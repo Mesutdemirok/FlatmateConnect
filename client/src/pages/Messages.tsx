@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
+import { formatDateRelative } from "@/lib/formatters";
 import { insertMessageSchema } from "@shared/schema";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -30,6 +32,7 @@ const sendMessageSchema = insertMessageSchema.omit({ senderId: true });
 type SendMessageData = z.infer<typeof sendMessageSchema>;
 
 export default function Messages() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -50,8 +53,8 @@ export default function Messages() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: t('errors.unauthorized'),
+        description: t('errors.unauthorized'),
         variant: "destructive",
       });
       setTimeout(() => {
@@ -86,8 +89,8 @@ export default function Messages() {
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: t('errors.unauthorized'),
+          description: t('errors.unauthorized'),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -96,8 +99,8 @@ export default function Messages() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
+        title: t('errors.server_error'),
+        description: t('errors.network_error'),
         variant: "destructive"
       });
     }
@@ -128,29 +131,13 @@ export default function Messages() {
     }
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    if (days === 0) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (days === 1) {
-      return 'Yesterday';
-    } else if (days < 7) {
-      return date.toLocaleDateString([], { weekday: 'short' });
-    } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    }
-  };
 
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center" data-testid="messages-loading">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading messages...</p>
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -163,10 +150,10 @@ export default function Messages() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="page-title">
-            Messages
+            {t('messages.title')}
           </h1>
           <p className="text-muted-foreground" data-testid="page-subtitle">
-            Communicate with potential flatmates
+            {t('nav.messages')}
           </p>
         </div>
 
@@ -176,7 +163,7 @@ export default function Messages() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
-                Conversations
+                {t('messages.conversations')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -196,9 +183,9 @@ export default function Messages() {
                 ) : conversations?.length === 0 ? (
                   <div className="p-6 text-center">
                     <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-sm font-semibold mb-2">No conversations yet</h3>
+                    <h3 className="text-sm font-semibold mb-2">{t('messages.no_messages')}</h3>
                     <p className="text-xs text-muted-foreground">
-                      Start browsing listings to connect with people
+                      {t('messages.start_conversation')}
                     </p>
                   </div>
                 ) : (
@@ -226,7 +213,7 @@ export default function Messages() {
                                 {conversation.user.firstName} {conversation.user.lastName}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {formatTime(conversation.lastMessage.createdAt)}
+                                {formatDateRelative(conversation.lastMessage.createdAt)}
                               </p>
                             </div>
                             <p className="text-xs text-muted-foreground truncate">
@@ -264,7 +251,7 @@ export default function Messages() {
                         {conversations?.find((c: any) => c.user.id === selectedConversation)?.user.firstName}{' '}
                         {conversations?.find((c: any) => c.user.id === selectedConversation)?.user.lastName}
                       </p>
-                      <p className="text-xs text-muted-foreground">Online</p>
+                      <p className="text-xs text-muted-foreground">{t('common.loading')}</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -303,7 +290,7 @@ export default function Messages() {
                               }`}>
                                 <Clock className="h-3 w-3" />
                                 <span className="text-xs">
-                                  {formatTime(message.createdAt)}
+                                  {formatDateRelative(message.createdAt)}
                                 </span>
                                 {message.senderId === user?.id && message.isRead && (
                                   <CheckCheck className="h-3 w-3" />
@@ -321,7 +308,7 @@ export default function Messages() {
                   <div className="border-t p-4">
                     <div className="flex space-x-2">
                       <Textarea
-                        placeholder="Type your message..."
+                        placeholder={t('messages.type_message')}
                         value={messageText}
                         onChange={(e) => setMessageText(e.target.value)}
                         onKeyPress={handleKeyPress}
@@ -349,9 +336,9 @@ export default function Messages() {
               <CardContent className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Select a conversation</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t('messages.start_conversation')}</h3>
                   <p className="text-muted-foreground">
-                    Choose a conversation from the left to start messaging
+                    {t('messages.start_conversation')}
                   </p>
                 </div>
               </CardContent>

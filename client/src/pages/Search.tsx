@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SearchFilters, { SearchFilters as FilterType } from "@/components/SearchFilters";
@@ -10,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Search as SearchIcon } from "lucide-react";
 
 export default function Search() {
+  const { t } = useTranslation();
   const [location] = useLocation();
   const [filters, setFilters] = useState<FilterType>({});
 
@@ -79,11 +81,11 @@ export default function Search() {
             <div className="mb-6" data-testid="search-results-header">
               <h1 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
                 <SearchIcon className="h-6 w-6" />
-                Search Results
+                {t('search.results')}
               </h1>
               {!isLoading && listings && (
                 <p className="text-muted-foreground" data-testid="results-count">
-                  {listings.length} {listings.length === 1 ? 'listing' : 'listings'} found
+                  {listings.length} {listings.length === 1 ? t('search.listing_found') : t('search.listings_found')}
                 </p>
               )}
             </div>
@@ -112,7 +114,7 @@ export default function Search() {
               <Alert className="mb-6" data-testid="search-error">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Failed to load listings. Please try again later.
+                  {t('search.failed_to_load')}
                 </AlertDescription>
               </Alert>
             )}
@@ -121,9 +123,9 @@ export default function Search() {
             {!isLoading && !error && listings && listings.length === 0 && (
               <div className="text-center py-12" data-testid="no-results">
                 <SearchIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No listings found</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{t('search.no_results_title')}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Try adjusting your search filters or check back later for new listings.
+                  {t('search.no_results_message')}
                 </p>
               </div>
             )}

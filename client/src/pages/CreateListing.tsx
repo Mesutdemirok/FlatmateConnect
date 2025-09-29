@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -22,20 +23,25 @@ import { Separator } from "@/components/ui/separator";
 import { Home, DollarSign, Calendar, MapPin, Camera, Loader2 } from "lucide-react";
 import { z } from "zod";
 
-const createListingSchema = insertListingSchema.extend({
-  rentAmount: z.string().min(1, "Rent amount is required"),
-  bondAmount: z.string().optional(),
-});
-
-type CreateListingFormData = z.infer<typeof createListingSchema>;
+type CreateListingFormData = z.infer<typeof insertListingSchema> & {
+  rentAmount: string;
+  bondAmount?: string;
+};
 
 export default function CreateListing() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [images, setImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Create schema with translated error messages
+  const createListingSchema = insertListingSchema.extend({
+    rentAmount: z.string().min(1, t('errors.required')),
+    bondAmount: z.string().optional(),
+  });
 
   const form = useForm<CreateListingFormData>({
     resolver: zodResolver(createListingSchema),
@@ -50,6 +56,7 @@ export default function CreateListing() {
       rentAmount: '',
       bondAmount: '',
       availableFrom: '',
+      availableTo: '',
       roomType: '',
       propertyType: '',
       furnished: false,
@@ -63,8 +70,8 @@ export default function CreateListing() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: t('errors.unauthorized'),
+        description: t('auth.sign_out'),
         variant: "destructive",
       });
       setTimeout(() => {
@@ -100,8 +107,8 @@ export default function CreateListing() {
         } catch (error) {
           console.error('Error uploading images:', error);
           toast({
-            title: "Warning",
-            description: "Listing created but some images failed to upload. You can add them later.",
+            title: t('common.warning', 'Uyarı'),
+            description: t('create_listing.image_upload_partial_error', 'İlan oluşturuldu ancak bazı görseller yüklenemedi. Daha sonra ekleyebilirsiniz.'),
             variant: "destructive"
           });
         }
@@ -111,8 +118,8 @@ export default function CreateListing() {
       queryClient.invalidateQueries({ queryKey: ['/api/my-listings'] });
       
       toast({
-        title: "Success!",
-        description: "Your listing has been created successfully."
+        title: t('common.success', 'Başarılı!'),
+        description: t('success.listing_created')
       });
       
       setLocation(`/listing/${listing.id}`);
@@ -120,8 +127,8 @@ export default function CreateListing() {
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: t('errors.unauthorized'),
+          description: t('auth.sign_out'),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -130,8 +137,8 @@ export default function CreateListing() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to create listing. Please try again.",
+        title: t('common.error', 'Hata'),
+        description: t('create_listing.create_error', 'İlan oluşturulurken hata oluştu. Lütfen tekrar deneyin.'),
         variant: "destructive"
       });
     }
@@ -148,7 +155,7 @@ export default function CreateListing() {
       <div className="min-h-screen bg-background flex items-center justify-center" data-testid="create-listing-loading">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -161,10 +168,10 @@ export default function CreateListing() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="page-title">
-            List Your Room
+            {t('create_listing.title')}
           </h1>
           <p className="text-muted-foreground" data-testid="page-subtitle">
-            Create a listing to find your perfect flatmate
+            {t('create_listing.subtitle', 'Mükemmel ev arkadaşınızı bulmak için ilan oluşturun')}
           </p>
         </div>
 
@@ -175,7 +182,7 @@ export default function CreateListing() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Home className="h-5 w-5" />
-                  Basic Information
+                  {t('create_listing.basic_info')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -184,16 +191,16 @@ export default function CreateListing() {
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Listing Title *</FormLabel>
+                      <FormLabel>{t('create_listing.listing_title')} *</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="e.g., Spacious room in Surry Hills"
+                          placeholder={t('create_listing.listing_title_placeholder', 'örn., Kadıköy\'de geniş oda')}
                           {...field}
                           data-testid="input-title"
                         />
                       </FormControl>
                       <FormDescription>
-                        Create an eye-catching title for your listing
+                        {t('create_listing.listing_title_desc', 'İlanınız için dikkat çekici bir başlık oluşturun')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -205,17 +212,17 @@ export default function CreateListing() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel>{t('create_listing.description')}</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="Describe your room, the house, and what you're looking for in a flatmate..."
+                          placeholder={t('create_listing.description_placeholder', 'Odanızı, evi ve ev arkadaşınızda aradıklarınızı açıklayın...')}
                           className="min-h-[120px]"
                           {...field}
                           data-testid="textarea-description"
                         />
                       </FormControl>
                       <FormDescription>
-                        Provide details about the room, property, and your preferences
+                        {t('create_listing.description_desc', 'Oda, mülk ve tercihleriniz hakkında detay verin')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -228,18 +235,18 @@ export default function CreateListing() {
                     name="roomType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Room Type</FormLabel>
+                        <FormLabel>{t('create_listing.room_type')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-room-type">
-                              <SelectValue placeholder="Select room type" />
+                              <SelectValue placeholder={t('create_listing.select_room_type', 'Oda tipini seçin')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="private">Private Room</SelectItem>
-                            <SelectItem value="shared">Shared Room</SelectItem>
-                            <SelectItem value="ensuite">Ensuite</SelectItem>
-                            <SelectItem value="studio">Studio</SelectItem>
+                            <SelectItem value="private">{t('hero.room_types.private')}</SelectItem>
+                            <SelectItem value="shared">{t('hero.room_types.shared')}</SelectItem>
+                            <SelectItem value="ensuite">{t('hero.room_types.ensuite')}</SelectItem>
+                            <SelectItem value="studio">{t('hero.room_types.studio')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -252,18 +259,18 @@ export default function CreateListing() {
                     name="propertyType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Property Type</FormLabel>
+                        <FormLabel>{t('create_listing.property_type')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-property-type">
-                              <SelectValue placeholder="Select property type" />
+                              <SelectValue placeholder={t('create_listing.select_property_type', 'Mülk tipini seçin')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="house">House</SelectItem>
-                            <SelectItem value="apartment">Apartment</SelectItem>
-                            <SelectItem value="townhouse">Townhouse</SelectItem>
-                            <SelectItem value="unit">Unit</SelectItem>
+                            <SelectItem value="house">{t('hero.property_types.house')}</SelectItem>
+                            <SelectItem value="apartment">{t('hero.property_types.apartment')}</SelectItem>
+                            <SelectItem value="townhouse">{t('hero.property_types.townhouse')}</SelectItem>
+                            <SelectItem value="unit">{t('hero.property_types.unit')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -279,7 +286,7 @@ export default function CreateListing() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
-                  Location
+                  {t('create_listing.location')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -288,10 +295,10 @@ export default function CreateListing() {
                   name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Street Address</FormLabel>
+                      <FormLabel>{t('create_listing.address')}</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="e.g., 123 Main Street"
+                          placeholder={t('create_listing.address_placeholder', 'örn., Atatürk Caddesi No: 123')}
                           {...field}
                           data-testid="input-address"
                         />
@@ -307,10 +314,10 @@ export default function CreateListing() {
                     name="suburb"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Suburb *</FormLabel>
+                        <FormLabel>{t('create_listing.suburb', 'Semt')} *</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="e.g., Surry Hills"
+                            placeholder={t('create_listing.suburb_placeholder', 'örn., Kadıköy')}
                             {...field}
                             data-testid="input-suburb"
                           />
@@ -325,10 +332,10 @@ export default function CreateListing() {
                     name="city"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>City</FormLabel>
+                        <FormLabel>{t('create_listing.city')}</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="e.g., Sydney"
+                            placeholder={t('create_listing.city_placeholder', 'örn., İstanbul')}
                             {...field}
                             data-testid="input-city"
                           />
@@ -343,10 +350,10 @@ export default function CreateListing() {
                     name="postcode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Postcode</FormLabel>
+                        <FormLabel>{t('create_listing.postcode')}</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="e.g., 2010"
+                            placeholder={t('create_listing.postcode_placeholder', 'örn., 34710')}
                             {...field}
                             data-testid="input-postcode"
                           />
@@ -362,22 +369,22 @@ export default function CreateListing() {
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>State</FormLabel>
+                      <FormLabel>{t('create_listing.state')}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-state">
-                            <SelectValue placeholder="Select state" />
+                            <SelectValue placeholder={t('create_listing.select_state', 'İl seçin')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="NSW">New South Wales</SelectItem>
-                          <SelectItem value="VIC">Victoria</SelectItem>
-                          <SelectItem value="QLD">Queensland</SelectItem>
-                          <SelectItem value="WA">Western Australia</SelectItem>
-                          <SelectItem value="SA">South Australia</SelectItem>
-                          <SelectItem value="TAS">Tasmania</SelectItem>
-                          <SelectItem value="ACT">Australian Capital Territory</SelectItem>
-                          <SelectItem value="NT">Northern Territory</SelectItem>
+                          <SelectItem value="NSW">{t('options.states.NSW')}</SelectItem>
+                          <SelectItem value="VIC">{t('options.states.VIC')}</SelectItem>
+                          <SelectItem value="QLD">{t('options.states.QLD')}</SelectItem>
+                          <SelectItem value="WA">{t('options.states.WA')}</SelectItem>
+                          <SelectItem value="SA">{t('options.states.SA')}</SelectItem>
+                          <SelectItem value="TAS">{t('options.states.TAS')}</SelectItem>
+                          <SelectItem value="ACT">{t('options.states.ACT')}</SelectItem>
+                          <SelectItem value="NT">{t('options.states.NT')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -392,7 +399,7 @@ export default function CreateListing() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5" />
-                  Pricing & Availability
+                  {t('create_listing.pricing')} & {t('create_listing.availability')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -402,13 +409,13 @@ export default function CreateListing() {
                     name="rentAmount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Weekly Rent *</FormLabel>
+                        <FormLabel>{t('create_listing.weekly_rent')} *</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input 
                               type="number"
-                              placeholder="280"
+                              placeholder="1500"
                               className="pl-10"
                               {...field}
                               data-testid="input-rent-amount"
@@ -416,7 +423,7 @@ export default function CreateListing() {
                           </div>
                         </FormControl>
                         <FormDescription>
-                          Amount per week in AUD
+                          {t('create_listing.weekly_rent_desc', 'Haftalık tutar (TL)')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -428,13 +435,13 @@ export default function CreateListing() {
                     name="bondAmount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Bond Amount</FormLabel>
+                        <FormLabel>{t('create_listing.bond')}</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input 
                               type="number"
-                              placeholder="1120"
+                              placeholder="3000"
                               className="pl-10"
                               {...field}
                               data-testid="input-bond-amount"
@@ -442,7 +449,7 @@ export default function CreateListing() {
                           </div>
                         </FormControl>
                         <FormDescription>
-                          Security deposit amount
+                          {t('create_listing.bond_desc', 'Güvenlik depozitosu tutarı')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -456,7 +463,7 @@ export default function CreateListing() {
                     name="availableFrom"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Available From</FormLabel>
+                        <FormLabel>{t('create_listing.available_from')}</FormLabel>
                         <FormControl>
                           <Input 
                             type="date"
@@ -465,7 +472,7 @@ export default function CreateListing() {
                           />
                         </FormControl>
                         <FormDescription>
-                          When the room becomes available
+                          {t('create_listing.available_from_desc', 'Oda ne zaman müsait olacak')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -477,7 +484,7 @@ export default function CreateListing() {
                     name="availableTo"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Available Until</FormLabel>
+                        <FormLabel>{t('create_listing.available_until', 'Müsait Olma Bitiş Tarihi')}</FormLabel>
                         <FormControl>
                           <Input 
                             type="date"
@@ -486,7 +493,7 @@ export default function CreateListing() {
                           />
                         </FormControl>
                         <FormDescription>
-                          Optional end date for availability
+                          {t('create_listing.available_until_desc', 'İsteğe bağlı müsaitlik bitiş tarihi')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -499,7 +506,7 @@ export default function CreateListing() {
             {/* Features & Amenities */}
             <Card>
               <CardHeader>
-                <CardTitle>Features & Amenities</CardTitle>
+                <CardTitle>{t('create_listing.features')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -516,9 +523,9 @@ export default function CreateListing() {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Furnished</FormLabel>
+                          <FormLabel>{t('create_listing.furnished')}</FormLabel>
                           <FormDescription>
-                            Room comes with furniture
+                            {t('create_listing.furnished_desc', 'Oda mobilyalı olarak geliyor')}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -538,9 +545,9 @@ export default function CreateListing() {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Bills Included</FormLabel>
+                          <FormLabel>{t('create_listing.bills_included', 'Faturalar Dahil')}</FormLabel>
                           <FormDescription>
-                            Electricity, gas, water included
+                            {t('create_listing.bills_included_desc', 'Elektrik, gaz, su dahil')}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -560,9 +567,9 @@ export default function CreateListing() {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Internet Included</FormLabel>
+                          <FormLabel>{t('create_listing.internet')}</FormLabel>
                           <FormDescription>
-                            WiFi/Broadband included
+                            {t('create_listing.internet_desc', 'WiFi/İnternet dahil')}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -582,9 +589,9 @@ export default function CreateListing() {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Parking Available</FormLabel>
+                          <FormLabel>{t('create_listing.parking')}</FormLabel>
                           <FormDescription>
-                            Car parking space available
+                            {t('create_listing.parking_desc', 'Araç park alanı mevcut')}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -599,7 +606,7 @@ export default function CreateListing() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Camera className="h-5 w-5" />
-                  Property Images
+                  {t('create_listing.images')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -615,7 +622,7 @@ export default function CreateListing() {
                 onClick={() => setLocation('/search')}
                 data-testid="cancel-button"
               >
-                Cancel
+                {t('create_listing.cancel')}
               </Button>
               <Button 
                 type="submit" 
@@ -626,10 +633,10 @@ export default function CreateListing() {
                 {isSubmitting || createListingMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating Listing...
+                    {t('create_listing.creating', 'İlan Oluşturuluyor...')}
                   </>
                 ) : (
-                  'Create Listing'
+                  t('create_listing.create_button')
                 )}
               </Button>
             </div>

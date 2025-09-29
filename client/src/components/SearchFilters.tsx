@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ export interface SearchFilters {
 }
 
 export default function SearchFilters({ onFilterChange, initialFilters = {} }: SearchFiltersProps) {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState<SearchFilters>(initialFilters);
 
   const updateFilter = (key: keyof SearchFilters, value: any) => {
@@ -45,14 +47,14 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
     <Card className="sticky top-20" data-testid="search-filters">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Filters</span>
+          <span>{t('filters.title')}</span>
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={clearFilters}
             data-testid="clear-filters-button"
           >
-            Clear All
+            {t('filters.clear')}
           </Button>
         </CardTitle>
       </CardHeader>
@@ -61,11 +63,11 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
         <div className="space-y-2">
           <Label htmlFor="filter-location" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
-            Location
+            {t('filters.location')}
           </Label>
           <Input
             id="filter-location"
-            placeholder="Suburb, city or postcode"
+            placeholder={t('hero.search_placeholder')}
             value={filters.location || ''}
             onChange={(e) => updateFilter('location', e.target.value)}
             data-testid="filter-location-input"
@@ -78,13 +80,13 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
         <div className="space-y-3">
           <Label className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
-            Price Range (per week)
+            {t('filters.price_range')}
           </Label>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Input
                 type="number"
-                placeholder="Min"
+                placeholder={t('filters.min')}
                 value={filters.minPrice || ''}
                 onChange={(e) => updateFilter('minPrice', e.target.value ? Number(e.target.value) : undefined)}
                 data-testid="filter-min-price"
@@ -93,7 +95,7 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
             <div>
               <Input
                 type="number"
-                placeholder="Max"
+                placeholder={t('filters.max')}
                 value={filters.maxPrice || ''}
                 onChange={(e) => updateFilter('maxPrice', e.target.value ? Number(e.target.value) : undefined)}
                 data-testid="filter-max-price"
@@ -108,7 +110,7 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
         <div className="space-y-2">
           <Label htmlFor="filter-available-from" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Available From
+            {t('filters.availability')}
           </Label>
           <Input
             id="filter-available-from"
@@ -125,41 +127,41 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <Home className="h-4 w-4" />
-            Room Type
+            {t('filters.room_type')}
           </Label>
           <Select 
             value={filters.roomType || ''} 
             onValueChange={(value) => updateFilter('roomType', value || undefined)}
           >
             <SelectTrigger data-testid="filter-room-type">
-              <SelectValue placeholder="Any room type" />
+              <SelectValue placeholder={t('hero.room_types.any')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Any room type</SelectItem>
-              <SelectItem value="private">Private Room</SelectItem>
-              <SelectItem value="shared">Shared Room</SelectItem>
-              <SelectItem value="ensuite">Ensuite</SelectItem>
-              <SelectItem value="studio">Studio</SelectItem>
+              <SelectItem value="all">{t('hero.room_types.any')}</SelectItem>
+              <SelectItem value="private">{t('hero.room_types.private')}</SelectItem>
+              <SelectItem value="shared">{t('hero.room_types.shared')}</SelectItem>
+              <SelectItem value="ensuite">{t('hero.room_types.ensuite')}</SelectItem>
+              <SelectItem value="studio">{t('hero.room_types.studio')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Property Type */}
         <div className="space-y-2">
-          <Label>Property Type</Label>
+          <Label>{t('filters.property_type')}</Label>
           <Select 
             value={filters.propertyType || ''} 
             onValueChange={(value) => updateFilter('propertyType', value || undefined)}
           >
             <SelectTrigger data-testid="filter-property-type">
-              <SelectValue placeholder="Any property type" />
+              <SelectValue placeholder={t('hero.property_types.any')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Any property type</SelectItem>
-              <SelectItem value="house">House</SelectItem>
-              <SelectItem value="apartment">Apartment</SelectItem>
-              <SelectItem value="townhouse">Townhouse</SelectItem>
-              <SelectItem value="unit">Unit</SelectItem>
+              <SelectItem value="all">{t('hero.property_types.any')}</SelectItem>
+              <SelectItem value="house">{t('hero.property_types.house')}</SelectItem>
+              <SelectItem value="apartment">{t('hero.property_types.apartment')}</SelectItem>
+              <SelectItem value="townhouse">{t('hero.property_types.townhouse')}</SelectItem>
+              <SelectItem value="unit">{t('hero.property_types.unit')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -168,7 +170,7 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
 
         {/* Features */}
         <div className="space-y-3">
-          <Label>Features</Label>
+          <Label>{t('filters.features')}</Label>
           
           <div className="flex items-center space-x-2">
             <Checkbox
@@ -178,7 +180,7 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
               data-testid="filter-furnished"
             />
             <Label htmlFor="furnished" className="text-sm font-normal">
-              Furnished
+              {t('hero.feature_options.furnished')}
             </Label>
           </div>
 
@@ -191,7 +193,7 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
             />
             <Label htmlFor="bills-included" className="text-sm font-normal flex items-center gap-1">
               <DollarSign className="h-3 w-3" />
-              Bills Included
+              {t('hero.feature_options.bills_included')}
             </Label>
           </div>
 
@@ -204,7 +206,7 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
             />
             <Label htmlFor="parking" className="text-sm font-normal flex items-center gap-1">
               <Car className="h-3 w-3" />
-              Parking Available
+              {t('hero.feature_options.parking')}
             </Label>
           </div>
 
@@ -217,7 +219,7 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
             />
             <Label htmlFor="internet" className="text-sm font-normal flex items-center gap-1">
               <Wifi className="h-3 w-3" />
-              Internet Included
+              {t('hero.feature_options.internet')}
             </Label>
           </div>
         </div>

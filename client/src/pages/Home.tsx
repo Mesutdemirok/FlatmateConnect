@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
@@ -10,6 +11,7 @@ import Footer from "@/components/Footer";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
 export default function Home() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
 
@@ -17,8 +19,8 @@ export default function Home() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: t('errors.unauthorized'),
+        description: t('errors.unauthorized_description'),
         variant: "destructive",
       });
       setTimeout(() => {
@@ -33,7 +35,7 @@ export default function Home() {
       <div className="min-h-screen bg-background flex items-center justify-center" data-testid="home-loading">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your dashboard...</p>
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -48,10 +50,10 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="welcome-message">
-                Welcome back, {user?.firstName || 'User'}!
+                {t('home.welcome_back', { name: user?.firstName || t('common.user') })}
               </h1>
               <p className="text-muted-foreground" data-testid="dashboard-subtitle">
-                Find your perfect flatmate or list your room
+                {t('home.subtitle')}
               </p>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertListingSchema, insertUserPreferencesSchema, insertMessageSchema, insertFavoriteSchema } from "@shared/schema";
+import { getErrorMessage, detectLanguage } from "./i18n";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -26,7 +27,8 @@ const upload = multer({
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      const lang = detectLanguage(req);
+      cb(new Error(getErrorMessage('invalid_file_type', lang)));
     }
   },
   limits: {
@@ -49,7 +51,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('user_not_found', lang) });
     }
   });
 
@@ -71,7 +74,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(listings);
     } catch (error) {
       console.error("Error fetching listings:", error);
-      res.status(500).json({ message: "Failed to fetch listings" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
   });
 
@@ -79,12 +83,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const listing = await storage.getListing(req.params.id);
       if (!listing) {
-        return res.status(404).json({ message: "Listing not found" });
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: getErrorMessage('listing_not_found', lang) });
       }
       res.json(listing);
     } catch (error) {
       console.error("Error fetching listing:", error);
-      res.status(500).json({ message: "Failed to fetch listing" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
   });
 
@@ -100,7 +106,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(listing);
     } catch (error) {
       console.error("Error creating listing:", error);
-      res.status(400).json({ message: "Failed to create listing", error: error.message });
+      const lang = detectLanguage(req);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: getErrorMessage('bad_request', lang), error: error.message });
+      } else {
+        res.status(400).json({ message: getErrorMessage('listing_creation_failed', lang), error: error.message });
+      }
     }
   });
 
@@ -110,7 +121,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listing = await storage.getListing(req.params.id);
       
       if (!listing || listing.userId !== userId) {
-        return res.status(404).json({ message: "Listing not found or unauthorized" });
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: getErrorMessage('listing_not_found', lang) });
       }
       
       const updates = insertListingSchema.partial().parse(req.body);
@@ -118,7 +130,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updated);
     } catch (error) {
       console.error("Error updating listing:", error);
-      res.status(400).json({ message: "Failed to update listing", error: error.message });
+      const lang = detectLanguage(req);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: getErrorMessage('bad_request', lang), error: error.message });
+      } else {
+        res.status(400).json({ message: getErrorMessage('listing_update_failed', lang), error: error.message });
+      }
     }
   });
 
@@ -128,14 +145,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listing = await storage.getListing(req.params.id);
       
       if (!listing || listing.userId !== userId) {
-        return res.status(404).json({ message: "Listing not found or unauthorized" });
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: getErrorMessage('listing_not_found', lang) });
       }
       
       await storage.deleteListing(req.params.id);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting listing:", error);
-      res.status(500).json({ message: "Failed to delete listing" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('listing_delete_failed', lang) });
     }
   });
 
@@ -146,7 +165,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(listings);
     } catch (error) {
       console.error("Error fetching user listings:", error);
-      res.status(500).json({ message: "Failed to fetch listings" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
   });
 
@@ -157,7 +177,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listing = await storage.getListing(req.params.id);
       
       if (!listing || listing.userId !== userId) {
-        return res.status(404).json({ message: "Listing not found or unauthorized" });
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: getErrorMessage('listing_not_found', lang) });
       }
       
       const files = req.files as Express.Multer.File[];
@@ -176,7 +197,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(images);
     } catch (error) {
       console.error("Error uploading images:", error);
-      res.status(500).json({ message: "Failed to upload images" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('upload_failed', lang) });
     }
   });
 
@@ -186,14 +208,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listing = await storage.getListing(req.params.listingId);
       
       if (!listing || listing.userId !== userId) {
-        return res.status(404).json({ message: "Listing not found or unauthorized" });
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: getErrorMessage('listing_not_found', lang) });
       }
       
       await storage.deleteListingImage(req.params.imageId);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting image:", error);
-      res.status(500).json({ message: "Failed to delete image" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
   });
 
@@ -205,7 +229,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(preferences);
     } catch (error) {
       console.error("Error fetching preferences:", error);
-      res.status(500).json({ message: "Failed to fetch preferences" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
   });
 
@@ -221,7 +246,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(preferences);
     } catch (error) {
       console.error("Error updating preferences:", error);
-      res.status(400).json({ message: "Failed to update preferences", error: error.message });
+      const lang = detectLanguage(req);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: getErrorMessage('bad_request', lang), error: error.message });
+      } else {
+        res.status(400).json({ message: getErrorMessage('profile_update_failed', lang), error: error.message });
+      }
     }
   });
 
@@ -233,7 +263,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(conversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
-      res.status(500).json({ message: "Failed to fetch conversations" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('conversation_not_found', lang) });
     }
   });
 
@@ -247,7 +278,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(messages);
     } catch (error) {
       console.error("Error fetching messages:", error);
-      res.status(500).json({ message: "Failed to fetch messages" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
   });
 
@@ -263,7 +295,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(message);
     } catch (error) {
       console.error("Error sending message:", error);
-      res.status(400).json({ message: "Failed to send message", error: error.message });
+      const lang = detectLanguage(req);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: getErrorMessage('bad_request', lang), error: error.message });
+      } else {
+        res.status(400).json({ message: getErrorMessage('message_send_failed', lang), error: error.message });
+      }
     }
   });
 
@@ -273,7 +310,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       console.error("Error marking message as read:", error);
-      res.status(500).json({ message: "Failed to mark message as read" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
   });
 
@@ -285,7 +323,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(favorites);
     } catch (error) {
       console.error("Error fetching favorites:", error);
-      res.status(500).json({ message: "Failed to fetch favorites" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
   });
 
@@ -301,7 +340,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(favorite);
     } catch (error) {
       console.error("Error adding favorite:", error);
-      res.status(400).json({ message: "Failed to add favorite", error: error.message });
+      const lang = detectLanguage(req);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: getErrorMessage('bad_request', lang), error: error.message });
+      } else {
+        res.status(400).json({ message: getErrorMessage('database_error', lang), error: error.message });
+      }
     }
   });
 
@@ -312,7 +356,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       console.error("Error removing favorite:", error);
-      res.status(500).json({ message: "Failed to remove favorite" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
   });
 
@@ -323,7 +368,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ isFavorite });
     } catch (error) {
       console.error("Error checking favorite:", error);
-      res.status(500).json({ message: "Failed to check favorite status" });
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
   });
 

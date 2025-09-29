@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ export default function ImageUpload({
   acceptedTypes = ['image/jpeg', 'image/png', 'image/webp'],
   maxFileSize = 5 * 1024 * 1024 // 5MB
 }: ImageUploadProps) {
+  const { t } = useTranslation();
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [dragActive, setDragActive] = useState(false);
@@ -26,8 +28,8 @@ export default function ImageUpload({
   const validateFile = (file: File): boolean => {
     if (!acceptedTypes.includes(file.type)) {
       toast({
-        title: "Invalid file type",
-        description: `Please upload images in ${acceptedTypes.join(', ')} format`,
+        title: t('errors.invalid_file_type'),
+        description: t('errors.invalid_file_type_description', { types: 'JPEG, PNG, WebP' }),
         variant: "destructive"
       });
       return false;
@@ -35,8 +37,8 @@ export default function ImageUpload({
 
     if (file.size > maxFileSize) {
       toast({
-        title: "File too large",
-        description: `Please upload images smaller than ${Math.round(maxFileSize / 1024 / 1024)}MB`,
+        title: t('errors.file_too_large'),
+        description: t('errors.file_too_large_description', { maxMB: Math.round(maxFileSize / 1024 / 1024).toString() }),
         variant: "destructive"
       });
       return false;
@@ -52,8 +54,8 @@ export default function ImageUpload({
     Array.from(fileList).forEach(file => {
       if (images.length + validFiles.length >= maxImages) {
         toast({
-          title: "Too many images",
-          description: `Maximum ${maxImages} images allowed`,
+          title: t('errors.too_many_images'),
+          description: t('errors.too_many_images_description', { max: maxImages.toString() }),
           variant: "destructive"
         });
         return;

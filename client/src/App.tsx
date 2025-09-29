@@ -12,6 +12,7 @@ import ListingDetail from "@/pages/ListingDetail";
 import CreateListing from "@/pages/CreateListing";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
+import "./i18n"; // Initialize i18n
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();

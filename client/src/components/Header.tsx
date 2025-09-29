@@ -3,11 +3,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageSquare, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function Header() {
   const [location] = useLocation();
   const { user, isAuthenticated, isLoading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { t } = useTranslation();
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
@@ -27,21 +29,21 @@ export default function Header() {
                 className="text-foreground hover:text-primary transition-colors"
                 data-testid="nav-browse-rooms"
               >
-                Browse Rooms
+                {t('nav.browse_rooms')}
               </Link>
               <Link 
                 href="/create-listing" 
                 className="text-foreground hover:text-primary transition-colors"
                 data-testid="nav-list-room"
               >
-                List a Room
+                {t('nav.list_room')}
               </Link>
               <Link 
                 href="/how-it-works" 
                 className="text-foreground hover:text-primary transition-colors"
                 data-testid="nav-how-it-works"
               >
-                How it Works
+                {t('nav.how_it_works')}
               </Link>
             </nav>
           </div>
@@ -50,23 +52,23 @@ export default function Header() {
             {isAuthenticated ? (
               <>
                 <Link href="/favorites" data-testid="favorites-link">
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" aria-label={t('nav.favorites')}>
                     <Heart className="h-5 w-5" />
                   </Button>
                 </Link>
                 <Link href="/messages" data-testid="messages-link">
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" aria-label={t('nav.messages')}>
                     <MessageSquare className="h-5 w-5" />
                   </Button>
                 </Link>
                 <Link href="/profile" data-testid="profile-link">
                   <Button variant="outline" className="hidden sm:flex">
-                    Profile
+                    {t('nav.profile')}
                   </Button>
                 </Link>
                 <a href="/api/logout" data-testid="logout-link">
                   <Button variant="outline" className="hidden sm:flex">
-                    Log Out
+                    {t('nav.logout')}
                   </Button>
                 </a>
               </>
@@ -74,12 +76,12 @@ export default function Header() {
               <>
                 <a href="/api/login" data-testid="login-link">
                   <Button variant="outline" className="hidden sm:flex">
-                    Log In
+                    {t('nav.login')}
                   </Button>
                 </a>
                 <a href="/api/login" data-testid="signup-link">
                   <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                    Sign Up
+                    {t('nav.sign_up')}
                   </Button>
                 </a>
               </>
@@ -103,26 +105,26 @@ export default function Header() {
         <div className="md:hidden border-t border-border bg-card" data-testid="mobile-menu">
           <div className="px-4 py-4 space-y-4">
             <Link href="/search" className="block text-foreground hover:text-primary transition-colors">
-              Browse Rooms
+              {t('nav.browse_rooms')}
             </Link>
             <Link href="/create-listing" className="block text-foreground hover:text-primary transition-colors">
-              List a Room
+              {t('nav.list_room')}
             </Link>
             <Link href="/how-it-works" className="block text-foreground hover:text-primary transition-colors">
-              How it Works
+              {t('nav.how_it_works')}
             </Link>
             {isAuthenticated ? (
               <>
                 <Link href="/profile" className="block text-foreground hover:text-primary transition-colors">
-                  Profile
+                  {t('nav.profile')}
                 </Link>
                 <a href="/api/logout" className="block text-foreground hover:text-primary transition-colors">
-                  Log Out
+                  {t('nav.logout')}
                 </a>
               </>
             ) : (
               <a href="/api/login" className="block text-foreground hover:text-primary transition-colors">
-                Log In
+                {t('nav.login')}
               </a>
             )}
           </div>

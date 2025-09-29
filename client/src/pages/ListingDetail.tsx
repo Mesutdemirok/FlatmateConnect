@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
+import { formatCurrency, formatDate } from "@/lib/formatters";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -30,6 +32,7 @@ import {
 } from "lucide-react";
 
 export default function ListingDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -59,15 +62,15 @@ export default function ListingDetail() {
       queryClient.invalidateQueries({ queryKey: [`/api/favorites/${id}/check`] });
       queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
       toast({
-        title: favoriteStatus?.isFavorite ? "Removed from favorites" : "Added to favorites",
-        description: favoriteStatus?.isFavorite ? "Listing removed from your favorites" : "Listing added to your favorites"
+        title: favoriteStatus?.isFavorite ? t('success.favorite_removed') : t('success.favorite_added'),
+        description: favoriteStatus?.isFavorite ? t('success.favorite_removed_description') : t('success.favorite_added_description')
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: t('errors.unauthorized'),
+          description: t('errors.unauthorized_description'),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -76,8 +79,8 @@ export default function ListingDetail() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to update favorites",
+        title: t('errors.network_error'),
+        description: t('errors.favorite_update_failed'),
         variant: "destructive"
       });
     }
@@ -111,14 +114,10 @@ export default function ListingDetail() {
     }
   };
 
-  const formatPrice = (amount: string) => {
-    return `$${Math.round(Number(amount))}`;
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "Available Now";
+  const formatAvailability = (dateString: string | null) => {
+    if (!dateString) return t('listings.available_now');
     const date = new Date(dateString);
-    return date > new Date() ? date.toLocaleDateString() : "Available Now";
+    return date > new Date() ? formatDate(dateString) : t('listings.available_now');
   };
 
   if (isLoading) {
@@ -157,12 +156,12 @@ export default function ListingDetail() {
         <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card>
             <CardContent className="p-8 text-center">
-              <h1 className="text-2xl font-bold text-foreground mb-2">Listing Not Found</h1>
+              <h1 className="text-2xl font-bold text-foreground mb-2">{t('listings.not_found_title')}</h1>
               <p className="text-muted-foreground mb-4">
-                The listing you're looking for doesn't exist or may have been removed.
+                {t('listings.not_found_message')}
               </p>
               <Link href="/search">
-                <Button>Browse Other Listings</Button>
+                <Button>{t('listings.browse_other_listings')}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -188,7 +187,7 @@ export default function ListingDetail() {
         <Link href="/search">
           <Button variant="ghost" className="mb-6" data-testid="back-button">
             <ChevronLeft className="h-4 w-4 mr-2" />
-            Back to Search
+            {t('listings.back_to_search')}
           </Button>
         </Link>
 
@@ -272,7 +271,7 @@ export default function ListingDetail() {
                 <div className="flex flex-wrap gap-2 mb-4">
                   <Badge variant="secondary" data-testid="availability-badge">
                     <Calendar className="h-3 w-3 mr-1" />
-                    {formatDate(listing.availableFrom)}
+                    {formatAvailability(listing.availableFrom)}
                   </Badge>
                   {listing.roomType && (
                     <Badge variant="outline" data-testid="room-type-badge">
@@ -282,7 +281,7 @@ export default function ListingDetail() {
                   )}
                   {listing.furnished && (
                     <Badge variant="outline" data-testid="furnished-badge">
-                      Furnished
+                      {t('listings.furnished')}
                     </Badge>
                   )}
                 </div>
@@ -293,7 +292,7 @@ export default function ListingDetail() {
               {/* Description */}
               {listing.description && (
                 <div>
-                  <h2 className="text-xl font-semibold mb-3">Description</h2>
+                  <h2 className="text-xl font-semibold mb-3">{t('listings.description')}</h2>
                   <p className="text-foreground leading-relaxed" data-testid="listing-description">
                     {listing.description}
                   </p>
@@ -304,24 +303,24 @@ export default function ListingDetail() {
 
               {/* Features */}
               <div>
-                <h2 className="text-xl font-semibold mb-4">Features & Amenities</h2>
+                <h2 className="text-xl font-semibold mb-4">{t('listings.features_amenities')}</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {listing.billsIncluded && (
                     <div className="flex items-center" data-testid="bills-included-feature">
                       <Zap className="h-4 w-4 mr-2 text-secondary" />
-                      <span>Bills Included</span>
+                      <span>{t('listings.bills_included')}</span>
                     </div>
                   )}
                   {listing.internetIncluded && (
                     <div className="flex items-center" data-testid="internet-feature">
                       <Wifi className="h-4 w-4 mr-2 text-secondary" />
-                      <span>Internet Included</span>
+                      <span>{t('listings.internet_included')}</span>
                     </div>
                   )}
                   {listing.parkingAvailable && (
                     <div className="flex items-center" data-testid="parking-feature">
                       <Car className="h-4 w-4 mr-2 text-secondary" />
-                      <span>Parking Available</span>
+                      <span>{t('listings.parking_available')}</span>
                     </div>
                   )}
                   {listing.propertyType && (
@@ -342,12 +341,12 @@ export default function ListingDetail() {
               <CardContent className="p-6">
                 <div className="text-center mb-6">
                   <div className="text-3xl font-bold text-foreground" data-testid="listing-price">
-                    {formatPrice(listing.rentAmount)}
-                    <span className="text-lg font-normal text-muted-foreground">/week</span>
+                    {formatCurrency(Number(listing.rentAmount))}
+                    <span className="text-lg font-normal text-muted-foreground">{t('listings.per_week')}</span>
                   </div>
                   {listing.bondAmount && (
                     <p className="text-sm text-muted-foreground mt-1" data-testid="bond-amount">
-                      ${Math.round(Number(listing.bondAmount))} bond
+                      {formatCurrency(Number(listing.bondAmount))} {t('listings.bond')}
                     </p>
                   )}
                 </div>
@@ -359,7 +358,7 @@ export default function ListingDetail() {
                     data-testid="contact-owner-button"
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    Contact Owner
+                    {t('listings.contact_owner')}
                   </Button>
                   
                   <Button 
@@ -370,7 +369,7 @@ export default function ListingDetail() {
                     data-testid="favorite-button"
                   >
                     <Heart className={`h-4 w-4 mr-2 ${favoriteStatus?.isFavorite ? 'fill-destructive text-destructive' : ''}`} />
-                    {favoriteStatus?.isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                    {favoriteStatus?.isFavorite ? t('listings.remove_from_favorites') : t('listings.add_to_favorites')}
                   </Button>
                 </div>
               </CardContent>
@@ -381,7 +380,7 @@ export default function ListingDetail() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5 text-secondary" />
-                  Property Owner
+                  {t('listings.property_owner')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -400,7 +399,7 @@ export default function ListingDetail() {
                     {listing.user.verificationStatus === 'verified' && (
                       <div className="flex items-center gap-1 text-sm text-secondary">
                         <Shield className="h-3 w-3" />
-                        <span>Verified</span>
+                        <span>{t('listings.verified')}</span>
                       </div>
                     )}
                   </div>
@@ -408,7 +407,7 @@ export default function ListingDetail() {
                 
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Star className="h-4 w-4 text-accent" />
-                  <span>4.8 rating • 12 reviews</span>
+                  <span>4.8 {t('listings.rating_reviews')}</span>
                 </div>
               </CardContent>
             </Card>
@@ -418,10 +417,10 @@ export default function ListingDetail() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Shield className="h-4 w-4 text-secondary" />
-                  <span className="font-medium text-secondary">Safety First</span>
+                  <span className="font-medium text-secondary">{t('listings.safety_first')}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Always meet in person before making any payments. Never send money without viewing the property.
+                  {t('listings.safety_message')}
                 </p>
               </CardContent>
             </Card>

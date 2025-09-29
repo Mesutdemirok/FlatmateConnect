@@ -5,8 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Search, SlidersHorizontal } from "lucide-react";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 
 export default function Hero() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [searchParams, setSearchParams] = useState({
     location: '',
@@ -40,11 +42,10 @@ export default function Hero() {
       
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h1 className="text-4xl lg:text-6xl font-bold text-primary-foreground mb-6" data-testid="hero-title">
-          Find Your Perfect
-          <span className="block">Flatmate & Room</span>
+          {t('hero.title')}
         </h1>
         <p className="text-lg lg:text-xl text-primary-foreground/90 mb-10 max-w-2xl mx-auto" data-testid="hero-subtitle">
-          Connect with verified people seeking shared accommodation. Safe, secure, and simple.
+          {t('hero.subtitle')}
         </p>
         
         {/* Main search form */}
@@ -52,14 +53,14 @@ export default function Hero() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
             <div className="lg:col-span-2">
               <Label htmlFor="location" className="block text-sm font-medium text-muted-foreground mb-2">
-                Location
+                {t('filters.location')}
               </Label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="location"
                   type="text"
-                  placeholder="Suburb, city or postcode"
+                  placeholder={t('hero.search_placeholder')}
                   className="pl-10"
                   value={searchParams.location}
                   onChange={(e) => handleInputChange('location', e.target.value)}
@@ -70,25 +71,25 @@ export default function Hero() {
             
             <div>
               <Label className="block text-sm font-medium text-muted-foreground mb-2">
-                Price Range
+                {t('hero.filters.price')}
               </Label>
               <Select value={searchParams.priceRange} onValueChange={(value) => handleInputChange('priceRange', value)}>
                 <SelectTrigger data-testid="select-price-range">
-                  <SelectValue placeholder="Any Price" />
+                  <SelectValue placeholder={t('hero.price_ranges.any')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Any Price</SelectItem>
-                  <SelectItem value="100-200">$100 - $200</SelectItem>
-                  <SelectItem value="200-300">$200 - $300</SelectItem>
-                  <SelectItem value="300-500">$300 - $500</SelectItem>
-                  <SelectItem value="500+">$500+</SelectItem>
+                  <SelectItem value="all">{t('hero.price_ranges.any')}</SelectItem>
+                  <SelectItem value="100-200">{t('hero.price_ranges.100-200')}</SelectItem>
+                  <SelectItem value="200-300">{t('hero.price_ranges.200-300')}</SelectItem>
+                  <SelectItem value="300-500">{t('hero.price_ranges.300-500')}</SelectItem>
+                  <SelectItem value="500+">{t('hero.price_ranges.500+')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
               <Label htmlFor="availableFrom" className="block text-sm font-medium text-muted-foreground mb-2">
-                Available From
+                {t('create_listing.available_from')}
               </Label>
               <Input
                 id="availableFrom"
@@ -108,7 +109,7 @@ export default function Hero() {
               data-testid="button-advanced-filters"
             >
               <SlidersHorizontal className="h-4 w-4 mr-2" />
-              Advanced Filters
+              {t('filters.title')}
             </Button>
             <Button 
               className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg"
@@ -116,7 +117,7 @@ export default function Hero() {
               data-testid="button-search"
             >
               <Search className="h-4 w-4 mr-2" />
-              Search Rooms
+              {t('hero.search_button')}
             </Button>
           </div>
 
@@ -126,52 +127,52 @@ export default function Hero() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Room Type
+                    {t('hero.filters.room_type')}
                   </Label>
                   <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="Any Room Type" />
+                      <SelectValue placeholder={t('hero.room_types.any')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Any Room Type</SelectItem>
-                      <SelectItem value="private">Private Room</SelectItem>
-                      <SelectItem value="shared">Shared Room</SelectItem>
-                      <SelectItem value="ensuite">Ensuite</SelectItem>
+                      <SelectItem value="all">{t('hero.room_types.any')}</SelectItem>
+                      <SelectItem value="private">{t('hero.room_types.private')}</SelectItem>
+                      <SelectItem value="shared">{t('hero.room_types.shared')}</SelectItem>
+                      <SelectItem value="ensuite">{t('hero.room_types.ensuite')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
                   <Label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Property Type
+                    {t('hero.filters.property_type')}
                   </Label>
                   <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="Any Property" />
+                      <SelectValue placeholder={t('hero.property_types.any')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Any Property</SelectItem>
-                      <SelectItem value="house">House</SelectItem>
-                      <SelectItem value="apartment">Apartment</SelectItem>
-                      <SelectItem value="townhouse">Townhouse</SelectItem>
+                      <SelectItem value="all">{t('hero.property_types.any')}</SelectItem>
+                      <SelectItem value="house">{t('hero.property_types.house')}</SelectItem>
+                      <SelectItem value="apartment">{t('hero.property_types.apartment')}</SelectItem>
+                      <SelectItem value="townhouse">{t('hero.property_types.townhouse')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
                   <Label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Features
+                    {t('hero.filters.features')}
                   </Label>
                   <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="Any Features" />
+                      <SelectValue placeholder={t('hero.feature_options.any')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Any Features</SelectItem>
-                      <SelectItem value="furnished">Furnished</SelectItem>
-                      <SelectItem value="bills-included">Bills Included</SelectItem>
-                      <SelectItem value="parking">Parking Available</SelectItem>
-                      <SelectItem value="internet">Internet Included</SelectItem>
+                      <SelectItem value="all">{t('hero.feature_options.any')}</SelectItem>
+                      <SelectItem value="furnished">{t('hero.feature_options.furnished')}</SelectItem>
+                      <SelectItem value="bills-included">{t('hero.feature_options.bills_included')}</SelectItem>
+                      <SelectItem value="parking">{t('hero.feature_options.parking')}</SelectItem>
+                      <SelectItem value="internet">{t('hero.feature_options.internet')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

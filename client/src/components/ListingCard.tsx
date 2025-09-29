@@ -2,11 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Heart, Star } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { formatCurrency, formatDate } from "@/lib/formatters";
 
 interface ListingCardProps {
   listing: {
@@ -35,6 +37,7 @@ export default function ListingCard({
   showDistance = false, 
   distance 
 }: ListingCardProps) {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -59,14 +62,14 @@ export default function ListingCard({
       setFavorite(!favorite);
       queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
       toast({
-        title: favorite ? "Removed from favorites" : "Added to favorites",
-        description: favorite ? "Listing removed from your favorites" : "Listing added to your favorites"
+        title: favorite ? t('success.removed_from_favorites') : t('success.added_to_favorites'),
+        description: favorite ? t('success.listing_removed_from_favorites') : t('success.listing_added_to_favorites')
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
+          title: t('errors.unauthorized'),
           description: "You are logged out. Logging in again...",
           variant: "destructive",
         });
@@ -95,14 +98,10 @@ export default function ListingCard({
     toggleFavoriteMutation.mutate();
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatAvailability = (dateString: string | null) => {
     if (!dateString) return "Available Now";
     const date = new Date(dateString);
-    return date > new Date() ? date.toLocaleDateString() : "Available Now";
-  };
-
-  const formatPrice = (amount: string) => {
-    return `$${Math.round(Number(amount))}`;
+    return date > new Date() ? formatDate(dateString) : "Available Now";
   };
 
   return (
@@ -129,7 +128,7 @@ export default function ListingCard({
           </Button>
           
           <div className="absolute bottom-3 left-3 bg-primary text-primary-foreground px-2 py-1 rounded text-sm font-medium" data-testid={`availability-${listing.id}`}>
-            {formatDate(listing.availableFrom)}
+            {formatAvailability(listing.availableFrom)}
           </div>
         </div>
         
@@ -151,7 +150,7 @@ export default function ListingCard({
           <div className="flex items-center justify-between">
             <div>
               <span className="text-lg font-bold text-foreground" data-testid={`listing-price-${listing.id}`}>
-                {formatPrice(listing.rentAmount)}
+                {formatCurrency(Number(listing.rentAmount))}
               </span>
               <span className="text-muted-foreground text-sm">/week</span>
             </div>

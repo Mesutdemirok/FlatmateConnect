@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 export default function FeaturedListings() {
+  const { t } = useTranslation();
   const { data: listings, isLoading, error } = useQuery({
     queryKey: ['/api/listings'],
   });
@@ -46,16 +48,16 @@ export default function FeaturedListings() {
       <section className="py-16 bg-muted/30" data-testid="featured-listings-error">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="bg-card border border-destructive rounded-lg p-8">
-            <h3 className="text-lg font-semibold text-destructive mb-2">Unable to Load Listings</h3>
+            <h3 className="text-lg font-semibold text-destructive mb-2">{t('listings.unable_to_load')}</h3>
             <p className="text-muted-foreground mb-4">
-              We're having trouble loading the featured listings right now. Please try again later.
+              {t('listings.trouble_loading')}
             </p>
             <Button 
               onClick={() => window.location.reload()} 
               variant="outline"
               data-testid="retry-button"
             >
-              Try Again
+              {t('listings.try_again')}
             </Button>
           </div>
         </div>
@@ -63,20 +65,20 @@ export default function FeaturedListings() {
     );
   }
 
-  const featuredListings = listings?.slice(0, 4) || [];
+  const featuredListings = Array.isArray(listings) ? listings.slice(0, 4) : [];
 
   if (featuredListings.length === 0) {
     return (
       <section className="py-16 bg-muted/30" data-testid="featured-listings-empty">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="bg-card border border-border rounded-lg p-8">
-            <h3 className="text-lg font-semibold text-foreground mb-2">No Listings Available</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t('listings.no_listings_available')}</h3>
             <p className="text-muted-foreground mb-4">
-              There are currently no room listings available. Check back soon for new listings!
+              {t('listings.no_listings_message')}
             </p>
             <Link href="/create-listing">
               <Button data-testid="create-listing-button">
-                List Your Room
+                {t('listings.list_your_room')}
               </Button>
             </Link>
           </div>
@@ -91,15 +93,15 @@ export default function FeaturedListings() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-3xl font-bold text-foreground mb-2" data-testid="featured-title">
-              Featured Rooms
+              {t('listings.featured_rooms')}
             </h2>
             <p className="text-muted-foreground" data-testid="featured-subtitle">
-              Popular listings in your area
+              {t('listings.popular_listings')}
             </p>
           </div>
           <Link href="/search" data-testid="view-all-link">
             <Button variant="ghost" className="text-primary hover:text-primary/80 font-medium">
-              View All <ArrowRight className="ml-1 h-4 w-4" />
+              {t('listings.view_all')} <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </Link>
         </div>

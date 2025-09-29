@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -36,6 +37,7 @@ const preferencesSchema = insertUserPreferencesSchema.omit({ userId: true });
 type PreferencesFormData = z.infer<typeof preferencesSchema>;
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -45,8 +47,8 @@ export default function Profile() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: t('errors.unauthorized'),
+        description: t('errors.unauthorized_description'),
         variant: "destructive",
       });
       setTimeout(() => {
@@ -101,14 +103,14 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ['/api/preferences'] });
       toast({
         title: "Success!",
-        description: "Your preferences have been updated."
+        description: t('success.profile_updated')
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: t('errors.unauthorized'),
+          description: t('errors.unauthorized_description'),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -117,8 +119,8 @@ export default function Profile() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to update preferences. Please try again.",
+        title: t('errors.server_error'),
+        description: t('errors.failed_to_update_preferences'),
         variant: "destructive"
       });
     }
@@ -133,7 +135,7 @@ export default function Profile() {
       <div className="min-h-screen bg-background flex items-center justify-center" data-testid="profile-loading">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading your profile...</p>
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -146,7 +148,7 @@ export default function Profile() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="page-title">
-            Profile
+            {t('profile.title')}
           </h1>
           <p className="text-muted-foreground" data-testid="page-subtitle">
             Manage your account and preferences
@@ -157,19 +159,19 @@ export default function Profile() {
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" data-testid="tab-profile">
               <User className="h-4 w-4 mr-2" />
-              Profile
+              {t('profile.personal_info')}
             </TabsTrigger>
             <TabsTrigger value="preferences" data-testid="tab-preferences">
               <Settings className="h-4 w-4 mr-2" />
-              Preferences
+              {t('profile.preferences')}
             </TabsTrigger>
             <TabsTrigger value="listings" data-testid="tab-listings">
               <Home className="h-4 w-4 mr-2" />
-              My Listings
+              {t('profile.my_listings')}
             </TabsTrigger>
             <TabsTrigger value="favorites" data-testid="tab-favorites">
               <Heart className="h-4 w-4 mr-2" />
-              Favorites
+              {t('profile.favorites')}
             </TabsTrigger>
           </TabsList>
 
@@ -178,7 +180,7 @@ export default function Profile() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card className="lg:col-span-1">
                 <CardHeader>
-                  <CardTitle>Profile Information</CardTitle>
+                  <CardTitle>{t('profile.personal_info')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex flex-col items-center text-center">
@@ -200,7 +202,7 @@ export default function Profile() {
                     {user?.verificationStatus === 'verified' && (
                       <Badge className="mt-2 bg-secondary text-secondary-foreground" data-testid="verification-badge">
                         <Shield className="h-3 w-3 mr-1" />
-                        Verified
+                        {t('features.verified_profiles.title')}
                       </Badge>
                     )}
                   </div>
@@ -235,20 +237,20 @@ export default function Profile() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">First Name</label>
-                      <p className="text-foreground">{user?.firstName || 'Not provided'}</p>
+                      <label className="text-sm font-medium text-muted-foreground">{t('profile.first_name')}</label>
+                      <p className="text-foreground">{user?.firstName || t('common.not_provided')}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Last Name</label>
-                      <p className="text-foreground">{user?.lastName || 'Not provided'}</p>
+                      <label className="text-sm font-medium text-muted-foreground">{t('profile.last_name')}</label>
+                      <p className="text-foreground">{user?.lastName || t('common.not_provided')}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Email</label>
-                      <p className="text-foreground">{user?.email || 'Not provided'}</p>
+                      <label className="text-sm font-medium text-muted-foreground">{t('profile.email')}</label>
+                      <p className="text-foreground">{user?.email || t('common.not_provided')}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Verification Status</label>
-                      <p className="text-foreground">{user?.verificationStatus || 'Unverified'}</p>
+                      <p className="text-foreground">{user?.verificationStatus || t('common.unverified')}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -260,7 +262,7 @@ export default function Profile() {
           <TabsContent value="preferences">
             <Card>
               <CardHeader>
-                <CardTitle>Lifestyle Preferences</CardTitle>
+                <CardTitle>{t('profile.preferences')}</CardTitle>
                 <p className="text-muted-foreground">
                   Help us match you with compatible flatmates by setting your preferences
                 </p>
@@ -284,18 +286,18 @@ export default function Profile() {
                           name="smokingPreference"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Smoking Preference</FormLabel>
+                              <FormLabel>{t('profile.smoking')}</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                                 <FormControl>
                                   <SelectTrigger data-testid="select-smoking-preference">
-                                    <SelectValue placeholder="Select preference" />
+                                    <SelectValue placeholder={t('common.select_preference')} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="non-smoker">Non-smoker</SelectItem>
-                                  <SelectItem value="smoker">Smoker</SelectItem>
-                                  <SelectItem value="social-smoker">Social smoker</SelectItem>
-                                  <SelectItem value="no-preference">No preference</SelectItem>
+                                  <SelectItem value="non-smoker">{t('options.smoking.non-smoker')}</SelectItem>
+                                  <SelectItem value="smoker">{t('options.smoking.smoker')}</SelectItem>
+                                  <SelectItem value="social-smoker">{t('options.smoking.social-smoker')}</SelectItem>
+                                  <SelectItem value="no-preference">{t('options.smoking.no-preference')}</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -308,18 +310,18 @@ export default function Profile() {
                           name="petPreference"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Pet Preference</FormLabel>
+                              <FormLabel>{t('profile.pets')}</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                                 <FormControl>
                                   <SelectTrigger data-testid="select-pet-preference">
-                                    <SelectValue placeholder="Select preference" />
+                                    <SelectValue placeholder={t('common.select_preference')} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="no-pets">No pets</SelectItem>
-                                  <SelectItem value="cat-friendly">Cat friendly</SelectItem>
-                                  <SelectItem value="dog-friendly">Dog friendly</SelectItem>
-                                  <SelectItem value="all-pets">All pets welcome</SelectItem>
+                                  <SelectItem value="no-pets">{t('options.pets.no-pets')}</SelectItem>
+                                  <SelectItem value="cat-friendly">{t('options.pets.cat-friendly')}</SelectItem>
+                                  <SelectItem value="dog-friendly">{t('options.pets.dog-friendly')}</SelectItem>
+                                  <SelectItem value="all-pets">{t('options.pets.all-pets')}</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -332,18 +334,18 @@ export default function Profile() {
                           name="cleanlinessLevel"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Cleanliness Level</FormLabel>
+                              <FormLabel>{t('profile.cleanliness')}</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                                 <FormControl>
                                   <SelectTrigger data-testid="select-cleanliness-level">
-                                    <SelectValue placeholder="Select level" />
+                                    <SelectValue placeholder={t('common.select_level')} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="very-clean">Very clean</SelectItem>
-                                  <SelectItem value="clean">Clean</SelectItem>
-                                  <SelectItem value="average">Average</SelectItem>
-                                  <SelectItem value="relaxed">Relaxed</SelectItem>
+                                  <SelectItem value="very-clean">{t('options.cleanliness.very-clean')}</SelectItem>
+                                  <SelectItem value="clean">{t('options.cleanliness.clean')}</SelectItem>
+                                  <SelectItem value="average">{t('options.cleanliness.average')}</SelectItem>
+                                  <SelectItem value="relaxed">{t('options.cleanliness.relaxed')}</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -356,18 +358,18 @@ export default function Profile() {
                           name="socialLevel"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Social Level</FormLabel>
+                              <FormLabel>{t('profile.social_level')}</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                                 <FormControl>
                                   <SelectTrigger data-testid="select-social-level">
-                                    <SelectValue placeholder="Select level" />
+                                    <SelectValue placeholder={t('common.select_level')} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="very-social">Very social</SelectItem>
-                                  <SelectItem value="social">Social</SelectItem>
-                                  <SelectItem value="balanced">Balanced</SelectItem>
-                                  <SelectItem value="quiet">Quiet</SelectItem>
+                                  <SelectItem value="very-social">{t('options.social_level.very-social')}</SelectItem>
+                                  <SelectItem value="social">{t('options.social_level.social')}</SelectItem>
+                                  <SelectItem value="balanced">{t('options.social_level.balanced')}</SelectItem>
+                                  <SelectItem value="quiet">{t('options.social_level.quiet')}</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -380,19 +382,19 @@ export default function Profile() {
                           name="workSchedule"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Work Schedule</FormLabel>
+                              <FormLabel>{t('profile.work_schedule')}</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                                 <FormControl>
                                   <SelectTrigger data-testid="select-work-schedule">
-                                    <SelectValue placeholder="Select schedule" />
+                                    <SelectValue placeholder={t('common.select_schedule')} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="9-to-5">9 to 5</SelectItem>
-                                  <SelectItem value="shift-work">Shift work</SelectItem>
-                                  <SelectItem value="student">Student</SelectItem>
-                                  <SelectItem value="work-from-home">Work from home</SelectItem>
-                                  <SelectItem value="unemployed">Unemployed</SelectItem>
+                                  <SelectItem value="9-to-5">{t('options.work_schedule.9-to-5')}</SelectItem>
+                                  <SelectItem value="shift-work">{t('options.work_schedule.shift-work')}</SelectItem>
+                                  <SelectItem value="student">{t('options.work_schedule.student')}</SelectItem>
+                                  <SelectItem value="work-from-home">{t('options.work_schedule.work-from-home')}</SelectItem>
+                                  <SelectItem value="unemployed">{t('options.work_schedule.unemployed')}</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -405,17 +407,17 @@ export default function Profile() {
                           name="genderPreference"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Gender Preference</FormLabel>
+                              <FormLabel>{t('profile.gender_preference')}</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                                 <FormControl>
                                   <SelectTrigger data-testid="select-gender-preference">
-                                    <SelectValue placeholder="Select preference" />
+                                    <SelectValue placeholder={t('common.select_preference')} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="male">Male only</SelectItem>
-                                  <SelectItem value="female">Female only</SelectItem>
-                                  <SelectItem value="no-preference">No preference</SelectItem>
+                                  <SelectItem value="male">{t('options.gender_preference.male')}</SelectItem>
+                                  <SelectItem value="female">{t('options.gender_preference.female')}</SelectItem>
+                                  <SelectItem value="no-preference">{t('options.gender_preference.no-preference')}</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -430,7 +432,7 @@ export default function Profile() {
                           name="agePreferenceMin"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Minimum Age Preference</FormLabel>
+                              <FormLabel>{t('create_listing.age_range')} (Min)</FormLabel>
                               <FormControl>
                                 <Input 
                                   type="number"
@@ -451,7 +453,7 @@ export default function Profile() {
                           name="agePreferenceMax"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Maximum Age Preference</FormLabel>
+                              <FormLabel>{t('create_listing.age_range')} (Max)</FormLabel>
                               <FormControl>
                                 <Input 
                                   type="number"
@@ -478,10 +480,10 @@ export default function Profile() {
                           {updatePreferencesMutation.isPending ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Saving...
+                              {t('common.loading')}
                             </>
                           ) : (
-                            'Save Preferences'
+                            t('profile.save_changes')
                           )}
                         </Button>
                       </div>
@@ -496,7 +498,7 @@ export default function Profile() {
           <TabsContent value="listings">
             <Card>
               <CardHeader>
-                <CardTitle>My Listings</CardTitle>
+                <CardTitle>{t('profile.my_listings')}</CardTitle>
                 <p className="text-muted-foreground">
                   Manage your room listings
                 </p>
@@ -517,12 +519,12 @@ export default function Profile() {
                 ) : myListings?.length === 0 ? (
                   <div className="text-center py-8">
                     <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No listings yet</h3>
+                    <h3 className="text-lg font-semibold mb-2">{t('listings.no_listings_available')}</h3>
                     <p className="text-muted-foreground mb-4">
-                      You haven't created any room listings yet.
+                      {t('listings.no_listings_message')}
                     </p>
                     <Button onClick={() => window.location.href = '/create-listing'}>
-                      Create Your First Listing
+                      {t('listings.list_your_room')}
                     </Button>
                   </div>
                 ) : (
@@ -558,7 +560,7 @@ export default function Profile() {
           <TabsContent value="favorites">
             <Card>
               <CardHeader>
-                <CardTitle>Favorite Listings</CardTitle>
+                <CardTitle>{t('profile.favorites')}</CardTitle>
                 <p className="text-muted-foreground">
                   Your saved room listings
                 </p>
@@ -584,7 +586,7 @@ export default function Profile() {
                       Start browsing and save listings you're interested in.
                     </p>
                     <Button onClick={() => window.location.href = '/search'}>
-                      Browse Listings
+                      {t('nav.browse_rooms')}
                     </Button>
                   </div>
                 ) : (

@@ -1,25 +1,28 @@
 import { Shield, Users, MessageSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function FeaturesSection() {
+  const { t } = useTranslation();
+  
   const features = [
     {
       icon: Shield,
-      title: "Verified Profiles",
-      description: "All users undergo identity verification for your safety and security",
+      titleKey: "features.verified_profiles.title",
+      descriptionKey: "features.verified_profiles.description",
       color: "text-primary",
       bgColor: "bg-primary/10"
     },
     {
       icon: Users,
-      title: "Smart Matching",
-      description: "Find compatible flatmates based on lifestyle preferences and habits",
+      titleKey: "features.smart_matching.title",
+      descriptionKey: "features.smart_matching.description",
       color: "text-secondary",
       bgColor: "bg-secondary/10"
     },
     {
       icon: MessageSquare,
-      title: "Secure Messaging",
-      description: "Connect safely through our in-app messaging system",
+      titleKey: "features.secure_messaging.title",
+      descriptionKey: "features.secure_messaging.description",
       color: "text-accent",
       bgColor: "bg-accent/10"
     }
@@ -30,10 +33,10 @@ export default function FeaturesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4" data-testid="features-title">
-            Why Choose Odanet?
+            {t('features.title')}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="features-subtitle">
-            Safe, verified connections for your peace of mind
+            {t('features.subtitle')}
           </p>
         </div>
         
@@ -46,10 +49,10 @@ export default function FeaturesSection() {
                   <IconComponent className={`h-8 w-8 ${feature.color}`} />
                 </div>
                 <h3 className="text-xl font-semibold mb-2" data-testid={`feature-title-${index}`}>
-                  {feature.title}
+                  {t(feature.titleKey)}
                 </h3>
                 <p className="text-muted-foreground" data-testid={`feature-description-${index}`}>
-                  {feature.description}
+                  {t(feature.descriptionKey)}
                 </p>
               </div>
             );
