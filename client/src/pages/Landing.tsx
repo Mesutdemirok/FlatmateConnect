@@ -1,0 +1,27 @@
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/Header";
+import Hero from "@/components/Hero";
+import FeaturesSection from "@/components/FeaturesSection";
+import FeaturedListings from "@/components/FeaturedListings";
+import CTASection from "@/components/CTASection";
+import Footer from "@/components/Footer";
+
+export default function Landing() {
+  const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  return (
+    <div className="min-h-screen bg-background" data-testid="landing-page">
+      <Header />
+      <main>
+        <Hero />
+        <FeaturesSection />
+        <FeaturedListings />
+        <CTASection />
+      </main>
+      <Footer />
+    </div>
+  );
+}
