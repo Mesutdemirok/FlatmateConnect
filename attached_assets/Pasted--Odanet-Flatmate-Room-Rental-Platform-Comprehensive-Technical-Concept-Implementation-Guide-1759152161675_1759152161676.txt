@@ -1,0 +1,382 @@
+# Odanet - Flatmate & Room Rental Platform
+## Comprehensive Technical Concept & Implementation Guide
+### 1. Project Overview
+Vision : Create a secure, user-friendly platform connecting people seeking accommodation with those offering rooms, similar to flatmate.com.au but with enhanced features and modern UX.
+
+Target Market : Students, young professionals, and anyone seeking shared accommodation in urban areas.
+
+Core Value Proposition :
+
+- Verified profiles for safety
+- Instant matching and communication
+- Lifestyle compatibility matching
+- Mobile-first responsive design
+### 2. Technical Architecture 2.1 Frontend Stack
+- Framework : Next.js 14+ (React-based)
+- Styling : Tailwind CSS
+- Language : TypeScript
+- State Management : React Context API / Zustand
+- UI Components : Custom components with Lucide React icons
+- Responsive Design : Mobile-first approach 2.2 Backend Stack
+- Framework : Laravel 10+ (PHP)
+- Database : MySQL/PostgreSQL
+- Authentication : JWT tokens
+- API : RESTful API design
+- File Storage : Local storage / AWS S3
+- Email : Laravel Mail with SMTP 2.3 Development Environment
+- Platform : Replit (for rapid development)
+- Version Control : Git
+- Package Managers : npm/pnpm (frontend), Composer (backend)
+### 3. Core Features & Functionality 3.1 User Management
+```
+Features:
+- User registration/login
+- Profile creation with photos
+- Identity verification system
+- Preference settings (lifestyle, budget, 
+location)
+- Rating and review system
+``` 3.2 Listing Management
+```
+Room Listings:
+- Create/edit room advertisements
+- Photo uploads (multiple images)
+- Location mapping
+- Pricing and availability
+- House rules and preferences
+
+Search & Filter:
+- Location-based search
+- Price range filtering
+- Availability date filtering
+- Lifestyle preference matching
+- Map view integration
+``` 3.3 Communication System
+```
+- In-app messaging
+- Contact request system
+- Notification system
+- Email alerts
+- Mobile push notifications (future)
+``` 3.4 Safety & Verification
+```
+- Identity document verification
+- Profile verification badges
+- Report and block functionality
+- Secure payment integration (future)
+- Background check integration (future)
+```
+### 4. Database Schema 4.1 Core Tables
+```
+-- Users table
+users:
+- id (primary key)
+- email (unique)
+- password (hashed)
+- first_name
+- last_name
+- phone
+- date_of_birth
+- gender
+- occupation
+- bio
+- profile_image
+- verification_status
+- created_at, updated_at
+
+-- Listings table
+listings:
+- id (primary key)
+- user_id (foreign key)
+- title
+- description
+- address
+- suburb
+- city
+- state
+- postcode
+- latitude, longitude
+- rent_amount
+- bond_amount
+- available_from
+- available_to
+- room_type
+- property_type
+- furnished
+- bills_included
+- parking_available
+- internet_included
+- status (active/inactive)
+- created_at, updated_at
+
+-- Listing Images
+listing_images:
+- id (primary key)
+- listing_id (foreign key)
+- image_path
+- is_primary
+- created_at
+
+-- User Preferences
+user_preferences:
+- id (primary key)
+- user_id (foreign key)
+- smoking_preference
+- pet_preference
+- cleanliness_level
+- social_level
+- work_schedule
+- age_preference_min
+- age_preference_max
+- gender_preference
+
+-- Messages
+messages:
+- id (primary key)
+- sender_id (foreign key)
+- receiver_id (foreign key)
+- listing_id (foreign key)
+- message
+- is_read
+- created_at
+
+-- Favorites
+favorites:
+- id (primary key)
+- user_id (foreign key)
+- listing_id (foreign key)
+- created_at
+```
+### 5. API Endpoints Structure 5.1 Authentication Endpoints
+```
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
+POST /api/auth/refresh
+GET  /api/auth/me
+``` 5.2 User Endpoints
+```
+GET    /api/users/profile
+PUT    /api/users/profile
+POST   /api/users/upload-avatar
+GET    /api/users/{id}
+PUT    /api/users/preferences
+``` 5.3 Listing Endpoints
+```
+GET    /api/listings (with filters)
+POST   /api/listings
+GET    /api/listings/{id}
+PUT    /api/listings/{id}
+DELETE /api/listings/{id}
+POST   /api/listings/{id}/images
+GET    /api/listings/my-listings
+``` 5.4 Communication Endpoints
+```
+GET    /api/messages/conversations
+GET    /api/messages/conversation/{userId}
+POST   /api/messages
+PUT    /api/messages/{id}/read
+```
+### 6. Frontend Component Structure 6.1 Page Components
+```
+src/app/
+├── page.tsx (Homepage)
+├── search/page.tsx (Search Results)
+├── listing/[id]/page.tsx (Listing Detail)
+├── profile/page.tsx (User Profile)
+├── messages/page.tsx (Messages)
+├── create-listing/page.tsx (Create Listing)
+└── auth/
+    ├── login/page.tsx
+    └── register/page.tsx
+``` 6.2 Reusable Components
+```
+src/components/
+├── Hero.tsx (Homepage hero section)
+├── ListingCard.tsx (Listing preview card)
+├── SearchFilters.tsx (Search filter sidebar)
+├── MessageThread.tsx (Chat interface)
+├── ImageUpload.tsx (Image upload component)
+├── Map.tsx (Location map)
+├── UserProfile.tsx (Profile display)
+└── Layout/
+    ├── Header.tsx
+    ├── Footer.tsx
+    └── Sidebar.tsx
+```
+### 7. Implementation Phases Phase 1: MVP (4-6 weeks)
+```
+✓ User authentication system
+✓ Basic listing creation/viewing
+✓ Simple search functionality
+✓ Basic messaging system
+✓ Responsive design implementation
+``` Phase 2: Enhanced Features (3-4 weeks)
+```
+- Advanced search filters
+- Image upload for listings
+- User preferences matching
+- Email notifications
+- Profile verification system
+``` Phase 3: Advanced Features (4-6 weeks)
+```
+- Map integration
+- Payment system integration
+- Mobile app development
+- Advanced matching algorithm
+- Analytics dashboard
+```
+### 8. Replit Setup Instructions 8.1 Project Structure
+```
+odanet-platform/
+├── frontend/ (Next.js app)
+├── backend/ (Laravel API)
+├── database/ (SQL files)
+└── docs/ (Documentation)
+``` 8.2 Environment Configuration
+```
+# Frontend (.env.local)
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Backend (.env)
+APP_NAME=Odanet
+APP_ENV=local
+APP_KEY=base64:generated_key
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=odanet
+DB_USERNAME=root
+DB_PASSWORD=
+
+JWT_SECRET=your_jwt_secret
+``` 8.3 Installation Commands
+```
+# Backend setup
+cd backend
+composer install
+php artisan key:generate
+php artisan jwt:secret
+php artisan migrate
+php artisan db:seed
+
+# Frontend setup
+cd frontend
+npm install
+npm run dev
+```
+### 9. Key Features Implementation 9.1 Search Algorithm
+```
+// Backend search logic
+public function search(Request $request)
+{
+    $query = Listing::query();
+    
+    if ($request->location) {
+        $query->where('suburb', 'like', "%
+        {$request->location}%");
+    }
+    
+    if ($request->min_price) {
+        $query->where('rent_amount', '>=', 
+        $request->min_price);
+    }
+    
+    if ($request->max_price) {
+        $query->where('rent_amount', '<=', 
+        $request->max_price);
+    }
+    
+    return $query->with(['images', 'user'])
+    ->paginate(20);
+}
+``` 9.2 Matching System
+```
+// Compatibility scoring
+public function calculateCompatibility($user1, 
+$user2)
+{
+    $score = 0;
+    $preferences1 = $user1->preferences;
+    $preferences2 = $user2->preferences;
+    
+    // Age compatibility
+    if ($preferences1->age_preference_min <= 
+    $user2->age && 
+        $preferences1->age_preference_max >= 
+        $user2->age) {
+        $score += 20;
+    }
+    
+    // Lifestyle compatibility
+    if ($preferences1->smoking_preference === 
+    $preferences2->smoking_preference) {
+        $score += 15;
+    }
+    
+    return $score;
+}
+```
+### 10. Security Considerations 10.1 Data Protection
+```
+- Password hashing (bcrypt)
+- JWT token authentication
+- Input validation and sanitization
+- CSRF protection
+- Rate limiting on API endpoints
+- Secure file upload validation
+``` 10.2 Privacy Features
+```
+- Email masking in listings
+- Phone number verification
+- Profile visibility controls
+- Data deletion compliance
+- Secure messaging system
+```
+### 11. Performance Optimization 11.1 Frontend Optimization
+```
+- Image lazy loading
+- Component code splitting
+- Caching strategies
+- Optimized bundle size
+- Progressive Web App features
+``` 11.2 Backend Optimization
+```
+- Database indexing
+- Query optimization
+- Caching (Redis)
+- API response compression
+- Background job processing
+```
+### 12. Testing Strategy 12.1 Frontend Testing
+```
+- Unit tests (Jest)
+- Component testing (React Testing Library)
+- E2E testing (Playwright)
+- Visual regression testing
+``` 12.2 Backend Testing
+```
+- Unit tests (PHPUnit)
+- Feature tests
+- API endpoint testing
+- Database testing
+```
+### 13. Deployment & DevOps 13.1 Production Environment
+```
+- Frontend: Vercel/Netlify
+- Backend: DigitalOcean/AWS
+- Database: Managed MySQL/PostgreSQL
+- File Storage: AWS S3
+- CDN: CloudFlare
+``` 13.2 Monitoring
+```
+- Error tracking (Sentry)
+- Performance monitoring
+- User analytics
+- Server monitoring
+- Database performance tracking
+```
