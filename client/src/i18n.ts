@@ -363,6 +363,8 @@ const resources = {
       
       // Error Messages
       errors: {
+        page_not_found: "404 Sayfa Bulunamadı",
+        page_not_found_description: "Aradığınız sayfa mevcut değil.",
         required: "Bu alan zorunludur",
         invalid_email: "Geçerli bir e-posta adresi giriniz",
         min_length: "En az {{count}} karakter olmalıdır",

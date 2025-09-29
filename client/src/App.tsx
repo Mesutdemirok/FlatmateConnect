@@ -26,13 +26,15 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/profile" component={Profile} />
           <Route path="/messages" component={Messages} />
-          <Route path="/create-listing" component={CreateListing} />
         </>
       )}
       
       {/* Public routes available to all users */}
       <Route path="/search" component={Search} />
       <Route path="/listing/:id" component={ListingDetail} />
+      
+      {/* Create listing route - handles its own authentication */}
+      <Route path="/create-listing" component={CreateListing} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
