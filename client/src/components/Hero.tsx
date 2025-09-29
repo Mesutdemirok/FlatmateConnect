@@ -20,7 +20,18 @@ export default function Hero() {
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchParams.location) params.set('location', searchParams.location);
-    if (searchParams.priceRange) params.set('priceRange', searchParams.priceRange);
+    
+    // Convert priceRange to minPrice and maxPrice
+    if (searchParams.priceRange && searchParams.priceRange !== 'all') {
+      if (searchParams.priceRange === '500+') {
+        params.set('minPrice', '500');
+      } else if (searchParams.priceRange.includes('-')) {
+        const [min, max] = searchParams.priceRange.split('-');
+        params.set('minPrice', min);
+        params.set('maxPrice', max);
+      }
+    }
+    
     if (searchParams.availableFrom) params.set('availableFrom', searchParams.availableFrom);
     
     setLocation(`/search?${params.toString()}`);

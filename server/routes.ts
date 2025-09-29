@@ -66,8 +66,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         availableFrom: req.query.availableFrom as string,
         suburb: req.query.suburb as string,
         city: req.query.city as string,
+        postcode: req.query.postcode as string,
+        roomType: req.query.roomType as string,
+        propertyType: req.query.propertyType as string,
         furnished: req.query.furnished === 'true' ? true : req.query.furnished === 'false' ? false : undefined,
         billsIncluded: req.query.billsIncluded === 'true' ? true : req.query.billsIncluded === 'false' ? false : undefined,
+        parkingAvailable: req.query.parkingAvailable === 'true' ? true : req.query.parkingAvailable === 'false' ? false : undefined,
+        internetIncluded: req.query.internetIncluded === 'true' ? true : req.query.internetIncluded === 'false' ? false : undefined,
       };
       
       const listings = await storage.getListings(filters);
@@ -104,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const listing = await storage.createListing(listingData);
       res.status(201).json(listing);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating listing:", error);
       const lang = detectLanguage(req);
       if (error.name === 'ZodError') {
@@ -128,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = insertListingSchema.partial().parse(req.body);
       const updated = await storage.updateListing(req.params.id, updates);
       res.json(updated);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating listing:", error);
       const lang = detectLanguage(req);
       if (error.name === 'ZodError') {
@@ -221,6 +226,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Set primary image
+  app.put('/api/listings/:listingId/images/:imageId/primary', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const listing = await storage.getListing(req.params.listingId);
+      
+      if (!listing || listing.userId !== userId) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: getErrorMessage('listing_not_found', lang) });
+      }
+      
+      await storage.setPrimaryImage(req.params.listingId, req.params.imageId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error setting primary image:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
+  // Get listing images
+  app.get('/api/listings/:id/images', async (req, res) => {
+    try {
+      const images = await storage.getListingImages(req.params.id);
+      res.json(images);
+    } catch (error) {
+      console.error("Error fetching listing images:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
   // User preferences routes
   app.get('/api/preferences', isAuthenticated, async (req: any, res) => {
     try {
@@ -244,7 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const preferences = await storage.upsertUserPreferences(preferencesData);
       res.json(preferences);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating preferences:", error);
       const lang = detectLanguage(req);
       if (error.name === 'ZodError') {
@@ -293,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const message = await storage.sendMessage(messageData);
       res.status(201).json(message);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
       const lang = detectLanguage(req);
       if (error.name === 'ZodError') {
@@ -338,7 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const favorite = await storage.addFavorite(favoriteData);
       res.status(201).json(favorite);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding favorite:", error);
       const lang = detectLanguage(req);
       if (error.name === 'ZodError') {

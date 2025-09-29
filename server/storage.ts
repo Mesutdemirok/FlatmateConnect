@@ -20,6 +20,8 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ilike, gte, lte, desc, asc } from "drizzle-orm";
+import fs from 'fs';
+import path from 'path';
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
@@ -34,8 +36,13 @@ export interface IStorage {
     availableFrom?: string;
     suburb?: string;
     city?: string;
+    postcode?: string;
+    roomType?: string;
+    propertyType?: string;
     furnished?: boolean;
     billsIncluded?: boolean;
+    parkingAvailable?: boolean;
+    internetIncluded?: boolean;
   }): Promise<(Listing & { images: ListingImage[], user: User })[]>;
   getListing(id: string): Promise<(Listing & { images: ListingImage[], user: User }) | undefined>;
   createListing(listing: InsertListing): Promise<Listing>;
@@ -47,6 +54,7 @@ export interface IStorage {
   addListingImage(image: InsertListingImage): Promise<ListingImage>;
   getListingImages(listingId: string): Promise<ListingImage[]>;
   deleteListingImage(id: string): Promise<void>;
+  setPrimaryImage(listingId: string, imageId: string): Promise<void>;
   
   // User preferences
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
@@ -95,24 +103,36 @@ export class DatabaseStorage implements IStorage {
     availableFrom?: string;
     suburb?: string;
     city?: string;
+    postcode?: string;
+    roomType?: string;
+    propertyType?: string;
     furnished?: boolean;
     billsIncluded?: boolean;
+    parkingAvailable?: boolean;
+    internetIncluded?: boolean;
   }): Promise<(Listing & { images: ListingImage[], user: User })[]> {
-    let query = db
-      .select()
-      .from(listings)
-      .where(eq(listings.status, 'active'));
+    const conditions = [eq(listings.status, 'active')];
 
     if (filters) {
-      const conditions = [];
-      
       if (filters.location) {
+        // Make location search case-insensitive and handle Turkish characters better
+        const searchTerm = filters.location.toLowerCase()
+          .replace(/ı/g, 'i')
+          .replace(/ğ/g, 'g')
+          .replace(/ü/g, 'u')
+          .replace(/ş/g, 's')
+          .replace(/ö/g, 'o')
+          .replace(/ç/g, 'c');
+        
         conditions.push(
           or(
             ilike(listings.suburb, `%${filters.location}%`),
             ilike(listings.city, `%${filters.location}%`),
-            ilike(listings.postcode, `%${filters.location}%`)
-          )
+            ilike(listings.postcode, `%${filters.location}%`),
+            // Also search with normalized version for better Turkish support
+            ilike(listings.suburb, `%${searchTerm}%`),
+            ilike(listings.city, `%${searchTerm}%`)
+          )!
         );
       }
       
@@ -143,13 +163,33 @@ export class DatabaseStorage implements IStorage {
       if (filters.billsIncluded !== undefined) {
         conditions.push(eq(listings.billsIncluded, filters.billsIncluded));
       }
-
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
+      
+      if (filters.postcode) {
+        conditions.push(ilike(listings.postcode, `%${filters.postcode}%`));
+      }
+      
+      if (filters.roomType) {
+        conditions.push(eq(listings.roomType, filters.roomType));
+      }
+      
+      if (filters.propertyType) {
+        conditions.push(eq(listings.propertyType, filters.propertyType));
+      }
+      
+      if (filters.parkingAvailable !== undefined) {
+        conditions.push(eq(listings.parkingAvailable, filters.parkingAvailable));
+      }
+      
+      if (filters.internetIncluded !== undefined) {
+        conditions.push(eq(listings.internetIncluded, filters.internetIncluded));
       }
     }
 
-    const results = await query.orderBy(desc(listings.createdAt));
+    const results = await db
+      .select()
+      .from(listings)
+      .where(and(...conditions))
+      .orderBy(desc(listings.createdAt));
     
     // Fetch images and user data for each listing
     const listingsWithData = await Promise.all(
@@ -192,6 +232,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteListing(id: string): Promise<void> {
+    // First delete all images and their files
+    const images = await this.getListingImages(id);
+    for (const image of images) {
+      const fullPath = path.join(process.cwd(), image.imagePath.replace(/^\//, ''));
+      try {
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+      } catch (error) {
+        console.error('Failed to delete image file:', error);
+      }
+    }
+    
+    // Delete from database (cascade will handle related records)
     await db.delete(listings).where(eq(listings.id, id));
   }
 
@@ -227,7 +281,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteListingImage(id: string): Promise<void> {
+    // First get the image to delete the file
+    const [image] = await db.select().from(listingImages).where(eq(listingImages.id, id));
+    
+    if (image) {
+      // Delete the physical file
+      const fullPath = path.join(process.cwd(), image.imagePath.replace(/^\//, ''));
+      try {
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+      } catch (error) {
+        console.error('Failed to delete image file:', error);
+      }
+    }
+    
+    // Delete from database
     await db.delete(listingImages).where(eq(listingImages.id, id));
+  }
+
+  async setPrimaryImage(listingId: string, imageId: string): Promise<void> {
+    // First set all images for this listing to non-primary
+    await db
+      .update(listingImages)
+      .set({ isPrimary: false })
+      .where(eq(listingImages.listingId, listingId));
+    
+    // Then set the specified image as primary
+    await db
+      .update(listingImages)
+      .set({ isPrimary: true })
+      .where(eq(listingImages.id, imageId));
   }
 
   // User preferences
@@ -293,21 +377,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMessages(userId1: string, userId2: string, listingId?: string): Promise<(Message & { sender: User, receiver: User })[]> {
-    let query = db
-      .select()
-      .from(messages)
-      .where(
-        or(
-          and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
-          and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
-        )
-      );
-
+    const whereConditions = [
+      or(
+        and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
+        and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
+      )
+    ];
+    
     if (listingId) {
-      query = query.where(eq(messages.listingId, listingId));
+      whereConditions.push(eq(messages.listingId, listingId));
     }
 
-    const results = await query.orderBy(asc(messages.createdAt));
+    const results = await db
+      .select()
+      .from(messages)
+      .where(and(...whereConditions))
+      .orderBy(asc(messages.createdAt));
 
     const messagesWithUsers = await Promise.all(
       results.map(async (message) => {

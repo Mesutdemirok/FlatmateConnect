@@ -131,7 +131,7 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
           </Label>
           <Select 
             value={filters.roomType || ''} 
-            onValueChange={(value) => updateFilter('roomType', value || undefined)}
+            onValueChange={(value) => updateFilter('roomType', value === 'all' ? undefined : value)}
           >
             <SelectTrigger data-testid="filter-room-type">
               <SelectValue placeholder={t('hero.room_types.any')} />
@@ -151,7 +151,7 @@ export default function SearchFilters({ onFilterChange, initialFilters = {} }: S
           <Label>{t('filters.property_type')}</Label>
           <Select 
             value={filters.propertyType || ''} 
-            onValueChange={(value) => updateFilter('propertyType', value || undefined)}
+            onValueChange={(value) => updateFilter('propertyType', value === 'all' ? undefined : value)}
           >
             <SelectTrigger data-testid="filter-property-type">
               <SelectValue placeholder={t('hero.property_types.any')} />
