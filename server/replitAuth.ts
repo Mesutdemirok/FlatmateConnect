@@ -24,9 +24,17 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  
+  // Construct DATABASE_URL from individual PG* env vars if needed
+  let connectionString = process.env.DATABASE_URL;
+  if (!connectionString || connectionString.includes('PGUSER') || connectionString.includes('PGHOST')) {
+    const { PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE } = process.env;
+    connectionString = `postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=require`;
+  }
+  
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
+    conString: connectionString,
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions",
