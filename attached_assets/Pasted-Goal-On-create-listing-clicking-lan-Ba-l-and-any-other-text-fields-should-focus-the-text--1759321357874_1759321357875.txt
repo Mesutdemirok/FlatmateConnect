@@ -1,0 +1,25 @@
+Goal: On /create-listing, clicking “İlan Başlığı” (and any other text fields) should focus the text input, not open the file picker. File picker must open only from the dedicated image upload control/button. Keep Turkish UI.
+
+What to do:
+	1.	Audit the form structure in the Create Listing page/component (likely client/src/app/create-listing/page.tsx and any imported ImageUpload/Dropzone component). Find why clicks on the title field open file upload:
+	•	Check if a <label> for the file input is wrapping a large area of the form.
+	•	Check if the file <input type="file"> (or Dropzone) is positioned with absolute inset-0, large width/height, or high z-index so it overlays other fields.
+	•	Check htmlFor/id pairs: the “İlan Başlığı” label must point to the title input id (e.g., htmlFor="title" with <input id="title" type="text" …>). Make sure no label points to the file input by mistake.
+	2.	Correct the upload control layout:
+	•	Restrict the file input / dropzone area to its own container only (no overlay across the form).
+	•	If a hidden file input is used, keep it sr-only and trigger it only from a visible “Fotoğraf Ekle” button via ref.click().
+	•	Remove/avoid any absolute inset-0 or z-[9999] styles that cover other controls. If an overlay is needed inside the upload component, contain it within that component’s box.
+	3.	Ensure field types & accessibility:
+	•	Title: <input id="title" name="title" type="text" …> with Turkish placeholder (e.g., “İlan Başlığı”).
+	•	Price, deposit: type="number" or text with proper formatting.
+	•	Dates: proper date picker; not tied to file input.
+	•	All labels use correct htmlFor → matching id.
+	4.	Regression sweep: Click all core fields (Başlık, Açıklama, Adres, Fiyat, Tarih, vs.). None of them should trigger the file dialog. Only the upload control should.
+	5.	Keep Turkish localization exactly as-is for labels, placeholders, toasts.
+
+Acceptance criteria:
+	•	Clicking İlan Başlığı focuses the text input; no file dialog.
+	•	Clicking anywhere in the form (except the upload area/button) never opens file picker.
+	•	“Fotoğraf Ekle / Görsel Yükle” opens file picker and uploads image(s) successfully.
+	•	No position:absolute overlay from the upload component sits over other fields.
+	•	All labels correctly map to their inputs; form is keyboard-accessible.

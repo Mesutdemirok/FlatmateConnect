@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +24,7 @@ export default function ImageUpload({
   const [previews, setPreviews] = useState<string[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): boolean => {
     if (!acceptedTypes.includes(file.type)) {
@@ -128,9 +129,24 @@ export default function ImageUpload({
     onImagesChange(updatedImages);
   };
 
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="space-y-4" data-testid="image-upload-container">
-      <Label>Property Images</Label>
+      <Label>{t('create_listing.property_images', 'Mülk Görselleri')}</Label>
+      
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept={acceptedTypes.join(',')}
+        onChange={handleFileInput}
+        className="sr-only"
+        data-testid="file-input"
+      />
       
       {/* Upload area */}
       <div
@@ -149,22 +165,19 @@ export default function ImageUpload({
           <Upload className="h-12 w-12 text-muted-foreground" />
           <div>
             <p className="text-lg font-medium text-foreground">
-              Drop images here or click to upload
+              {t('create_listing.drop_images_here', 'Görselleri buraya sürükleyin veya düğmeyle yükleyin')}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              PNG, JPG or WebP up to {Math.round(maxFileSize / 1024 / 1024)}MB
+              {t('create_listing.file_size_limit', 'PNG, JPG veya WebP, maksimum {{maxMB}}MB', { maxMB: Math.round(maxFileSize / 1024 / 1024) })}
             </p>
           </div>
-          <Button type="button" variant="outline" data-testid="upload-button">
-            <input
-              type="file"
-              multiple
-              accept={acceptedTypes.join(',')}
-              onChange={handleFileInput}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              data-testid="file-input"
-            />
-            Choose Images
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={handleButtonClick}
+            data-testid="upload-button"
+          >
+            {t('create_listing.choose_images', 'Fotoğraf Seç')}
           </Button>
         </div>
       </div>
@@ -172,7 +185,7 @@ export default function ImageUpload({
       {/* Image previews */}
       {previews.length > 0 && (
         <div className="space-y-3">
-          <Label>Uploaded Images ({images.length}/{maxImages})</Label>
+          <Label>{t('create_listing.uploaded_images', 'Yüklenen Görseller')} ({images.length}/{maxImages})</Label>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {previews.map((preview, index) => (
               <Card key={index} className="relative overflow-hidden" data-testid={`image-preview-${index}`}>
@@ -187,7 +200,7 @@ export default function ImageUpload({
                   {index === 0 && (
                     <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
                       <Star className="h-3 w-3" />
-                      Primary
+                      {t('create_listing.primary_image', 'Ana Görsel')}
                     </div>
                   )}
                   
@@ -226,9 +239,9 @@ export default function ImageUpload({
             ))}
           </div>
           
-          {index === 0 && images.length > 1 && (
+          {images.length > 1 && (
             <p className="text-xs text-muted-foreground">
-              The first image will be used as the primary image. Click the star icon to make any image primary.
+              {t('create_listing.first_image_info', 'İlk görsel ana görsel olarak kullanılacaktır. Herhangi bir görseli ana yapmak için yıldız simgesine tıklayın.')}
             </p>
           )}
         </div>
