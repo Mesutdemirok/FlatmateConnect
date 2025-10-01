@@ -2,8 +2,8 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertListingSchema, insertUserPreferencesSchema, insertMessageSchema, insertFavoriteSchema } from "@shared/schema";
+import { jwtAuth, generateToken, hashPassword, comparePassword } from "./auth";
+import { insertListingSchema, insertUserPreferencesSchema, insertMessageSchema, insertFavoriteSchema, insertUserSchema, type User } from "@shared/schema";
 import { getErrorMessage, detectLanguage } from "./i18n";
 import multer from 'multer';
 import path from 'path';
@@ -37,18 +37,100 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
-
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.post('/api/auth/register', async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      const lang = detectLanguage(req);
+      const userData = insertUserSchema.parse(req.body);
+      
+      const existingUser = await storage.getUserByEmail(userData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Bu e-posta adresi zaten kullanılıyor' });
+      }
+
+      const hashedPassword = await hashPassword(userData.password);
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword,
+      });
+
+      const token = generateToken(user.id, user.email);
+      
+      const { password, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
+      
+      res.status(201).json({ 
+        user: userWithoutPassword, 
+        token 
+      });
+    } catch (error: any) {
+      console.error("Error registering user:", error);
+      const lang = detectLanguage(req);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: 'Geçersiz kayıt bilgileri', error: error.message });
+      } else {
+        res.status(500).json({ message: 'Kayıt işlemi başarısız oldu' });
+      }
+    }
+  });
+
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      const lang = detectLanguage(req);
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: 'E-posta ve şifre gereklidir' });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.password) {
+        return res.status(401).json({ message: 'Geçersiz e-posta veya şifre' });
+      }
+
+      const isPasswordValid = await comparePassword(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: 'Geçersiz e-posta veya şifre' });
+      }
+
+      const token = generateToken(user.id, user.email);
+      
+      const { password: _, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
+      
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      
+      res.json({ 
+        user: userWithoutPassword, 
+        token 
+      });
+    } catch (error) {
+      console.error("Error logging in:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: 'Giriş işlemi başarısız oldu' });
+    }
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    res.clearCookie('token');
+    res.json({ message: 'Çıkış yapıldı' });
+  });
+
+  app.get('/api/auth/me', jwtAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.userId!);
+      if (!user) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: getErrorMessage('user_not_found', lang) });
+      }
+      
+      const { password, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
     } catch (error) {
       console.error("Error fetching user:", error);
       const lang = detectLanguage(req);
@@ -99,9 +181,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/listings', isAuthenticated, async (req: any, res) => {
+  app.post('/api/listings', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const listingData = insertListingSchema.parse({
         ...req.body,
         userId
@@ -120,9 +202,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/listings/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/listings/:id', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const listing = await storage.getListing(req.params.id);
       
       if (!listing || listing.userId !== userId) {
@@ -144,9 +226,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/listings/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/listings/:id', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const listing = await storage.getListing(req.params.id);
       
       if (!listing || listing.userId !== userId) {
@@ -163,9 +245,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/my-listings', isAuthenticated, async (req: any, res) => {
+  app.get('/api/my-listings', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const listings = await storage.getUserListings(userId);
       res.json(listings);
     } catch (error) {
@@ -176,9 +258,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Image upload routes
-  app.post('/api/listings/:id/images', isAuthenticated, upload.array('images', 10), async (req: any, res) => {
+  app.post('/api/listings/:id/images', jwtAuth, upload.array('images', 10), async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const listing = await storage.getListing(req.params.id);
       
       if (!listing || listing.userId !== userId) {
@@ -207,9 +289,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/listings/:listingId/images/:imageId', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/listings/:listingId/images/:imageId', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const listing = await storage.getListing(req.params.listingId);
       
       if (!listing || listing.userId !== userId) {
@@ -227,9 +309,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Set primary image
-  app.put('/api/listings/:listingId/images/:imageId/primary', isAuthenticated, async (req: any, res) => {
+  app.put('/api/listings/:listingId/images/:imageId/primary', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const listing = await storage.getListing(req.params.listingId);
       
       if (!listing || listing.userId !== userId) {
@@ -259,9 +341,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User preferences routes
-  app.get('/api/preferences', isAuthenticated, async (req: any, res) => {
+  app.get('/api/preferences', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const preferences = await storage.getUserPreferences(userId);
       res.json(preferences);
     } catch (error) {
@@ -271,9 +353,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/preferences', isAuthenticated, async (req: any, res) => {
+  app.put('/api/preferences', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const preferencesData = insertUserPreferencesSchema.parse({
         ...req.body,
         userId
@@ -293,9 +375,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Message routes
-  app.get('/api/conversations', isAuthenticated, async (req: any, res) => {
+  app.get('/api/conversations', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const conversations = await storage.getConversations(userId);
       res.json(conversations);
     } catch (error) {
@@ -305,9 +387,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/messages/:otherUserId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/messages/:otherUserId', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const { otherUserId } = req.params;
       const { listingId } = req.query;
       
@@ -320,9 +402,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/messages', isAuthenticated, async (req: any, res) => {
+  app.post('/api/messages', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const messageData = insertMessageSchema.parse({
         ...req.body,
         senderId: userId
@@ -341,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/messages/:id/read', isAuthenticated, async (req: any, res) => {
+  app.put('/api/messages/:id/read', jwtAuth, async (req, res) => {
     try {
       await storage.markMessageAsRead(req.params.id);
       res.status(204).send();
@@ -353,9 +435,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Favorites routes
-  app.get('/api/favorites', isAuthenticated, async (req: any, res) => {
+  app.get('/api/favorites', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const favorites = await storage.getFavorites(userId);
       res.json(favorites);
     } catch (error) {
@@ -365,9 +447,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/favorites', isAuthenticated, async (req: any, res) => {
+  app.post('/api/favorites', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const favoriteData = insertFavoriteSchema.parse({
         ...req.body,
         userId
@@ -386,9 +468,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/favorites/:listingId', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/favorites/:listingId', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       await storage.removeFavorite(userId, req.params.listingId);
       res.status(204).send();
     } catch (error) {
@@ -398,9 +480,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/favorites/:listingId/check', isAuthenticated, async (req: any, res) => {
+  app.get('/api/favorites/:listingId/check', jwtAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.userId!;
       const isFavorite = await storage.isFavorite(userId, req.params.listingId);
       res.json({ isFavorite });
     } catch (error) {

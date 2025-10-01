@@ -16,7 +16,6 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Session storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const sessions = pgTable(
   "sessions",
   {
@@ -28,10 +27,12 @@ export const sessions = pgTable(
 );
 
 // User storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
+  password: varchar("password"),
+  passwordResetToken: varchar("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -201,9 +202,20 @@ export const insertListingImageSchema = createInsertSchema(listingImages).omit({
   createdAt: true,
 });
 
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  passwordResetToken: true,
+  passwordResetExpires: true,
+}).extend({
+  password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertListing = z.infer<typeof insertListingSchema>;
 export type Listing = typeof listings.$inferSelect;
 export type ListingImage = typeof listingImages.$inferSelect;

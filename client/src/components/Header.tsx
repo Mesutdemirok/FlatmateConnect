@@ -7,11 +7,16 @@ import { useTranslation } from "react-i18next";
 
 export default function Header() {
   const [location] = useLocation();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = '/';
+  };
 
   return (
     <header className="bg-card border-b border-border sticky top-0 z-50" data-testid="header">
@@ -66,24 +71,27 @@ export default function Header() {
                     {t('nav.profile')}
                   </Button>
                 </Link>
-                <a href="/api/logout" data-testid="logout-link">
-                  <Button variant="outline" className="hidden sm:flex">
-                    {t('nav.logout')}
-                  </Button>
-                </a>
+                <Button 
+                  variant="outline" 
+                  className="hidden sm:flex" 
+                  onClick={handleLogout}
+                  data-testid="logout-button"
+                >
+                  {t('nav.logout')}
+                </Button>
               </>
             ) : (
               <>
-                <a href="/api/login" data-testid="login-link">
+                <Link href="/auth/login" data-testid="login-link">
                   <Button variant="outline" className="hidden sm:flex">
                     {t('nav.login')}
                   </Button>
-                </a>
-                <a href="/api/login" data-testid="signup-link">
+                </Link>
+                <Link href="/auth/register" data-testid="signup-link">
                   <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
                     {t('nav.sign_up')}
                   </Button>
-                </a>
+                </Link>
               </>
             )}
             
@@ -118,14 +126,23 @@ export default function Header() {
                 <Link href="/profile" className="block text-foreground hover:text-primary transition-colors">
                   {t('nav.profile')}
                 </Link>
-                <a href="/api/logout" className="block text-foreground hover:text-primary transition-colors">
+                <button 
+                  onClick={handleLogout}
+                  className="block text-foreground hover:text-primary transition-colors text-left w-full"
+                  data-testid="mobile-logout-button"
+                >
                   {t('nav.logout')}
-                </a>
+                </button>
               </>
             ) : (
-              <a href="/api/login" className="block text-foreground hover:text-primary transition-colors">
-                {t('nav.login')}
-              </a>
+              <>
+                <Link href="/auth/login" className="block text-foreground hover:text-primary transition-colors">
+                  {t('nav.login')}
+                </Link>
+                <Link href="/auth/register" className="block text-foreground hover:text-primary transition-colors">
+                  {t('nav.sign_up')}
+                </Link>
+              </>
             )}
           </div>
         </div>
