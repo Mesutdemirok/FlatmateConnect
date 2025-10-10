@@ -11,9 +11,9 @@
   --card-foreground: hsl(215, 25%, 27%);
   --popover: hsl(210, 40%, 100%);
   --popover-foreground: hsl(215, 25%, 27%);
-  --primary: hsl(206, 100%, 50%);
+  --primary: hsl(263, 70%, 50%);
   --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(142, 70%, 45%);
+  --secondary: hsl(290, 70%, 50%);
   --secondary-foreground: hsl(210, 40%, 98%);
   --muted: hsl(210, 40%, 96%);
   --muted-foreground: hsl(215, 25%, 65%);
@@ -23,7 +23,7 @@
   --destructive-foreground: hsl(210, 40%, 98%);
   --border: hsl(214, 32%, 91%);
   --input: hsl(214, 32%, 91%);
-  --ring: hsl(206, 100%, 50%);
+  --ring: hsl(263, 70%, 50%);
   --chart-1: hsl(206, 100%, 50%);
   --chart-2: hsl(142, 70%, 45%);
   --chart-3: hsl(25, 95%, 53%);
@@ -31,12 +31,12 @@
   --chart-5: hsl(341, 75%, 51%);
   --sidebar: hsl(210, 40%, 100%);
   --sidebar-foreground: hsl(215, 25%, 27%);
-  --sidebar-primary: hsl(206, 100%, 50%);
+  --sidebar-primary: hsl(263, 70%, 50%);
   --sidebar-primary-foreground: hsl(210, 40%, 98%);
   --sidebar-accent: hsl(210, 40%, 96%);
-  --sidebar-accent-foreground: hsl(206, 100%, 50%);
+  --sidebar-accent-foreground: hsl(263, 70%, 50%);
   --sidebar-border: hsl(214, 32%, 91%);
-  --sidebar-ring: hsl(206, 100%, 50%);
+  --sidebar-ring: hsl(263, 70%, 50%);
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -60,9 +60,9 @@
   --card-foreground: hsl(0, 0%, 85%);
   --popover: hsl(0, 0%, 0%);
   --popover-foreground: hsl(200, 7%, 91%);
-  --primary: hsl(206, 100%, 50%);
+  --primary: hsl(263, 70%, 50%);
   --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(142, 70%, 45%);
+  --secondary: hsl(290, 70%, 50%);
   --secondary-foreground: hsl(210, 40%, 98%);
   --muted: hsl(0, 0%, 9%);
   --muted-foreground: hsl(210, 4%, 46%);
@@ -72,7 +72,7 @@
   --destructive-foreground: hsl(210, 40%, 98%);
   --border: hsl(210, 5%, 15%);
   --input: hsl(208, 28%, 18%);
-  --ring: hsl(206, 100%, 50%);
+  --ring: hsl(263, 70%, 50%);
   --chart-1: hsl(206, 100%, 50%);
   --chart-2: hsl(142, 70%, 45%);
   --chart-3: hsl(25, 95%, 53%);
@@ -80,12 +80,12 @@
   --chart-5: hsl(341, 75%, 51%);
   --sidebar: hsl(228, 10%, 10%);
   --sidebar-foreground: hsl(0, 0%, 85%);
-  --sidebar-primary: hsl(206, 100%, 50%);
+  --sidebar-primary: hsl(263, 70%, 50%);
   --sidebar-primary-foreground: hsl(210, 40%, 98%);
   --sidebar-accent: hsl(0, 0%, 9%);
-  --sidebar-accent-foreground: hsl(206, 100%, 50%);
+  --sidebar-accent-foreground: hsl(263, 70%, 50%);
   --sidebar-border: hsl(210, 5%, 26%);
-  --sidebar-ring: hsl(206, 100%, 50%);
+  --sidebar-ring: hsl(263, 70%, 50%);
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -112,11 +112,11 @@
 
 /* Custom gradient classes for hero section */
 .gradient-bg {
-  background: linear-gradient(135deg, hsl(206, 100%, 50%) 0%, hsl(142, 70%, 45%) 100%);
+  background: linear-gradient(180deg, hsl(239, 84%, 67%) 0%, hsl(280, 70%, 70%) 50%, hsl(328, 85%, 70%) 100%);
 }
 
 .hero-pattern {
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* Ensure proper line clamping for listing cards */

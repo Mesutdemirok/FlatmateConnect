@@ -42,23 +42,9 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background" data-testid="home-page">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-violet-50 to-fuchsia-50" data-testid="home-page">
       <Header />
       <main>
-        {/* Welcome section for authenticated users */}
-        <section className="py-8 bg-muted/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="welcome-message">
-                {t('home.welcome_back', { name: user?.firstName || t('common.user') })}
-              </h1>
-              <p className="text-muted-foreground" data-testid="dashboard-subtitle">
-                {t('home.subtitle')}
-              </p>
-            </div>
-          </div>
-        </section>
-
         <Hero />
         <FeaturesSection />
         <FeaturedListings />

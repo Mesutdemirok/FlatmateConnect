@@ -15,7 +15,7 @@ export default function Landing() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background" data-testid="landing-page">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-violet-50 to-fuchsia-50" data-testid="landing-page">
       <Header />
       <main>
         <Hero />

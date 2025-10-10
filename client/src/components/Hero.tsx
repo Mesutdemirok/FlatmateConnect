@@ -42,20 +42,20 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative bg-gradient-to-br from-primary to-secondary py-16 lg:py-24" data-testid="hero-section">
+    <section className="relative bg-gradient-to-b from-indigo-50 via-violet-50 to-fuchsia-50 py-16 lg:py-24" data-testid="hero-section">
       {/* Hero pattern overlay */}
       <div 
         className="absolute inset-0 opacity-10"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }}
       />
       
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-4xl lg:text-6xl font-bold text-primary-foreground mb-6" data-testid="hero-title">
+        <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6" data-testid="hero-title">
           {t('hero.title')}
         </h1>
-        <p className="text-lg lg:text-xl text-primary-foreground/90 mb-10 max-w-2xl mx-auto" data-testid="hero-subtitle">
+        <p className="text-lg lg:text-xl text-gray-700 mb-10 max-w-2xl mx-auto" data-testid="hero-subtitle">
           {t('hero.subtitle')}
         </p>
         
