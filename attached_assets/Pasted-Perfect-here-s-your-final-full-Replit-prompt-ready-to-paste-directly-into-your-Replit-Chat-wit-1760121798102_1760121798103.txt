@@ -1,0 +1,117 @@
+Perfect ✅ — here’s your final full Replit prompt, ready to paste directly into your Replit “Chat with Agent” box.
+This version includes everything: migration, environment setup, rebuild, seed, missing dependency fixes, and an automatic health check.
+
+⸻
+
+🟣 Full Replit Setup & Auto-Fix Prompt
+
+I want you to fully repair, configure, and optimize this Replit project (FlatmateConnect) so it runs exactly like the Trae version (same design, functionality, and database setup).
+
+Please do everything below automatically, in this exact order 👇
+
+⸻
+
+⚙️ 1. Environment & Dependencies
+	•	Detect and install all missing dependencies automatically (frontend + backend).
+	•	Run:
+
+npm install
+
+
+	•	Make sure TypeScript, tsx, Vite, and Drizzle dependencies are correctly installed and up to date.
+
+⸻
+
+🧩 2. Environment Variables (Replit Secrets)
+
+Set or replace these:
+
+DATABASE_URL=file:./db.sqlite
+NODE_ENV=production
+PORT=5000
+
+
+⸻
+
+📝 3. .replit File Configuration
+
+Replace the .replit file content with this:
+
+run = "npm run build && npm start"
+entrypoint = "server/index.ts"
+language = "nodejs"
+onBoot = "npm install"
+
+
+⸻
+
+🗂️ 4. Server Configuration (fix routes + static build)
+
+Open server/index.ts and ensure it includes the following block at the end:
+
+import path from "path";
+import express from "express";
+
+const app = express();
+app.use(express.json());
+
+// ✅ Serve frontend build properly
+app.use(express.static(path.join(__dirname, "../client/dist")));
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+});
+
+
+⸻
+
+🧠 5. Build & Database Setup
+
+Run these commands sequentially:
+
+npm run build
+npm run db:push || npx drizzle-kit push
+npx tsx scripts/seed-listings.ts
+npx tsx scripts/seed-seekers.ts
+npm start
+
+
+⸻
+
+🩺 6. Health Check & Auto-Fix
+	•	Verify the server is accessible on port 5000.
+	•	Check /api/listings and /api/seekers endpoints respond with data.
+	•	Fix any detected schema, build, or CORS issues automatically.
+	•	Confirm frontend Vite build is connected and serving from /client/dist.
+	•	If SQLite file is missing, recreate db.sqlite and reapply schema.
+	•	Ensure seed data populates 3+ listings and 3+ seekers.
+
+⸻
+
+🎨 7. Design Verification
+
+Check that:
+	•	Hero section shows the purple gradient background
+	•	Featured Listings and Featured Seekers display correctly
+	•	Footer has gradient background and correct links
+	•	All cards and spacing match the Trae version design
+
+⸻
+
+🚀 8. Final Confirmation
+
+When all fixes are applied, confirm:
+	•	✅ Backend running without errors on port 5000
+	•	✅ Database connected (SQLite)
+	•	✅ Frontend accessible via Replit preview URL
+	•	✅ Seed data visible on home page
+	•	✅ Design and layout identical to Trae
+
+⸻
+
+🟢 After you finish all the above, please output:
+
+“✅ Replit environment fully synced with Trae — everything running smoothly.”
+
+⸻
+
+Would you like me to also make a follow-up command that checks daily if the Replit environment stays synced and automatically repairs broken dependencies (a scheduled health check)?
