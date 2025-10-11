@@ -19,10 +19,10 @@ import { z } from "zod";
 
 const createSeekerSchema = z.object({
   fullName: z.string().min(3, 'Lütfen adınızı ve soyadınızı giriniz'),
-  age: z.string().min(1, 'Lütfen yaşınızı giriniz'),
+  age: z.coerce.number().int().positive('Yaş 0\'dan büyük olmalıdır').max(120, 'Lütfen geçerli bir yaş giriniz'),
   gender: z.string().min(1, 'Lütfen cinsiyetinizi seçiniz'),
-  status: z.string().min(1, 'Lütfen durumunuzu seçiniz'),
-  budgetMonthly: z.string().min(1, 'Lütfen bütçenizi giriniz'),
+  occupation: z.string().min(1, 'Lütfen durumunuzu seçiniz'),
+  budgetMonthly: z.coerce.number().positive('Bütçe 0\'dan büyük olmalıdır'),
   about: z.string().min(10, 'Lütfen kendiniz hakkında bilgi veriniz (en az 10 karakter)'),
   preferredLocation: z.string().min(3, 'Lütfen tercih ettiğiniz lokasyonu giriniz'),
 });
@@ -41,10 +41,10 @@ export default function CreateSeekerProfile() {
     resolver: zodResolver(createSeekerSchema),
     defaultValues: {
       fullName: '',
-      age: '',
+      age: 0,
       gender: '',
-      status: '',
-      budgetMonthly: '',
+      occupation: '',
+      budgetMonthly: 0,
       about: '',
       preferredLocation: '',
     },
@@ -70,10 +70,10 @@ export default function CreateSeekerProfile() {
       const response = await apiRequest('POST', '/api/seekers', {
         userId: user?.id,
         fullName: data.fullName,
-        age: Number(data.age),
+        age: data.age,
         gender: data.gender,
-        status: data.status,
-        budgetMonthly: Number(data.budgetMonthly),
+        occupation: data.occupation,
+        budgetMonthly: data.budgetMonthly,
         about: data.about,
         preferredLocation: data.preferredLocation,
       });
@@ -265,7 +265,7 @@ export default function CreateSeekerProfile() {
                 {/* 5. Durumunuz nedir? */}
                 <FormField
                   control={form.control}
-                  name="status"
+                  name="occupation"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>5. Durumunuz nedir? *</FormLabel>

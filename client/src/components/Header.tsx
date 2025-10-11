@@ -30,18 +30,18 @@ export default function Header() {
             </div>
             <nav className="hidden md:flex space-x-6">
               <Link 
-                href="/oda-ilanlari" 
+                href={isAuthenticated ? "/ilan-olustur" : "/giris?next=/ilan-olustur"}
                 className="text-foreground hover:text-primary transition-colors"
-                data-testid="nav-browse-rooms"
+                data-testid="nav-create-listing"
               >
-                {t('nav.list_room')}
+                Oda İlanı Ver
               </Link>
               <Link 
-                href={isAuthenticated ? "/profil" : "/giris?next=/profil"}
+                href={isAuthenticated ? "/oda-arama-ilani-olustur" : "/giris?next=/oda-arama-ilani-olustur"}
                 className="text-foreground hover:text-primary transition-colors"
                 data-testid="nav-create-seeker"
               >
-                {t('nav.browse_rooms')}
+                Oda Arama İlanı Ver
               </Link>
             </nav>
           </div>
@@ -105,11 +105,11 @@ export default function Header() {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-card" data-testid="mobile-menu">
           <div className="px-4 py-4 space-y-4">
-            <Link href="/oda-ilanlari" className="block text-foreground hover:text-primary transition-colors">
-              {t('nav.list_room')}
+            <Link href={isAuthenticated ? "/ilan-olustur" : "/giris?next=/ilan-olustur"} className="block text-foreground hover:text-primary transition-colors">
+              Oda İlanı Ver
             </Link>
-            <Link href={isAuthenticated ? "/profil" : "/giris?next=/profil"} className="block text-foreground hover:text-primary transition-colors">
-              {t('nav.browse_rooms')}
+            <Link href={isAuthenticated ? "/oda-arama-ilani-olustur" : "/giris?next=/oda-arama-ilani-olustur"} className="block text-foreground hover:text-primary transition-colors">
+              Oda Arama İlanı Ver
             </Link>
             {isAuthenticated ? (
               <>
