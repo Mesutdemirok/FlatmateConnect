@@ -8,10 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
-import { insertListingSchema } from "@shared/schema";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ImageUpload from "@/components/ImageUpload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -19,14 +17,28 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { Home, DollarSign, Calendar, MapPin, Camera, Loader2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Loader2, Home, Upload } from "lucide-react";
 import { z } from "zod";
 
-type CreateListingFormData = z.infer<typeof insertListingSchema> & {
-  rentAmount: string;
-  bondAmount?: string;
-};
+const createListingSchema = z.object({
+  address: z.string().min(5, 'Lütfen geçerli bir adres giriniz'),
+  title: z.string().min(10, 'Başlık en az 10 karakter olmalıdır'),
+  rentAmount: z.string().min(1, 'Lütfen kira tutarını giriniz'),
+  billsIncluded: z.enum(['yes', 'no']),
+  propertyType: z.string().min(1, 'Lütfen konut tipini seçiniz'),
+  internetIncluded: z.enum(['yes', 'no']),
+  totalRooms: z.string().min(1, 'Lütfen oda sayısını giriniz'),
+  bathroomType: z.string().min(1, 'Lütfen banyo tipini seçiniz'),
+  furnishingStatus: z.string().min(1, 'Lütfen eşya durumunu seçiniz'),
+  amenities: z.array(z.string()).default([]),
+  totalOccupants: z.string().min(1, 'Lütfen kişi sayısını giriniz'),
+  roommatePreference: z.string().min(1, 'Lütfen ev arkadaşı tercihinizi seçiniz'),
+  smokingPolicy: z.string().min(1, 'Lütfen sigara politikasını seçiniz'),
+});
+
+type CreateListingFormData = z.infer<typeof createListingSchema>;
 
 export default function CreateListing() {
   const { t } = useTranslation();
@@ -35,39 +47,24 @@ export default function CreateListing() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [images, setImages] = useState<File[]>([]);
-
-  // Create schema with specific validation messages
-  const createListingSchema = insertListingSchema.extend({
-    rentAmount: z.string().min(1, 'Lütfen haftalık kira tutarını giriniz'),
-    bondAmount: z.string().optional(),
-  }).refine(data => data.title && data.title.length >= 10, {
-    message: 'Başlık en az 10 karakter olmalıdır',
-    path: ['title'],
-  }).refine(data => data.suburb, {
-    message: 'Lütfen semt giriniz',
-    path: ['suburb'],
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CreateListingFormData>({
     resolver: zodResolver(createListingSchema),
     defaultValues: {
-      title: '',
-      description: '',
       address: '',
-      suburb: '',
-      city: '',
-      state: '',
-      postcode: '',
+      title: '',
       rentAmount: '',
-      bondAmount: '',
-      availableFrom: '',
-      availableTo: '',
-      roomType: '',
+      billsIncluded: 'no',
       propertyType: '',
-      furnished: false,
-      billsIncluded: false,
-      parkingAvailable: false,
-      internetIncluded: false,
+      internetIncluded: 'no',
+      totalRooms: '',
+      bathroomType: '',
+      furnishingStatus: '',
+      amenities: [],
+      totalOccupants: '',
+      roommatePreference: '',
+      smokingPolicy: '',
     },
   });
 
@@ -75,7 +72,7 @@ export default function CreateListing() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({
-        title: t('errors.unauthorized'),
+        title: 'Giriş Gerekli',
         description: 'İlan oluşturmak için giriş yapmalısınız',
         variant: "destructive",
       });
@@ -89,9 +86,20 @@ export default function CreateListing() {
   const createListingMutation = useMutation({
     mutationFn: async (data: CreateListingFormData) => {
       const response = await apiRequest('POST', '/api/listings', {
-        ...data,
+        userId: user?.id,
+        address: data.address,
+        title: data.title,
         rentAmount: Number(data.rentAmount),
-        bondAmount: data.bondAmount ? Number(data.bondAmount) : null,
+        billsIncluded: data.billsIncluded === 'yes',
+        propertyType: data.propertyType,
+        internetIncluded: data.internetIncluded === 'yes',
+        totalRooms: Number(data.totalRooms),
+        bathroomType: data.bathroomType,
+        furnishingStatus: data.furnishingStatus,
+        amenities: data.amenities,
+        totalOccupants: Number(data.totalOccupants),
+        roommatePreference: data.roommatePreference,
+        smokingPolicy: data.smokingPolicy,
       });
       return response.json();
     },
@@ -111,20 +119,14 @@ export default function CreateListing() {
           });
         } catch (error) {
           console.error('Error uploading images:', error);
-          toast({
-            title: t('common.warning', 'Uyarı'),
-            description: t('create_listing.image_upload_partial_error', 'İlan oluşturuldu ancak bazı görseller yüklenemedi. Daha sonra ekleyebilirsiniz.'),
-            variant: "destructive"
-          });
         }
       }
 
       queryClient.invalidateQueries({ queryKey: ['/api/listings'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/my-listings'] });
       
       toast({
-        title: t('common.success', 'Başarılı!'),
-        description: t('success.listing_created')
+        title: 'Başarılı!',
+        description: 'İlan başarıyla oluşturuldu.'
       });
       
       setLocation(`/oda-ilani/${listing.id}`);
@@ -132,7 +134,7 @@ export default function CreateListing() {
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: t('errors.unauthorized'),
+          title: 'Giriş Gerekli',
           description: 'İlan oluşturmak için giriş yapmalısınız',
           variant: "destructive",
         });
@@ -142,169 +144,95 @@ export default function CreateListing() {
         return;
       }
       toast({
-        title: t('common.error', 'Hata'),
-        description: t('create_listing.create_error', 'İlan oluşturulurken hata oluştu. Lütfen tekrar deneyin.'),
+        title: 'Hata',
+        description: 'Bir hata oluştu, lütfen tekrar deneyiniz.',
         variant: "destructive"
       });
     }
   });
 
-  const onSubmit = (data: CreateListingFormData) => {
-    console.log('Form data:', data);
-    console.log('Form errors:', form.formState.errors);
-    createListingMutation.mutate(data);
+  const onSubmit = async (data: CreateListingFormData) => {
+    setIsSubmitting(true);
+    try {
+      await createListingMutation.mutateAsync(data);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const fileList = Array.from(e.target.files);
+      const validFiles = fileList.filter(file => {
+        const isValidType = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type);
+        const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
+        return isValidType && isValidSize;
+      });
+      setImages(validFiles);
+      
+      if (validFiles.length < fileList.length) {
+        toast({
+          title: 'Uyarı',
+          description: 'Bazı dosyalar geçersiz. Sadece PNG, JPG, WebP formatları ve 5MB altı kabul edilir.',
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center" data-testid="create-listing-loading">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">{t('common.loading')}</p>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
+  const amenityOptions = [
+    { id: 'yatak', label: 'Yatak' },
+    { id: 'dolap', label: 'Dolap' },
+    { id: 'masa', label: 'Masa' },
+    { id: 'sandalye', label: 'Sandalye' },
+    { id: 'klima', label: 'Klima' },
+    { id: 'tv', label: 'TV' },
+    { id: 'diger', label: 'Diğer' },
+  ];
+
   return (
-    <div className="min-h-screen bg-background" data-testid="create-listing-page">
+    <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="page-title">
-            {t('create_listing.title')}
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Oda İlanı Oluştur
           </h1>
-          <p className="text-muted-foreground" data-testid="page-subtitle">
-            {t('create_listing.subtitle', 'Mükemmel ev arkadaşınızı bulmak için ilan oluşturun')}
+          <p className="text-muted-foreground">
+            Ev arkadaşınızı bulmak için ilan verin
           </p>
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* Basic Information */}
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Home className="h-5 w-5" />
-                  {t('create_listing.basic_info')}
+                  İlan Bilgileri
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('create_listing.listing_title')} *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder={t('create_listing.listing_title_placeholder', 'örn., Kadıköy\'de geniş oda')}
-                          {...field}
-                          data-testid="input-title"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {t('create_listing.listing_title_desc', 'İlanınız için dikkat çekici bir başlık oluşturun')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('create_listing.description')}</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder={t('create_listing.description_placeholder', 'Odanızı, evi ve ev arkadaşınızda aradıklarınızı açıklayın...')}
-                          className="min-h-[120px]"
-                          {...field}
-                          data-testid="textarea-description"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {t('create_listing.description_desc', 'Oda, mülk ve tercihleriniz hakkında detay verin')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="roomType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('create_listing.room_type')}</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-room-type">
-                              <SelectValue placeholder={t('create_listing.select_room_type', 'Oda tipini seçin')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="private">{t('hero.room_types.private')}</SelectItem>
-                            <SelectItem value="shared">{t('hero.room_types.shared')}</SelectItem>
-                            <SelectItem value="ensuite">{t('hero.room_types.ensuite')}</SelectItem>
-                            <SelectItem value="studio">{t('hero.room_types.studio')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="propertyType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('create_listing.property_type')}</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-property-type">
-                              <SelectValue placeholder={t('create_listing.select_property_type', 'Mülk tipini seçin')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="house">{t('hero.property_types.house')}</SelectItem>
-                            <SelectItem value="apartment">{t('hero.property_types.apartment')}</SelectItem>
-                            <SelectItem value="townhouse">{t('hero.property_types.townhouse')}</SelectItem>
-                            <SelectItem value="unit">{t('hero.property_types.unit')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Location */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  {t('create_listing.location')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
+                {/* 1. İlan adresiniz nedir? */}
                 <FormField
                   control={form.control}
                   name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('create_listing.address')}</FormLabel>
+                      <FormLabel>1. İlan adresiniz nedir? *</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder={t('create_listing.address_placeholder', 'örn., Atatürk Caddesi No: 123')}
-                          {...field}
+                          placeholder="örn., Kadıköy, İstanbul" 
+                          {...field} 
                           data-testid="input-address"
                         />
                       </FormControl>
@@ -313,335 +241,359 @@ export default function CreateListing() {
                   )}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="suburb"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('create_listing.suburb', 'Semt')} *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder={t('create_listing.suburb_placeholder', 'örn., Kadıköy')}
-                            {...field}
-                            data-testid="input-suburb"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('create_listing.city')}</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder={t('create_listing.city_placeholder', 'örn., İstanbul')}
-                            {...field}
-                            data-testid="input-city"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="postcode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('create_listing.postcode')}</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder={t('create_listing.postcode_placeholder', 'örn., 34710')}
-                            {...field}
-                            data-testid="input-postcode"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
+                {/* 2. İlan başlığınız nedir? */}
                 <FormField
                   control={form.control}
-                  name="state"
+                  name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('create_listing.state')}</FormLabel>
+                      <FormLabel>2. İlan başlığınız nedir? *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="örn., Kadıköy'de geniş ve aydınlık oda" 
+                          {...field} 
+                          data-testid="input-title"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 3. Aylık kira bedeli ne kadar? */}
+                <FormField
+                  control={form.control}
+                  name="rentAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>3. Aylık kira bedeli ne kadar? *</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2.5">₺</span>
+                          <Input 
+                            type="number"
+                            placeholder="5000" 
+                            className="pl-8"
+                            {...field} 
+                            data-testid="input-rent"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 4. Fiyata faturalar dahil mi? */}
+                <FormField
+                  control={form.control}
+                  name="billsIncluded"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>4. Fiyata faturalar dahil mi? *</FormLabel>
+                      <FormControl>
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value}>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="bills-yes" />
+                            <Label htmlFor="bills-yes">Evet</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="bills-no" />
+                            <Label htmlFor="bills-no">Hayır</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 5. Konut tipi nedir? */}
+                <FormField
+                  control={form.control}
+                  name="propertyType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>5. Konut tipi nedir? *</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger data-testid="select-state">
-                            <SelectValue placeholder={t('create_listing.select_state', 'İl seçin')} />
+                          <SelectTrigger data-testid="select-property-type">
+                            <SelectValue placeholder="Seçiniz" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="NSW">{t('options.states.NSW')}</SelectItem>
-                          <SelectItem value="VIC">{t('options.states.VIC')}</SelectItem>
-                          <SelectItem value="QLD">{t('options.states.QLD')}</SelectItem>
-                          <SelectItem value="WA">{t('options.states.WA')}</SelectItem>
-                          <SelectItem value="SA">{t('options.states.SA')}</SelectItem>
-                          <SelectItem value="TAS">{t('options.states.TAS')}</SelectItem>
-                          <SelectItem value="ACT">{t('options.states.ACT')}</SelectItem>
-                          <SelectItem value="NT">{t('options.states.NT')}</SelectItem>
+                          <SelectItem value="rezidans">Rezidans</SelectItem>
+                          <SelectItem value="apartman">Apartman</SelectItem>
+                          <SelectItem value="daire">Daire</SelectItem>
+                          <SelectItem value="mustakil">Müstakil Ev</SelectItem>
+                          <SelectItem value="diger">Diğer</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
 
-            {/* Pricing & Availability */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  {t('create_listing.pricing')} & {t('create_listing.availability')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="rentAmount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('create_listing.weekly_rent')} *</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                              type="number"
-                              placeholder="1500"
-                              className="pl-10"
-                              {...field}
-                              data-testid="input-rent-amount"
-                            />
+                {/* 6. Evde internet mevcut mu? */}
+                <FormField
+                  control={form.control}
+                  name="internetIncluded"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>6. Evde internet mevcut mu? *</FormLabel>
+                      <FormControl>
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value}>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="internet-yes" />
+                            <Label htmlFor="internet-yes">Evet</Label>
                           </div>
-                        </FormControl>
-                        <FormDescription>
-                          {t('create_listing.weekly_rent_desc', 'Haftalık tutar (TL)')}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="bondAmount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('create_listing.bond')}</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                              type="number"
-                              placeholder="3000"
-                              className="pl-10"
-                              {...field}
-                              data-testid="input-bond-amount"
-                            />
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="internet-no" />
+                            <Label htmlFor="internet-no">Hayır</Label>
                           </div>
-                        </FormControl>
-                        <FormDescription>
-                          {t('create_listing.bond_desc', 'Güvenlik depozitosu tutarı')}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="availableFrom"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('create_listing.available_from')}</FormLabel>
+                {/* 7. Evde toplam kaç oda var? */}
+                <FormField
+                  control={form.control}
+                  name="totalRooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>7. Evde toplam kaç oda var? *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <Input 
-                            type="date"
-                            {...field}
-                            data-testid="input-available-from"
-                          />
+                          <SelectTrigger data-testid="select-rooms">
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormDescription>
-                          {t('create_listing.available_from_desc', 'Oda ne zaman müsait olacak')}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                            <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="availableTo"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('create_listing.available_until', 'Müsait Olma Bitiş Tarihi')}</FormLabel>
+                {/* 8. Banyo durumu nedir? */}
+                <FormField
+                  control={form.control}
+                  name="bathroomType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>8. Banyo durumu nedir? *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <Input 
-                            type="date"
-                            {...field}
-                            data-testid="input-available-to"
-                          />
+                          <SelectTrigger data-testid="select-bathroom">
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormDescription>
-                          {t('create_listing.available_until_desc', 'İsteğe bağlı müsaitlik bitiş tarihi')}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                        <SelectContent>
+                          <SelectItem value="ortak">Ortak</SelectItem>
+                          <SelectItem value="ozel">Özel</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 9. Evin eşya durumu nedir? */}
+                <FormField
+                  control={form.control}
+                  name="furnishingStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>9. Evin eşya durumu nedir? *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-furnishing">
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="esyali">Eşyalı</SelectItem>
+                          <SelectItem value="esyasiz">Eşyasız</SelectItem>
+                          <SelectItem value="kismen">Kısmen Eşyalı</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 10. Odada hangi eşyalar mevcut? */}
+                <FormField
+                  control={form.control}
+                  name="amenities"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>10. Odada hangi eşyalar mevcut?</FormLabel>
+                      <div className="grid grid-cols-2 gap-4">
+                        {amenityOptions.map((item) => (
+                          <FormField
+                            key={item.id}
+                            control={form.control}
+                            name="amenities"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={item.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(item.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...field.value, item.id])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== item.id
+                                              )
+                                            )
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {item.label}
+                                  </FormLabel>
+                                </FormItem>
+                              )
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 11. Evde toplam kaç kişi yaşamaktadır? */}
+                <FormField
+                  control={form.control}
+                  name="totalOccupants"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>11. Evde toplam kaç kişi yaşamaktadır? *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="2" 
+                          {...field} 
+                          data-testid="input-occupants"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 12. Ev arkadaşı tercihiniz nedir? */}
+                <FormField
+                  control={form.control}
+                  name="roommatePreference"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>12. Ev arkadaşı tercihiniz nedir? *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-roommate">
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="kadin">Kadın</SelectItem>
+                          <SelectItem value="erkek">Erkek</SelectItem>
+                          <SelectItem value="farketmez">Farketmez</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 13. Evde sigara politikası nedir? */}
+                <FormField
+                  control={form.control}
+                  name="smokingPolicy"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>13. Evde sigara politikası nedir? *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-smoking">
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="icilebilir">İçilebilir</SelectItem>
+                          <SelectItem value="icilemez">İçilemez</SelectItem>
+                          <SelectItem value="balkon-dahil-icilemez">Balkon Dahil İçilemez</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 14. İlan için fotoğraflar yükler misiniz? */}
+                <FormItem>
+                  <FormLabel>14. İlan için fotoğraflar yükler misiniz?</FormLabel>
+                  <FormControl>
+                    <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                      <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                      <Input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        multiple
+                        onChange={handleImageChange}
+                        className="cursor-pointer"
+                        data-testid="input-images"
+                      />
+                      <p className="text-sm text-muted-foreground mt-2">
+                        PNG, JPG, WebP (Max 5MB)
+                      </p>
+                      {images.length > 0 && (
+                        <p className="text-sm text-green-600 mt-2">
+                          {images.length} fotoğraf seçildi
+                        </p>
+                      )}
+                    </div>
+                  </FormControl>
+                </FormItem>
               </CardContent>
             </Card>
 
-            {/* Features & Amenities */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('create_listing.features')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="furnished"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            data-testid="checkbox-furnished"
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>{t('create_listing.furnished')}</FormLabel>
-                          <FormDescription>
-                            {t('create_listing.furnished_desc', 'Oda mobilyalı olarak geliyor')}
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="billsIncluded"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            data-testid="checkbox-bills-included"
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>{t('create_listing.bills_included', 'Faturalar Dahil')}</FormLabel>
-                          <FormDescription>
-                            {t('create_listing.bills_included_desc', 'Elektrik, gaz, su dahil')}
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="internetIncluded"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            data-testid="checkbox-internet-included"
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>{t('create_listing.internet')}</FormLabel>
-                          <FormDescription>
-                            {t('create_listing.internet_desc', 'WiFi/İnternet dahil')}
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="parkingAvailable"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            data-testid="checkbox-parking-available"
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>{t('create_listing.parking')}</FormLabel>
-                          <FormDescription>
-                            {t('create_listing.parking_desc', 'Araç park alanı mevcut')}
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Images */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Camera className="h-5 w-5" />
-                  {t('create_listing.images')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ImageUpload onImagesChange={setImages} />
-              </CardContent>
-            </Card>
-
-            {/* Submit */}
             <div className="flex justify-end space-x-4">
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setLocation('/search')}
-                data-testid="cancel-button"
+                onClick={() => setLocation('/oda-ilanlari')}
+                data-testid="button-cancel"
               >
-                {t('create_listing.cancel')}
+                İptal
               </Button>
               <Button 
                 type="submit" 
-                disabled={createListingMutation.isPending}
+                disabled={isSubmitting || createListingMutation.isPending}
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
-                data-testid="submit-button"
+                data-testid="button-submit"
               >
-                {createListingMutation.isPending ? (
+                {isSubmitting || createListingMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {t('create_listing.creating', 'İlan Oluşturuluyor...')}
+                    İlan Oluşturuluyor...
                   </>
                 ) : (
-                  t('create_listing.create_button')
+                  'İlan Oluştur'
                 )}
               </Button>
             </div>

@@ -17,9 +17,8 @@ const resources = {
       nav: {
         home: "Ana Sayfa",
         search: "Arama",
-        browse_rooms: "Oda Ara",
+        browse_rooms: "Oda Arama İlanı Ver",
         list_room: "Oda İlanı Ver",
-        how_it_works: "Nasıl Çalışır",
         messages: "Mesajlar",
         profile: "Profil",
         login: "Giriş Yap",

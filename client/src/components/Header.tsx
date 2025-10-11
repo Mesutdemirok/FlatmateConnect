@@ -34,21 +34,14 @@ export default function Header() {
                 className="text-foreground hover:text-primary transition-colors"
                 data-testid="nav-browse-rooms"
               >
-                {t('nav.browse_rooms')}
-              </Link>
-              <Link 
-                href="/ilan-olustur" 
-                className="text-foreground hover:text-primary transition-colors"
-                data-testid="nav-list-room"
-              >
                 {t('nav.list_room')}
               </Link>
               <Link 
-                href="/nasil-calisir" 
+                href={isAuthenticated ? "/profil" : "/giris?next=/profil"}
                 className="text-foreground hover:text-primary transition-colors"
-                data-testid="nav-how-it-works"
+                data-testid="nav-create-seeker"
               >
-                {t('nav.how_it_works')}
+                {t('nav.browse_rooms')}
               </Link>
             </nav>
           </div>
@@ -113,13 +106,10 @@ export default function Header() {
         <div className="md:hidden border-t border-border bg-card" data-testid="mobile-menu">
           <div className="px-4 py-4 space-y-4">
             <Link href="/oda-ilanlari" className="block text-foreground hover:text-primary transition-colors">
-              {t('nav.browse_rooms')}
-            </Link>
-            <Link href="/ilan-olustur" className="block text-foreground hover:text-primary transition-colors">
               {t('nav.list_room')}
             </Link>
-            <Link href="/nasil-calisir" className="block text-foreground hover:text-primary transition-colors">
-              {t('nav.how_it_works')}
+            <Link href={isAuthenticated ? "/profil" : "/giris?next=/profil"} className="block text-foreground hover:text-primary transition-colors">
+              {t('nav.browse_rooms')}
             </Link>
             {isAuthenticated ? (
               <>
