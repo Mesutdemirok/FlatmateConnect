@@ -49,25 +49,29 @@ export const users = pgTable("users", {
 export const listings = pgTable("listings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  
+  // Basic Information
+  address: text("address").notNull(),
   title: varchar("title").notNull(),
-  description: text("description"),
-  address: text("address"),
-  suburb: varchar("suburb"),
-  city: varchar("city"),
-  state: varchar("state"),
-  postcode: varchar("postcode"),
-  latitude: decimal("latitude", { precision: 10, scale: 7 }),
-  longitude: decimal("longitude", { precision: 10, scale: 7 }),
-  rentAmount: decimal("rent_amount", { precision: 8, scale: 2 }).notNull(),
-  bondAmount: decimal("bond_amount", { precision: 8, scale: 2 }),
-  availableFrom: date("available_from"),
-  availableTo: date("available_to"),
-  roomType: varchar("room_type"),
-  propertyType: varchar("property_type"),
-  furnished: boolean("furnished").default(false),
-  billsIncluded: boolean("bills_included").default(false),
-  parkingAvailable: boolean("parking_available").default(false),
+  rentAmount: decimal("rent_amount", { precision: 8, scale: 2 }).notNull(), // Monthly rent
+  billsIncluded: boolean("bills_included").default(false), // Utilities included
+  
+  // Property Details  
+  propertyType: varchar("property_type"), // Rezidans/Apartman/Daire/Müstakil Ev/Diğer
   internetIncluded: boolean("internet_included").default(false),
+  totalRooms: integer("total_rooms"), // Total rooms in house
+  bathroomType: varchar("bathroom_type"), // Ortak/Özel
+  
+  // Furnishing
+  furnishingStatus: varchar("furnishing_status"), // Eşyalı/Eşyasız/Kısmen Eşyalı
+  amenities: text("amenities").array(), // Yatak/Dolap/Masa/Sandalye/Klima/TV/Diğer
+  
+  // Occupancy & Preferences
+  totalOccupants: integer("total_occupants"), // How many people live there
+  roommatePreference: varchar("roommate_preference"), // Kadın/Erkek/Farketmez
+  smokingPolicy: varchar("smoking_policy"), // İçilebilir/İçilemez/Balkon Dahil İçilemez
+  
+  // System fields
   status: varchar("status").default('active'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -116,18 +120,20 @@ export const favorites = pgTable("favorites", {
 export const seekerProfiles = pgTable("seeker_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
+  
+  // Personal Information
+  profilePhotoUrl: varchar("profile_photo_url"), // Profile photo
+  fullName: varchar("full_name"), // Combined first and last name
   age: integer("age"),
-  gender: varchar("gender"),
-  about: text("about"),
-  budgetWeekly: decimal("budget_weekly", { precision: 8, scale: 2 }),
-  preferredLocations: text("preferred_locations").array(),
-  moveInDate: date("move_in_date"),
-  stayDuration: varchar("stay_duration"),
-  occupation: varchar("occupation"),
-  smokingStatus: varchar("smoking_status"),
-  petOwner: boolean("pet_owner").default(false),
+  gender: varchar("gender"), // Kadın/Erkek/Diğer/Belirtmek İstemiyorum
+  status: varchar("status"), // Öğrenci/Çalışan/Serbest/Diğer (occupation/status)
+  
+  // Search Preferences
+  budgetMonthly: decimal("budget_monthly", { precision: 8, scale: 2 }), // Monthly budget
+  about: text("about"), // Bio/description
+  preferredLocation: text("preferred_location"), // Single location preference
+  
+  // System fields
   isActive: boolean("is_active").default(true),
   isFeatured: boolean("is_featured").default(false),
   createdAt: timestamp("created_at").defaultNow(),

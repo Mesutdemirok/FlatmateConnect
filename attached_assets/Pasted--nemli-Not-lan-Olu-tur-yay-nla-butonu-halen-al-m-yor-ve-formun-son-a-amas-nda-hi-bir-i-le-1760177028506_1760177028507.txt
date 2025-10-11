@@ -1,0 +1,117 @@
+⚠️ Önemli Not:
+“İlan Oluştur” (yayınla) butonu halen çalışmıyor ve formun son aşamasında hiçbir işlem yapmıyor. Bu hata daha önceki çalışmada çözülmemiştir.  
+Lütfen bu problemi tamamen çözerek formun **tam işlevsel hale gelmesini** sağlayın.  
+Bu işlem önceki ücretlendirmeye dahildir; ek ücret talep edilmemesi gerekir.
+
+---
+
+Şimdi lütfen aşağıdaki değişiklikleri Odanet platformuna eksiksiz şekilde uygulayın.  
+Hem **Oda İlanı Verme Formu** hem de **Kullanıcı Profili Formu** tamamen aşağıda verilen yeni sorular ve seçeneklerle yenilenmeli, test edilip tam olarak çalışır hale getirilmelidir.  
+Ayrıca menü, yönlendirme ve görünüm değişiklikleri de dahil edilmelidir.
+
+---
+
+## 🏠 1️⃣ Oda İlanı Formu (Yeni Soru Listesi ve Seçenekler)
+
+Aşağıdaki sorular sırasıyla kullanılacak, her biri için uygun seçim seçenekleri tanımlanacak.  
+Form tamamlandığında “İlan Oluştur” butonuna tıklanınca ilan veritabanına kaydedilmeli ve yayınlanmalıdır.
+
+### Yeni Soru Listesi:
+1. **İlan adresiniz nedir?** → metin girişi  
+2. **İlan başlığınız nedir?** → metin girişi  
+3. **Aylık kira bedeli ne kadar?** → sayısal girdi (₺ simgesiyle)  
+4. **Fiyata faturalar dahil mi?** → seçenek: (Evet / Hayır)  
+5. **Konut tipi nedir?** → seçenek: (Rezidans / Apartman / Daire / Müstakil Ev / Diğer)  
+6. **Evde internet mevcut mu?** → seçenek: (Evet / Hayır)  
+7. **Evde toplam kaç oda var?** → sayı seçici (1–10 arası)  
+8. **Banyo durumu nedir?** → seçenek: (Ortak / Özel)  
+9. **Evin eşya durumu nedir?** → seçenek: (Eşyalı / Eşyasız / Kısmen Eşyalı)  
+10. **Odada hangi eşyalar mevcut?** → çoklu seçim: (Yatak / Dolap / Masa / Sandalye / Klima / TV / Diğer)  
+11. **Evde toplam kaç kişi yaşamaktadır?** → sayı seçici  
+12. **Ev arkadaşı tercihiniz nedir?** → seçenek: (Kadın / Erkek / Farketmez)  
+13. **Evde sigara politikası nedir?** → seçenek: (İçilebilir / İçilemez / Balkon Dahil İçilemez)  
+14. **İlan için fotoğraflar yükler misiniz?** → çoklu fotoğraf yükleme (PNG, JPG, WebP – max 5MB)
+
+✅ Bu formun sonunda:
+- “İlan Oluştur” butonuna tıklanınca tüm veriler API’ye gönderilmeli ve ilan oluşturulmalı.
+- Başarılı kayıt sonrası toast mesajı: **“İlan başarıyla oluşturuldu.”**
+- Hata durumunda: **“Bir hata oluştu, lütfen tekrar deneyiniz.”**
+- Başarılı ilan sonrası yönlendirme: yeni oluşturulan ilanın sayfasına (`/oda-ilani/:id`).
+
+---
+
+## 👤 2️⃣ Kullanıcı Profili Formu (Yeni Alanlar ve Seçenekler)
+
+Aşağıdaki form, oda arayan kullanıcıların profil oluşturma ekranıdır.  
+Profil bilgileri API üzerinden kayıt edilmelidir.
+
+### Yeni Soru Listesi:
+1. **Profil fotoğrafınızı yükleyiniz** → tek görsel yükleme (PNG/JPG/WebP)  
+2. **Adınız Soyadınız nedir?** → metin girişi  
+3. **Yaşınız kaç?** → sayı girişi  
+4. **Cinsiyetiniz nedir?** → seçenek: (Kadın / Erkek / Diğer / Belirtmek İstemiyorum)  
+5. **Durumunuz nedir?** → seçenek: (Öğrenci / Çalışan / Serbest / Diğer)  
+6. **Aylık kira için bütçeniz ne kadar?** → sayısal girdi (₺ simgesiyle)  
+7. **Kendinizden kısaca bahseder misiniz?** → çok satırlı metin alanı  
+8. **Hangi lokasyonda oda/ev arıyorsunuz?** → metin girişi / şehir seçici  
+
+✅ Bu formun sonunda:
+- “Profil Oluştur” butonu tam işlevsel olmalı.
+- Başarılı kayıt sonrası toast: “Profil başarıyla oluşturuldu.”
+- Hata durumunda: “Bir hata oluştu, lütfen tekrar deneyiniz.”
+- Başarılı işlem sonrası yönlendirme: `/profil`.
+
+---
+
+## 🧭 3️⃣ Menü ve Navigasyon Değişiklikleri
+
+✅ Menü Çubuğu Güncellemeleri:
+- “Oda Ara” → değiştirilecek: **“Oda Arama İlanı Ver”**
+- “Nasıl Çalışır” sekmesi → tamamen kaldırılacak.
+- “Oda İlanı Ver” → kalacak, form yönlendirmesi `/ilan-olustur` olacak.
+- Menüde bu iki seçenek (Oda Arama İlanı Ver ve Oda İlanı Ver) kullanıcı **kayıt/giriş** sonrası aktif hale gelecek.
+- Giriş yapmamış kullanıcı tıklarsa → önce giriş/kayıt sayfasına yönlendirilecek.
+
+✅ Profil Sayfası:
+- Profil ekranında hem **“Oda Arama İlanı Ver”** hem de **“Oda İlanı Ver”** butonları yer alacak.
+- Kullanıcı isterse bu butonlardan forma geçiş yapabilecek.
+
+✅ Alt Kısım (Footer) Güncellemesi:
+- “Odanı mı arıyorsun? Profilini oluştur” bölümü tamamen kaldırılacak.
+
+---
+
+## 🧩 4️⃣ Teknik Düzeltme ve Test Talepleri
+
+✅ En kritik hata:
+- Mevcut “İlan Oluştur / Yayınla” butonu hiçbir işlem yapmıyor.
+- Bu durum hem yeni formda hem mevcut formda **mutlaka test edilip çözülmeli**.
+
+✅ Tüm form işlemleri:
+- Backend API’leriyle tam senkronize çalışmalı.
+- Formların tamamı test edilip veri tabanına kayıt yapmalı.
+- Başarılı işlem sonrası yönlendirme ve bildirimler doğru çalışmalı.
+
+---
+
+## 🚀 5️⃣ Genel İyileştirmeler
+- Form alanlarına görsel düzen (soft border, placeholder, spacing).
+- Mobil uyumluluk (responsive layout).
+- Form yükleme aşamasında “yükleniyor” göstergesi.
+- Tüm başlık, URL ve yönlendirmeler Türkçe olacak.
+
+---
+
+## ✅ 6️⃣ Son Kontrol ve Yayınlama
+- Tüm değişikliklerden sonra projeyi yeniden build edin (`npm run build`).
+- Server’ı yeniden başlatın.
+- Test edin:
+  - Oda İlanı Ver formu sorunsuz çalışıyor mu?
+  - Kullanıcı Profili formu kayıt yapıyor mu?
+  - Yönlendirmeler doğru mu?
+- Her iki form da test edilip %100 çalışır hale geldikten sonra üretime (production `.replit.app`) otomatik olarak deploy edin.
+
+---
+
+Lütfen bu işlemleri eksiksiz uygulayıp test ederek tamamlayın.  
+Bu güncelleme, mevcut hataların giderilmesini ve yeni form sisteminin eksiksiz çalışmasını kapsar.

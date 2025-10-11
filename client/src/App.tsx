@@ -1,4 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -21,13 +22,18 @@ function ProtectedRoute({ component: Component, ...rest }: { component: () => JS
   const { isAuthenticated, isLoading } = useAuth();
   const [location, navigate] = useLocation();
 
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      const currentPath = rest.path || location;
+      navigate(`/giris?next=${encodeURIComponent(currentPath)}`);
+    }
+  }, [isLoading, isAuthenticated, location, navigate, rest.path]);
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Yükleniyor...</div>;
   }
 
   if (!isAuthenticated) {
-    const currentPath = rest.path || location;
-    navigate(`/giris?next=${encodeURIComponent(currentPath)}`);
     return null;
   }
 
