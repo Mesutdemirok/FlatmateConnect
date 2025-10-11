@@ -1,0 +1,37 @@
+Please implement the following UI and functional improvements based on the attached screenshots and descriptions:
+
+1️⃣ **Header Buttons Visibility Fix**
+- When logged in, the “Profil” and “Çıkış Yap” buttons blend into the header because of same background and text color.
+- Fix this by changing button text color to a darker tone (e.g., text-indigo-700) and keeping the background white.
+- Ensure both buttons are always clearly visible against the header gradient (desktop and mobile).
+
+2️⃣ **Heart and Message Icons Styling**
+- Replace both icons with thicker, more visible versions (filled or bold outline).
+- Add a slightly darker background behind them (like `bg-white/10 hover:bg-white/20`) to improve contrast.
+- Keep icons the same in desktop and mobile versions, consistent style and alignment.
+
+3️⃣ **Remove "Apartman" Option**
+- In the “Konut tipi nedir?” dropdown menu, remove only the “Apartman” option.
+- Keep other options intact: “Rezidans”, “Daire”, “Müstakil Ev”, “Diğer”.
+
+4️⃣ **Fiyata Faturalar Dahil mi? Logic**
+- When the user selects “Evet”, do nothing extra.
+- When the user selects “Hayır”, automatically show additional checkboxes or input fields below for:
+  - Su
+  - Elektrik
+  - Telefon
+  - Doğalgaz
+  - İnternet
+- These should appear dynamically and allow users to mark which bills are excluded or enter approximate amounts if needed.
+
+5️⃣ **General Testing**
+- After applying all fixes, test both logged-in and logged-out states.
+- Confirm that:
+  - “Profil” and “Çıkış Yap” buttons are always readable.
+  - Icons appear correctly on both desktop and mobile.
+  - “Apartman” option is removed.
+  - “Fiyata Faturalar Dahil mi?” conditional fields work smoothly without breaking form submission.
+
+✅ Please apply all changes cleanly and update both frontend and backend logic if necessary.
+✅ Make sure everything is responsive, visually balanced, and consistent with Odanet’s purple/orange color theme.
+✅ Rebuild and test on the live `.replit.app` environment before completion.

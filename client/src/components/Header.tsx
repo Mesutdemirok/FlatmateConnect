@@ -71,9 +71,9 @@ export default function Header() {
                     variant="ghost"
                     size="icon"
                     aria-label={t("nav.favorites")}
-                    className="text-white hover:bg-white/10"
+                    className="text-white hover:bg-white/20 bg-white/10"
                   >
-                    <Heart className="h-5 w-5" />
+                    <Heart className="h-6 w-6" strokeWidth={2.5} fill="currentColor" />
                   </Button>
                 </Link>
                 <Link href="/mesajlar" data-testid="messages-link">
@@ -81,22 +81,22 @@ export default function Header() {
                     variant="ghost"
                     size="icon"
                     aria-label={t("nav.messages")}
-                    className="text-white hover:bg-white/10"
+                    className="text-white hover:bg-white/20 bg-white/10"
                   >
-                    <MessageSquare className="h-5 w-5" />
+                    <MessageSquare className="h-6 w-6" strokeWidth={2.5} />
                   </Button>
                 </Link>
                 <Link href="/profil" data-testid="profile-link">
                   <Button
                     variant="outline"
-                    className="hidden sm:flex border-white text-white hover:bg-white hover:text-indigo-700"
+                    className="hidden sm:flex bg-white text-indigo-700 border-white hover:bg-indigo-50 font-medium"
                   >
                     {t("nav.profile")}
                   </Button>
                 </Link>
                 <Button
                   variant="outline"
-                  className="hidden sm:flex border-white text-white hover:bg-white hover:text-indigo-700"
+                  className="hidden sm:flex bg-white text-indigo-700 border-white hover:bg-indigo-50 font-medium"
                   onClick={handleLogout}
                   data-testid="logout-button"
                 >

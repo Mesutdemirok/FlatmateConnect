@@ -27,6 +27,7 @@ const createListingSchema = z.object({
   title: z.string().min(10, 'Başlık en az 10 karakter olmalıdır'),
   rentAmount: z.coerce.number().positive('Kira tutarı 0\'dan büyük olmalıdır'),
   billsIncluded: z.enum(['yes', 'no']),
+  excludedBills: z.array(z.string()).optional().default([]),
   propertyType: z.string().min(1, 'Lütfen konut tipini seçiniz'),
   internetIncluded: z.enum(['yes', 'no']),
   totalRooms: z.coerce.number().int().positive('Oda sayısı 0\'dan büyük olmalıdır'),
@@ -56,6 +57,7 @@ export default function CreateListing() {
       title: '',
       rentAmount: 0,
       billsIncluded: 'no',
+      excludedBills: [],
       propertyType: '',
       internetIncluded: 'no',
       totalRooms: 0,
@@ -67,6 +69,9 @@ export default function CreateListing() {
       smokingPolicy: '',
     },
   });
+
+  // Watch billsIncluded field to show/hide excluded bills
+  const billsIncluded = form.watch('billsIncluded');
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -91,6 +96,7 @@ export default function CreateListing() {
         title: data.title,
         rentAmount: data.rentAmount.toString(),
         billsIncluded: data.billsIncluded === 'yes',
+        excludedBills: data.excludedBills || [],
         propertyType: data.propertyType,
         internetIncluded: data.internetIncluded === 'yes',
         totalRooms: data.totalRooms,
@@ -310,6 +316,58 @@ export default function CreateListing() {
                   )}
                 />
 
+                {/* 4b. Dahil olmayan faturalar (conditional) */}
+                {billsIncluded === 'no' && (
+                  <FormField
+                    control={form.control}
+                    name="excludedBills"
+                    render={() => (
+                      <FormItem>
+                        <div className="mb-3">
+                          <FormLabel className="text-base">Hangi faturalar dahil değil?</FormLabel>
+                          <FormDescription>Dahil olmayan faturaları işaretleyin</FormDescription>
+                        </div>
+                        <div className="space-y-3">
+                          {['Su', 'Elektrik', 'Telefon', 'Doğalgaz', 'İnternet'].map((bill) => (
+                            <FormField
+                              key={bill}
+                              control={form.control}
+                              name="excludedBills"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={bill}
+                                    className="flex flex-row items-start space-x-3 space-y-0"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(bill)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...field.value, bill])
+                                            : field.onChange(
+                                                field.value?.filter(
+                                                  (value) => value !== bill
+                                                )
+                                              );
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-normal">
+                                      {bill}
+                                    </FormLabel>
+                                  </FormItem>
+                                );
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 {/* 5. Konut tipi nedir? */}
                 <FormField
                   control={form.control}
@@ -325,7 +383,6 @@ export default function CreateListing() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="rezidans">Rezidans</SelectItem>
-                          <SelectItem value="apartman">Apartman</SelectItem>
                           <SelectItem value="daire">Daire</SelectItem>
                           <SelectItem value="mustakil">Müstakil Ev</SelectItem>
                           <SelectItem value="diger">Diğer</SelectItem>

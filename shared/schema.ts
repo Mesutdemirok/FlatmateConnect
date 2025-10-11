@@ -55,6 +55,7 @@ export const listings = pgTable("listings", {
   title: varchar("title").notNull(),
   rentAmount: decimal("rent_amount", { precision: 8, scale: 2 }).notNull(), // Monthly rent
   billsIncluded: boolean("bills_included").default(false), // Utilities included
+  excludedBills: text("excluded_bills").array().default(sql`ARRAY[]::text[]`), // Bills not included when billsIncluded is false
   
   // Property Details  
   propertyType: varchar("property_type"), // Rezidans/Apartman/Daire/Müstakil Ev/Diğer
