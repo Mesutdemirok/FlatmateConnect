@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +46,14 @@ export default function CreateSeekerProfile() {
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Fetch existing seeker profile for editing
+  const { data: existingProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ['/api/seekers/user', user?.id],
+    enabled: isAuthenticated && !!user?.id,
+  });
+
+  const isEditMode = !!existingProfile;
+
   const form = useForm<CreateSeekerFormData>({
     resolver: zodResolver(createSeekerSchema),
     defaultValues: {
@@ -67,6 +75,29 @@ export default function CreateSeekerProfile() {
     },
   });
 
+  // Pre-populate form with existing data when editing
+  useEffect(() => {
+    if (existingProfile) {
+      form.reset({
+        fullName: existingProfile.fullName || '',
+        age: existingProfile.age || 0,
+        gender: existingProfile.gender || '',
+        occupation: existingProfile.occupation || '',
+        budgetMonthly: existingProfile.budgetMonthly ? parseFloat(existingProfile.budgetMonthly) : 0,
+        about: existingProfile.about || '',
+        preferredLocation: existingProfile.preferredLocation || '',
+        smokingPreference: existingProfile.smokingPreference || '',
+        petPreference: existingProfile.petPreference || '',
+        cleanlinessLevel: existingProfile.cleanlinessLevel || '',
+        socialLevel: existingProfile.socialLevel || '',
+        workSchedule: existingProfile.workSchedule || '',
+        agePreferenceMin: existingProfile.agePreferenceMin,
+        agePreferenceMax: existingProfile.agePreferenceMax,
+        genderPreference: existingProfile.genderPreference || '',
+      });
+    }
+  }, [existingProfile, form]);
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -84,7 +115,7 @@ export default function CreateSeekerProfile() {
 
   const createSeekerMutation = useMutation({
     mutationFn: async (data: CreateSeekerFormData) => {
-      const response = await apiRequest('POST', '/api/seekers', {
+      const payload = {
         userId: user?.id,
         fullName: data.fullName,
         age: data.age,
@@ -102,7 +133,12 @@ export default function CreateSeekerProfile() {
         agePreferenceMin: data.agePreferenceMin || null,
         agePreferenceMax: data.agePreferenceMax || null,
         genderPreference: data.genderPreference || null,
-      });
+      };
+
+      // Use PUT for editing, POST for creating
+      const method = isEditMode ? 'PUT' : 'POST';
+      const endpoint = isEditMode ? `/api/seekers/${existingProfile.id}` : '/api/seekers';
+      const response = await apiRequest(method, endpoint, payload);
       return response.json();
     },
     onSuccess: async (seeker) => {
@@ -127,7 +163,7 @@ export default function CreateSeekerProfile() {
       
       toast({
         title: 'Başarılı!',
-        description: 'Profil başarıyla oluşturuldu.'
+        description: isEditMode ? 'Profil başarıyla güncellendi.' : 'Profil başarıyla oluşturuldu.'
       });
       
       setLocation('/profil');
@@ -183,10 +219,10 @@ export default function CreateSeekerProfile() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Oda Arama İlanı Oluştur
+            {isEditMode ? 'Oda Arama İlanımı Düzenle' : 'Oda Arama İlanı Oluştur'}
           </h1>
           <p className="text-muted-foreground">
-            Profilinizi oluşturun ve mükemmel odayı bulun
+            {isEditMode ? 'Profil bilgilerinizi güncelleyin' : 'Profilinizi oluşturun ve mükemmel odayı bulun'}
           </p>
         </div>
 

@@ -1,0 +1,108 @@
+
+
+🔹 OBJECTIVE
+
+Fix and complete the “Oda Arama İlanı Ver” listing system so that user-created seeker listings:
+	•	appear correctly in the user’s Profilim → İlanlarım section,
+	•	display on the homepage under “Oda Arayanlar”,
+	•	are editable by the user,
+	•	and all pages are 100 % in Turkish, with no fake or English text remaining.
+
+⸻
+
+🔹 TASKS TO IMPLEMENT
+
+1️⃣ Listing Visibility & Data Linking
+	•	When a user submits the Oda Arama İlanı Ver form:
+	•	Automatically create or update their seeker listing.
+	•	Display it in two places:
+	•	Profilim → İlanlarım tab.
+	•	Homepage → “Oda Arayanlar” cards.
+	•	Ensure each seeker listing is linked to that user’s account.
+	•	If a user already has a seeker listing, submitting again should update it, not duplicate it.
+
+⸻
+
+2️⃣ Edit Listing Functionality
+	•	Allow users to edit both “Oda İlanı” (room listing) and “Oda Arama İlanı” (seeker listing).
+	•	Users can edit from:
+	•	“Profilim → İlanlarım” tab, or
+	•	the listing detail page (via an “İlanımı Düzenle” button).
+	•	After editing, data must sync immediately on:
+	•	Homepage listing cards,
+	•	Profile listing view,
+	•	Database backend.
+
+⸻
+
+3️⃣ Remove Fake / Irrelevant Data
+
+From Profilim → Kişisel Bilgiler, remove these unnecessary elements:
+	•	⭐ “4.8 rating”
+	•	“12 reviews”
+	•	“Member since 2025”
+
+Show only real, relevant data:
+	•	Ad
+	•	Soyad
+	•	E-posta
+	•	Profil fotoğrafı
+
+⸻
+
+4️⃣ Full Turkish Localization (No English Anywhere)
+	•	Translate all remaining English text into Turkish.
+	•	Specific replacements:
+	•	“Account Details” → “Hesap Bilgileri”
+	•	“Verification Status” → “Doğrulama Durumu”
+	•	“unverified” → “Doğrulanmadı”
+	•	Check every component (Profile, Listing, Homepage, Header, Buttons, Forms, etc.) for leftover English text and translate to Turkish.
+	•	No English phrases should remain across any UI element.
+
+⸻
+
+5️⃣ Homepage & Card Integration
+	•	Make sure “Oda Arayanlar” cards display real seeker data from the database.
+	•	Each card should show:
+	•	Profil fotoğrafı (or default avatar)
+	•	Ad Soyad (first name + initial)
+	•	Yaş
+	•	Cinsiyet
+	•	Aylık bütçe (₺…/ay)
+	•	Lokasyon
+	•	Prevent placeholder or repeated data (no “İstanbul” clones or static examples).
+	•	Cards link to the seeker’s detail or editable profile.
+
+⸻
+
+6️⃣ Fix Submission Flow
+	•	Confirm that submitting Oda Arama İlanı Ver correctly saves all data and photo uploads.
+	•	If validation errors like Expected string, received number occur:
+	•	Adjust backend schema to accept both string and numeric input for rent/budget.
+	•	Normalize these fields server-side before saving.
+	•	Verify that uploaded photos save to /uploads, display in profile and card views.
+
+⸻
+
+7️⃣ Verification & Testing
+
+After implementing everything:
+	1.	Rebuild and start the project.
+	2.	Create a new seeker listing with a profile photo.
+	3.	Verify it appears:
+	•	In Profilim → İlanlarım.
+	•	On Homepage → Oda Arayanlar.
+	4.	Edit the listing and confirm it updates everywhere instantly.
+	5.	Check the profile and ensure all text is in Turkish.
+	6.	Ensure there are no fake “rating/review/member since” elements.
+	7.	Confirm homepage cards use the real database data.
+
+⸻
+
+✅ EXPECTED OUTCOME
+	•	Users can submit, view, and edit both listing types (“Oda İlanı” & “Oda Arayan İlanı”).
+	•	Data syncs seamlessly between form, profile, and homepage.
+	•	All UI is fully Turkish and realistic.
+	•	No dummy or English text remains.
+	•	Project rebuilds and runs cleanly without validation or console errors.
+

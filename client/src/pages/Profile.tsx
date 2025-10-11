@@ -28,8 +28,6 @@ import {
   Heart, 
   Home, 
   Shield, 
-  Star,
-  Calendar,
   Loader2
 } from "lucide-react";
 import { z } from "zod";
@@ -193,7 +191,7 @@ export default function Profile() {
             {t('profile.title')}
           </h1>
           <p className="text-muted-foreground" data-testid="page-subtitle">
-            Manage your account and preferences
+            Hesabınızı ve tercihlerinizi yönetin
           </p>
         </div>
 
@@ -287,50 +285,34 @@ export default function Profile() {
                     )}
                   </div>
                   
-                  <Separator />
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-accent" />
-                      <span className="text-sm text-muted-foreground">4.8 rating • 12 reviews</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        Member since {user?.createdAt ? new Date(user.createdAt).getFullYear() : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
 
               <Card className="lg:col-span-2">
                 <CardHeader>
-                  <CardTitle>Account Details</CardTitle>
+                  <CardTitle>Hesap Bilgileri</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground">
-                    Your account information is managed through our secure authentication system. 
-                    To update your personal details, please contact support.
+                    Hesap bilgileriniz güvenli kimlik doğrulama sistemimiz tarafından yönetilmektedir.
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">{t('profile.first_name')}</label>
-                      <p className="text-foreground">{user?.firstName || t('common.not_provided')}</p>
+                      <label className="text-sm font-medium text-muted-foreground">Ad</label>
+                      <p className="text-foreground">{user?.firstName || 'Belirtilmemiş'}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">{t('profile.last_name')}</label>
-                      <p className="text-foreground">{user?.lastName || t('common.not_provided')}</p>
+                      <label className="text-sm font-medium text-muted-foreground">Soyad</label>
+                      <p className="text-foreground">{user?.lastName || 'Belirtilmemiş'}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">{t('profile.email')}</label>
-                      <p className="text-foreground">{user?.email || t('common.not_provided')}</p>
+                      <label className="text-sm font-medium text-muted-foreground">E-posta</label>
+                      <p className="text-foreground">{user?.email || 'Belirtilmemiş'}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Verification Status</label>
-                      <p className="text-foreground">{user?.verificationStatus || t('common.unverified')}</p>
+                      <label className="text-sm font-medium text-muted-foreground">Doğrulama Durumu</label>
+                      <p className="text-foreground">{user?.verificationStatus === 'verified' ? 'Doğrulandı' : 'Doğrulanmadı'}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -344,7 +326,7 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle>{t('profile.preferences')}</CardTitle>
                 <p className="text-muted-foreground">
-                  Help us match you with compatible flatmates by setting your preferences
+                  Uyumlu ev arkadaşları ile eşleşmenize yardımcı olmak için tercihlerinizi belirleyin
                 </p>
               </CardHeader>
               <CardContent>
@@ -589,58 +571,132 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle>{t('profile.my_listings')}</CardTitle>
                 <p className="text-muted-foreground">
-                  Manage your room listings
+                  Oda ilanlarınızı ve oda arama ilanınızı yönetin
                 </p>
               </CardHeader>
-              <CardContent>
-                {listingsLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="border rounded-lg overflow-hidden">
-                        <Skeleton className="w-full h-48" />
-                        <div className="p-4">
-                          <Skeleton className="h-4 w-3/4 mb-2" />
-                          <Skeleton className="h-3 w-1/2" />
+              <CardContent className="space-y-8">
+                {/* Room Listings Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Oda İlanlarım</h3>
+                  {listingsLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="border rounded-lg overflow-hidden">
+                          <Skeleton className="w-full h-48" />
+                          <div className="p-4">
+                            <Skeleton className="h-4 w-3/4 mb-2" />
+                            <Skeleton className="h-3 w-1/2" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : myListings?.length === 0 ? (
+                    <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                      <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Henüz oda ilanınız yok</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Kiralık odanızı ilan edin ve uygun ev arkadaşları bulun
+                      </p>
+                      <Button onClick={() => setLocation('/ilan-olustur')}>
+                        Oda İlanı Ver
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="my-listings-grid">
+                      {myListings?.map((listing: any) => (
+                        <div 
+                          key={listing.id} 
+                          className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => setLocation(`/oda-ilani/${listing.id}`)}
+                        >
+                          <div className="relative">
+                            <img
+                              src={listing.images?.find((img: any) => img.isPrimary)?.imagePath || listing.images?.[0]?.imagePath || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250'}
+                              alt={listing.title}
+                              className="w-full h-32 object-cover"
+                            />
+                            <Badge 
+                              className={`absolute top-2 right-2 ${listing.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`}
+                            >
+                              {listing.status === 'active' ? 'Aktif' : 'Pasif'}
+                            </Badge>
+                          </div>
+                          <div className="p-4">
+                            <h4 className="font-semibold mb-1">{listing.title}</h4>
+                            <p className="text-sm text-muted-foreground mb-2">{listing.address}</p>
+                            <p className="text-lg font-bold text-primary">₺{Math.round(Number(listing.rentAmount))}/ay</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Seeker Profile Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Oda Arama İlanım</h3>
+                  {preferencesLoading ? (
+                    <div className="border rounded-lg overflow-hidden">
+                      <Skeleton className="w-full h-48" />
+                      <div className="p-4">
+                        <Skeleton className="h-4 w-3/4 mb-2" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </div>
+                  ) : !mySeekerProfile ? (
+                    <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                      <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Henüz oda arama ilanınız yok</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Oda arama profilinizi oluşturun ve size uygun odaları bulun
+                      </p>
+                      <Button onClick={() => setLocation('/oda-arama-ilani-olustur')}>
+                        Oda Arama İlanı Ver
+                      </Button>
+                    </div>
+                  ) : (
+                    <div 
+                      className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => setLocation(`/oda-arayan/${mySeekerProfile.id}`)}
+                    >
+                      <div className="relative">
+                        <img
+                          src={mySeekerProfile.profilePhotoUrl || 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400'}
+                          alt={mySeekerProfile.fullName}
+                          className="w-full h-48 object-cover"
+                        />
+                        <Badge className="absolute top-2 right-2 bg-purple-500">
+                          Oda Arayan
+                        </Badge>
+                      </div>
+                      <div className="p-4">
+                        <h4 className="font-semibold mb-2">{mySeekerProfile.fullName}</h4>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          <p>{mySeekerProfile.age} yaş • {mySeekerProfile.gender === 'male' ? 'Erkek' : mySeekerProfile.gender === 'female' ? 'Kadın' : 'Belirtilmemiş'}</p>
+                          <p className="text-primary font-semibold">₺{mySeekerProfile.budgetMonthly}/ay bütçe</p>
+                          <p>{mySeekerProfile.preferredLocation}</p>
+                        </div>
+                        <div className="flex gap-2 mt-3 flex-wrap">
+                          {mySeekerProfile.cleanlinessLevel && (
+                            <Badge variant="outline" className="text-xs">
+                              {mySeekerProfile.cleanlinessLevel === 'very-clean' ? 'Çok Temiz' : 
+                               mySeekerProfile.cleanlinessLevel === 'clean' ? 'Temiz' : 
+                               mySeekerProfile.cleanlinessLevel === 'average' ? 'Orta' : 'Rahat'}
+                            </Badge>
+                          )}
+                          {mySeekerProfile.smokingPreference && (
+                            <Badge variant="outline" className="text-xs">
+                              {mySeekerProfile.smokingPreference === 'non-smoker' ? 'Sigara İçmiyor' : 
+                               mySeekerProfile.smokingPreference === 'smoker' ? 'Sigara İçiyor' : 'Sosyal İçici'}
+                            </Badge>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : myListings?.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">{t('listings.no_listings_available')}</h3>
-                    <p className="text-muted-foreground mb-4">
-                      {t('listings.no_listings_message')}
-                    </p>
-                    <Button onClick={() => setLocation('/ilan-olustur')}>
-                      {t('listings.list_your_room')}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="my-listings-grid">
-                    {myListings?.map((listing: any) => (
-                      <div key={listing.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                        <div className="relative">
-                          <img
-                            src={listing.images[0]?.imagePath || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250'}
-                            alt={listing.title}
-                            className="w-full h-32 object-cover"
-                          />
-                          <Badge 
-                            className={`absolute top-2 right-2 ${listing.status === 'active' ? 'bg-secondary' : 'bg-muted'}`}
-                          >
-                            {listing.status}
-                          </Badge>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold mb-1">{listing.title}</h4>
-                          <p className="text-sm text-muted-foreground mb-2">{listing.suburb}</p>
-                          <p className="text-lg font-bold">${Math.round(Number(listing.rentAmount))}/week</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -651,7 +707,7 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle>{t('profile.favorites')}</CardTitle>
                 <p className="text-muted-foreground">
-                  Your saved room listings
+                  Kaydettiğiniz oda ilanları
                 </p>
               </CardHeader>
               <CardContent>
@@ -670,9 +726,9 @@ export default function Profile() {
                 ) : favorites?.length === 0 ? (
                   <div className="text-center py-8">
                     <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No favorites yet</h3>
+                    <h3 className="text-lg font-semibold mb-2">Henüz favori eklemediniz</h3>
                     <p className="text-muted-foreground mb-4">
-                      Start browsing and save listings you're interested in.
+                      İlgilendiğiniz ilanları göz atmaya başlayın ve kaydedin.
                     </p>
                     <Button onClick={() => setLocation('/oda-ilanlari')}>
                       {t('nav.browse_rooms')}
@@ -681,18 +737,22 @@ export default function Profile() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="favorites-grid">
                     {favorites?.map((favorite: any) => (
-                      <div key={favorite.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                      <div 
+                        key={favorite.id} 
+                        className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => setLocation(`/oda-ilani/${favorite.listing.id}`)}
+                      >
                         <div className="relative">
                           <img
-                            src={favorite.listing.images[0]?.imagePath || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250'}
+                            src={favorite.listing.images?.find((img: any) => img.isPrimary)?.imagePath || favorite.listing.images?.[0]?.imagePath || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250'}
                             alt={favorite.listing.title}
                             className="w-full h-32 object-cover"
                           />
                         </div>
                         <div className="p-4">
                           <h4 className="font-semibold mb-1">{favorite.listing.title}</h4>
-                          <p className="text-sm text-muted-foreground mb-2">{favorite.listing.suburb}</p>
-                          <p className="text-lg font-bold">${Math.round(Number(favorite.listing.rentAmount))}/week</p>
+                          <p className="text-sm text-muted-foreground mb-2">{favorite.listing.address}</p>
+                          <p className="text-lg font-bold text-primary">₺{Math.round(Number(favorite.listing.rentAmount))}/ay</p>
                         </div>
                       </div>
                     ))}
