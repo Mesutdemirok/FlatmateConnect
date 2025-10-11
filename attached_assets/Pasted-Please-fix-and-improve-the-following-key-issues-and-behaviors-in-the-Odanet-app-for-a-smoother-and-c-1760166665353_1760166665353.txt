@@ -1,0 +1,65 @@
+Please fix and improve the following key issues and behaviors in the Odanet app for a smoother and consistent experience across all users (logged-in or guest).  
+
+---
+
+### 🔧 1. Listing Form Submission Issue
+- When creating a new “İlan” (listing), the form doesn’t submit after all sections are filled.
+✅ Fix:
+- Identify the cause (frontend validation or backend POST issue).
+- Ensure the “İlan Oluştur” button correctly triggers listing creation and sends form data (including images and metadata) to the backend.
+- Confirm success redirects the user to the new listing’s details page with a success toast message.
+
+---
+
+### 🟣 2. Public Access to Room Seeker Cards
+- Currently, “Oda Arayanlar” cards are visible only to logged-in users.
+✅ Fix:
+- Make all seeker cards (FeaturedRoomSeekers + Oda Arayanlar page) publicly visible.
+- Ensure guest users can view these cards and click them without needing to log in.
+
+---
+
+### 🔗 3. Room Seeker Card Links (404 Fix)
+- Clicking a seeker card leads to “404 Sayfa Bulunamadı”.
+✅ Fix:
+- Ensure each seeker card links correctly to its dynamic detail page (e.g., `/seekers/:id`).
+- Restore or create the corresponding route and page to show full seeker profile details.
+
+---
+
+### 👤 4. Redirect After Login
+✅ Update login flow:
+- After successful login, redirect users automatically to their **Profile page** instead of the homepage.
+- Show a short success toast like “Hoş geldiniz, [userName]!”
+
+---
+
+### 🏠 5. Consistent Homepage for All Users
+✅ Fix:
+- Make the homepage visually identical for logged-in and guest users.
+- Ensure both can see the same hero section, listings, and room seekers.
+- Adjust header buttons dynamically (e.g., “Üye Ol” → “Profil / Çıkış Yap” when logged in).
+
+---
+
+### 🧠 6. Optional Enhancements (recommended for better UX)
+- Add loading states to “İlan Oluştur” and “Oda Arayanlar” sections for smoother feedback.
+- Improve form validation messages (e.g., “Lütfen fiyat giriniz” instead of generic errors).
+- Optimize card image display with fallback placeholders if no image uploaded.
+- Improve mobile spacing between hero, listings, and seeker cards.
+
+---
+
+### 🧩 7. Post-Fix Verification
+After applying the fixes:
+✅ Test all main flows:
+1. Submit a listing (İlan oluştur)
+2. View seekers on homepage (logged out)
+3. Click a seeker card (navigate to correct profile)
+4. Login → automatically redirected to profile
+5. Check homepage looks identical for both logged and guest users
+
+---
+
+Please implement all fixes above and perform a full functionality check to ensure everything works smoothly.  
+Keep the current purple gradient aesthetic and existing UI design consistent.

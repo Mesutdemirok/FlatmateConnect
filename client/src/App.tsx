@@ -9,6 +9,7 @@ import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
 import ListingDetail from "@/pages/ListingDetail";
+import SeekerDetail from "@/pages/SeekerDetail";
 import CreateListing from "@/pages/CreateListing";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
@@ -42,16 +43,8 @@ function Router() {
       <Route path="/auth/login" component={Login} />
       <Route path="/auth/register" component={Register} />
       
-      {/* Home route - Landing or Home based on auth */}
-      {isLoading ? (
-        <Route path="/">
-          <div className="min-h-screen flex items-center justify-center">Yükleniyor...</div>
-        </Route>
-      ) : !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <Route path="/" component={Home} />
-      )}
+      {/* Home route - Same for all users */}
+      <Route path="/" component={Home} />
       
       {/* Protected routes */}
       <Route path="/profile">
@@ -67,6 +60,7 @@ function Router() {
       {/* Public routes */}
       <Route path="/search" component={Search} />
       <Route path="/listing/:id" component={ListingDetail} />
+      <Route path="/seeker/:id" component={SeekerDetail} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

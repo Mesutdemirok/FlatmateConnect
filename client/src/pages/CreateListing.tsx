@@ -35,12 +35,17 @@ export default function CreateListing() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [images, setImages] = useState<File[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Create schema with translated error messages
+  // Create schema with specific validation messages
   const createListingSchema = insertListingSchema.extend({
-    rentAmount: z.string().min(1, t('errors.required')),
+    rentAmount: z.string().min(1, 'Lütfen haftalık kira tutarını giriniz'),
     bondAmount: z.string().optional(),
+  }).refine(data => data.title && data.title.length >= 10, {
+    message: 'Başlık en az 10 karakter olmalıdır',
+    path: ['title'],
+  }).refine(data => data.suburb, {
+    message: 'Lütfen semt giriniz',
+    path: ['suburb'],
   });
 
   const form = useForm<CreateListingFormData>({
@@ -71,15 +76,15 @@ export default function CreateListing() {
     if (!authLoading && !isAuthenticated) {
       toast({
         title: t('errors.unauthorized'),
-        description: t('auth.sign_out'),
+        description: 'İlan oluşturmak için giriş yapmalısınız',
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        setLocation(`/auth/login?next=${encodeURIComponent('/create-listing')}`);
       }, 500);
       return;
     }
-  }, [isAuthenticated, authLoading, toast]);
+  }, [isAuthenticated, authLoading, toast, setLocation]);
 
   const createListingMutation = useMutation({
     mutationFn: async (data: CreateListingFormData) => {
@@ -128,11 +133,11 @@ export default function CreateListing() {
       if (isUnauthorizedError(error)) {
         toast({
           title: t('errors.unauthorized'),
-          description: t('auth.sign_out'),
+          description: 'İlan oluşturmak için giriş yapmalısınız',
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          setLocation(`/auth/login?next=${encodeURIComponent('/create-listing')}`);
         }, 500);
         return;
       }
@@ -145,9 +150,9 @@ export default function CreateListing() {
   });
 
   const onSubmit = (data: CreateListingFormData) => {
-    setIsSubmitting(true);
+    console.log('Form data:', data);
+    console.log('Form errors:', form.formState.errors);
     createListingMutation.mutate(data);
-    setIsSubmitting(false);
   };
 
   if (authLoading) {
@@ -626,11 +631,11 @@ export default function CreateListing() {
               </Button>
               <Button 
                 type="submit" 
-                disabled={isSubmitting || createListingMutation.isPending}
+                disabled={createListingMutation.isPending}
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
                 data-testid="submit-button"
               >
-                {isSubmitting || createListingMutation.isPending ? (
+                {createListingMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     {t('create_listing.creating', 'İlan Oluşturuluyor...')}

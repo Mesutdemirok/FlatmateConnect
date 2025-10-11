@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 
 export default function Login() {
   const [, navigate] = useLocation();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
   
@@ -19,7 +19,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   const params = new URLSearchParams(window.location.search);
-  const nextPath = params.get('next') || '/';
+  const nextPath = params.get('next') || '/profile';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +27,10 @@ export default function Login() {
 
     try {
       await login(email, password);
+      const userName = email.split('@')[0];
       toast({
         title: t('auth.login_success'),
-        description: t('auth.welcome_back'),
+        description: `Hoş geldiniz, ${userName}!`,
       });
       navigate(nextPath);
     } catch (error: any) {
