@@ -55,3 +55,19 @@ export function formatDateRelative(date: string | Date): string {
   
   return `${Math.floor(diffDays / 365)} yıl önce`;
 }
+
+/**
+ * Format monthly price with period suffix
+ */
+export function formatMonthlyPrice(amount: number | null | undefined, period: string = 'month'): string {
+  if (!amount) return '₺0/ay';
+  
+  const formattedAmount = new Intl.NumberFormat('tr-TR', {
+    style: 'currency',
+    currency: 'TRY',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+  
+  return `${formattedAmount}/ay`;
+}
