@@ -77,6 +77,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 11, 2025 - Homepage Image Display & Section Reordering
+- **Listing Images Fixed**: Updated FeaturedListings component to properly extract image paths from images array
+  - Primary image selection: `listing.images?.find(img => img.isPrimary)?.imagePath`
+  - Fallback to first image if no primary: `listing.images?.[0]?.imagePath`
+  - Unsplash fallback for listings without images
+- **Static File Serving**: Added Express static middleware to serve uploaded files from `/uploads` directory
+  - Images now accessible via HTTP at `/uploads/listings/*` paths
+  - Confirmed working with uploaded PNG and JPEG files
+- **Homepage Layout**: Reordered sections to prioritize room listings over seeker profiles
+  - New order: Hero → FeaturedListings → FeaturedRoomSeekers
+  - Improved user experience by showing available rooms first
+
 ### October 11, 2025 - Complete Turkish URL Implementation
 - **Turkish URL Structure**: Converted all application URLs to Turkish for local market SEO and user experience
   - Route mappings: `/auth/login` → `/giris`, `/auth/register` → `/uye-ol`, `/profile` → `/profil`, `/messages` → `/mesajlar`, `/create-listing` → `/ilan-olustur`, `/search` → `/oda-ilanlari`, `/listing/:id` → `/oda-ilani/:id`, `/seeker/:id` → `/oda-arayan/:id`, `/favorites` → `/favoriler`, `/how-it-works` → `/nasil-calisir`
