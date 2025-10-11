@@ -71,7 +71,7 @@ export default function FeaturedListings() {
           {featuredListings.map((listing) => (
             <article
               key={listing.id}
-              onClick={() => navigate(`/listing/${listing.id}`)}
+              onClick={() => navigate(`/oda-ilani/${listing.id}`)}
               className="
                 bg-white rounded-2xl shadow-md border border-slate-200
                 overflow-hidden transition-transform duration-300
@@ -116,7 +116,7 @@ export default function FeaturedListings() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/listing/${listing.id}`);
+                      navigate(`/oda-ilani/${listing.id}`);
                     }}
                     className="
                       text-xs sm:text-sm font-medium text-indigo-700

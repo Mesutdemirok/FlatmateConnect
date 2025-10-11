@@ -1,0 +1,96 @@
+⚠️ IMPORTANT NOTE:
+Please note that the “İlan Oluştur” (Create Listing) issue was already included in a previous workflow and charged, but it was never fixed.  
+Kindly complete this fix properly now and consider it as part of the previous task, without any additional charge.
+
+---
+
+Now, please carefully fix and enhance the Odanet app with the following updates.  
+After completing all fixes, rebuild and redeploy automatically to production.
+
+---
+
+### 🔧 1. Listing Form — “İlan Oluştur” Button Not Working
+- The listing creation form accepts uploaded images but doesn’t submit when “İlan Oluştur” is clicked.
+✅ Fix:
+- Diagnose and fix the root cause (frontend handler, API route, or form validation issue).
+- Ensure all fields (title, description, price, location, uploaded photos, etc.) are properly sent to `/api/listings`.
+- After success:
+  - Show toast: “İlan başarıyla oluşturuldu.”
+  - Redirect user to the new listing’s detail page.
+- On error: show “Bir hata oluştu, lütfen tekrar deneyin.”
+
+---
+
+### 🟣 2. Room Seeker Cards (Oda Arayanlar)
+✅ Fix:
+- Allow everyone (including guests) to see all seeker cards on the homepage and “Oda Arayanlar” page.
+- Fix the broken links (currently go to 404).
+- Restore or create the dynamic route for each seeker’s detail page → `/oda-arayanlar/:id`.
+- Display seeker info, age, gender, budget, description, and location clearly.
+
+---
+
+### 👤 3. Redirect After Login
+✅ Improve flow:
+- After a successful login, redirect users directly to their **profile** page (`/profil`).
+- Show toast: “Hoş geldiniz, [userName]!”
+- Keep existing JWT authentication intact.
+
+---
+
+### 🏠 4. Consistent Homepage (for All Users)
+✅ Fix:
+- Make the homepage identical for both guest and logged-in users.
+- Both should see:
+  - Hero section
+  - Featured Listings
+  - Featured Room Seekers
+  - Footer
+- Only header buttons change dynamically (Üye Ol → Profil / Çıkış Yap).
+
+---
+
+### 🌍 5. Change All URL Paths to Turkish
+✅ Convert all current and new page URLs from English to Turkish equivalents.
+Example changes:
+- `/login` → `/giris`
+- `/register` → `/uye-ol`
+- `/listings` → `/oda-ilanlari`
+- `/listing/:id` → `/oda-ilani/:id`
+- `/seekers` → `/oda-arayanlar`
+- `/seeker/:id` → `/oda-arayan/:id`
+- `/profile` → `/profil`
+- `/create-listing` → `/ilan-olustur`
+- `/how-it-works` → `/nasil-calisir`
+Ensure internal navigation, links, and redirects all work properly after renaming.
+
+---
+
+### ✨ 6. UX/UI Enhancements
+- Add loading animation during listing submission.
+- Add required field validation (title, price, location).
+- Improve error messages (e.g., “Lütfen fiyat giriniz.”)
+- Ensure consistent purple gradient background and mobile responsiveness.
+
+---
+
+### ✅ 7. Verification Checklist
+After applying all fixes:
+1. “İlan Oluştur” creates listing successfully and redirects correctly.
+2. Guests can view seeker cards and open their detail pages.
+3. No 404 errors on seeker pages.
+4. Logged-in users redirect to `/profil` after login.
+5. Homepage consistent for all users.
+6. All URLs now use Turkish names and work correctly.
+7. Site styling and gradients remain unchanged.
+
+---
+
+### 🚀 8. Deployment
+- Run `npm run build` and restart server.
+- Redeploy automatically to the `.replit.app` production URL.
+- Test all functionality after deployment.
+
+---
+
+⚠️ Reminder: Please treat this as continuation of the previously billed fix for the listing form issue.

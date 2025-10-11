@@ -27,7 +27,7 @@ function ProtectedRoute({ component: Component, ...rest }: { component: () => JS
 
   if (!isAuthenticated) {
     const currentPath = rest.path || location;
-    navigate(`/auth/login?next=${encodeURIComponent(currentPath)}`);
+    navigate(`/giris?next=${encodeURIComponent(currentPath)}`);
     return null;
   }
 
@@ -39,28 +39,28 @@ function Router() {
 
   return (
     <Switch>
-      {/* Auth routes */}
-      <Route path="/auth/login" component={Login} />
-      <Route path="/auth/register" component={Register} />
+      {/* Auth routes - Turkish URLs */}
+      <Route path="/giris" component={Login} />
+      <Route path="/uye-ol" component={Register} />
       
       {/* Home route - Same for all users */}
       <Route path="/" component={Home} />
       
-      {/* Protected routes */}
-      <Route path="/profile">
-        <ProtectedRoute component={Profile} path="/profile" />
+      {/* Protected routes - Turkish URLs */}
+      <Route path="/profil">
+        <ProtectedRoute component={Profile} path="/profil" />
       </Route>
-      <Route path="/messages">
-        <ProtectedRoute component={Messages} path="/messages" />
+      <Route path="/mesajlar">
+        <ProtectedRoute component={Messages} path="/mesajlar" />
       </Route>
-      <Route path="/create-listing">
-        <ProtectedRoute component={CreateListing} path="/create-listing" />
+      <Route path="/ilan-olustur">
+        <ProtectedRoute component={CreateListing} path="/ilan-olustur" />
       </Route>
       
-      {/* Public routes */}
-      <Route path="/search" component={Search} />
-      <Route path="/listing/:id" component={ListingDetail} />
-      <Route path="/seeker/:id" component={SeekerDetail} />
+      {/* Public routes - Turkish URLs */}
+      <Route path="/oda-ilanlari" component={Search} />
+      <Route path="/oda-ilani/:id" component={ListingDetail} />
+      <Route path="/oda-arayan/:id" component={SeekerDetail} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

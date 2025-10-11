@@ -162,7 +162,7 @@ export default function Register() {
             <div className="text-sm text-center text-muted-foreground">
               {t('auth.already_have_account')}{" "}
               <a
-                href="/auth/login"
+                href="/giris"
                 className="text-primary hover:underline"
                 data-testid="link-login"
               >

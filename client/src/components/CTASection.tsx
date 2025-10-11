@@ -25,7 +25,7 @@ export default function CTASection() {
             <p className="text-muted-foreground mb-4" data-testid="search-cta-description">
               {t('cta.browse_verified_listings')}
             </p>
-            <Link href="/search">
+            <Link href="/oda-ilanlari">
               <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" data-testid="start-searching-button">
                 {t('cta.start_searching')}
               </Button>
@@ -39,13 +39,13 @@ export default function CTASection() {
               {t('cta.list_your_space')}
             </p>
             {isAuthenticated ? (
-              <Link href="/create-listing">
+              <Link href="/ilan-olustur">
                 <Button className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90" data-testid="list-room-button">
                   {t('cta.list_your_room')}
                 </Button>
               </Link>
             ) : (
-              <a href="/api/login">
+              <a href="/giris">
                 <Button className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90" data-testid="list-room-login-button">
                   {t('cta.list_your_room')}
                 </Button>

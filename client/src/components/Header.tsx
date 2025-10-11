@@ -30,21 +30,21 @@ export default function Header() {
             </div>
             <nav className="hidden md:flex space-x-6">
               <Link 
-                href="/search" 
+                href="/oda-ilanlari" 
                 className="text-foreground hover:text-primary transition-colors"
                 data-testid="nav-browse-rooms"
               >
                 {t('nav.browse_rooms')}
               </Link>
               <Link 
-                href="/create-listing" 
+                href="/ilan-olustur" 
                 className="text-foreground hover:text-primary transition-colors"
                 data-testid="nav-list-room"
               >
                 {t('nav.list_room')}
               </Link>
               <Link 
-                href="/how-it-works" 
+                href="/nasil-calisir" 
                 className="text-foreground hover:text-primary transition-colors"
                 data-testid="nav-how-it-works"
               >
@@ -56,17 +56,17 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <Link href="/favorites" data-testid="favorites-link">
+                <Link href="/favoriler" data-testid="favorites-link">
                   <Button variant="ghost" size="icon" aria-label={t('nav.favorites')}>
                     <Heart className="h-5 w-5" />
                   </Button>
                 </Link>
-                <Link href="/messages" data-testid="messages-link">
+                <Link href="/mesajlar" data-testid="messages-link">
                   <Button variant="ghost" size="icon" aria-label={t('nav.messages')}>
                     <MessageSquare className="h-5 w-5" />
                   </Button>
                 </Link>
-                <Link href="/profile" data-testid="profile-link">
+                <Link href="/profil" data-testid="profile-link">
                   <Button variant="outline" className="hidden sm:flex">
                     {t('nav.profile')}
                   </Button>
@@ -82,12 +82,12 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Link href="/auth/login" data-testid="login-link">
+                <Link href="/giris" data-testid="login-link">
                   <Button variant="outline" className="hidden sm:flex">
                     {t('nav.login')}
                   </Button>
                 </Link>
-                <Link href="/auth/register" data-testid="signup-link">
+                <Link href="/uye-ol" data-testid="signup-link">
                   <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
                     {t('nav.sign_up')}
                   </Button>
@@ -112,18 +112,18 @@ export default function Header() {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-card" data-testid="mobile-menu">
           <div className="px-4 py-4 space-y-4">
-            <Link href="/search" className="block text-foreground hover:text-primary transition-colors">
+            <Link href="/oda-ilanlari" className="block text-foreground hover:text-primary transition-colors">
               {t('nav.browse_rooms')}
             </Link>
-            <Link href="/create-listing" className="block text-foreground hover:text-primary transition-colors">
+            <Link href="/ilan-olustur" className="block text-foreground hover:text-primary transition-colors">
               {t('nav.list_room')}
             </Link>
-            <Link href="/how-it-works" className="block text-foreground hover:text-primary transition-colors">
+            <Link href="/nasil-calisir" className="block text-foreground hover:text-primary transition-colors">
               {t('nav.how_it_works')}
             </Link>
             {isAuthenticated ? (
               <>
-                <Link href="/profile" className="block text-foreground hover:text-primary transition-colors">
+                <Link href="/profil" className="block text-foreground hover:text-primary transition-colors">
                   {t('nav.profile')}
                 </Link>
                 <button 
@@ -136,10 +136,10 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="block text-foreground hover:text-primary transition-colors">
+                <Link href="/giris" className="block text-foreground hover:text-primary transition-colors">
                   {t('nav.login')}
                 </Link>
-                <Link href="/auth/register" className="block text-foreground hover:text-primary transition-colors">
+                <Link href="/uye-ol" className="block text-foreground hover:text-primary transition-colors">
                   {t('nav.sign_up')}
                 </Link>
               </>

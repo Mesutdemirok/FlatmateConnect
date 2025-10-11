@@ -80,7 +80,7 @@ export default function CreateListing() {
         variant: "destructive",
       });
       setTimeout(() => {
-        setLocation(`/auth/login?next=${encodeURIComponent('/create-listing')}`);
+        setLocation(`/giris?next=${encodeURIComponent('/ilan-olustur')}`);
       }, 500);
       return;
     }
@@ -127,7 +127,7 @@ export default function CreateListing() {
         description: t('success.listing_created')
       });
       
-      setLocation(`/listing/${listing.id}`);
+      setLocation(`/oda-ilani/${listing.id}`);
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -137,7 +137,7 @@ export default function CreateListing() {
           variant: "destructive",
         });
         setTimeout(() => {
-          setLocation(`/auth/login?next=${encodeURIComponent('/create-listing')}`);
+          setLocation(`/giris?next=${encodeURIComponent('/ilan-olustur')}`);
         }, 500);
         return;
       }

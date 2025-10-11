@@ -19,7 +19,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   const params = new URLSearchParams(window.location.search);
-  const nextPath = params.get('next') || '/profile';
+  const nextPath = params.get('next') || '/profil';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +90,7 @@ export default function Login() {
             <div className="text-sm text-center text-muted-foreground">
               {t('auth.no_account')}{" "}
               <a
-                href="/auth/register"
+                href="/uye-ol"
                 className="text-primary hover:underline"
                 data-testid="link-register"
               >

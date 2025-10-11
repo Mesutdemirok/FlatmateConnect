@@ -108,7 +108,7 @@ export default function FeaturedRoomSeekers() {
           <Card
             key={seeker.id}
             className="rounded-2xl shadow-md overflow-hidden border border-slate-200 hover:shadow-xl transition-shadow duration-300 cursor-pointer group"
-            onClick={() => navigate(`/seeker/${seeker.id}`)}
+            onClick={() => navigate(`/oda-arayan/${seeker.id}`)}
             data-testid={`seeker-card-${seeker.id}`}
           >
             {/* Photo Section */}
@@ -169,7 +169,7 @@ export default function FeaturedRoomSeekers() {
                 className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/seeker/${seeker.id}`);
+                  navigate(`/oda-arayan/${seeker.id}`);
                 }}
                 data-testid={`seeker-details-btn-${seeker.id}`}
               >

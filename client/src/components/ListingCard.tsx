@@ -74,7 +74,7 @@ export default function ListingCard({
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/giris";
         }, 500);
         return;
       }
@@ -91,7 +91,7 @@ export default function ListingCard({
     e.stopPropagation();
     
     if (!isAuthenticated) {
-      window.location.href = "/api/login";
+      window.location.href = "/giris";
       return;
     }
     
@@ -105,7 +105,7 @@ export default function ListingCard({
   };
 
   return (
-    <Link href={`/listing/${listing.id}`}>
+    <Link href={`/oda-ilani/${listing.id}`}>
       <div className="bg-card rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group cursor-pointer" data-testid={`listing-card-${listing.id}`}>
         <div className="relative">
           <img 
