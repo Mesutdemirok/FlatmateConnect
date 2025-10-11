@@ -77,6 +77,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 11, 2025 - Complete Turkish URL Implementation
+- **Turkish URL Structure**: Converted all application URLs to Turkish for local market SEO and user experience
+  - Route mappings: `/auth/login` → `/giris`, `/auth/register` → `/uye-ol`, `/profile` → `/profil`, `/messages` → `/mesajlar`, `/create-listing` → `/ilan-olustur`, `/search` → `/oda-ilanlari`, `/listing/:id` → `/oda-ilani/:id`, `/seeker/:id` → `/oda-arayan/:id`, `/favorites` → `/favoriler`, `/how-it-works` → `/nasil-calisir`
+- **Client-Side Navigation**: All navigation uses Wouter's `setLocation` hook instead of `window.location.href` for smooth SPA experience
+- **Protected Routes**: Updated ProtectedRoute to redirect to `/giris?next=...` with Turkish URLs
+- **Authentication Flow**: Login/Register pages properly handle next parameter for post-login redirection to Turkish URLs
+- **Component Updates**: Updated all feature components (Header, FeaturedListings, FeaturedRoomSeekers, ListingCard, CTASection) to use Turkish URLs
+- **Page Components**: Messages, Profile, CreateListing, ListingDetail all use Turkish navigation and redirects
+
 ### October 11, 2025 - Critical UX Fixes & Navigation Improvements
 - **Form Submission Fix**: Resolved CreateListing form submission bug by removing synchronous `setIsSubmitting(false)` call that prevented async mutations
 - **Public Seeker Access**: Made seeker profiles publicly accessible by unifying homepage experience - all users (guest and authenticated) now see identical Home page
