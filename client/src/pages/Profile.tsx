@@ -157,6 +157,44 @@ export default function Profile() {
           </p>
         </div>
 
+        {/* Quick Action Buttons */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Hızlı İşlemler</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button
+                onClick={() => setLocation('/ilan-olustur')}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-auto py-6"
+                data-testid="button-create-listing"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Home className="h-6 w-6" />
+                  <div className="text-center">
+                    <div className="font-semibold">Oda İlanı Ver</div>
+                    <div className="text-sm opacity-90">Kiralık odanızı ilan edin</div>
+                  </div>
+                </div>
+              </Button>
+              <Button
+                onClick={() => setLocation('/oda-arama-ilani-olustur')}
+                variant="outline"
+                className="w-full h-auto py-6 border-2"
+                data-testid="button-create-seeker"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <User className="h-6 w-6" />
+                  <div className="text-center">
+                    <div className="font-semibold">Oda Arama İlanı Ver</div>
+                    <div className="text-sm opacity-90">Oda arama profilinizi oluşturun</div>
+                  </div>
+                </div>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" data-testid="tab-profile">

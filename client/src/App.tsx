@@ -12,6 +12,7 @@ import Search from "@/pages/Search";
 import ListingDetail from "@/pages/ListingDetail";
 import SeekerDetail from "@/pages/SeekerDetail";
 import CreateListing from "@/pages/CreateListing";
+import CreateSeekerProfile from "@/pages/CreateSeekerProfile";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
 import Login from "@/pages/Login";
@@ -61,6 +62,9 @@ function Router() {
       </Route>
       <Route path="/ilan-olustur">
         <ProtectedRoute component={CreateListing} path="/ilan-olustur" />
+      </Route>
+      <Route path="/oda-arama-ilani-olustur">
+        <ProtectedRoute component={CreateSeekerProfile} path="/oda-arama-ilani-olustur" />
       </Route>
       
       {/* Public routes - Turkish URLs */}
