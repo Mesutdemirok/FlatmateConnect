@@ -27,13 +27,14 @@ Preferred communication style: Simple, everyday language.
 
 ### Database Design
 - **ORM**: Drizzle ORM with PostgreSQL dialect
-- **Schema**: Modular schema design with separate tables for users, listings, listing images, user preferences, messages, and favorites
+- **Schema**: Modular schema design with separate tables for users, listings, listing images, user preferences, messages, favorites, seeker profiles, and seeker photos
 - **Session Storage**: Dedicated sessions table for Replit Auth compatibility
 - **Relationships**: Proper foreign key relationships with cascade deletes for data integrity
 
 ### Key Features Architecture
 - **User Management**: Profile creation with verification status, preferences, and image uploads
 - **Listing System**: Room listings with multiple images, detailed descriptions, and filtering capabilities
+- **Seeker Profiles**: Room-seeking profiles for users looking for accommodation with budget, location preferences, move-in dates, and personal details
 - **Messaging System**: Real-time messaging between users with conversation management
 - **Favorites System**: Users can save and manage favorite listings
 - **Search & Filtering**: Location-based search with price range, availability, and feature filters
@@ -73,3 +74,27 @@ Preferred communication style: Simple, everyday language.
 - **i18next**: Internationalization with browser language detection
 - **date-fns**: Date manipulation and formatting utilities
 - **PostCSS & Autoprefixer**: CSS processing and vendor prefixing
+
+## Recent Changes
+
+### October 11, 2025 - Seeker/Room-Seeking Functionality
+- **Database**: Extended PostgreSQL schema with `seekerProfiles` and `seekerPhotos` tables
+  - Added fields: firstName, lastName, age, gender, budgetWeekly, preferredLocations, moveInDate, occupation, smokingStatus, petOwner, isFeatured
+  - Implemented proper relations with users table and photos table with cascade deletes
+- **Backend API**: Created comprehensive REST endpoints for seeker profiles
+  - GET `/api/seekers` - List all seekers with filtering support (budget, gender, location)
+  - GET `/api/seekers/featured` - Get featured seeker profiles
+  - GET `/api/seekers/:id` - Get single seeker profile by ID
+  - GET `/api/seekers/user/:userId` - Get seeker profile by user ID
+  - POST `/api/seekers` - Create new seeker profile (authenticated)
+  - PUT `/api/seekers/:id` - Update seeker profile (authenticated, owner only)
+  - DELETE `/api/seekers/:id` - Delete seeker profile (authenticated, owner only)
+  - POST `/api/seekers/:id/photos` - Upload seeker photos with multer (max 5 photos)
+  - DELETE `/api/seekers/:seekerId/photos/:photoId` - Delete seeker photo
+- **Storage Layer**: Added seeker CRUD methods to storage interface mirroring listing patterns
+- **Frontend**: 
+  - Created `FeaturedRoomSeekers` component with real API integration using React Query
+  - Added seeker API client (`client/src/lib/seekerApi.ts`) for frontend-backend communication
+  - Integrated FeaturedRoomSeekers section on homepage with purple gradient styling
+  - Added formatMonthlyPrice utility function for Turkish price formatting
+- **Data Seeding**: Created seed script with 3 sample Turkish seeker profiles (Ayşe Yılmaz, Mehmet Demir, Zeynep Kaya)
