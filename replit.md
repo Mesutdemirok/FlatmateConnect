@@ -77,6 +77,32 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 11, 2025 - Unified Seeker Profile System
+- **Database Schema Consolidation**: Merged userPreferences table fields directly into seekerProfiles table for unified data model
+  - Added 8 preference fields: smokingPreference, petPreference, cleanlinessLevel, socialLevel, workSchedule, agePreferenceMin, agePreferenceMax, genderPreference
+  - Eliminated separate userPreferences table to prevent data inconsistency
+  - Changed budgetMonthly from decimal to varchar for better form validation compatibility
+- **CreateSeekerProfile Form Enhancement**: Expanded to include all 16 fields in a single comprehensive form
+  - 8 basic fields: fullName, age, gender, occupation, budgetMonthly, about, preferredLocation, profilePhoto
+  - 8 preference fields: all lifestyle and compatibility preferences
+  - Added Zod schema transformations to handle empty string inputs for optional numeric fields
+  - Integrated photo upload with profilePhotoUrl storage
+- **Profile Page Refactor**: Streamlined to manage unified seeker profiles
+  - Single PUT /api/seekers/:id endpoint updates all fields including preferences
+  - Removed dependency on legacy /api/preferences endpoints
+  - Fixed validation for optional numeric fields (agePreferenceMin/Max) to accept empty strings
+  - Shows "Create Profile" prompt when user has no seeker profile (404 is expected behavior)
+  - Proper cache invalidation for both `/api/seekers` and `/api/seekers/user/:userId`
+- **Homepage Display**: Updated FeaturedRoomSeekers to show unified data
+  - Displays profilePhotoUrl from seeker profile
+  - Shows preference badges (cleanliness, smoking, gender preference) from unified data
+  - Uses fullName field for display
+- **Backend Integration**: All seeker endpoints work with unified schema
+  - POST /api/seekers creates profile with all fields including preferences
+  - GET /api/seekers/user/:userId retrieves unified profile (returns 404 if no profile exists)
+  - POST /api/seekers/:id/photos saves profilePhotoUrl on first upload
+  - All storage methods updated to handle unified seeker profile structure
+
 ### October 11, 2025 - Listing Display & Pricing Format Updates
 - **Listing Detail Page Data Binding**: Fixed all listing data fields to display correctly using proper schema fields
   - Now shows: address, title, rentAmount, propertyType, furnishingStatus, bathroomType, totalRooms, totalOccupants, roommatePreference, smokingPolicy, amenities, excludedBills
