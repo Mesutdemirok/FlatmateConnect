@@ -93,6 +93,15 @@ export default function CreateSeekerProfile() {
         budgetMonthly: data.budgetMonthly.toString(),
         about: data.about,
         preferredLocation: data.preferredLocation,
+        // Include all preference fields
+        smokingPreference: data.smokingPreference || null,
+        petPreference: data.petPreference || null,
+        cleanlinessLevel: data.cleanlinessLevel || null,
+        socialLevel: data.socialLevel || null,
+        workSchedule: data.workSchedule || null,
+        agePreferenceMin: data.agePreferenceMin || null,
+        agePreferenceMax: data.agePreferenceMax || null,
+        genderPreference: data.genderPreference || null,
       });
       return response.json();
     },
@@ -101,7 +110,7 @@ export default function CreateSeekerProfile() {
       if (profilePhoto) {
         try {
           const formData = new FormData();
-          formData.append('images', profilePhoto);
+          formData.append('photos', profilePhoto); // Changed from 'images' to 'photos' to match the backend route
           
           await fetch(`/api/seekers/${seeker.id}/photos`, {
             method: 'POST',
@@ -114,6 +123,7 @@ export default function CreateSeekerProfile() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['/api/seekers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/seekers/user', user?.id] });
       
       toast({
         title: 'Başarılı!',

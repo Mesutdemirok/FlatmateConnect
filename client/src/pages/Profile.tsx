@@ -34,7 +34,23 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 
-const preferencesSchema = insertUserPreferencesSchema.omit({ userId: true });
+// Use a schema for the preference fields only (these match the unified seeker profile fields)
+const preferencesSchema = z.object({
+  smokingPreference: z.string().optional(),
+  petPreference: z.string().optional(),
+  cleanlinessLevel: z.string().optional(),
+  socialLevel: z.string().optional(),
+  workSchedule: z.string().optional(),
+  agePreferenceMin: z.union([z.string(), z.number()]).transform(val => {
+    if (val === '' || val === null || val === undefined) return undefined;
+    return typeof val === 'string' ? (val ? Number(val) : undefined) : val;
+  }).optional(),
+  agePreferenceMax: z.union([z.string(), z.number()]).transform(val => {
+    if (val === '' || val === null || val === undefined) return undefined;
+    return typeof val === 'string' ? (val ? Number(val) : undefined) : val;
+  }).optional(),
+  genderPreference: z.string().optional(),
+});
 type PreferencesFormData = z.infer<typeof preferencesSchema>;
 
 export default function Profile() {
@@ -60,12 +76,7 @@ export default function Profile() {
     }
   }, [isAuthenticated, authLoading, toast, setLocation]);
 
-  const { data: preferences, isLoading: preferencesLoading } = useQuery({
-    queryKey: ['/api/preferences'],
-    enabled: isAuthenticated,
-  });
-
-  const { data: mySeekerProfile, isLoading: seekerLoading } = useQuery({
+  const { data: mySeekerProfile, isLoading: preferencesLoading } = useQuery({
     queryKey: ['/api/seekers/user', user?.id],
     enabled: isAuthenticated && !!user?.id,
   });
@@ -345,6 +356,15 @@ export default function Profile() {
                         <Skeleton className="h-10 w-full" />
                       </div>
                     ))}
+                  </div>
+                ) : !mySeekerProfile ? (
+                  <div className="text-center py-10">
+                    <p className="text-muted-foreground mb-4">
+                      Tercihlerinizi kaydetmek için önce bir oda arama profili oluşturmanız gerekiyor.
+                    </p>
+                    <Button onClick={() => setLocation('/oda-arama-ilani-olustur')}>
+                      Oda Arama Profili Oluştur
+                    </Button>
                   </div>
                 ) : (
                   <Form {...preferencesForm}>
