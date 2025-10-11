@@ -113,6 +113,35 @@ export const favorites = pgTable("favorites", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const seekerProfiles = pgTable("seeker_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  age: integer("age"),
+  gender: varchar("gender"),
+  about: text("about"),
+  budgetWeekly: decimal("budget_weekly", { precision: 8, scale: 2 }),
+  preferredLocations: text("preferred_locations").array(),
+  moveInDate: date("move_in_date"),
+  stayDuration: varchar("stay_duration"),
+  occupation: varchar("occupation"),
+  smokingStatus: varchar("smoking_status"),
+  petOwner: boolean("pet_owner").default(false),
+  isActive: boolean("is_active").default(true),
+  isFeatured: boolean("is_featured").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const seekerPhotos = pgTable("seeker_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  seekerId: varchar("seeker_id").notNull().references(() => seekerProfiles.id, { onDelete: 'cascade' }),
+  imagePath: varchar("image_path").notNull(),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   listings: many(listings),
@@ -120,6 +149,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sentMessages: many(messages, { relationName: "sender" }),
   receivedMessages: many(messages, { relationName: "receiver" }),
   favorites: many(favorites),
+  seekerProfiles: many(seekerProfiles),
 }));
 
 export const listingsRelations = relations(listings, ({ one, many }) => ({
@@ -174,6 +204,21 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
   }),
 }));
 
+export const seekerProfilesRelations = relations(seekerProfiles, ({ one, many }) => ({
+  user: one(users, {
+    fields: [seekerProfiles.userId],
+    references: [users.id],
+  }),
+  photos: many(seekerPhotos),
+}));
+
+export const seekerPhotosRelations = relations(seekerPhotos, ({ one }) => ({
+  seeker: one(seekerProfiles, {
+    fields: [seekerPhotos.seekerId],
+    references: [seekerProfiles.id],
+  }),
+}));
+
 // Schemas
 export const insertListingSchema = createInsertSchema(listings).omit({
   id: true,
@@ -202,6 +247,17 @@ export const insertListingImageSchema = createInsertSchema(listingImages).omit({
   createdAt: true,
 });
 
+export const insertSeekerProfileSchema = createInsertSchema(seekerProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSeekerPhotoSchema = createInsertSchema(seekerPhotos).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -226,3 +282,7 @@ export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Favorite = typeof favorites.$inferSelect;
 export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
+export type SeekerProfile = typeof seekerProfiles.$inferSelect;
+export type InsertSeekerProfile = z.infer<typeof insertSeekerProfileSchema>;
+export type SeekerPhoto = typeof seekerPhotos.$inferSelect;
+export type InsertSeekerPhoto = z.infer<typeof insertSeekerPhotoSchema>;

@@ -1,0 +1,42 @@
+Yes — please go ahead and fully implement the complete seeker and room-seeking functionality.
+
+Here’s exactly what I want you to do:
+
+1. ✅ Create the database schema for seeker profiles (SeekerProfileWithRelations) with proper fields such as:
+   - firstName, lastName, age, gender
+   - about, budgetWeekly, preferredLocations
+   - photos, createdAt, updatedAt
+   - relation to the user table
+
+2. ✅ Build all backend API endpoints:
+   - /api/seekers → GET (list seekers)
+   - /api/seekers/:id → GET (single seeker)
+   - /api/seekers → POST (create seeker profile)
+   - /api/seekers/:id → PUT (update seeker profile)
+   - /api/seekers/:id → DELETE (optional)
+   Make sure all routes use proper validation and connect to the database via Drizzle ORM.
+
+3. ✅ Update the FeaturedRoomSeekers component to display real data dynamically from the database instead of static placeholders.
+
+4. ✅ Add seeker profile creation & management features:
+   - Allow users to create or edit their seeker profiles after login.
+   - Include form validation for fields like age, budget, and locations.
+   - Enable image upload (linked with uploads folder or cloud storage).
+
+5. ✅ Show the FeaturedRoomSeekers section on the homepage:
+   - Right under FeaturedListings, matching the purple gradient design.
+   - Ensure responsive layout (works perfectly on both desktop and mobile).
+
+6. ✅ Improve UI & performance:
+   - Optimize image loading for listings and seekers.
+   - Ensure smooth spacing, consistent typography, and proper card hover effects.
+   - Adjust margins/paddings between sections for a clean, professional layout.
+
+7. ✅ Perform a complete project health check:
+   - Verify login, registration, listings, seekers, and database connections.
+   - Ensure both frontend and backend run without console or build errors.
+   - Confirm APIs return valid JSON data for both seekers and listings.
+
+8. ✅ Once completed, rebuild and restart the app so I can preview the final, working version with the new features visible on the homepage.
+
+Keep the existing design (purple gradient aesthetic) consistent while making the platform fully functional and efficient.
