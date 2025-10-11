@@ -82,15 +82,16 @@ export default function FeaturedListings() {
               <div className="relative w-full h-[230px] sm:h-[220px] overflow-hidden">
                 <img
                   src={
-                    listing.coverImageUrl ||
-                    listing.images?.[0] ||
-                    "https://placehold.co/600x400?text=Odanet"
+                    listing.images?.find(img => img.isPrimary)?.imagePath ||
+                    listing.images?.[0]?.imagePath ||
+                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop"
                   }
                   alt={listing.title || "Oda İlanı"}
                   className="
                     w-full h-full object-cover object-center
                     transition-transform duration-500 hover:scale-105
                   "
+                  data-testid={`listing-image-${listing.id}`}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
               </div>

@@ -19,15 +19,15 @@ export default function Home() {
         {/* Hero Section */}
         <Hero />
 
+        {/* Featured Listings Section */}
+        <FeaturedListings />
+
         {/* Featured Seekers Section */}
         <div className="bg-gradient-to-b from-white via-slate-50 to-violet-50 py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <FeaturedRoomSeekers />
           </div>
         </div>
-
-        {/* Featured Listings Section */}
-        <FeaturedListings />
       </main>
 
       {/* Footer */}

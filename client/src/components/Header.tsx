@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 
 export default function Header() {
   const [location] = useLocation();
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
 
@@ -15,122 +15,188 @@ export default function Header() {
 
   const handleLogout = async () => {
     await logout();
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   return (
-    <header className="bg-card border-b border-border sticky top-0 z-50" data-testid="header">
+    <header
+      className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 text-white sticky top-0 z-50 shadow-md"
+      data-testid="header"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
+          {/* Left Section */}
           <div className="flex items-center space-x-8">
             <div className="flex-shrink-0">
               <Link href="/" data-testid="logo-link">
-                <h1 className="text-2xl font-bold text-primary cursor-pointer">Odanet</h1>
+                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight cursor-pointer hover:opacity-90 transition-opacity">
+                  Odanet
+                </h1>
               </Link>
             </div>
+
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-6">
-              <Link 
-                href={isAuthenticated ? "/ilan-olustur" : "/giris?next=/ilan-olustur"}
-                className="text-foreground hover:text-primary transition-colors"
+              <Link
+                href={
+                  isAuthenticated
+                    ? "/ilan-olustur"
+                    : "/giris?next=/ilan-olustur"
+                }
+                className="text-white/90 hover:text-white transition-colors"
                 data-testid="nav-create-listing"
               >
                 Oda İlanı Ver
               </Link>
-              <Link 
-                href={isAuthenticated ? "/oda-arama-ilani-olustur" : "/giris?next=/oda-arama-ilani-olustur"}
-                className="text-foreground hover:text-primary transition-colors"
+              <Link
+                href={
+                  isAuthenticated
+                    ? "/oda-arama-ilani-olustur"
+                    : "/giris?next=/oda-arama-ilani-olustur"
+                }
+                className="text-white/90 hover:text-white transition-colors"
                 data-testid="nav-create-seeker"
               >
                 Oda Arama İlanı Ver
               </Link>
             </nav>
           </div>
-          
+
+          {/* Right Section */}
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
                 <Link href="/favoriler" data-testid="favorites-link">
-                  <Button variant="ghost" size="icon" aria-label={t('nav.favorites')}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("nav.favorites")}
+                    className="text-white hover:bg-white/10"
+                  >
                     <Heart className="h-5 w-5" />
                   </Button>
                 </Link>
                 <Link href="/mesajlar" data-testid="messages-link">
-                  <Button variant="ghost" size="icon" aria-label={t('nav.messages')}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("nav.messages")}
+                    className="text-white hover:bg-white/10"
+                  >
                     <MessageSquare className="h-5 w-5" />
                   </Button>
                 </Link>
                 <Link href="/profil" data-testid="profile-link">
-                  <Button variant="outline" className="hidden sm:flex">
-                    {t('nav.profile')}
+                  <Button
+                    variant="outline"
+                    className="hidden sm:flex border-white text-white hover:bg-white hover:text-indigo-700"
+                  >
+                    {t("nav.profile")}
                   </Button>
                 </Link>
-                <Button 
-                  variant="outline" 
-                  className="hidden sm:flex" 
+                <Button
+                  variant="outline"
+                  className="hidden sm:flex border-white text-white hover:bg-white hover:text-indigo-700"
                   onClick={handleLogout}
                   data-testid="logout-button"
                 >
-                  {t('nav.logout')}
+                  {t("nav.logout")}
                 </Button>
               </>
             ) : (
               <>
                 <Link href="/giris" data-testid="login-link">
-                  <Button variant="outline" className="hidden sm:flex">
-                    {t('nav.login')}
+                  <Button
+                    variant="outline"
+                    className="hidden sm:flex border-white text-white hover:bg-white hover:text-indigo-700"
+                  >
+                    {t("nav.login")}
                   </Button>
                 </Link>
                 <Link href="/uye-ol" data-testid="signup-link">
-                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                    {t('nav.sign_up')}
+                  <Button className="bg-white text-indigo-700 hover:bg-indigo-100 font-semibold">
+                    {t("nav.sign_up")}
                   </Button>
                 </Link>
               </>
             )}
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="md:hidden" 
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`md:hidden rounded-full p-2 transition-all duration-300 ${
+                isMobileMenuOpen
+                  ? "bg-orange-100 hover:bg-orange-200 text-orange-600"
+                  : "bg-white/10 hover:bg-white/20 text-white"
+              }`}
               onClick={toggleMobileMenu}
               data-testid="mobile-menu-toggle"
             >
-              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {isMobileMenuOpen ? (
+                <X className="h-8 w-8" />
+              ) : (
+                <Menu className="h-8 w-8" />
+              )}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-card" data-testid="mobile-menu">
+        <div
+          className="md:hidden border-t border-white/20 bg-gradient-to-b from-orange-100 to-amber-50 text-gray-800"
+          data-testid="mobile-menu"
+        >
           <div className="px-4 py-4 space-y-4">
-            <Link href={isAuthenticated ? "/ilan-olustur" : "/giris?next=/ilan-olustur"} className="block text-foreground hover:text-primary transition-colors">
+            <Link
+              href={
+                isAuthenticated ? "/ilan-olustur" : "/giris?next=/ilan-olustur"
+              }
+              className="block hover:text-orange-600 transition-colors"
+            >
               Oda İlanı Ver
             </Link>
-            <Link href={isAuthenticated ? "/oda-arama-ilani-olustur" : "/giris?next=/oda-arama-ilani-olustur"} className="block text-foreground hover:text-primary transition-colors">
+            <Link
+              href={
+                isAuthenticated
+                  ? "/oda-arama-ilani-olustur"
+                  : "/giris?next=/oda-arama-ilani-olustur"
+              }
+              className="block hover:text-orange-600 transition-colors"
+            >
               Oda Arama İlanı Ver
             </Link>
             {isAuthenticated ? (
               <>
-                <Link href="/profil" className="block text-foreground hover:text-primary transition-colors">
-                  {t('nav.profile')}
+                <Link
+                  href="/profil"
+                  className="block hover:text-orange-600 transition-colors"
+                >
+                  {t("nav.profile")}
                 </Link>
-                <button 
+                <button
                   onClick={handleLogout}
-                  className="block text-foreground hover:text-primary transition-colors text-left w-full"
+                  className="block hover:text-orange-600 transition-colors text-left w-full"
                   data-testid="mobile-logout-button"
                 >
-                  {t('nav.logout')}
+                  {t("nav.logout")}
                 </button>
               </>
             ) : (
               <>
-                <Link href="/giris" className="block text-foreground hover:text-primary transition-colors">
-                  {t('nav.login')}
+                <Link
+                  href="/giris"
+                  className="block hover:text-orange-600 transition-colors"
+                >
+                  {t("nav.login")}
                 </Link>
-                <Link href="/uye-ol" className="block text-foreground hover:text-primary transition-colors">
-                  {t('nav.sign_up')}
+                <Link
+                  href="/uye-ol"
+                  className="block hover:text-orange-600 transition-colors"
+                >
+                  {t("nav.sign_up")}
                 </Link>
               </>
             )}
