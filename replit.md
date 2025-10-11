@@ -77,6 +77,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 11, 2025 - UI/UX Improvements & Form Enhancements
+- **Header Button Visibility**: Updated "Profil" and "Çıkış Yap" buttons with white background and indigo-700 text for better contrast against the purple gradient header
+- **Icon Styling**: Enhanced heart and message icons to be thicker (h-6 w-6, strokeWidth 2.5) with improved background contrast (bg-white/10 hover:bg-white/20)
+- **Property Type Update**: Removed "Apartman" option from property type dropdown, keeping Rezidans, Daire, Müstakil Ev, and Diğer
+- **Conditional Bill Fields**: Added dynamic excluded bills checkboxes (Su, Elektrik, Telefon, Doğalgaz, İnternet) that appear when "Fiyata Faturalar Dahil mi?" is set to "Hayır"
+  - Added excludedBills field to database schema as text array
+  - Form properly captures and submits excluded bill selections
+  - Database migration successfully applied
+
 ### October 11, 2025 - Homepage Image Display & Section Reordering
 - **Listing Images Fixed**: Updated FeaturedListings component to properly extract image paths from images array
   - Primary image selection: `listing.images?.find(img => img.isPrimary)?.imagePath`
