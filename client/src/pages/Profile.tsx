@@ -65,6 +65,11 @@ export default function Profile() {
     enabled: isAuthenticated,
   });
 
+  const { data: mySeekerProfile, isLoading: seekerLoading } = useQuery({
+    queryKey: ['/api/seekers/user', user?.id],
+    enabled: isAuthenticated && !!user?.id,
+  });
+
   const { data: myListings, isLoading: listingsLoading } = useQuery({
     queryKey: ['/api/my-listings'],
     enabled: isAuthenticated,
@@ -89,23 +94,45 @@ export default function Profile() {
     },
   });
 
-  // Update form when preferences are loaded
+  // Update form when seeker profile is loaded
   useEffect(() => {
-    if (preferences) {
-      preferencesForm.reset(preferences);
+    if (mySeekerProfile) {
+      preferencesForm.reset({
+        smokingPreference: mySeekerProfile.smokingPreference || '',
+        petPreference: mySeekerProfile.petPreference || '',
+        cleanlinessLevel: mySeekerProfile.cleanlinessLevel || '',
+        socialLevel: mySeekerProfile.socialLevel || '',
+        workSchedule: mySeekerProfile.workSchedule || '',
+        agePreferenceMin: mySeekerProfile.agePreferenceMin,
+        agePreferenceMax: mySeekerProfile.agePreferenceMax,
+        genderPreference: mySeekerProfile.genderPreference || '',
+      });
     }
-  }, [preferences, preferencesForm]);
+  }, [mySeekerProfile, preferencesForm]);
 
   const updatePreferencesMutation = useMutation({
     mutationFn: async (data: PreferencesFormData) => {
-      const response = await apiRequest('PUT', '/api/preferences', data);
-      return response.json();
+      // Update seeker profile instead of separate preferences
+      if (mySeekerProfile?.id) {
+        const response = await apiRequest('PUT', `/api/seekers/${mySeekerProfile.id}`, data);
+        return response.json();
+      } else {
+        // If no seeker profile exists, redirect to create one
+        toast({
+          title: "Profil Bulunamadı",
+          description: "Lütfen önce bir oda arama profili oluşturun",
+          variant: "destructive"
+        });
+        setTimeout(() => setLocation('/oda-arama-ilani-olustur'), 1000);
+        throw new Error('No seeker profile');
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/preferences'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/seekers/user', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/seekers'] });
       toast({
-        title: "Success!",
-        description: t('success.profile_updated')
+        title: "Başarılı!",
+        description: "Tercihleriniz güncellendi"
       });
     },
     onError: (error) => {
@@ -120,11 +147,13 @@ export default function Profile() {
         }, 500);
         return;
       }
-      toast({
-        title: t('errors.server_error'),
-        description: t('errors.failed_to_update_preferences'),
-        variant: "destructive"
-      });
+      if (error.message !== 'No seeker profile') {
+        toast({
+          title: t('errors.server_error'),
+          description: 'Tercihler güncellenemedi',
+          variant: "destructive"
+        });
+      }
     }
   });
 
