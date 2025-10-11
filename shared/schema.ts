@@ -130,9 +130,19 @@ export const seekerProfiles = pgTable("seeker_profiles", {
   occupation: varchar("occupation"), // Öğrenci/Çalışan/Serbest/Diğer
   
   // Search Preferences
-  budgetMonthly: decimal("budget_monthly", { precision: 8, scale: 2 }), // Monthly budget
+  budgetMonthly: varchar("budget_monthly"), // Monthly budget (stored as string to avoid validation issues)
   about: text("about"), // Bio/description
   preferredLocation: text("preferred_location"), // Single location preference
+  
+  // Lifestyle Preferences (merged from userPreferences)
+  smokingPreference: varchar("smoking_preference"),
+  petPreference: varchar("pet_preference"),
+  cleanlinessLevel: varchar("cleanliness_level"),
+  socialLevel: varchar("social_level"),
+  workSchedule: varchar("work_schedule"),
+  agePreferenceMin: integer("age_preference_min"),
+  agePreferenceMax: integer("age_preference_max"),
+  genderPreference: varchar("gender_preference"),
   
   // System fields
   isActive: boolean("is_active").default(true),
@@ -231,6 +241,8 @@ export const insertListingSchema = createInsertSchema(listings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  rentAmount: z.union([z.string(), z.number()]).transform(val => String(val)),
 });
 
 export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
@@ -258,6 +270,9 @@ export const insertSeekerProfileSchema = createInsertSchema(seekerProfiles).omit
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  budgetMonthly: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
+  age: z.union([z.string(), z.number()]).transform(val => Number(val)).optional(),
 });
 
 export const insertSeekerPhotoSchema = createInsertSchema(seekerPhotos).omit({
