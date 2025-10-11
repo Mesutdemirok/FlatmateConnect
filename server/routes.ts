@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { jwtAuth, generateToken, hashPassword, comparePassword } from "./auth";
-import { insertListingSchema, insertUserPreferencesSchema, insertMessageSchema, insertFavoriteSchema, insertUserSchema, type User } from "@shared/schema";
+import { insertListingSchema, insertUserPreferencesSchema, insertMessageSchema, insertFavoriteSchema, insertUserSchema, insertSeekerProfileSchema, type User } from "@shared/schema";
 import { getErrorMessage, detectLanguage } from "./i18n";
 import multer from 'multer';
 import path from 'path';
@@ -21,6 +21,33 @@ const upload = multer({
     filename: (req: any, file: any, cb: any) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+  }),
+  fileFilter: (req: any, file: any, cb: any) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      const lang = detectLanguage(req);
+      cb(new Error(getErrorMessage('invalid_file_type', lang)));
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  }
+});
+
+// Configure multer for seeker photo uploads
+const seekerUploadDir = 'uploads/seekers';
+if (!fs.existsSync(seekerUploadDir)) {
+  fs.mkdirSync(seekerUploadDir, { recursive: true });
+}
+
+const seekerUpload = multer({
+  storage: multer.diskStorage({
+    destination: seekerUploadDir,
+    filename: (req: any, file: any, cb: any) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, 'seeker-' + uniqueSuffix + path.extname(file.originalname));
     }
   }),
   fileFilter: (req: any, file: any, cb: any) => {
@@ -487,6 +514,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ isFavorite });
     } catch (error) {
       console.error("Error checking favorite:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
+  // Seeker profile routes
+  app.get('/api/seekers', async (req, res) => {
+    try {
+      const filters = {
+        minBudget: req.query.minBudget ? Number(req.query.minBudget) : undefined,
+        maxBudget: req.query.maxBudget ? Number(req.query.maxBudget) : undefined,
+        gender: req.query.gender as string,
+        location: req.query.location as string,
+        isFeatured: req.query.featured === 'true' ? true : undefined,
+      };
+      
+      const seekers = await storage.getSeekerProfiles(filters);
+      res.json(seekers);
+    } catch (error) {
+      console.error("Error fetching seekers:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
+  app.get('/api/seekers/featured', async (req, res) => {
+    try {
+      const count = req.query.count ? Number(req.query.count) : 4;
+      const seekers = await storage.getSeekerProfiles({ isFeatured: true });
+      res.json(seekers.slice(0, count));
+    } catch (error) {
+      console.error("Error fetching featured seekers:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
+  app.get('/api/seekers/:id', async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      if (!seeker) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: 'Oda arayan profil bulunamadı' });
+      }
+      res.json(seeker);
+    } catch (error) {
+      console.error("Error fetching seeker:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
+  app.get('/api/seekers/user/:userId', async (req, res) => {
+    try {
+      const seeker = await storage.getUserSeekerProfile(req.params.userId);
+      if (!seeker) {
+        return res.status(404).json({ message: 'Profil bulunamadı' });
+      }
+      res.json(seeker);
+    } catch (error) {
+      console.error("Error fetching user seeker profile:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
+  app.post('/api/seekers', jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const seekerData = insertSeekerProfileSchema.parse({
+        ...req.body,
+        userId
+      });
+      
+      const seeker = await storage.createSeekerProfile(seekerData);
+      res.status(201).json(seeker);
+    } catch (error: any) {
+      console.error("Error creating seeker profile:", error);
+      const lang = detectLanguage(req);
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: getErrorMessage('bad_request', lang), error: error.message });
+      } else {
+        res.status(400).json({ message: 'Profil oluşturulamadı', error: error.message });
+      }
+    }
+  });
+
+  app.put('/api/seekers/:id', jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      
+      if (!seeker || seeker.userId !== userId) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: 'Profil bulunamadı veya yetkiniz yok' });
+      }
+      
+      const updatedSeeker = await storage.updateSeekerProfile(req.params.id, req.body);
+      res.json(updatedSeeker);
+    } catch (error: any) {
+      console.error("Error updating seeker profile:", error);
+      const lang = detectLanguage(req);
+      res.status(400).json({ message: 'Profil güncellenemedi', error: error.message });
+    }
+  });
+
+  app.delete('/api/seekers/:id', jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      
+      if (!seeker || seeker.userId !== userId) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: 'Profil bulunamadı veya yetkiniz yok' });
+      }
+      
+      await storage.deleteSeekerProfile(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting seeker profile:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
+  // Seeker photo routes
+  app.post('/api/seekers/:id/photos', jwtAuth, seekerUpload.array('photos', 5), async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      
+      if (!seeker || seeker.userId !== userId) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: 'Profil bulunamadı veya yetkiniz yok' });
+      }
+      
+      const files = req.files as Express.Multer.File[];
+      const existingPhotos = await storage.getSeekerPhotos(req.params.id);
+      
+      const photoPromises = files.map((file, index) => 
+        storage.addSeekerPhoto({
+          seekerId: req.params.id,
+          imagePath: file.filename,
+          sortOrder: existingPhotos.length + index,
+        })
+      );
+      
+      const photos = await Promise.all(photoPromises);
+      res.status(201).json(photos);
+    } catch (error: any) {
+      console.error("Error adding seeker photos:", error);
+      const lang = detectLanguage(req);
+      res.status(400).json({ message: 'Fotoğraflar eklenemedi', error: error.message });
+    }
+  });
+
+  app.delete('/api/seekers/:seekerId/photos/:photoId', jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const seeker = await storage.getSeekerProfile(req.params.seekerId);
+      
+      if (!seeker || seeker.userId !== userId) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: 'Profil bulunamadı veya yetkiniz yok' });
+      }
+      
+      await storage.deleteSeekerPhoto(req.params.photoId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting seeker photo:", error);
       const lang = detectLanguage(req);
       res.status(500).json({ message: getErrorMessage('database_error', lang) });
     }
