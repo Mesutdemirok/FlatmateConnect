@@ -1,71 +1,118 @@
-import { Facebook, Twitter, Instagram } from "lucide-react";
+import React from "react";
+import { COMPANY } from "@/lib/company";
+import { Facebook, Instagram, MessageCircle, Mail } from "lucide-react";
+
+type SocialProps = {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+};
+
+const Social = ({ href, label, children }: SocialProps) => (
+  <a
+    href={href}
+    aria-label={label}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="
+      inline-flex h-10 w-10 items-center justify-center rounded-full
+      bg-orange-600 text-white ring-1 ring-white/10
+      transition hover:bg-orange-700 hover:ring-white/20
+      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500
+    "
+  >
+    {children}
+  </a>
+);
 
 export default function Footer() {
-  const year = new Date().getFullYear();
-
   return (
-    <footer
-      className="
-        border-t border-white/10
-        bg-gradient-to-tr from-indigo-950 via-violet-950 to-fuchsia-900
-        text-white
-      "
-      // Prevent iOS Safari bottom bar overlap while keeping footer compact
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      data-testid="footer"
-    >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-        {/* Top row */}
-        <div className="flex flex-col gap-5 items-center">
-          {/* Ownership + contact (centered) */}
-          <div className="space-y-1 text-center">
-            {/* Optional: remove logo on mobile for cleaner look */}
-            {/* <img src="/logo-odanet.png" alt="Odanet" className="hidden md:block h-7 w-auto" /> */}
-            <p className="text-sm text-white/85">
-              Odanet,{" "}
-              <span className="font-medium text-white">
-                Mestok Bilişim ve Teknoloji
-              </span>{" "}
-              şirketine aittir.
+    <footer className="mt-16 bg-gradient-to-r from-indigo-700 via-violet-700 to-fuchsia-700 text-white">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {/* Brand + Address */}
+        <div className="grid gap-8 md:grid-cols-3">
+          <div>
+            <h3 className="text-2xl font-extrabold tracking-tight">
+              {COMPANY.brand}
+            </h3>
+            <p className="mt-2 text-white/90">
+              {COMPANY.brand}, {COMPANY.legalName} şirketine aittir.
             </p>
-            <p className="text-xs text-white/70">
-              Ritim İş Merkezi, Maltepe / İstanbul
-            </p>
-            <a
-              href="mailto:admin@odanet.com.tr"
-              className="text-xs font-medium text-white hover:text-white/90 underline decoration-white/30 underline-offset-4"
+
+            {/* Structured address for SEO */}
+            <address
+              className="not-italic mt-4 text-white/90 leading-relaxed"
+              itemScope
+              itemType="https://schema.org/PostalAddress"
             >
-              admin@odanet.com.tr
-            </a>
+              <span itemProp="streetAddress">{COMPANY.street}</span>
+              <br />
+              <span itemProp="addressLocality">{COMPANY.district}</span> /{" "}
+              <span itemProp="addressRegion">{COMPANY.city}</span>
+              <br />
+              <span itemProp="addressCountry">{COMPANY.country}</span>
+              <br />
+              <a
+                href={`mailto:${COMPANY.email}`}
+                className="mt-2 inline-flex items-center gap-2 text-white underline decoration-white/40 underline-offset-4 hover:decoration-white"
+              >
+                <Mail className="h-4 w-4" />
+                {COMPANY.email}
+              </a>
+            </address>
           </div>
 
-          {/* Social icons with strong purple chip */}
-          <div className="flex justify-center gap-2">
-            {[
-              { Icon: Facebook, label: "Facebook", href: "#" },
-              { Icon: Twitter, label: "Twitter", href: "#" },
-              { Icon: Instagram, label: "Instagram", href: "#" },
-            ].map(({ Icon, label, href }, i) => (
-              <a
-                key={i}
-                href={href}
-                aria-label={label}
-                className="
-                  inline-flex h-9 w-9 items-center justify-center
-                  rounded-xl bg-violet-600 hover:bg-violet-500
-                  shadow-sm ring-1 ring-white/10 transition
-                "
-              >
-                <Icon className="h-4 w-4 text-white" />
-              </a>
-            ))}
+          {/* Quick links */}
+          <nav className="space-y-3">
+            <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
+              Bağlantılar
+            </p>
+            <ul className="space-y-2 text-white/90">
+              <li>
+                <a className="hover:opacity-90" href="/oda-ilani-ver">
+                  Oda İlanı Ver
+                </a>
+              </li>
+              <li>
+                <a className="hover:opacity-90" href="/oda-arama-ilani-ver">
+                  Oda Arama İlanı Ver
+                </a>
+              </li>
+              <li>
+                <a className="hover:opacity-90" href="/profil">
+                  Profilim
+                </a>
+              </li>
+              <li>
+                <a className="hover:opacity-90" href="/yardim">
+                  Yardım &amp; Destek
+                </a>
+              </li>
+            </ul>
+          </nav>
+
+          {/* Social (dark orange only) */}
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
+              Sosyal
+            </p>
+            <div className="mt-3 flex items-center gap-3">
+              <Social href="https://instagram.com/odanet" label="Instagram">
+                <Instagram className="h-5 w-5" />
+              </Social>
+              <Social href="https://facebook.com/odanet" label="Facebook">
+                <Facebook className="h-5 w-5" />
+              </Social>
+              <Social href={`${COMPANY.site}/iletisim`} label="İletişim">
+                <MessageCircle className="h-5 w-5" />
+              </Social>
+            </div>
           </div>
         </div>
 
-        {/* Bottom legal line, compact */}
-        <p className="mt-4 border-t border-white/10 pt-3 text-[11px] leading-none text-white/60 text-center">
-          © {year} Odanet. Tüm hakları saklıdır.
-        </p>
+        <div className="mt-10 border-t border-white/15 pt-6 text-center text-sm text-white/80">
+          © {new Date().getFullYear()} {COMPANY.brand}. Tüm hakları saklıdır.
+        </div>
       </div>
     </footer>
   );

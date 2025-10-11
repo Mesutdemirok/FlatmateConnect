@@ -1,62 +1,80 @@
-import { Shield, Users, MessageSquare } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import ListingCard from "@/components/ListingCard"; // <-- use the component here
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 
-export default function FeaturesSection() {
+export default function FeaturedListings() {
   const { t } = useTranslation();
-  
-  const features = [
-    {
-      icon: Shield,
-      titleKey: "features.verified_profiles.title",
-      descriptionKey: "features.verified_profiles.description",
-      color: "text-primary",
-      bgColor: "bg-primary/10"
+  const {
+    data: listings,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["/api/listings"],
+    queryFn: async () => {
+      const res = await fetch("/api/listings");
+      if (!res.ok) throw new Error("Failed to fetch listings");
+      return res.json();
     },
-    {
-      icon: Users,
-      titleKey: "features.smart_matching.title",
-      descriptionKey: "features.smart_matching.description",
-      color: "text-secondary",
-      bgColor: "bg-secondary/10"
-    },
-    {
-      icon: MessageSquare,
-      titleKey: "features.secure_messaging.title",
-      descriptionKey: "features.secure_messaging.description",
-      color: "text-accent",
-      bgColor: "bg-accent/10"
-    }
-  ];
+  });
 
-  return (
-    <section className="py-16 bg-background" data-testid="features-section">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4" data-testid="features-title">
-            {t('features.title')}
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="features-subtitle">
-            {t('features.subtitle')}
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {features.map((feature, index) => {
-            const IconComponent = feature.icon;
-            return (
-              <div key={index} className="text-center" data-testid={`feature-${index}`}>
-                <div className={`w-16 h-16 ${feature.bgColor} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                  <IconComponent className={`h-8 w-8 ${feature.color}`} />
-                </div>
-                <h3 className="text-xl font-semibold mb-2" data-testid={`feature-title-${index}`}>
-                  {t(feature.titleKey)}
-                </h3>
-                <p className="text-muted-foreground" data-testid={`feature-description-${index}`}>
-                  {t(feature.descriptionKey)}
-                </p>
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 px-0 sm:px-2">
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className="bg-white/80 rounded-2xl shadow-md overflow-hidden border border-slate-200"
+          >
+            <Skeleton className="w-full h-[230px]" />
+            <div className="p-4">
+              <div className="flex items-center justify-between gap-3">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-4 w-16" />
               </div>
-            );
-          })}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10 text-red-600 font-medium">
+        {t("listings.unable_to_load")}
+      </div>
+    );
+  }
+
+  const featuredListings = Array.isArray(listings) ? listings.slice(0, 4) : [];
+
+  if (featuredListings.length === 0) {
+    return (
+      <div className="text-center py-10 text-slate-600">
+        {t("listings.no_listings_available")}
+      </div>
+    );
+  }
+
+  // Use the shared ListingCard so style updates actually apply
+  return (
+    <section className="py-10 sm:py-12 bg-gradient-to-b from-[#f8faff] via-[#f3f5ff] to-[#e8ebff]">
+      <div className="max-w-[1500px] mx-auto px-0 sm:px-2">
+        <div
+          className="
+            grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4
+            gap-y-8 gap-x-3 sm:gap-x-4
+          "
+          data-testid="featured-listings-section"
+        >
+          {featuredListings.map((listing: any) => (
+            <ListingCard
+              key={`featured-listing-${listing.id}`}
+              listing={listing}
+              showDistance={false}
+            />
+          ))}
         </div>
       </div>
     </section>

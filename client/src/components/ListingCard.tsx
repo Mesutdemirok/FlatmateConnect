@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Heart, Star } from "lucide-react";
+import { Heart, ShieldCheck } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,22 +8,22 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatCurrency } from "@/lib/formatters";
 
 interface ListingCardProps {
-  listing: {
-    id: string;
-    title: string;
-    suburb: string;
-    rentAmount: string;
-    availableFrom: string | null;
-    images: Array<{
-      imagePath: string;
-      isPrimary: boolean;
+  listing?: {
+    id?: string;
+    title?: string | null;
+    suburb?: string | null;
+    rentAmount?: string | number | null;
+    availableFrom?: string | null;
+    images?: Array<{
+      imagePath?: string;
+      isPrimary?: boolean;
     }>;
-    user: {
-      firstName: string | null;
-      verificationStatus: string;
+    user?: {
+      firstName?: string | null;
+      verificationStatus?: string | null;
     };
   };
   isFavorited?: boolean;
@@ -31,137 +31,168 @@ interface ListingCardProps {
   distance?: string;
 }
 
-export default function ListingCard({ 
-  listing, 
-  isFavorited = false, 
-  showDistance = false, 
-  distance 
+const FALLBACK_IMG =
+  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=60";
+
+export default function ListingCard({
+  listing,
+  isFavorited = false,
+  showDistance = false,
+  distance,
 }: ListingCardProps) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [favorite, setFavorite] = useState(isFavorited);
 
-  const primaryImage = listing.images.find(img => img.isPrimary) || listing.images[0];
-  const imageUrl = primaryImage 
-    ? primaryImage.imagePath.startsWith('/uploads') 
-      ? primaryImage.imagePath 
-      : primaryImage.imagePath
-    : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250';
+  // --- Safe fields (avoid touching undefined) ---
+  const id = listing?.id ?? "";
+  const rawTitle = (listing?.title ?? "").toString().trim();
+  const title4 =
+    rawTitle.length > 0
+      ? rawTitle.split(/\s+/).slice(0, 4).join(" ") +
+        (rawTitle.split(/\s+/).length > 4 ? "…" : "")
+      : "İlan";
+
+  const suburb = (listing?.suburb ?? "").toString();
+  const amountNumber = Number(
+    typeof listing?.rentAmount === "string"
+      ? listing?.rentAmount.replace(/[^\d.,-]/g, "").replace(",", ".")
+      : (listing?.rentAmount ?? 0),
+  );
+  const rentLabel = formatCurrency(
+    Number.isFinite(amountNumber) ? amountNumber : 0,
+  );
+
+  const imgs =
+    Array.isArray(listing?.images) && listing?.images?.length
+      ? listing!.images!
+      : [{ imagePath: FALLBACK_IMG, isPrimary: true }];
+
+  const primaryImage = imgs.find((img) => img?.isPrimary) ??
+    imgs[0] ?? { imagePath: FALLBACK_IMG };
+  const imageUrl = primaryImage?.imagePath || FALLBACK_IMG;
+
+  const isVerified = listing?.user?.verificationStatus === "verified";
+
+  const [favorite, setFavorite] = useState(isFavorited);
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: async () => {
+      if (!id) return; // nothing to do without an id
       if (favorite) {
-        await apiRequest('DELETE', `/api/favorites/${listing.id}`);
+        await apiRequest("DELETE", `/api/favorites/${id}`);
       } else {
-        await apiRequest('POST', '/api/favorites', { listingId: listing.id });
+        await apiRequest("POST", "/api/favorites", { listingId: id });
       }
     },
     onSuccess: () => {
-      setFavorite(!favorite);
-      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      setFavorite((f) => !f);
+      queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
       toast({
-        title: favorite ? t('success.removed_from_favorites') : t('success.added_to_favorites'),
-        description: favorite ? t('success.listing_removed_from_favorites') : t('success.listing_added_to_favorites')
+        title: favorite
+          ? t("success.removed_from_favorites")
+          : t("success.added_to_favorites"),
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: t('errors.unauthorized'),
-          description: "You are logged out. Logging in again...",
+          title: t("errors.unauthorized"),
+          description: "Oturumunuz sonlandı. Lütfen tekrar giriş yapın.",
           variant: "destructive",
         });
-        setTimeout(() => {
-          window.location.href = "/giris";
-        }, 500);
+        setTimeout(() => (window.location.href = "/giris"), 500);
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to update favorites",
-        variant: "destructive"
+        title: "Hata",
+        description: "Favoriler güncellenemedi.",
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (!isAuthenticated) {
-      window.location.href = "/giris";
-      return;
-    }
-    
+    if (!isAuthenticated) return (window.location.href = "/giris");
+    if (!id) return; // guard
     toggleFavoriteMutation.mutate();
   };
 
-  const formatAvailability = (dateString: string | null) => {
-    if (!dateString) return "Available Now";
-    const date = new Date(dateString);
-    return date > new Date() ? formatDate(dateString) : "Available Now";
-  };
-
   return (
-    <Link href={`/oda-ilani/${listing.id}`}>
-      <div className="bg-card rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group cursor-pointer" data-testid={`listing-card-${listing.id}`}>
-        <div className="relative">
-          <img 
+    <Link href={id ? `/oda-ilani/${id}` : "#"}>
+      <div
+        className="
+          group relative cursor-pointer overflow-hidden rounded-2xl
+          bg-gradient-to-b from-[#f9faff] via-[#f3f6ff] to-[#edf0ff]
+          ring-1 ring-black/5 shadow-sm hover:shadow-lg transition-all duration-300
+          before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1.5
+          before:bg-gradient-to-b before:from-indigo-500 before:to-fuchsia-500
+        "
+        data-testid={`listing-card-${id || "noid"}`}
+      >
+        {/* Image */}
+        <div className="relative mx-2 mt-2 mb-1 overflow-hidden rounded-lg ring-1 ring-black/5 sm:mx-3 sm:mt-3 sm:mb-2 -ml-0.5">
+          <img
             src={imageUrl}
-            alt={listing.title}
-            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-            data-testid={`listing-image-${listing.id}`}
+            alt={title4}
+            className="w-full h-[168px] sm:h-[210px] object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            data-testid={`listing-image-${id || "noid"}`}
           />
+
+          {/* Single price */}
+          <div className="absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full bg-white/95 px-2.5 py-1 sm:px-3 text-[12px] sm:text-sm font-semibold text-indigo-700 shadow-sm backdrop-blur">
+            {rentLabel}
+            <span className="ml-1 text-[11px] sm:text-xs font-medium text-indigo-600">
+              /ay
+            </span>
+          </div>
+
+          {/* Favorite — dark orange */}
           <Button
             variant="secondary"
             size="icon"
-            className="absolute top-3 right-3 w-8 h-8 bg-card/80 backdrop-blur-sm rounded-full hover:bg-card transition-colors"
+            aria-label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"}
+            className="
+              absolute left-2 top-2 h-9 w-9 sm:h-10 sm:w-10 rounded-full
+              bg-orange-600 text-white shadow-sm ring-1 ring-white/40
+              hover:bg-orange-700 active:scale-95 transition
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70
+            "
             onClick={handleToggleFavorite}
-            disabled={toggleFavoriteMutation.isPending}
-            data-testid={`favorite-button-${listing.id}`}
+            disabled={toggleFavoriteMutation.isPending || !id}
+            aria-pressed={favorite}
+            data-testid={`favorite-button-${id || "noid"}`}
           >
-            <Heart 
-              className={`h-4 w-4 ${favorite ? 'fill-destructive text-destructive' : 'text-muted-foreground hover:text-destructive'}`} 
+            <Heart
+              className="h-5 w-5"
+              strokeWidth={2}
+              fill={favorite ? "currentColor" : "none"}
             />
           </Button>
-          
-          <div className="absolute bottom-3 left-3 bg-primary text-primary-foreground px-2 py-1 rounded text-sm font-medium" data-testid={`availability-${listing.id}`}>
-            {formatAvailability(listing.availableFrom)}
-          </div>
+
+          {/* Verified badge */}
+          {isVerified && (
+            <div className="absolute bottom-2 left-2 rounded-full bg-emerald-600/95 p-1.5 text-white shadow-sm ring-1 ring-white/40 sm:bottom-3 sm:left-3">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+          )}
         </div>
-        
-        <div className="p-4">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-foreground line-clamp-1" data-testid={`listing-title-${listing.id}`}>
-              {listing.title}
-            </h3>
-            <div className="flex items-center ml-2">
-              <Star className="h-4 w-4 text-accent mr-1" />
-              <span className="text-sm text-muted-foreground">4.8</span>
-            </div>
-          </div>
-          
-          <p className="text-muted-foreground text-sm mb-3" data-testid={`listing-location-${listing.id}`}>
-            {listing.suburb} {showDistance && distance && `• ${distance} from CBD`}
+
+        {/* Content */}
+        <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+          <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug">
+            {title4}
+          </h3>
+          <p
+            className="mt-0.5 sm:mt-1 text-[13px] sm:text-sm text-slate-600 truncate"
+            title={`${suburb}${showDistance && distance ? ` • ${distance}` : ""}`}
+          >
+            {suburb}
+            {showDistance && distance ? ` • ${distance}` : ""}
           </p>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-lg font-bold text-foreground" data-testid={`listing-price-${listing.id}`}>
-                {formatCurrency(Number(listing.rentAmount))}
-              </span>
-              <span className="text-muted-foreground text-sm">/ay</span>
-            </div>
-            
-            {listing.user.verificationStatus === 'verified' && (
-              <div className="flex items-center space-x-1" data-testid={`verification-badge-${listing.id}`}>
-                <div className="w-6 h-6 rounded-full bg-secondary"></div>
-                <span className="text-xs text-muted-foreground">Verified</span>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </Link>

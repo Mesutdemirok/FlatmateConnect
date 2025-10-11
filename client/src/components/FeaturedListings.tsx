@@ -85,7 +85,7 @@ export default function FeaturedListings() {
               <div className="relative w-full h-[230px] sm:h-[220px] overflow-hidden">
                 <img
                   src={
-                    listing.images?.find(img => img.isPrimary)?.imagePath ||
+                    listing.images?.find((img) => img.isPrimary)?.imagePath ||
                     listing.images?.[0]?.imagePath ||
                     "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop"
                   }
@@ -111,10 +111,7 @@ export default function FeaturedListings() {
 
                 <div className="flex items-center justify-between mt-auto pt-2">
                   <span className="text-indigo-600 font-bold text-base">
-                    {formatMonthlyPrice(
-                      listing.rentAmount,
-                      "month",
-                    )}
+                    {formatMonthlyPrice(listing.rentAmount, "month")}
                   </span>
                   <button
                     onClick={(e) => {
