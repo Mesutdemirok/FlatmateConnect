@@ -74,7 +74,7 @@ export default function ListingDetail() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          setLocation(`/giris?next=/oda-ilani/${id}`);
         }, 500);
         return;
       }
@@ -88,7 +88,7 @@ export default function ListingDetail() {
 
   const handleFavoriteToggle = () => {
     if (!isAuthenticated) {
-      window.location.href = "/api/login";
+      setLocation(`/giris?next=/oda-ilani/${id}`);
       return;
     }
     toggleFavoriteMutation.mutate();
@@ -96,10 +96,10 @@ export default function ListingDetail() {
 
   const handleContactOwner = () => {
     if (!isAuthenticated) {
-      window.location.href = "/api/login";
+      setLocation(`/giris?next=/oda-ilani/${id}`);
       return;
     }
-    setLocation(`/messages?user=${listing.user.id}&listing=${listing.id}`);
+    setLocation(`/mesajlar?user=${listing.user.id}&listing=${listing.id}`);
   };
 
   const nextImage = () => {

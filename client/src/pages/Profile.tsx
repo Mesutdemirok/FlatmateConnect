@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -41,6 +42,7 @@ export default function Profile() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
 
   // Redirect if not authenticated
@@ -52,11 +54,11 @@ export default function Profile() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        setLocation("/giris?next=/profil");
       }, 500);
       return;
     }
-  }, [isAuthenticated, authLoading, toast]);
+  }, [isAuthenticated, authLoading, toast, setLocation]);
 
   const { data: preferences, isLoading: preferencesLoading } = useQuery({
     queryKey: ['/api/preferences'],
@@ -114,7 +116,7 @@ export default function Profile() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          setLocation("/giris?next=/profil");
         }, 500);
         return;
       }
@@ -523,7 +525,7 @@ export default function Profile() {
                     <p className="text-muted-foreground mb-4">
                       {t('listings.no_listings_message')}
                     </p>
-                    <Button onClick={() => window.location.href = '/create-listing'}>
+                    <Button onClick={() => setLocation('/ilan-olustur')}>
                       {t('listings.list_your_room')}
                     </Button>
                   </div>
@@ -585,7 +587,7 @@ export default function Profile() {
                     <p className="text-muted-foreground mb-4">
                       Start browsing and save listings you're interested in.
                     </p>
-                    <Button onClick={() => window.location.href = '/search'}>
+                    <Button onClick={() => setLocation('/oda-ilanlari')}>
                       {t('nav.browse_rooms')}
                     </Button>
                   </div>
