@@ -20,22 +20,22 @@ export default function FeaturedRoomSeekers() {
   });
 
   const getDisplayName = (seeker: SeekerProfileWithRelations) => {
-    if (seeker.firstName && seeker.lastName) {
-      return `${seeker.firstName} ${seeker.lastName.charAt(0)}.`;
+    if (seeker.fullName) {
+      const parts = seeker.fullName.split(" ");
+      return parts.length > 1 ? `${parts[0]} ${parts[1].charAt(0)}.` : parts[0];
     }
     if (seeker.user?.firstName && seeker.user?.lastName) {
       return `${seeker.user.firstName} ${seeker.user.lastName.charAt(0)}.`;
     }
-    if (seeker.user?.name) {
-      const nameParts = seeker.user.name.split(" ");
-      return nameParts.length > 1
-        ? `${nameParts[0]} ${nameParts[1].charAt(0)}.`
-        : nameParts[0];
-    }
-    return seeker.firstName || "Anonim";
+    return "Anonim";
   };
 
   const getPhotoUrl = (seeker: SeekerProfileWithRelations) => {
+    // Use profilePhotoUrl if available
+    if (seeker.profilePhotoUrl) {
+      return seeker.profilePhotoUrl;
+    }
+    // Fallback to photos array
     const primaryPhoto = seeker.photos?.find((p) => p.sortOrder === 0) || seeker.photos?.[0];
     if (primaryPhoto) {
       return `/uploads/seekers/${primaryPhoto.imagePath}`;
@@ -156,6 +156,30 @@ export default function FeaturedRoomSeekers() {
                 {seeker.occupation && (
                   <div className="flex items-center gap-2">
                     <span className="text-slate-500">{seeker.occupation}</span>
+                  </div>
+                )}
+
+                {/* Preference Badges */}
+                {(seeker.cleanlinessLevel || seeker.smokingPreference || seeker.genderPreference) && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {seeker.cleanlinessLevel && (
+                      <Badge variant="secondary" className="text-xs">
+                        {seeker.cleanlinessLevel === 'very-clean' ? 'Çok Temiz' : 
+                         seeker.cleanlinessLevel === 'clean' ? 'Temiz' : 
+                         seeker.cleanlinessLevel === 'average' ? 'Orta' : 'Rahat'}
+                      </Badge>
+                    )}
+                    {seeker.smokingPreference && seeker.smokingPreference !== 'no-preference' && (
+                      <Badge variant="secondary" className="text-xs">
+                        {seeker.smokingPreference === 'non-smoker' ? 'İçmiyor' : 
+                         seeker.smokingPreference === 'smoker' ? 'İçiyor' : 'Sosyal'}
+                      </Badge>
+                    )}
+                    {seeker.genderPreference && seeker.genderPreference !== 'no-preference' && (
+                      <Badge variant="secondary" className="text-xs">
+                        {seeker.genderPreference === 'male' ? 'Erkek Tercih' : 'Kadın Tercih'}
+                      </Badge>
+                    )}
                   </div>
                 )}
               </div>

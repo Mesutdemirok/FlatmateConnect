@@ -25,6 +25,15 @@ const createSeekerSchema = z.object({
   budgetMonthly: z.coerce.number().positive('Bütçe 0\'dan büyük olmalıdır'),
   about: z.string().min(10, 'Lütfen kendiniz hakkında bilgi veriniz (en az 10 karakter)'),
   preferredLocation: z.string().min(3, 'Lütfen tercih ettiğiniz lokasyonu giriniz'),
+  // Preference fields
+  smokingPreference: z.string().optional(),
+  petPreference: z.string().optional(),
+  cleanlinessLevel: z.string().optional(),
+  socialLevel: z.string().optional(),
+  workSchedule: z.string().optional(),
+  agePreferenceMin: z.coerce.number().optional(),
+  agePreferenceMax: z.coerce.number().optional(),
+  genderPreference: z.string().optional(),
 });
 
 type CreateSeekerFormData = z.infer<typeof createSeekerSchema>;
@@ -47,6 +56,14 @@ export default function CreateSeekerProfile() {
       budgetMonthly: 0,
       about: '',
       preferredLocation: '',
+      smokingPreference: '',
+      petPreference: '',
+      cleanlinessLevel: '',
+      socialLevel: '',
+      workSchedule: '',
+      agePreferenceMin: undefined,
+      agePreferenceMax: undefined,
+      genderPreference: '',
     },
   });
 
@@ -354,6 +371,215 @@ export default function CreateSeekerProfile() {
                     </FormItem>
                   )}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Preferences Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Tercihleriniz
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Sigara Tercihi */}
+                  <FormField
+                    control={form.control}
+                    name="smokingPreference"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sigara</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-smoking">
+                              <SelectValue placeholder="Seçiniz" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="non-smoker">İçmiyor</SelectItem>
+                            <SelectItem value="smoker">İçiyor</SelectItem>
+                            <SelectItem value="social-smoker">Sosyal İçici</SelectItem>
+                            <SelectItem value="no-preference">Farketmez</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Evcil Hayvan Tercihi */}
+                  <FormField
+                    control={form.control}
+                    name="petPreference"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Evcil Hayvan</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-pet">
+                              <SelectValue placeholder="Seçiniz" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="no-pets">Hayır</SelectItem>
+                            <SelectItem value="cat-friendly">Kedi Seviyorum</SelectItem>
+                            <SelectItem value="dog-friendly">Köpek Seviyorum</SelectItem>
+                            <SelectItem value="all-pets">Hepsini Seviyorum</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Temizlik Seviyesi */}
+                  <FormField
+                    control={form.control}
+                    name="cleanlinessLevel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Temizlik Seviyesi</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-cleanliness">
+                              <SelectValue placeholder="Seçiniz" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="very-clean">Çok Temiz</SelectItem>
+                            <SelectItem value="clean">Temiz</SelectItem>
+                            <SelectItem value="average">Orta</SelectItem>
+                            <SelectItem value="relaxed">Rahat</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Sosyallik Seviyesi */}
+                  <FormField
+                    control={form.control}
+                    name="socialLevel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sosyallik</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-social">
+                              <SelectValue placeholder="Seçiniz" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="very-social">Çok Sosyal</SelectItem>
+                            <SelectItem value="social">Sosyal</SelectItem>
+                            <SelectItem value="balanced">Dengeli</SelectItem>
+                            <SelectItem value="quiet">Sakin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Çalışma Saatleri */}
+                  <FormField
+                    control={form.control}
+                    name="workSchedule"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Çalışma Saatleri</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-work">
+                              <SelectValue placeholder="Seçiniz" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="9-to-5">9-5 Mesai</SelectItem>
+                            <SelectItem value="shift-work">Vardiyalı</SelectItem>
+                            <SelectItem value="student">Öğrenci</SelectItem>
+                            <SelectItem value="work-from-home">Evden Çalışma</SelectItem>
+                            <SelectItem value="unemployed">İşsiz</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Cinsiyet Tercihi */}
+                  <FormField
+                    control={form.control}
+                    name="genderPreference"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ev Arkadaşı Cinsiyet Tercihi</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-gender-pref">
+                              <SelectValue placeholder="Seçiniz" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="male">Erkek</SelectItem>
+                            <SelectItem value="female">Kadın</SelectItem>
+                            <SelectItem value="no-preference">Farketmez</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Yaş Aralığı Min */}
+                  <FormField
+                    control={form.control}
+                    name="agePreferenceMin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Yaş Aralığı (Min)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            placeholder="18"
+                            {...field}
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            data-testid="input-age-pref-min"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Yaş Aralığı Max */}
+                  <FormField
+                    control={form.control}
+                    name="agePreferenceMax"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Yaş Aralığı (Max)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            placeholder="50"
+                            {...field}
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            data-testid="input-age-pref-max"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </CardContent>
             </Card>
 

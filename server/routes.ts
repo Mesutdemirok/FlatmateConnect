@@ -662,6 +662,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       const photos = await Promise.all(photoPromises);
+      
+      // If this is the first photo and profilePhotoUrl is not set, update it
+      if (files.length > 0 && !seeker.profilePhotoUrl) {
+        await storage.updateSeekerProfile(req.params.id, {
+          profilePhotoUrl: `/uploads/seekers/${files[0].filename}`
+        });
+      }
+      
       res.status(201).json(photos);
     } catch (error: any) {
       console.error("Error adding seeker photos:", error);
