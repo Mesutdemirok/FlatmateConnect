@@ -1,0 +1,117 @@
+[COMMAND MODE]  
+Apply all necessary code changes now.  
+Do not only plan — modify files directly and rebuild the project.  
+Make sure all features below are fully functional and tested in Preview mode.  
+
+---
+
+### 🔹 Objective:
+Unify the “Oda Arama İlanı Ver” (room seeker listing) and “Tercihlerim” (preferences) forms into a single, consistent and working system with photo upload and full homepage integration.
+
+---
+
+### 🔹 Tasks to Implement:
+
+1️⃣ **Unified Data Model**
+- Merge `SeekerProfile` and `Preferences` into a single combined data model (e.g. `SeekerProfileExtended`).
+- Include these fields:
+  - Ad Soyad
+  - Yaş
+  - Cinsiyet
+  - Durum (Öğrenci / Çalışan)
+  - Aylık kira bütçesi
+  - Lokasyon
+  - Kendini tanıtma açıklaması
+  - Profil fotoğrafı
+  - Sigara tercihi
+  - Evcil hayvan tercihi
+  - Temizlik seviyesi
+  - Sosyallik seviyesi
+  - Çalışma saatleri
+  - Cinsiyet tercihi
+  - Yaş aralığı (min-max)
+- Use one unified table and automatically connect updates between profile and listing.
+
+---
+
+2️⃣ **Photo Upload Functionality**
+- Fix the photo upload system end-to-end:
+  - Allow users to upload JPG, PNG, or WebP (max 5MB).
+  - Store the image in the `/uploads` folder (or configured storage).
+  - Save its URL in the seeker profile record.
+  - Show uploaded photo:
+    - In the user’s profile
+    - On the homepage under “Oda Arayanlar” cards
+  - If no image exists, show a default placeholder avatar.
+- Test upload workflow completely (select → save → visible on homepage card).
+
+---
+
+3️⃣ **Profile & Listing Sync**
+- When a user updates their profile or unified form:
+  - Sync all changes automatically with the public “Oda Arayanlar” listing.
+  - Ensure one data source only (no duplicate records).
+  - Updating from the profile page should instantly update homepage cards too.
+
+---
+
+4️⃣ **Unified Form UI & Flow**
+- Keep both top menu options:
+  - “Oda İlanı Ver”
+  - “Oda Arama İlanı Ver”
+- When user clicks “Oda Arama İlanı Ver”:
+  - Redirect to the new unified form.
+  - After completion, show a confirmation message and automatically create/update their public card.
+- In profile page (“Profilim”), under “Hızlı İşlemler”:
+  - “Oda İlanı Ver” → room listing form
+  - “Oda Arama İlanı Ver” → unified seeker form (connected to preferences)
+
+---
+
+5️⃣ **Homepage Integration**
+- Ensure the unified seeker profiles appear under “Oda Arayanlar”.
+- Cards should display:
+  - Photo (if available)
+  - Ad Soyad (first name + initial)
+  - Yaş
+  - Cinsiyet
+  - Bütçe (₺…/ay)
+  - Lokasyon
+  - Temizlik / Sigara / Cinsiyet tercihi (if filled)
+- Make sure the data in cards comes directly from the unified model.
+
+---
+
+6️⃣ **Fix Known Bugs**
+- Fix the previous validation errors:
+  > “Expected string, received number” for `budgetMonthly` and `rentAmount`.
+  → Adjust backend validation to accept both strings and numbers.
+- Ensure all string-number mismatches are corrected.
+- Fix photo upload not submitting properly.
+
+---
+
+7️⃣ **Localization**
+- Convert all URLs and slugs in the app to Turkish (e.g. `/giris`, `/uye-ol`, `/oda-ilani-ver`, `/oda-arama-ilani-ver`, `/profil`, `/ilan/:id`).
+- Update any English routes to their Turkish equivalents.
+
+---
+
+8️⃣ **Testing & Verification**
+- Create and submit a new seeker profile.
+- Upload a photo and verify it appears in:
+  - Profile page
+  - Oda Arayanlar homepage card
+- Edit info (e.g., yaş, bütçe) from profile and check that homepage card updates automatically.
+- Rebuild project, verify no runtime or console errors.
+
+---
+
+✅ **Expected Outcome:**
+- A single unified and synced system for “Oda Arama İlanı”.
+- Working photo upload and card display.
+- Real-time synchronization between profile, preferences, and homepage.
+- All Turkish routes working.
+- No backend validation or type errors.
+
+Rebuild after changes and show confirmation that the unified form, photo upload, and homepage card are functioning as expected.
