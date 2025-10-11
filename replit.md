@@ -77,6 +77,28 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 11, 2025 - Listing Display & Pricing Format Updates
+- **Listing Detail Page Data Binding**: Fixed all listing data fields to display correctly using proper schema fields
+  - Now shows: address, title, rentAmount, propertyType, furnishingStatus, bathroomType, totalRooms, totalOccupants, roommatePreference, smokingPolicy, amenities, excludedBills
+  - Removed references to old fields (city, suburb, postcode, roomType, furnished, bondAmount)
+  - Added proper Turkish labels for all property details
+- **Monthly Pricing Format**: Changed pricing display from weekly to monthly across entire application
+  - ListingDetail: ₺X/ay instead of per_week
+  - FeaturedListings: ₺X/ay format for all listings
+  - ListingCard: ₺X/ay instead of /week
+  - FeaturedRoomSeekers: Fixed to use budgetMonthly field, display ₺X/ay
+- **Owner Section Cleanup**: Removed rating/star display from listing detail pages
+  - Removed Star icon import
+  - Clean display with only owner name, "Mülk Sahibi" label, and verified badge
+- **Homepage Listing Cards**: Updated to show dynamic data from database
+  - Card titles now show actual listing titles from database
+  - Addresses display properly below titles
+  - Removed hardcoded repetitive placeholder text
+- **Homepage Section Titles**: 
+  - Added "Güncel İlanlar" section header above listings
+  - Removed subtitle "Evinize uygun ev arkadaşı bulun" from "Oda Arayanlar" section
+- **Design Consistency**: Improved spacing, alignment, and typography for better visual hierarchy
+
 ### October 11, 2025 - UI/UX Improvements & Form Enhancements
 - **Header Button Visibility**: Updated "Profil" and "Çıkış Yap" buttons with white background and indigo-700 text for better contrast against the purple gradient header
 - **Icon Styling**: Enhanced heart and message icons to be thicker (h-6 w-6, strokeWidth 2.5) with improved background contrast (bg-white/10 hover:bg-white/20)
