@@ -126,7 +126,7 @@ export const seekerProfiles = pgTable("seeker_profiles", {
   fullName: varchar("full_name"), // Combined first and last name
   age: integer("age"),
   gender: varchar("gender"), // Kadın/Erkek/Diğer/Belirtmek İstemiyorum
-  status: varchar("status"), // Öğrenci/Çalışan/Serbest/Diğer (occupation/status)
+  occupation: varchar("occupation"), // Öğrenci/Çalışan/Serbest/Diğer
   
   // Search Preferences
   budgetMonthly: decimal("budget_monthly", { precision: 8, scale: 2 }), // Monthly budget
