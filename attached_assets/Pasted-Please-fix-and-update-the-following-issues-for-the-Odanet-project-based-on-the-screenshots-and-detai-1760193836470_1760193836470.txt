@@ -1,0 +1,51 @@
+Please fix and update the following issues for the Odanet project based on the screenshots and details:
+
+1️⃣ **Listing Detail Page – Data Binding Fix**
+- The information from the listing form (address, rent, property type, room details, etc.) is not showing correctly on the Listing Detail page.
+- Make sure all listing data fields from the form are properly displayed on the detail page.
+- Example: address, title, rent amount, included/excluded bills, property type, furniture status, internet availability, and roommate preferences.
+- Confirm data is pulled from the database dynamically and matches what was submitted via the form.
+
+2️⃣ **Pricing Format**
+- The pricing currently shows as “₺18.000,00/hafta”.
+- Change it to **monthly format** instead → “₺18.000/ay”.
+- Ensure this change applies across the site (both in detail pages and listing cards).
+
+3️⃣ **Owner Section (“Mülk Sahibi”) Cleanup**
+- Remove the rating text and star symbol (“4.8 puan • değerlendirme”).
+- Keep only:  
+  - Owner name (e.g., “Mahmut Tuncer”)  
+  - “Mülk Sahibi” label  
+  - Verified badge if available.
+
+4️⃣ **Homepage Listing Cards**
+- Current cards show repetitive “İstanbul, Konforlu, merkezi konumda...” texts.
+- Replace with dynamic listing data from database — use real title and short description from each listing form.
+- Add the listing title on top of each card (e.g., “Maltepe Ritim İstanbul’da Metroya Yakın Eşyalı Oda”).
+- Ensure cards show correct rent (₺x.xxx/ay) and district/location underneath.
+
+5️⃣ **Homepage Section Titles**
+- Add a section title above the listing cards:  
+  **“Güncel İlanlar”**
+- Remove the redundant text under “Oda Arayanlar”.
+  - Delete: “Evinize uygun ev arkadaşı bulun.”
+  - Keep only the section title “Oda Arayanlar”.
+
+6️⃣ **General Design & Consistency**
+- Ensure spacing and alignment between cards are balanced.
+- Make titles bold, readable, and uniform with other headings.
+- Check responsiveness — confirm the layout works cleanly on mobile.
+
+7️⃣ **Testing**
+- Verify that new listings submitted from the form now appear correctly on:
+  - Homepage listing cards.
+  - Listing detail page.
+- Confirm all form data saves correctly and maps to the right display fields.
+- Ensure that there are no broken bindings or missing fields.
+
+✅ After completing all fixes:
+- Rebuild and test the full flow:
+  - Create a new test listing.
+  - Confirm it appears on homepage and opens with full correct details.
+  - Check price shows monthly.
+- Ensure everything matches the Odanet color and design theme.

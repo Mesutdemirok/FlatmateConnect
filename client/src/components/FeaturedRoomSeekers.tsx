@@ -46,7 +46,7 @@ export default function FeaturedRoomSeekers() {
   const formatBudget = (budget: string | null) => {
     if (!budget) return "Belirtilmemiş";
     const num = parseFloat(budget);
-    return `₺${num.toLocaleString('tr-TR')}/hafta`;
+    return `₺${num.toLocaleString('tr-TR')}/ay`;
   };
 
   if (isLoading) {
@@ -92,12 +92,9 @@ export default function FeaturedRoomSeekers() {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8 text-center">
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
           Oda Arayanlar
         </h2>
-        <p className="text-slate-600">
-          Evinize uygun ev arkadaşı bulun
-        </p>
       </div>
 
       <div
@@ -142,24 +139,23 @@ export default function FeaturedRoomSeekers() {
               </div>
 
               <div className="space-y-2 text-sm text-slate-600">
-                {seeker.budgetWeekly && (
+                {seeker.budgetMonthly && (
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-indigo-500" />
-                    <span>{formatBudget(seeker.budgetWeekly)}</span>
+                    <span>{formatBudget(seeker.budgetMonthly)}</span>
                   </div>
                 )}
                 
-                {seeker.preferredLocations && seeker.preferredLocations.length > 0 && (
+                {seeker.preferredLocation && (
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-indigo-500" />
-                    <span className="truncate">{seeker.preferredLocations[0]}</span>
+                    <span className="truncate">{seeker.preferredLocation}</span>
                   </div>
                 )}
 
-                {seeker.moveInDate && (
+                {seeker.occupation && (
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-indigo-500" />
-                    <span>{new Date(seeker.moveInDate).toLocaleDateString('tr-TR')}</span>
+                    <span className="text-slate-500">{seeker.occupation}</span>
                   </div>
                 )}
               </div>

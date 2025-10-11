@@ -59,7 +59,10 @@ export default function FeaturedListings() {
       "
     >
       <div className="max-w-[1500px] mx-auto px-2 sm:px-4">
-        {/* No title — compact and clean layout */}
+        {/* Section Title */}
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6 sm:mb-8 text-center">
+          Güncel İlanlar
+        </h2>
 
         <div
           className="
@@ -98,19 +101,18 @@ export default function FeaturedListings() {
 
               {/* Text section */}
               <div className="p-4 flex flex-col">
-                <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                  {listing.city || "İstanbul"}{" "}
-                  {listing.suburb ? `• ${listing.suburb}` : ""}
+                <h3 className="text-lg font-bold text-slate-900 mb-1 line-clamp-1">
+                  {listing.title || "Oda İlanı"}
                 </h3>
 
                 <p className="text-sm text-slate-600 mb-3 line-clamp-2">
-                  Konforlu, merkezi konumda, taşınmaya hazır oda ilanı.
+                  {listing.address || "Konum bilgisi mevcut değil"}
                 </p>
 
                 <div className="flex items-center justify-between mt-auto pt-2">
                   <span className="text-indigo-600 font-bold text-base">
                     {formatMonthlyPrice(
-                      listing.price || listing.rentAmount,
+                      listing.rentAmount,
                       "month",
                     )}
                   </span>

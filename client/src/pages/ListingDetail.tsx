@@ -27,8 +27,7 @@ import {
   Zap,
   Shield,
   ChevronLeft,
-  ChevronRight,
-  Star
+  ChevronRight
 } from "lucide-react";
 
 export default function ListingDetail() {
@@ -264,24 +263,25 @@ export default function ListingDetail() {
                 <div className="flex items-center text-muted-foreground mb-4">
                   <MapPin className="h-4 w-4 mr-1" />
                   <span data-testid="listing-address">
-                    {listing.address || `${listing.suburb}, ${listing.city} ${listing.postcode}`}
+                    {listing.address}
                   </span>
                 </div>
                 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  <Badge variant="secondary" data-testid="availability-badge">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    {formatAvailability(listing.availableFrom)}
-                  </Badge>
-                  {listing.roomType && (
-                    <Badge variant="outline" data-testid="room-type-badge">
+                  {listing.propertyType && (
+                    <Badge variant="secondary" data-testid="property-type-badge">
                       <Home className="h-3 w-3 mr-1" />
-                      {listing.roomType}
+                      {listing.propertyType}
                     </Badge>
                   )}
-                  {listing.furnished && (
-                    <Badge variant="outline" data-testid="furnished-badge">
-                      {t('listings.furnished')}
+                  {listing.furnishingStatus && (
+                    <Badge variant="outline" data-testid="furnishing-badge">
+                      {listing.furnishingStatus}
+                    </Badge>
+                  )}
+                  {listing.bathroomType && (
+                    <Badge variant="outline" data-testid="bathroom-badge">
+                      Banyo: {listing.bathroomType}
                     </Badge>
                   )}
                 </div>
@@ -289,46 +289,62 @@ export default function ListingDetail() {
 
               <Separator />
 
-              {/* Description */}
-              {listing.description && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-3">{t('listings.description')}</h2>
-                  <p className="text-foreground leading-relaxed" data-testid="listing-description">
-                    {listing.description}
-                  </p>
+              {/* Property Details */}
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Oda Bilgileri</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  {listing.totalRooms && (
+                    <div className="flex items-center" data-testid="total-rooms">
+                      <Home className="h-4 w-4 mr-2 text-secondary" />
+                      <span>Toplam Oda Sayısı: {listing.totalRooms}</span>
+                    </div>
+                  )}
+                  {listing.totalOccupants && (
+                    <div className="flex items-center" data-testid="total-occupants">
+                      <span>Evde Yaşayan: {listing.totalOccupants} kişi</span>
+                    </div>
+                  )}
+                  {listing.roommatePreference && (
+                    <div className="flex items-center" data-testid="roommate-preference">
+                      <span>Tercih: {listing.roommatePreference}</span>
+                    </div>
+                  )}
+                  {listing.smokingPolicy && (
+                    <div className="flex items-center" data-testid="smoking-policy">
+                      <span>Sigara: {listing.smokingPolicy}</span>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               <Separator />
 
-              {/* Features */}
+              {/* Features & Amenities */}
               <div>
-                <h2 className="text-xl font-semibold mb-4">{t('listings.features_amenities')}</h2>
+                <h2 className="text-xl font-semibold mb-4">Özellikler ve Olanaklar</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {listing.billsIncluded && (
-                    <div className="flex items-center" data-testid="bills-included-feature">
-                      <Zap className="h-4 w-4 mr-2 text-secondary" />
-                      <span>{t('listings.bills_included')}</span>
-                    </div>
-                  )}
                   {listing.internetIncluded && (
                     <div className="flex items-center" data-testid="internet-feature">
                       <Wifi className="h-4 w-4 mr-2 text-secondary" />
-                      <span>{t('listings.internet_included')}</span>
+                      <span>İnternet Dahil</span>
                     </div>
                   )}
-                  {listing.parkingAvailable && (
-                    <div className="flex items-center" data-testid="parking-feature">
-                      <Car className="h-4 w-4 mr-2 text-secondary" />
-                      <span>{t('listings.parking_available')}</span>
+                  {listing.billsIncluded ? (
+                    <div className="flex items-center" data-testid="bills-included-feature">
+                      <Zap className="h-4 w-4 mr-2 text-secondary" />
+                      <span>Faturalar Dahil</span>
+                    </div>
+                  ) : listing.excludedBills && listing.excludedBills.length > 0 && (
+                    <div className="flex items-center" data-testid="bills-excluded-feature">
+                      <Zap className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>Dahil Değil: {listing.excludedBills.join(', ')}</span>
                     </div>
                   )}
-                  {listing.propertyType && (
-                    <div className="flex items-center" data-testid="property-type-feature">
-                      <Home className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{listing.propertyType}</span>
+                  {listing.amenities && listing.amenities.map((amenity, index) => (
+                    <div key={index} className="flex items-center" data-testid={`amenity-${index}`}>
+                      <span>{amenity}</span>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
             </div>
@@ -342,13 +358,8 @@ export default function ListingDetail() {
                 <div className="text-center mb-6">
                   <div className="text-3xl font-bold text-foreground" data-testid="listing-price">
                     {formatCurrency(Number(listing.rentAmount))}
-                    <span className="text-lg font-normal text-muted-foreground">{t('listings.per_week')}</span>
+                    <span className="text-lg font-normal text-muted-foreground">/ay</span>
                   </div>
-                  {listing.bondAmount && (
-                    <p className="text-sm text-muted-foreground mt-1" data-testid="bond-amount">
-                      {formatCurrency(Number(listing.bondAmount))} {t('listings.bond')}
-                    </p>
-                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -380,11 +391,11 @@ export default function ListingDetail() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5 text-secondary" />
-                  {t('listings.property_owner')}
+                  Mülk Sahibi
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3">
                   <Avatar data-testid="owner-avatar">
                     <AvatarImage src={listing.user.profileImageUrl || undefined} />
                     <AvatarFallback>
@@ -399,15 +410,10 @@ export default function ListingDetail() {
                     {listing.user.verificationStatus === 'verified' && (
                       <div className="flex items-center gap-1 text-sm text-secondary">
                         <Shield className="h-3 w-3" />
-                        <span>{t('listings.verified')}</span>
+                        <span>Doğrulanmış</span>
                       </div>
                     )}
                   </div>
-                </div>
-                
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Star className="h-4 w-4 text-accent" />
-                  <span>4.8 {t('listings.rating_reviews')}</span>
                 </div>
               </CardContent>
             </Card>

@@ -152,7 +152,7 @@ export default function ListingCard({
               <span className="text-lg font-bold text-foreground" data-testid={`listing-price-${listing.id}`}>
                 {formatCurrency(Number(listing.rentAmount))}
               </span>
-              <span className="text-muted-foreground text-sm">/week</span>
+              <span className="text-muted-foreground text-sm">/ay</span>
             </div>
             
             {listing.user.verificationStatus === 'verified' && (
