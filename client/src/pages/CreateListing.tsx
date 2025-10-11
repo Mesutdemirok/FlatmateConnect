@@ -89,7 +89,7 @@ export default function CreateListing() {
         userId: user?.id,
         address: data.address,
         title: data.title,
-        rentAmount: data.rentAmount,
+        rentAmount: data.rentAmount.toString(),
         billsIncluded: data.billsIncluded === 'yes',
         propertyType: data.propertyType,
         internetIncluded: data.internetIncluded === 'yes',
@@ -272,9 +272,11 @@ export default function CreateListing() {
                           <span className="absolute left-3 top-2.5">₺</span>
                           <Input 
                             type="number"
+                            min="0"
                             placeholder="5000" 
                             className="pl-8"
-                            {...field} 
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                             data-testid="input-rent"
                           />
                         </div>
@@ -365,18 +367,16 @@ export default function CreateListing() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>7. Evde toplam kaç oda var? *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-rooms">
-                            <SelectValue placeholder="Seçiniz" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                            <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="örn., 3"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                          data-testid="input-total-rooms"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -486,8 +486,10 @@ export default function CreateListing() {
                       <FormControl>
                         <Input 
                           type="number" 
+                          min="1"
                           placeholder="2" 
-                          {...field} 
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                           data-testid="input-occupants"
                         />
                       </FormControl>

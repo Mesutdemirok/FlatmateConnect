@@ -1,0 +1,62 @@
+⚠️ IMPORTANT NOTE:
+The new forms (Oda İlanı Ver and Kullanıcı Profili) still cannot be submitted successfully.  
+I have tested both forms manually, and the submission fails with this error:
+
+❌ [plugin:runtime-error-plugin] 400:  
+"Expected string, received number"  
+Fields affected: rentAmount, budgetMonthly (and possibly others).
+
+Please fix this issue completely and test both forms end-to-end before deployment.
+
+---
+
+### 🔧 1️⃣ Fix the Submission Type Error
+- Diagnose and fix the backend schema or validation issue.
+- The current backend expects `rentAmount` and `budgetMonthly` as **string**, but the frontend sends **number**.
+✅ Fix options (choose one consistent approach):
+  - Either update backend schema (Zod / Drizzle / Prisma) to accept numbers,  
+  **OR**
+  - Convert numeric values to strings in frontend before submission.
+- Ensure the form successfully posts to `/api/listings` and `/api/seekers` without throwing a 400 error.
+
+---
+
+### 🧪 2️⃣ Test the Entire Flow Thoroughly
+Perform full QA testing on both forms:
+
+**Oda İlanı Formu**
+- Fill out all fields, upload photos, and click “İlan Oluştur”.
+- Confirm success toast “İlan başarıyla oluşturuldu.” appears.
+- Confirm listing is created in database and visible on homepage.
+- Confirm redirect to listing detail page (`/oda-ilani/:id`).
+
+**Kullanıcı Profili Formu**
+- Fill out all fields, including numeric “bütçe”.
+- Submit and confirm success toast “Profil başarıyla oluşturuldu.”
+- Check that user data is correctly stored and visible on `/profil`.
+
+✅ Make sure no validation errors appear in the console.
+✅ Verify all required fields are saved with correct types (numbers, strings, booleans).
+✅ Confirm the API returns 200 OK on success.
+
+---
+
+### 🧩 3️⃣ Verify Full Integration
+After fixing and testing:
+- Confirm new listing and seeker data both appear on the homepage and “Oda Arayanlar” section.
+- Confirm images upload properly and display correctly.
+- Ensure both forms are mobile responsive and usable.
+
+---
+
+### 🚀 4️⃣ Final Step
+Once both forms are fully working:
+- Rebuild (`npm run build`)
+- Restart the server
+- Deploy automatically to `.replit.app`
+- Verify submission flow in live production build.
+
+---
+
+⚠️ Reminder:
+This issue must be resolved fully — the “İlan Oluştur” and “Profil Oluştur” forms must be **tested and functional** before marking this task complete.

@@ -73,7 +73,7 @@ export default function CreateSeekerProfile() {
         age: data.age,
         gender: data.gender,
         occupation: data.occupation,
-        budgetMonthly: data.budgetMonthly,
+        budgetMonthly: data.budgetMonthly.toString(),
         about: data.about,
         preferredLocation: data.preferredLocation,
       });
@@ -227,8 +227,11 @@ export default function CreateSeekerProfile() {
                       <FormControl>
                         <Input 
                           type="number"
-                          placeholder="25" 
-                          {...field} 
+                          min="18"
+                          max="120"
+                          placeholder="25"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                           data-testid="input-age"
                         />
                       </FormControl>
@@ -299,9 +302,11 @@ export default function CreateSeekerProfile() {
                           <span className="absolute left-3 top-2.5">₺</span>
                           <Input 
                             type="number"
+                            min="0"
                             placeholder="5000" 
                             className="pl-8"
-                            {...field} 
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                             data-testid="input-budget"
                           />
                         </div>
