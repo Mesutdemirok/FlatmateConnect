@@ -77,6 +77,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### October 11, 2025 - Critical UX Fixes & Navigation Improvements
+- **Form Submission Fix**: Resolved CreateListing form submission bug by removing synchronous `setIsSubmitting(false)` call that prevented async mutations
+- **Public Seeker Access**: Made seeker profiles publicly accessible by unifying homepage experience - all users (guest and authenticated) now see identical Home page
+- **Seeker Detail Pages**: Created SeekerDetail component with full profile display and fixed 404 errors when clicking seeker cards
+- **Login Flow Enhancement**: Updated login to redirect to /profile page with personalized Turkish welcome toast ("Hoş geldiniz, {username}!") instead of homepage
+- **SPA Navigation**: Replaced all full-page redirects (window.location.href) with client-side navigation (setLocation) for smooth single-page app experience
+  - Fixed CreateListing unauthorized redirects to use client-side routing
+  - Proper next parameter handling for post-login navigation
+- **Form Validation**: Enhanced validation messages with specific Turkish error messages for better user experience
+- **Loading State Management**: Added proper finally blocks to prevent stuck loading states
+
 ### October 11, 2025 - Seeker/Room-Seeking Functionality
 - **Database**: Extended PostgreSQL schema with `seekerProfiles` and `seekerPhotos` tables
   - Added fields: firstName, lastName, age, gender, budgetWeekly, preferredLocations, moveInDate, occupation, smokingStatus, petOwner, isFeatured
