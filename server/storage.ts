@@ -5,6 +5,8 @@ import {
   userPreferences,
   messages,
   favorites,
+  seekerProfiles,
+  seekerPhotos,
   type User,
   type UpsertUser,
   type Listing,
@@ -17,6 +19,10 @@ import {
   type InsertMessage,
   type Favorite,
   type InsertFavorite,
+  type SeekerProfile,
+  type InsertSeekerProfile,
+  type SeekerPhoto,
+  type InsertSeekerPhoto,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ilike, gte, lte, desc, asc } from "drizzle-orm";
@@ -73,6 +79,25 @@ export interface IStorage {
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
   removeFavorite(userId: string, listingId: string): Promise<void>;
   isFavorite(userId: string, listingId: string): Promise<boolean>;
+  
+  // Seeker profiles
+  getSeekerProfiles(filters?: {
+    minBudget?: number;
+    maxBudget?: number;
+    gender?: string;
+    location?: string;
+    isFeatured?: boolean;
+  }): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User })[]>;
+  getSeekerProfile(id: string): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User }) | undefined>;
+  getUserSeekerProfile(userId: string): Promise<(SeekerProfile & { photos: SeekerPhoto[] }) | undefined>;
+  createSeekerProfile(profile: InsertSeekerProfile): Promise<SeekerProfile>;
+  updateSeekerProfile(id: string, profile: Partial<InsertSeekerProfile>): Promise<SeekerProfile>;
+  deleteSeekerProfile(id: string): Promise<void>;
+  
+  // Seeker photos
+  addSeekerPhoto(photo: InsertSeekerPhoto): Promise<SeekerPhoto>;
+  getSeekerPhotos(seekerId: string): Promise<SeekerPhoto[]>;
+  deleteSeekerPhoto(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -466,6 +491,141 @@ export class DatabaseStorage implements IStorage {
       .from(favorites)
       .where(and(eq(favorites.userId, userId), eq(favorites.listingId, listingId)));
     return !!favorite;
+  }
+
+  // Seeker profiles
+  async getSeekerProfiles(filters?: {
+    minBudget?: number;
+    maxBudget?: number;
+    gender?: string;
+    location?: string;
+    isFeatured?: boolean;
+  }): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User })[]> {
+    const whereConditions = [];
+    whereConditions.push(eq(seekerProfiles.isActive, true));
+
+    if (filters?.minBudget) {
+      whereConditions.push(gte(seekerProfiles.budgetWeekly, filters.minBudget.toString()));
+    }
+    if (filters?.maxBudget) {
+      whereConditions.push(lte(seekerProfiles.budgetWeekly, filters.maxBudget.toString()));
+    }
+    if (filters?.gender) {
+      whereConditions.push(eq(seekerProfiles.gender, filters.gender));
+    }
+    if (filters?.isFeatured !== undefined) {
+      whereConditions.push(eq(seekerProfiles.isFeatured, filters.isFeatured));
+    }
+
+    const profiles = await db
+      .select()
+      .from(seekerProfiles)
+      .where(and(...whereConditions))
+      .orderBy(desc(seekerProfiles.createdAt));
+
+    const profilesWithRelations = await Promise.all(
+      profiles.map(async (profile) => {
+        const [photos, user] = await Promise.all([
+          this.getSeekerPhotos(profile.id),
+          this.getUser(profile.userId)
+        ]);
+        return { ...profile, photos, user: user! };
+      })
+    );
+
+    return profilesWithRelations;
+  }
+
+  async getSeekerProfile(id: string): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User }) | undefined> {
+    const [profile] = await db
+      .select()
+      .from(seekerProfiles)
+      .where(eq(seekerProfiles.id, id));
+
+    if (!profile) return undefined;
+
+    const [photos, user] = await Promise.all([
+      this.getSeekerPhotos(profile.id),
+      this.getUser(profile.userId)
+    ]);
+
+    return { ...profile, photos, user: user! };
+  }
+
+  async getUserSeekerProfile(userId: string): Promise<(SeekerProfile & { photos: SeekerPhoto[] }) | undefined> {
+    const [profile] = await db
+      .select()
+      .from(seekerProfiles)
+      .where(eq(seekerProfiles.userId, userId));
+
+    if (!profile) return undefined;
+
+    const photos = await this.getSeekerPhotos(profile.id);
+    return { ...profile, photos };
+  }
+
+  async createSeekerProfile(profileData: InsertSeekerProfile): Promise<SeekerProfile> {
+    const [profile] = await db
+      .insert(seekerProfiles)
+      .values(profileData)
+      .returning();
+    return profile;
+  }
+
+  async updateSeekerProfile(id: string, profileData: Partial<InsertSeekerProfile>): Promise<SeekerProfile> {
+    const [profile] = await db
+      .update(seekerProfiles)
+      .set({ ...profileData, updatedAt: new Date() })
+      .where(eq(seekerProfiles.id, id))
+      .returning();
+    return profile;
+  }
+
+  async deleteSeekerProfile(id: string): Promise<void> {
+    const profile = await this.getSeekerProfile(id);
+    if (profile) {
+      for (const photo of profile.photos) {
+        const photoPath = path.join(process.cwd(), 'uploads', 'seekers', photo.imagePath);
+        if (fs.existsSync(photoPath)) {
+          fs.unlinkSync(photoPath);
+        }
+      }
+    }
+    await db.delete(seekerProfiles).where(eq(seekerProfiles.id, id));
+  }
+
+  // Seeker photos
+  async addSeekerPhoto(photoData: InsertSeekerPhoto): Promise<SeekerPhoto> {
+    const [photo] = await db
+      .insert(seekerPhotos)
+      .values(photoData)
+      .returning();
+    return photo;
+  }
+
+  async getSeekerPhotos(seekerId: string): Promise<SeekerPhoto[]> {
+    const photos = await db
+      .select()
+      .from(seekerPhotos)
+      .where(eq(seekerPhotos.seekerId, seekerId))
+      .orderBy(asc(seekerPhotos.sortOrder));
+    return photos;
+  }
+
+  async deleteSeekerPhoto(id: string): Promise<void> {
+    const [photo] = await db
+      .select()
+      .from(seekerPhotos)
+      .where(eq(seekerPhotos.id, id));
+
+    if (photo) {
+      const photoPath = path.join(process.cwd(), 'uploads', 'seekers', photo.imagePath);
+      if (fs.existsSync(photoPath)) {
+        fs.unlinkSync(photoPath);
+      }
+    }
+
+    await db.delete(seekerPhotos).where(eq(seekerPhotos.id, id));
   }
 }
 
