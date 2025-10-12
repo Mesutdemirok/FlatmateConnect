@@ -68,6 +68,27 @@ const seekerUpload = multer({
   }
 });
 
+// Address masking function for privacy
+function maskAddress(address: string): string {
+  // Remove detailed info like building numbers, apartment numbers, etc.
+  // Keep only neighborhood/district level information
+  const parts = address.split(',');
+  
+  // Remove parts with numbers or detailed info
+  const filtered = parts.filter(part => {
+    const hasDetailedInfo = /(\d+\s*(no|numara|daire|kat|kapı|blok)|no:\s*\d+|daire:\s*\d+|\d+\.\s*sokak)/i.test(part);
+    return !hasDetailedInfo;
+  });
+  
+  // If we have at least one part, return it, otherwise return first two parts
+  if (filtered.length > 0) {
+    return filtered.slice(0, 2).join(',').trim();
+  }
+  
+  // Fallback: return first 2 parts of address
+  return parts.slice(0, 2).join(',').trim();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));
@@ -443,7 +464,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const listings = await storage.getListings(filters);
-      res.json(listings);
+      
+      // Mask addresses for privacy unless user owns the listing
+      const userId = req.userId; // Will be undefined if not authenticated
+      const maskedListings = listings.map(listing => ({
+        ...listing,
+        address: userId === listing.userId ? listing.address : maskAddress(listing.address)
+      }));
+      
+      res.json(maskedListings);
     } catch (error) {
       console.error("Error fetching listings:", error);
       const lang = detectLanguage(req);
@@ -458,6 +487,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const lang = detectLanguage(req);
         return res.status(404).json({ message: getErrorMessage('listing_not_found', lang) });
       }
+      
+      // Mask address for privacy unless user owns the listing
+      const userId = req.userId; // Will be undefined if not authenticated
+      if (userId !== listing.userId) {
+        listing.address = maskAddress(listing.address);
+      }
+      
       res.json(listing);
     } catch (error) {
       console.error("Error fetching listing:", error);

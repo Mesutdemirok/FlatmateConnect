@@ -19,11 +19,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Loader2, Home, Upload } from "lucide-react";
+import { Loader2, Home, Upload, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
 
 const createListingSchema = z.object({
-  address: z.string().min(5, 'Lütfen geçerli bir adres giriniz'),
+  address: z.string()
+    .min(5, 'Lütfen geçerli bir adres giriniz')
+    .refine((val) => {
+      const lower = val.toLowerCase();
+      const hasDetailedInfo = /(\d+\s*(no|numara|daire|kat|kapı|blok)|no:\s*\d+|daire:\s*\d+)/i.test(val);
+      return !hasDetailedInfo;
+    }, 'Güvenlik için lütfen sadece mahalle/semt bilgisi girin (kapı no, daire no vb. eklemeyin)'),
   title: z.string().min(10, 'Başlık en az 10 karakter olmalıdır'),
   rentAmount: z.union([z.string(), z.number()]).transform(val => {
     const num = typeof val === 'string' ? Number(val) : val;
@@ -247,6 +254,12 @@ export default function CreateListing() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>1. İlan adresiniz nedir? *</FormLabel>
+                      <Alert className="mb-3 border-amber-200 bg-amber-50">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <AlertDescription className="text-amber-800">
+                          Güvenliğiniz için sadece mahalle veya semt bilgisi girin. Kapı numarası, daire numarası gibi detayları eklemeyin. Detayları mesajlaşma sırasında paylaşabilirsiniz.
+                        </AlertDescription>
+                      </Alert>
                       <FormControl>
                         <Input 
                           placeholder="örn., Kadıköy, İstanbul" 
