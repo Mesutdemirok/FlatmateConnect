@@ -19,7 +19,9 @@ export default function FeaturedRoomSeekers() {
     queryFn: async () => {
       const res = await fetch("/api/seekers/featured?count=4");
       if (!res.ok) throw new Error("Failed to fetch seekers");
-      return res.json();
+      const data = await res.json();
+      console.log("Seekers data:", data, "Type:", Array.isArray(data), "Length:", data?.length);
+      return data;
     },
   });
 
@@ -85,8 +87,9 @@ export default function FeaturedRoomSeekers() {
     );
   }
 
-  // Debug: Always show section title to see if component renders
-  const displaySeekers = seekers || [];
+  if (!seekers || seekers.length === 0) {
+    return null;
+  }
   
   return (
     <div className="max-w-7xl mx-auto">
@@ -94,17 +97,13 @@ export default function FeaturedRoomSeekers() {
         <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
           Oda Arayanlar
         </h2>
-        {displaySeekers.length === 0 && (
-          <p className="text-sm text-slate-500 mt-2">Henüz oda arayan profil yok</p>
-        )}
       </div>
 
-      {displaySeekers.length > 0 && (
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-          data-testid="featured-seekers-grid"
-        >
-          {displaySeekers.map((seeker) => (
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        data-testid="featured-seekers-grid"
+      >
+        {seekers.map((seeker) => (
           <Card
             key={seeker.id}
             className="rounded-2xl shadow-md overflow-hidden border border-slate-200 hover:shadow-xl transition-shadow duration-300 cursor-pointer group"
@@ -200,9 +199,8 @@ export default function FeaturedRoomSeekers() {
               </Button>
             </CardContent>
           </Card>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 }
