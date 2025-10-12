@@ -1,0 +1,121 @@
+Here’s a single, clean prompt you can paste to Replit Agent. It tells the agent exactly what to check, fix, and prove with working evidence.
+
+⸻
+
+[COMMAND MODE]
+Apply all necessary code changes now.
+Do not just plan — modify files, run the app, and verify in Preview.
+Report back with a short changelog (files edited + what changed) and a checklist of passes/fails.
+
+⸻
+
+🎯 Objective
+
+Do a full quality pass of the Odanet app and fix all broken buttons/links, routing, and data flows, especially:
+	•	“Oda Arayan” (room seeker) cards not appearing on the homepage,
+	•	“Aramaya Geri Dön” button on listing detail leads to 404,
+	•	“Giriş Yap” button sometimes not visible / turns off,
+	•	Any other broken interactions, console errors, or missing imports/aliases.
+
+Keep all routes in Turkish and ensure the site works for logged-out and logged-in users.
+
+⸻
+
+🧭 Context (repeat these exact checks)
+	1.	I created a few Oda Arayan profiles; none show in the homepage section “Oda Arayanlar”.
+	2.	On listing detail page, clicking “Aramaya Geri Dön” takes me to 404.
+	3.	The Giriş Yap button sometimes disappears or is not visible.
+	4.	Some links and buttons don’t respond; there are random 404s and HMR overlays.
+	5.	Build/Preview sometimes fails due to import aliases (e.g., @components).
+
+Fix these and any similar issues you find.
+
+⸻
+
+🔧 Tasks to Implement & Verify
+
+1) Set up & sanity checks
+	•	Run: npm install, then npm run dev (or the project’s Run workflow).
+	•	Clear console; fix all import alias issues.
+	•	Prefer the existing @ alias to client/src.
+	•	Replace @components/... with @/components/... or define an alias in both tsconfig.json and vite.config.ts:
+	•	@ -> client/src
+	•	@components -> client/src/components
+	•	Resolve any Vite “pre-transform” errors and TypeScript path mismatches.
+
+2) Routing & Links (Turkish slugs only)
+	•	Ensure all main routes exist and work:
+	•	/, /giris, /uye-ol, /profil, /ilan-olustur, /oda-arama-ilani-olustur, /oda-ilani/:id, /oda-arayanlar
+	•	Listing Detail back button “Aramaya Geri Dön”:
+	•	Implement back with fallback: if history has no previous list page, go to / (or /oda-ilanlari if that’s your list route).
+	•	No more 404 here.
+	•	All header & footer links must navigate without 404s (desktop & mobile menu).
+
+3) Auth & Header buttons
+	•	Giriş Yap button must always be visible when logged out (no gradient/background clash, no CSS that hides it).
+	•	After successful login, redirect to /profil.
+	•	For logged-in users, ensure Profil and Çıkış Yap are visible and clickable.
+	•	Mobile menu: icons/buttons clickable, no overlap or unclickable layers.
+	•	Icon badges behind buttons: use a light orange background for icon-only buttons to match footer social style (keep existing design otherwise).
+
+4) Oda Arayan (room seeker) data pipeline
+	•	Unify the seeker profile + preferences (already started). Confirm the public card source is the unified model.
+	•	Create a test Oda Arayan profile (with a photo).
+	•	It must appear under “Oda Arayanlar” on the homepage without login.
+	•	Cards show: photo (or avatar fallback), ad soyad (ad + baş harf), yaş, bütçe /ay, lokasyon (no duplicates), and compact styling.
+	•	Profile edits (age/budget/photo) must sync immediately to homepage cards.
+
+5) Oda İlanı (room listing) flow
+	•	Create a test room listing with 2–3 photos.
+	•	Listing card rules (mobile-first):
+	•	Single price pill only (remove any duplicate monthly price elsewhere on the card).
+	•	Remove “Hemen Müsait”; keep the title max 4 words (truncate with …).
+	•	Remove the small location/map icon; tighten vertical gaps on mobile; reduce space between listings.
+	•	Polished card background (very light gradient), image slightly left-biased is fine — keep tasteful spacing.
+	•	Listing detail page: /ay (monthly), no rating points like “4.8 • 12 reviews”, remove placeholders.
+	•	Ensure images render correctly from /uploads or whatever storage is configured.
+
+6) Buttons/links audit (site-wide)
+	•	Click every button and link on:
+	•	Header (desktop + mobile), Footer, Homepage, Listing cards, Listing detail, Profile tabs, Create forms (both), Login/Signup.
+	•	Fix any “no-op” clicks, incorrect routes, or disabled buttons.
+	•	Ensure “Favorilere Ekle” and favorite hearts work; unauthenticated users should be redirected to /giris.
+
+7) Error handling & overlays
+	•	Remove/avoid dev overlay crashes in Preview.
+	•	Guard UI against undefined values (e.g., listing?.title, images?.[0] fallback) to avoid “undefined is not an object” on mobile.
+	•	Show friendly toasts for auth errors and failed form submissions.
+
+8) Turkish-only localization
+	•	Remove remaining English copy anywhere (Profile “Account Details”, etc.).
+	•	Keep all slugs and labels fully Turkish.
+
+9) Health checks
+	•	Add a simple /api/health endpoint returning { ok: true, version, env }.
+	•	Log useful errors to console (server) and avoid noisy client logs.
+	•	Optional: add a minimal “QA checklist” markdown in repo root summarizing verified flows.
+
+⸻
+
+✅ Acceptance Criteria (must all pass)
+	•	No console errors in Preview.
+	•	All main routes above load, no 404s.
+	•	“Aramaya Geri Dön” never 404s; goes back to list or falls back to /.
+	•	Giriş Yap is visible when logged out and never disappears; after login user lands on /profil.
+	•	At least 1 Oda Arayan test profile appears on homepage cards (logged-out view).
+	•	At least 1 Oda İlanı test listing appears; cards have single monthly price pill; compact title (≤ 4 words), no “Hemen Müsait”, no rating dots.
+	•	Card spacing tightened on mobile; no map/location icon on cards; less gap between cards.
+	•	Header icon-only buttons have light orange background (as requested), desktop & mobile.
+	•	All copy Turkish; no English remnants.
+	•	Import/alias errors resolved (no Vite pre-transform errors).
+	•	Uploads work; images show on cards and detail pages.
+	•	Provide a short changelog (files touched + summary), and list the test steps you executed with results.
+
+⸻
+
+What to return
+	1.	✅/❌ checklist for each Acceptance Criterion.
+	2.	Short changelog (files edited, what changed).
+	3.	Any follow-up recommendations (max 5 lines).
+
+Run now, fix everything, and verify in Preview before responding.
