@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -71,6 +72,14 @@ export default function Auth() {
   const [, params] = useRoute('/giris');
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { refreshUser, isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/profil');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
   
   const searchParams = new URLSearchParams(window.location.search);
   const tabParam = searchParams.get('tab');
@@ -125,9 +134,9 @@ export default function Auth() {
       const res = await apiRequest('POST', '/api/auth/login', data);
       return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast({ title: 'Başarılı', description: 'Giriş yapıldı!' });
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await refreshUser(); // Update auth state
       navigate(data.redirect || '/profil');
     },
     onError: (error: any) => {
@@ -145,12 +154,12 @@ export default function Auth() {
       const res = await apiRequest('POST', '/api/auth/register', data);
       return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast({
         title: 'Başarılı',
         description: data.message || 'Kayıt işlemi başarıyla tamamlandı!',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      await refreshUser(); // Update auth state
       navigate(data.redirect || '/profil');
     },
     onError: (error: any) => {
