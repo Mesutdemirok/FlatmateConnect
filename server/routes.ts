@@ -2,9 +2,14 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { jwtAuth, generateToken, hashPassword, comparePassword } from "./auth";
+import { db } from "./db";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { jwtAuth, generateToken, hashPassword, comparePassword, generateVerificationToken, generateResetToken } from "./auth";
 import { insertListingSchema, insertUserPreferencesSchema, insertMessageSchema, insertFavoriteSchema, insertUserSchema, insertSeekerProfileSchema, type User } from "@shared/schema";
 import { getErrorMessage, detectLanguage } from "./i18n";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./lib/email";
+import { sendOTP, verifyOTP } from "./lib/otp";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -85,22 +90,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
-        return res.status(400).json({ message: 'Bu e-posta adresi zaten kullanılıyor' });
+        return res.status(400).json({ message: 'Bu e-posta ile kayıt zaten mevcut.' });
       }
 
       const hashedPassword = await hashPassword(userData.password);
+      const verificationToken = generateVerificationToken();
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
       const user = await storage.createUser({
         ...userData,
         password: hashedPassword,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires,
+        isEmailVerified: false,
       });
 
-      const token = generateToken(user.id, user.email);
+      // Send verification email
+      try {
+        await sendVerificationEmail(
+          user.email,
+          user.firstName || 'Kullanıcı',
+          verificationToken
+        );
+      } catch (emailError) {
+        console.error("Failed to send verification email:", emailError);
+        // Continue with registration even if email fails
+      }
       
-      const { password, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
+      const { password, passwordResetToken, passwordResetExpires, emailVerificationToken, emailVerificationExpires, ...userWithoutPassword } = user;
       
       res.status(201).json({ 
-        user: userWithoutPassword, 
-        token 
+        message: 'Kayıt işlemi başarıyla tamamlandı. Lütfen e-postanızı doğrulayın.',
+        user: userWithoutPassword
       });
     } catch (error: any) {
       console.error("Error registering user:", error);
@@ -115,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/auth/login', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, rememberMe } = req.body;
       const lang = detectLanguage(req);
       
       if (!email || !password) {
@@ -124,32 +145,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.getUserByEmail(email);
       if (!user || !user.password) {
-        return res.status(401).json({ message: 'Geçersiz e-posta veya şifre' });
+        return res.status(401).json({ message: 'Yanlış e-posta veya şifre girdiniz.' });
       }
 
       const isPasswordValid = await comparePassword(password, user.password);
       if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Geçersiz e-posta veya şifre' });
+        return res.status(401).json({ message: 'Yanlış e-posta veya şifre girdiniz.' });
       }
 
+      // Check email verification (optional: comment out if you want to allow unverified login)
+      // if (!user.isEmailVerified) {
+      //   return res.status(403).json({ message: 'Hesabınız doğrulama bekliyor. Lütfen e-postanızı kontrol edin.' });
+      // }
+
       const token = generateToken(user.id, user.email);
+      const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000; // 30 days or 7 days
       
-      const { password: _, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
+      const { password: _, passwordResetToken, passwordResetExpires, emailVerificationToken, emailVerificationExpires, ...userWithoutPassword } = user;
       
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: 'lax',
+        maxAge,
       });
       
       res.json({ 
         user: userWithoutPassword, 
-        token 
+        token,
+        redirect: '/profil'
       });
     } catch (error) {
       console.error("Error logging in:", error);
       const lang = detectLanguage(req);
-      res.status(500).json({ message: 'Giriş işlemi başarısız oldu' });
+      res.status(500).json({ message: 'Sunucuya bağlanırken hata oluştu. Lütfen tekrar deneyin.' });
     }
   });
 
@@ -166,12 +195,206 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: getErrorMessage('user_not_found', lang) });
       }
       
-      const { password, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
+      const { password, passwordResetToken, passwordResetExpires, emailVerificationToken, emailVerificationExpires, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {
       console.error("Error fetching user:", error);
       const lang = detectLanguage(req);
       res.status(500).json({ message: getErrorMessage('user_not_found', lang) });
+    }
+  });
+
+  // Email verification
+  app.get('/api/auth/verify-email', async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: 'Doğrulama kodu gereklidir.' });
+      }
+
+      const [user] = await db.select().from(users).where(eq(users.emailVerificationToken, token));
+      
+      if (!user) {
+        return res.status(400).json({ message: 'Geçersiz veya süresi dolmuş bağlantı. Lütfen tekrar isteyin.' });
+      }
+
+      if (user.emailVerificationExpires && user.emailVerificationExpires < new Date()) {
+        return res.status(400).json({ message: 'Geçersiz veya süresi dolmuş bağlantı. Lütfen tekrar isteyin.' });
+      }
+
+      await storage.upsertUser({
+        id: user.id,
+        email: user.email,
+        isEmailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      });
+
+      res.json({ message: 'E-posta başarıyla doğrulandı. Giriş yapabilirsiniz.' });
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      res.status(500).json({ message: 'E-posta doğrulama başarısız oldu.' });
+    }
+  });
+
+  // Forgot password
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'E-posta adresi gereklidir.' });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return res.json({ message: 'Sıfırlama bağlantısı e-posta adresinize gönderildi.' });
+      }
+
+      const resetToken = generateResetToken();
+      const resetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      await storage.upsertUser({
+        id: user.id,
+        email: user.email,
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetExpires,
+      });
+
+      try {
+        await sendPasswordResetEmail(
+          user.email,
+          user.firstName || 'Kullanıcı',
+          resetToken
+        );
+      } catch (emailError) {
+        console.error("Failed to send password reset email:", emailError);
+      }
+
+      res.json({ message: 'Sıfırlama bağlantısı e-posta adresinize gönderildi.' });
+    } catch (error) {
+      console.error("Error in forgot password:", error);
+      res.status(500).json({ message: 'Şifre sıfırlama talebi başarısız oldu.' });
+    }
+  });
+
+  // Reset password
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ message: 'Token ve yeni şifre gereklidir.' });
+      }
+
+      const [user] = await db.select().from(users).where(eq(users.passwordResetToken, token));
+      
+      if (!user) {
+        return res.status(400).json({ message: 'Geçersiz veya süresi dolmuş bağlantı. Lütfen tekrar isteyin.' });
+      }
+
+      if (user.passwordResetExpires && user.passwordResetExpires < new Date()) {
+        return res.status(400).json({ message: 'Geçersiz veya süresi dolmuş bağlantı. Lütfen tekrar isteyin.' });
+      }
+
+      const hashedPassword = await hashPassword(password);
+
+      await storage.upsertUser({
+        id: user.id,
+        email: user.email,
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      });
+
+      res.json({ message: 'Şifreniz güncellendi. Giriş yapabilirsiniz.' });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).json({ message: 'Şifre sıfırlama başarısız oldu.' });
+    }
+  });
+
+  // Phone OTP - Request
+  app.post('/api/auth/phone/request-otp', async (req, res) => {
+    try {
+      const { phone } = req.body;
+      
+      if (!phone) {
+        return res.status(400).json({ message: 'Telefon numarası gereklidir.' });
+      }
+
+      await sendOTP(phone);
+      
+      res.json({ message: 'Doğrulama kodu gönderildi.' });
+    } catch (error: any) {
+      console.error("Error sending OTP:", error);
+      res.status(500).json({ message: error.message || 'SMS gönderimi başarısız oldu.' });
+    }
+  });
+
+  // Phone OTP - Verify and login/register
+  app.post('/api/auth/phone/verify-otp', async (req, res) => {
+    try {
+      const { phone, code } = req.body;
+      
+      if (!phone || !code) {
+        return res.status(400).json({ message: 'Telefon numarası ve kod gereklidir.' });
+      }
+
+      const isValid = await verifyOTP(phone, code);
+      
+      if (!isValid) {
+        return res.status(400).json({ message: 'Geçersiz doğrulama kodu.' });
+      }
+
+      // Find or create user with this phone
+      let user = await db.select().from(users).where(eq(users.phone, phone)).limit(1).then(rows => rows[0]);
+      
+      if (!user) {
+        // Create new user with phone
+        user = await storage.createUser({
+          email: `${phone}@odanet.temp`, // Temporary email
+          phone,
+          isEmailVerified: true, // Auto-verify for phone auth
+        });
+      }
+
+      const token = generateToken(user.id, user.email);
+      
+      const { password, passwordResetToken, passwordResetExpires, emailVerificationToken, emailVerificationExpires, ...userWithoutPassword } = user;
+      
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      
+      res.json({ 
+        user: userWithoutPassword, 
+        token,
+        redirect: '/profil'
+      });
+    } catch (error: any) {
+      console.error("Error verifying OTP:", error);
+      res.status(500).json({ message: error.message || 'Doğrulama başarısız oldu.' });
+    }
+  });
+
+  // Google OAuth (placeholder - needs Google OAuth setup)
+  app.post('/api/auth/google', async (req, res) => {
+    try {
+      // This would need Google OAuth token verification
+      // For now, return error indicating setup needed
+      res.status(501).json({ 
+        message: 'Google girişi henüz yapılandırılmamış. Lütfen sistem yöneticinize başvurun.' 
+      });
+    } catch (error) {
+      console.error("Error in Google auth:", error);
+      res.status(500).json({ message: 'Google doğrulaması başarısız. Lütfen tekrar deneyin.' });
     }
   });
 
