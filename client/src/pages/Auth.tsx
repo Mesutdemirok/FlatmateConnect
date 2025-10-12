@@ -148,10 +148,10 @@ export default function Auth() {
     onSuccess: (data) => {
       toast({
         title: 'Başarılı',
-        description: data.message || 'Kayıt işlemi başarıyla tamamlandı. Lütfen e-postanızı doğrulayın.',
+        description: data.message || 'Kayıt işlemi başarıyla tamamlandı!',
       });
-      loginForm.setValue('email', registerForm.getValues('email'));
-      setActiveTab('login');
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      navigate(data.redirect || '/profil');
     },
     onError: (error: any) => {
       toast({

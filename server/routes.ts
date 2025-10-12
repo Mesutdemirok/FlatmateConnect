@@ -116,12 +116,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Failed to send verification email:", emailError);
         // Continue with registration even if email fails
       }
+
+      // Auto-login after registration
+      const token = generateToken(user.id, user.email);
       
       const { password, passwordResetToken, passwordResetExpires, emailVerificationToken, emailVerificationExpires, ...userWithoutPassword } = user;
       
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      
       res.status(201).json({ 
         message: 'Kayıt işlemi başarıyla tamamlandı. Lütfen e-postanızı doğrulayın.',
-        user: userWithoutPassword
+        user: userWithoutPassword,
+        redirect: '/profil'
       });
     } catch (error: any) {
       console.error("Error registering user:", error);
@@ -171,8 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json({ 
-        user: userWithoutPassword, 
-        token,
+        user: userWithoutPassword,
         redirect: '/profil'
       });
     } catch (error) {
@@ -374,8 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json({ 
-        user: userWithoutPassword, 
-        token,
+        user: userWithoutPassword,
         redirect: '/profil'
       });
     } catch (error: any) {
@@ -388,6 +397,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/google', async (req, res) => {
     try {
       // This would need Google OAuth token verification
+      // Placeholder implementation - needs actual Google OAuth token verification
+      // const { token: googleToken } = req.body;
+      // const googleUser = await verifyGoogleToken(googleToken);
+      // let user = await storage.getUserByEmail(googleUser.email);
+      // if (!user) {
+      //   user = await storage.createUser({
+      //     email: googleUser.email,
+      //     firstName: googleUser.given_name,
+      //     lastName: googleUser.family_name,
+      //     isEmailVerified: true,
+      //   });
+      // }
+      // const token = generateToken(user.id, user.email);
+      // res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 });
+      // res.json({ user: {...}, redirect: '/profil' });
+      
       // For now, return error indicating setup needed
       res.status(501).json({ 
         message: 'Google girişi henüz yapılandırılmamış. Lütfen sistem yöneticinize başvurun.' 
