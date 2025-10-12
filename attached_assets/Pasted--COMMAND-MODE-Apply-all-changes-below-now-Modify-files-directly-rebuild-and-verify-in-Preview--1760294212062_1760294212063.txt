@@ -1,0 +1,154 @@
+
+[COMMAND MODE]
+Apply all changes below now. Modify files directly, rebuild, and verify in Preview.
+
+Amaçlar
+	1.	“Oda Arayanlar” kartı: yalnızca (a) İsim, (b) Aradığı lokasyonlar görünsün. Görsel mobilde biraz daha uzun ve temiz; kart sade, modern.
+	2.	Konum arama çubuğu (İl → İlçe → Mahalle): Hero’nun hemen altında, “Güncel İlanlar” başlığının üstünde yer alacak. Seçimden sonra /arama sayfasına yönlendirip sonuçları gösterecek.
+	3.	İlan ve oda-arayan formlarındaki konum alanları bu arama çubuğuyla aynı dataset’i kullansın (tek kaynak, normalize alanlar).
+	4.	Tamamı Türkçe; mevcut Türkçe rota ve URL yapısı korunacak.
+
+⸻
+
+A) Oda Arayan Kartı (Seeker) – Tasarım ve İçerik
+
+Dosyalar (öneri):
+	•	client/src/components/ui/SeekerCard.tsx (yeni)
+	•	client/src/components/ui/FeaturedRoomSeekers.tsx (mevcut, bu kartı kullansın)
+
+UI Kuralları
+	•	Fotoğraf üstte, mobilde aspect-[4/3], md+ aspect-[16/10], object-cover, rounded-xl, shadow-sm, ring-1 ring-black/5.
+	•	Fotoğrafın sol altına (varsa) küçük verified rozeti:
+ShieldCheck ikon, bg-emerald-600/95 text-white rounded-full p-1.5, 14px.
+	•	Metin bloğu:
+	•	Başlık (kalın): Ad + " " + Soyad’ın ilk harfi + "." (ör. “Mem D.”). Eksikse sadece Ad; hiç yoksa “İsimsiz”.
+	•	Alt satır (soluk): “Aradığı lokasyonlar” (şehir/ilçe/mahalle kısa liste, virgülle). Yoksa “Lokasyon belirtilmedi.”
+	•	Kartta GÖSTERME: bütçe, cinsiyet, etiketler vb. (Bunlar profile/ayrıntıda kalabilir, kartta yok.)
+	•	Loading/Empty: Skeleton ve “Şu an görünür profil yok.” metni.
+	•	Erişilebilirlik: alt="${Ad} profil fotoğrafı".
+
+Veri
+	•	firstName, lastName, preferred_locations (veya karşılık gelen alan).
+preferred_locations dizi ise ilk 1–2 öğeyi göster, … ekleyebilirsin.
+
+Stil örneği (özet):
+	•	Kart: rounded-2xl bg-card ring-1 ring-black/5 shadow-sm hover:shadow-lg transition
+	•	Başlık: text-[15.5px] sm:text-[17px] font-semibold text-slate-900
+	•	Alt satır: text-[13px] sm:text-sm text-slate-600 truncate
+
+⸻
+
+B) Konum Arama Çubuğu – Hero’nun Hemen Altı
+
+Konum: Hero bileşeninin altına, “Güncel İlanlar” başlığının üstüne yerleştir.
+Dosyalar (öneri):
+	•	client/src/components/ui/LocationSearch.tsx (yeni)
+	•	client/src/pages/SearchPage.tsx (yeni sonuç sayfası)
+	•	client/src/components/ui/LocationSelect.tsx (form ve arama için ortak, yeni)
+
+UI / Davranış
+	•	Mobil-dostu, geniş, tek satır:
+	•	İl (zorunlu) → İlçe (zorunlu) → Mahalle (opsiyonel) cascading select
+	•	Sağda “Ara” butonu (primary).
+	•	Placeholder’lar: “İl seçin”, “İlçe seçin”, “Mahalle (isteğe bağlı)”.
+	•	Submit → /arama?il=istanbul&ilce=maltepe&mahalle=zumrutevler yönlendirme.
+	•	Sonuç sayfası /arama:
+	•	Üstte seçilen konum özetini göster.
+	•	Sekmeler: İlanlar | Oda Arayanlar (ikisi de bu filtreyle çekilsin).
+	•	Kartlar mevcut ListingCard/SeekerCard bileşenlerini kullansın.
+	•	“Sonuç yok” boş durumu.
+	•	“Filtreyi Sıfırla” → window.location='/arama' veya history.replace('/arama').
+
+⸻
+
+C) Ortak Konum Verisi ve Formlarla Bağlantı
+
+Amaç: Arama çubuğu ile ilan ve oda-arayan formları aynı dataset’i kullansın.
+
+Dosyalar (öneri):
+	•	shared/turkey-locations.json (yeni) → yapı:
+
+[
+  {
+    "city": "İstanbul", "slug": "istanbul",
+    "districts": [
+      {
+        "district": "Maltepe", "slug": "maltepe",
+        "neighborhoods": [{"name":"Zümrütevler","slug":"zumrutevler"}, ...]
+      },
+      ...
+    ]
+  },
+  ...
+]
+
+
+	•	server/routes/locations.ts (yeni, GET /api/locations dataset’i döner)
+	•	client/src/components/ui/LocationSelect.tsx (yeni, ortak bileşen)
+	•	Props: value={{il, ilce, mahalle}}, onChange, requiredLevels vb.
+	•	İç mantık: İl seçilince ilçe listesi, ilçe seçilince mahalle listesi güncellensin.
+
+Form Güncellemeleri
+	•	İlan oluşturma/düzenleme ve Oda Arayan (seeker) oluşturma/düzenleme formlarında adres alanları:
+	•	Tam adres GİRİLMESİN; sadece İl, İlçe, (opsiyonel) Mahalle seçtir.
+	•	İlgili alana açıklama metni ekle:
+“Lütfen tam adresinizi paylaşmayın. Sadece mahalle, semt/ilçe ve il bilgilerini giriniz. Tam adresi sadece güvenli mesajlaşma üzerinden paylaşın.”
+	•	Kayıt yaparken normalize alanlar sakla:
+	•	city, city_slug, district, district_slug, neighborhood?, neighborhood_slug?
+	•	Var olan kayıtları bozmadan migration ile alanları ekle (bkz. Bölüm D).
+
+⸻
+
+D) Backend Değişiklikleri
+
+Migration / Şema (örnek tablo alanları)
+	•	listings: city, city_slug, district, district_slug, neighborhood, neighborhood_slug (index: city_slug,district_slug,neighborhood_slug)
+	•	seeker_profiles: aynı alanlar.
+	•	Gerekli seed/güncellemeleri yaz (mevcut veride slug türet).
+
+API
+	•	GET /api/locations → turkey-locations.json döndür.
+	•	GET /api/search (yeni) veya mevcut uçları genişlet:
+	•	Query: il, ilce, mahalle (slug).
+	•	Dönen: { listings: [...], seekers: [...] } (veya ayrı uçlar /api/listings/search, /api/seekers/search).
+	•	Filtreleme slug alanları üzerinden yapılmalı (case-insensitive, indexed).
+	•	CORS/Cache: Cache-Control: public, max-age=86400 (dataset için).
+
+⸻
+
+E) Rotalar ve Metinler
+	•	Arama sonucu sayfası rotası: /arama.
+	•	Tüm yeni/eklenen metinler Türkçe.
+	•	Var olan Türkçe URL yapısı korunacak (örn. /giris, /uye-ol, /profil, /oda-ilani/:id).
+
+⸻
+
+F) Test / Kabul Kriterleri
+	1.	Seeker kartları ana sayfada:
+	•	Fotoğraf mobilde daha uzun (aspect [4/3]).
+	•	Sadece İsim ve Aradığı lokasyonlar görünüyor.
+	•	Verified varsa küçük rozet.
+	•	Boş/skeleton durumları çalışıyor.
+	2.	Konum arama çubuğu Hero’nun HEMEN ALTINDA, “Güncel İlanlar”ın üstünde.
+	•	İl → İlçe → Mahalle bağımlı çalışır, veri /api/locations’tan gelir.
+	•	“Ara” butonu tıklandığında /arama?... rotasına gider.
+	•	/arama sayfasında filtreye uygun İlanlar ve Oda Arayanlar sekmeleri dolar; boş durumda mesaj görünür.
+	3.	Formlar (ilan ve oda-arayan):
+	•	Aynı LocationSelect bileşeni kullanılıyor.
+	•	“Tam adres paylaşmayın…” uyarısı görünüyor.
+	•	Kayıt sonrası veritabanında *_slug alanları dolu; arama çubuğuyla eşleşiyor.
+	4.	Performans: Lokasyon dataset’i tek sefer yükleniyor (cache), sayfa etkileşimli.
+	5.	Tamamı Türkçe; console’da hata/uyarı yok.
+
+⸻
+
+Uygulama Notları
+	•	Slug üretmek için küçük yardımcı fonksiyon ekleyin (Türkçe karakter normalize).
+	•	LocationSelect.tsx’i formlar ve arama çubuğu ortak kullanacak şekilde soyutlayın.
+	•	Stil: Tailwind mevcut temaya uyumlu; kartlarda ring-black/5, yazılarda text-slate-* paleti, hover gölgeleri hafif.
+
+Bittiğinde:
+	•	Yeni/ değişen dosyaları listeleyin.
+	•	Hızlı bir demo akışı paylaşın:
+	1.	Hero altındaki konum aramasıyla /arama’ya gidip sonuçları görmek,
+	2.	Yeni ilan / oda-arayan oluşturup konum seçmek ve ana sayfa + aramada görünmesini doğrulamak.

@@ -1,0 +1,186 @@
+[
+  {
+    "city": "İstanbul",
+    "slug": "istanbul",
+    "districts": [
+      {
+        "district": "Kadıköy",
+        "slug": "kadikoy",
+        "neighborhoods": [
+          { "name": "Acıbadem", "slug": "acibadem" },
+          { "name": "Bostancı", "slug": "bostanci" },
+          { "name": "Fenerbahçe", "slug": "fenerbahce" },
+          { "name": "Göztepe", "slug": "goztepe" },
+          { "name": "Koşuyolu", "slug": "kosuyolu" },
+          { "name": "Moda", "slug": "moda" },
+          { "name": "Suadiye", "slug": "suadiye" }
+        ]
+      },
+      {
+        "district": "Beşiktaş",
+        "slug": "besiktas",
+        "neighborhoods": [
+          { "name": "Abbasağa", "slug": "abbasaga" },
+          { "name": "Bebek", "slug": "bebek" },
+          { "name": "Etiler", "slug": "etiler" },
+          { "name": "Levent", "slug": "levent" },
+          { "name": "Ortaköy", "slug": "ortakoy" }
+        ]
+      },
+      {
+        "district": "Şişli",
+        "slug": "sisli",
+        "neighborhoods": [
+          { "name": "Mecidiyeköy", "slug": "mecidiyekoy" },
+          { "name": "Nişantaşı", "slug": "nisantasi" },
+          { "name": "Osmanbey", "slug": "osmanbey" },
+          { "name": "Gayrettepe", "slug": "gayrettepe" }
+        ]
+      },
+      {
+        "district": "Üsküdar",
+        "slug": "uskudar",
+        "neighborhoods": [
+          { "name": "Acıbadem", "slug": "acibadem" },
+          { "name": "Altunizade", "slug": "altunizade" },
+          { "name": "Kısıklı", "slug": "kisikli" },
+          { "name": "Validebağ", "slug": "validebag" }
+        ]
+      },
+      {
+        "district": "Maltepe",
+        "slug": "maltepe",
+        "neighborhoods": [
+          { "name": "Bağlarbaşı", "slug": "baglarbasi" },
+          { "name": "Gülensu", "slug": "gulensu" },
+          { "name": "İdealtepe", "slug": "idealtepe" },
+          { "name": "Zümrütevler", "slug": "zumrutevler" }
+        ]
+      },
+      {
+        "district": "Sarıyer",
+        "slug": "sariyer",
+        "neighborhoods": [
+          { "name": "Bahçeköy", "slug": "bahcekoy" },
+          { "name": "İstinye", "slug": "istinye" },
+          { "name": "Rumeli Hisarı", "slug": "rumeli-hisari" },
+          { "name": "Zekeriyaköy", "slug": "zekeriyakoy" }
+        ]
+      }
+    ]
+  },
+  {
+    "city": "Ankara",
+    "slug": "ankara",
+    "districts": [
+      {
+        "district": "Çankaya",
+        "slug": "cankaya",
+        "neighborhoods": [
+          { "name": "Bahçelievler", "slug": "bahcelievler" },
+          { "name": "Kavaklıdere", "slug": "kavaklidere" },
+          { "name": "Kızılay", "slug": "kizilay" },
+          { "name": "Çankaya", "slug": "cankaya-merkez" }
+        ]
+      },
+      {
+        "district": "Keçiören",
+        "slug": "kecioren",
+        "neighborhoods": [
+          { "name": "Aktepe", "slug": "aktepe" },
+          { "name": "Etlik", "slug": "etlik" },
+          { "name": "Ovacık", "slug": "ovacik" }
+        ]
+      },
+      {
+        "district": "Yenimahalle",
+        "slug": "yenimahalle",
+        "neighborhoods": [
+          { "name": "Batıkent", "slug": "batikent" },
+          { "name": "Demetevler", "slug": "demetevler" },
+          { "name": "Ümitköy", "slug": "umitkoy" }
+        ]
+      }
+    ]
+  },
+  {
+    "city": "İzmir",
+    "slug": "izmir",
+    "districts": [
+      {
+        "district": "Konak",
+        "slug": "konak",
+        "neighborhoods": [
+          { "name": "Alsancak", "slug": "alsancak" },
+          { "name": "Basmane", "slug": "basmane" },
+          { "name": "Göztepe", "slug": "goztepe" }
+        ]
+      },
+      {
+        "district": "Karşıyaka",
+        "slug": "karsiyaka",
+        "neighborhoods": [
+          { "name": "Bostanlı", "slug": "bostanli" },
+          { "name": "Mavişehir", "slug": "mavisehir" },
+          { "name": "Çiğli", "slug": "cigli" }
+        ]
+      },
+      {
+        "district": "Bornova",
+        "slug": "bornova",
+        "neighborhoods": [
+          { "name": "Erzene", "slug": "erzene" },
+          { "name": "Evka", "slug": "evka" },
+          { "name": "Kazımdirik", "slug": "kazimdirik" }
+        ]
+      }
+    ]
+  },
+  {
+    "city": "Bursa",
+    "slug": "bursa",
+    "districts": [
+      {
+        "district": "Nilüfer",
+        "slug": "nilufer",
+        "neighborhoods": [
+          { "name": "Görükle", "slug": "gorukle" },
+          { "name": "Özlüce", "slug": "ozluce" },
+          { "name": "Ataevler", "slug": "ataevler" }
+        ]
+      },
+      {
+        "district": "Osmangazi",
+        "slug": "osmangazi",
+        "neighborhoods": [
+          { "name": "Çekirge", "slug": "cekirge" },
+          { "name": "Fomara", "slug": "fomara" },
+          { "name": "Hocahasan", "slug": "hocahasan" }
+        ]
+      }
+    ]
+  },
+  {
+    "city": "Antalya",
+    "slug": "antalya",
+    "districts": [
+      {
+        "district": "Muratpaşa",
+        "slug": "muratpasa",
+        "neighborhoods": [
+          { "name": "Fener", "slug": "fener" },
+          { "name": "Lara", "slug": "lara" },
+          { "name": "Konyaaltı", "slug": "konyaalti" }
+        ]
+      },
+      {
+        "district": "Kepez",
+        "slug": "kepez",
+        "neighborhoods": [
+          { "name": "Emek", "slug": "emek" },
+          { "name": "Varsak", "slug": "varsak" }
+        ]
+      }
+    ]
+  }
+]
