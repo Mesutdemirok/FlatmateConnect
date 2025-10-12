@@ -159,8 +159,8 @@ export default function ListingDetail() {
               <p className="text-muted-foreground mb-4">
                 {t('listings.not_found_message')}
               </p>
-              <Link href="/search">
-                <Button>{t('listings.browse_other_listings')}</Button>
+              <Link href="/oda-ilanlari">
+                <Button>Diğer İlanları İncele</Button>
               </Link>
             </CardContent>
           </Card>
@@ -183,10 +183,10 @@ export default function ListingDetail() {
       
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back button */}
-        <Link href="/search">
+        <Link href="/oda-ilanlari">
           <Button variant="ghost" className="mb-6" data-testid="back-button">
             <ChevronLeft className="h-4 w-4 mr-2" />
-            {t('listings.back_to_search')}
+            Aramaya Geri Dön
           </Button>
         </Link>
 

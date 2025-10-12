@@ -108,14 +108,14 @@ export default function Header() {
                 <Link href="/giris" data-testid="login-link">
                   <Button
                     variant="outline"
-                    className="hidden sm:flex border-white text-white hover:bg-white hover:text-indigo-700"
+                    className="hidden sm:flex bg-white text-indigo-700 border-white hover:bg-indigo-50 font-medium"
                   >
-                    {t("nav.login")}
+                    Giriş Yap
                   </Button>
                 </Link>
                 <Link href="/uye-ol" data-testid="signup-link">
                   <Button className="bg-white text-indigo-700 hover:bg-indigo-100 font-semibold">
-                    {t("nav.sign_up")}
+                    Üye Ol
                   </Button>
                 </Link>
               </>
@@ -127,8 +127,8 @@ export default function Header() {
               size="icon"
               className={`md:hidden rounded-full p-2 transition-all duration-300 ${
                 isMobileMenuOpen
-                  ? "bg-orange-100 hover:bg-orange-200 text-orange-600"
-                  : "bg-white/10 hover:bg-white/20 text-white"
+                  ? "bg-white text-indigo-700"
+                  : "bg-white/20 hover:bg-white/30 text-white"
               }`}
               onClick={toggleMobileMenu}
               data-testid="mobile-menu-toggle"
