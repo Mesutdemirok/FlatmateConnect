@@ -90,7 +90,7 @@ export default function FeaturedListings() {
                 <div className="relative w-full h-[200px] overflow-hidden">
                   <img
                     src={
-                      listing.images?.find((img) => img.isPrimary)?.imagePath ||
+                      listing.images?.find((img: any) => img.isPrimary)?.imagePath ||
                       listing.images?.[0]?.imagePath ||
                       "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop"
                     }
