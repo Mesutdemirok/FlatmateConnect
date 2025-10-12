@@ -87,6 +87,8 @@ export interface IStorage {
     gender?: string;
     location?: string;
     isFeatured?: boolean;
+    isPublished?: boolean;
+    isActive?: boolean;
   }): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User })[]>;
   getSeekerProfile(id: string): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User }) | undefined>;
   getUserSeekerProfile(userId: string): Promise<(SeekerProfile & { photos: SeekerPhoto[] }) | undefined>;
@@ -152,25 +154,8 @@ export class DatabaseStorage implements IStorage {
 
     if (filters) {
       if (filters.location) {
-        // Make location search case-insensitive and handle Turkish characters better
-        const searchTerm = filters.location.toLowerCase()
-          .replace(/ı/g, 'i')
-          .replace(/ğ/g, 'g')
-          .replace(/ü/g, 'u')
-          .replace(/ş/g, 's')
-          .replace(/ö/g, 'o')
-          .replace(/ç/g, 'c');
-        
-        conditions.push(
-          or(
-            ilike(listings.suburb, `%${filters.location}%`),
-            ilike(listings.city, `%${filters.location}%`),
-            ilike(listings.postcode, `%${filters.location}%`),
-            // Also search with normalized version for better Turkish support
-            ilike(listings.suburb, `%${searchTerm}%`),
-            ilike(listings.city, `%${searchTerm}%`)
-          )!
-        );
+        // Search in address field (current schema)
+        conditions.push(ilike(listings.address, `%${filters.location}%`));
       }
       
       if (filters.minPrice) {
@@ -181,40 +166,12 @@ export class DatabaseStorage implements IStorage {
         conditions.push(lte(listings.rentAmount, filters.maxPrice.toString()));
       }
       
-      if (filters.availableFrom) {
-        conditions.push(lte(listings.availableFrom, filters.availableFrom));
-      }
-      
-      if (filters.suburb) {
-        conditions.push(ilike(listings.suburb, `%${filters.suburb}%`));
-      }
-      
-      if (filters.city) {
-        conditions.push(ilike(listings.city, `%${filters.city}%`));
-      }
-      
-      if (filters.furnished !== undefined) {
-        conditions.push(eq(listings.furnished, filters.furnished));
-      }
-      
       if (filters.billsIncluded !== undefined) {
         conditions.push(eq(listings.billsIncluded, filters.billsIncluded));
       }
       
-      if (filters.postcode) {
-        conditions.push(ilike(listings.postcode, `%${filters.postcode}%`));
-      }
-      
-      if (filters.roomType) {
-        conditions.push(eq(listings.roomType, filters.roomType));
-      }
-      
       if (filters.propertyType) {
         conditions.push(eq(listings.propertyType, filters.propertyType));
-      }
-      
-      if (filters.parkingAvailable !== undefined) {
-        conditions.push(eq(listings.parkingAvailable, filters.parkingAvailable));
       }
       
       if (filters.internetIncluded !== undefined) {
@@ -500,21 +457,32 @@ export class DatabaseStorage implements IStorage {
     gender?: string;
     location?: string;
     isFeatured?: boolean;
+    isPublished?: boolean;
+    isActive?: boolean;
   }): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User })[]> {
     const whereConditions = [];
-    whereConditions.push(eq(seekerProfiles.isActive, true));
+    
+    // Default to active profiles if not specified
+    if (filters?.isActive !== undefined) {
+      whereConditions.push(eq(seekerProfiles.isActive, filters.isActive));
+    } else {
+      whereConditions.push(eq(seekerProfiles.isActive, true));
+    }
 
     if (filters?.minBudget) {
-      whereConditions.push(gte(seekerProfiles.budgetWeekly, filters.minBudget.toString()));
+      whereConditions.push(gte(seekerProfiles.budgetMonthly, filters.minBudget.toString()));
     }
     if (filters?.maxBudget) {
-      whereConditions.push(lte(seekerProfiles.budgetWeekly, filters.maxBudget.toString()));
+      whereConditions.push(lte(seekerProfiles.budgetMonthly, filters.maxBudget.toString()));
     }
     if (filters?.gender) {
       whereConditions.push(eq(seekerProfiles.gender, filters.gender));
     }
     if (filters?.isFeatured !== undefined) {
       whereConditions.push(eq(seekerProfiles.isFeatured, filters.isFeatured));
+    }
+    if (filters?.isPublished !== undefined) {
+      whereConditions.push(eq(seekerProfiles.isPublished, filters.isPublished));
     }
 
     const profiles = await db

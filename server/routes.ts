@@ -561,6 +561,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public seekers endpoint - no auth required
+  app.get('/api/seekers/public', async (req, res) => {
+    try {
+      const limit = req.query.limit ? Number(req.query.limit) : 4;
+      const seekers = await storage.getSeekerProfiles({ 
+        isPublished: true,
+        isActive: true 
+      });
+      res.json(seekers.slice(0, limit));
+    } catch (error) {
+      console.error("Error fetching public seekers:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
   app.get('/api/seekers/:id', async (req, res) => {
     try {
       const seeker = await storage.getSeekerProfile(req.params.id);
@@ -595,7 +611,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.userId!;
       const seekerData = insertSeekerProfileSchema.parse({
         ...req.body,
-        userId
+        userId,
+        isPublished: true // Auto-publish new seeker profiles
       });
       
       const seeker = await storage.createSeekerProfile(seekerData);
