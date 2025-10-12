@@ -25,16 +25,28 @@ import { z } from "zod";
 const createListingSchema = z.object({
   address: z.string().min(5, 'Lütfen geçerli bir adres giriniz'),
   title: z.string().min(10, 'Başlık en az 10 karakter olmalıdır'),
-  rentAmount: z.coerce.number().positive('Kira tutarı 0\'dan büyük olmalıdır'),
+  rentAmount: z.union([z.string(), z.number()]).transform(val => {
+    const num = typeof val === 'string' ? Number(val) : val;
+    if (isNaN(num) || num <= 0) throw new Error('Kira tutarı 0\'dan büyük olmalıdır');
+    return num;
+  }),
   billsIncluded: z.enum(['yes', 'no']),
   excludedBills: z.array(z.string()).optional().default([]),
   propertyType: z.string().min(1, 'Lütfen konut tipini seçiniz'),
   internetIncluded: z.enum(['yes', 'no']),
-  totalRooms: z.coerce.number().int().positive('Oda sayısı 0\'dan büyük olmalıdır'),
+  totalRooms: z.union([z.string(), z.number()]).transform(val => {
+    const num = typeof val === 'string' ? Number(val) : val;
+    if (isNaN(num) || num <= 0 || !Number.isInteger(num)) throw new Error('Oda sayısı geçerli bir tam sayı olmalıdır');
+    return num;
+  }),
   bathroomType: z.string().min(1, 'Lütfen banyo tipini seçiniz'),
   furnishingStatus: z.string().min(1, 'Lütfen eşya durumunu seçiniz'),
   amenities: z.array(z.string()).default([]),
-  totalOccupants: z.coerce.number().int().positive('Kişi sayısı 0\'dan büyük olmalıdır'),
+  totalOccupants: z.union([z.string(), z.number()]).transform(val => {
+    const num = typeof val === 'string' ? Number(val) : val;
+    if (isNaN(num) || num <= 0 || !Number.isInteger(num)) throw new Error('Kişi sayısı geçerli bir tam sayı olmalıdır');
+    return num;
+  }),
   roommatePreference: z.string().min(1, 'Lütfen ev arkadaşı tercihinizi seçiniz'),
   smokingPolicy: z.string().min(1, 'Lütfen sigara politikasını seçiniz'),
 });
@@ -277,12 +289,13 @@ export default function CreateListing() {
                         <div className="relative">
                           <span className="absolute left-3 top-2.5">₺</span>
                           <Input 
-                            type="number"
-                            min="0"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             placeholder="5000" 
-                            className="pl-8"
+                            className="pl-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             {...field}
-                            onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                            onChange={(e) => field.onChange(e.target.value)}
                             data-testid="input-rent"
                           />
                         </div>
@@ -426,11 +439,13 @@ export default function CreateListing() {
                       <FormLabel>7. Evde toplam kaç oda var? *</FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
-                          min="1"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           placeholder="örn., 3"
+                          className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           {...field}
-                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                          onChange={(e) => field.onChange(e.target.value)}
                           data-testid="input-total-rooms"
                         />
                       </FormControl>
@@ -542,11 +557,13 @@ export default function CreateListing() {
                       <FormLabel>11. Evde toplam kaç kişi yaşamaktadır? *</FormLabel>
                       <FormControl>
                         <Input 
-                          type="number" 
-                          min="1"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           placeholder="2" 
+                          className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           {...field}
-                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                          onChange={(e) => field.onChange(e.target.value)}
                           data-testid="input-occupants"
                         />
                       </FormControl>

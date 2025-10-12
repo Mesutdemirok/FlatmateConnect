@@ -150,16 +150,16 @@ export default function ListingCard({
             </span>
           </div>
 
-          {/* Favorite — dark orange */}
+          {/* Favorite — light orange */}
           <Button
             variant="secondary"
             size="icon"
             aria-label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"}
             className="
               absolute left-2 top-2 h-9 w-9 sm:h-10 sm:w-10 rounded-full
-              bg-orange-600 text-white shadow-sm ring-1 ring-white/40
-              hover:bg-orange-700 active:scale-95 transition
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70
+              bg-orange-100 text-orange-600 shadow-sm
+              hover:bg-orange-200 active:scale-95 transition
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300
             "
             onClick={handleToggleFavorite}
             disabled={toggleFavoriteMutation.isPending || !id}
@@ -172,22 +172,15 @@ export default function ListingCard({
               fill={favorite ? "currentColor" : "none"}
             />
           </Button>
-
-          {/* Verified badge */}
-          {isVerified && (
-            <div className="absolute bottom-2 left-2 rounded-full bg-emerald-600/95 p-1.5 text-white shadow-sm ring-1 ring-white/40 sm:bottom-3 sm:left-3">
-              <ShieldCheck className="h-4 w-4" />
-            </div>
-          )}
         </div>
 
         {/* Content */}
-        <div className="px-3 pb-3 sm:px-4 sm:pb-4">
-          <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug">
+        <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
+          <h3 className="text-[15px] sm:text-[16.5px] font-semibold text-slate-900 leading-snug">
             {title4}
           </h3>
           <p
-            className="mt-0.5 sm:mt-1 text-[13px] sm:text-sm text-slate-600 truncate"
+            className="mt-0.5 text-[12.5px] sm:text-[13.5px] text-slate-600 truncate"
             title={`${suburb}${showDistance && distance ? ` • ${distance}` : ""}`}
           >
             {suburb}

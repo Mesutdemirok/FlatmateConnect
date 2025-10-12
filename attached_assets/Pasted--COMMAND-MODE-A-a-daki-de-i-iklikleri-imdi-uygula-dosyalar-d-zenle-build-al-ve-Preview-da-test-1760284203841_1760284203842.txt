@@ -1,0 +1,136 @@
+[COMMAND MODE]
+Aşağıdaki değişiklikleri şimdi uygula, dosyaları düzenle, build al ve Preview’da test et.
+Amaç: Ana sayfa kartları, ilan formu, ilan detay sayfası ve “Oda Arayanlar” kartlarını tek seferde toparlamak + adres gizliliği kuralını UI/validation/backend düzeyinde garanti altına almak.
+
+⸻
+
+1) Ana sayfa ilan kartları (Güncel İlanlar) – arayüz ve veri temizliği
+
+Dosyalar: client/src/components/ui/ListingCard.tsx ve kartı kullanan liste bileşeni
+Yap:
+	•	Başlık: Kart “alt başlık”taki “İlan adresiniz…” metni yerine ilan başlığını göster.
+	•	Başlığı mobilde en fazla 4 kelime göster (fazlası … ile kesilsin).
+	•	Fiyat: Kartta tek yerde göster (görselin sağ-üstündeki fiyat kapsülü). Kart gövdesinde tekrar etme.
+	•	İsim / puan: İlan sahibinin adı, 4.8 puan, “reviews” vb. tamamen kaldır.
+	•	Yer satırı: Sadece suburb/district/city yaz (ikon yok). Mobilde satırlar arası boşluğu azalt.
+	•	Görsel düzen: Resmi hafif sola yasla hissi için kartın iç boşluklarını azalt; görsel üzerinde tek satır fiyat kapsülü (₺…/ay).
+	•	Favori butonu: Sol-üstte turuncu (bg-orange-100 → hover:200; ikon turuncu).
+	•	Aralıklar: Kartlar arasındaki düşey boşluğu azalt (mobil öncelikli).
+
+Kabul Ölçütleri:
+	•	Kartta tek fiyat var, isim/puan yok, başlık ≤ 4 kelime, boşluklar mobilde sıkı.
+
+⸻
+
+2) İlan formu – sayısal alanları düz girişe çevir
+
+Dosyalar: client/src/pages/ListingCreateForm.tsx (+ şema dosyası)
+Yap:
+	•	rentAmount, totalRooms vb. input type=“text” (veya number) + inputMode="numeric", pattern="[0-9]*" kullan.
+	•	WebKit/Mozilla spinner’larını CSS ile kapat.
+	•	Zod/Yup şemasında string | number kabul et → kayıtta Number()’a çevir.
+	•	Min/Max/required kuralları ve Türkçe hata mesajları ekle.
+
+Kabul Ölçütleri:
+	•	Artı/eksi stepper yok; kullanıcı doğrudan sayı yazıyor; validasyon TR mesajlarla çalışıyor.
+
+⸻
+
+3) İlan detay sayfası – bölümlere ayır, mobil dostu yap
+
+Dosyalar: client/src/pages/ListingDetail.tsx
+Yapı:
+	•	Başlık, fiyat (₺…/ay), maskeli adres (aşağıdaki #4’e göre), “Sahibiyle iletişime geç” butonu.
+	•	Rozet/çipler:
+	•	Konut tipi: Rezidans / Apartman / Daire / Müstakil Ev / Diğer
+	•	Banyo: Ortak / Özel
+	•	Eşya: Eşyalı / Eşyasız
+	•	İnternet: Var / Yok
+	•	Olanaklar: (Yatak, Dolap, Masa, Sandalye, Klima, TV, Diğer) → seçili olanlar etiket/çip olarak; seçilmemişler gri/soluk gösterilmesin.
+	•	Güvenlik notu: Mesaj butonunun altında küçük gri metin:
+Tam adres ve buluşma detaylarını mesajlarda paylaşın. İlanlarda tam adres gösterilmez.
+	•	Kaldır: 4.8 puan, “reviews”, haftalık fiyat metni (tamamı aylık).
+
+Kabul Ölçütleri:
+	•	Tüm rozetler doğru veriyle görünür; aylık fiyat; rating yok; mobilde okunur ve sıkı.
+
+⸻
+
+4) Adres gizliliği – UI uyarı + frontend validasyon + backend maskeleme
+
+Dosyalar:
+	•	UI/validasyon: client/src/pages/ListingCreateForm.tsx
+	•	Şema & API: server/**/schemas.ts, server/**/controllers/listings.ts (veya eşdeğer)
+	•	Model: Drizzle/Prisma şema dosyası
+
+UI (form başı uyarı bandı):
+	•	Başlığın altına şu bandı ekle (role="alert"):
+🔐 Güvenlik uyarısı: Lütfen tam adres (sokak/cadde adı, kapı–daire no) paylaşmayın.
+Sadece Mahalle, Semt/İlçe, Şehir yazın.
+Tam adres ve buluşma detaylarını yalnızca mesajlar üzerinden paylaşın.
+Örnek: Zümrütevler Mah., Maltepe / İstanbul — Yanlış: Bağdat Cd. No:12 D:4…
+	•	Adres input:
+	•	placeholder: Mahalle, Semt/İlçe, Şehir (örn: Zümrütevler, Maltepe / İstanbul)
+	•	Alt açıklama (id="addressHelp"):
+Tam adres girmeyin. Sadece mahalle, semt/ilçe ve şehir yazın. Detaylar mesajlarda paylaşılacaktır.
+	•	aria-describedby="addressHelp" ekle.
+
+Frontend validasyon:
+	•	Aşağıdaki kalıpları reddet (tam adres şüphesi):
+
+/\b(no|no\.|n°|daire|d:|kat|apt|apart|sok|sk|sokak|cad|cd|cadd|caddesi)\b|\d{2,}/i
+
+
+	•	Hata mesajı:
+Tam adres paylaşmayın. Sadece mahalle, semt/ilçe ve şehir yazın (örn: "Zümrütevler, Maltepe / İstanbul").
+
+Backend:
+	•	Tam adres alanı kullanma. displayAddress (string) ya da neighborhood/district/city alanları sakla.
+	•	Kaydetmeden önce metni trim + normalize et; çoklu boşlukları tek boşluğa indir.
+	•	API dönüşü ve kart/detay sayfaları daima displayAddress (veya parçalı alanları) kullansın.
+
+Detay sayfası notu: (bkz. madde 3)
+Tam adres ve buluşma detaylarını mesajlarda paylaşın…
+
+Kabul Ölçütleri:
+	•	“Bağdat Cd. No: 12 D:4” reddediliyor; “Zümrütevler, Maltepe / İstanbul” kabul.
+	•	Kart ve detayda tam adres yok, maskeli alan görünüyor.
+
+⸻
+
+5) Oda Arayanlar kartları – veri ve görünüm
+
+Dosyalar: client/src/components/ui/FeaturedRoomSeekers.tsx (veya kart bileşeni)
+Yap:
+	•	Kart içeriği (mobil öncelikli, sıkı boşluk):
+	•	Avatar/baş harfler (foto yoksa): AD, BK gibi.
+	•	Ad (Ad + soyadın ilk harfi), Yaş, Cinsiyet, Bütçe (₺/ay)
+	•	Aradığı lokasyon(lar) (kısa)
+	•	Tercih rozetleri (Sigara: evet/hayır; Cinsiyet tercihi; Temizlik/Sosyallik — varsa)
+	•	Sıralama: Son güncellenen üstte.
+	•	Boş durumda: Şu an listelenecek oda arayan bulunamadı. mesajı.
+	•	Admin seçimi opsiyonu: Profilde isPublished/featured alanı varsa sadece yayında olanlar gösterilsin.
+
+Kabul Ölçütleri:
+	•	Kartlar dolu/dolu değil durumda doğru davranır; veriler gerçek ve okunaklıdır.
+
+⸻
+
+6) Genel temizlik, çeviri ve testler
+
+Dosyalar: client/src/i18n.ts, TR metin kullanılan tüm bileşenler
+Yap:
+	•	İngilizce kalan hiçbir metin kalmasın. Tümü Türkçe.
+	•	“Hafta” → Ay.
+	•	“Aramaya geri dön” butonu 404’e gitmeyecek: route’u TR sluga bağla (örn. / veya /oda-ara)
+	•	Kart iskeleti (skeleton) ve boş durum metinleri mobilde bozulmadan çalışsın.
+
+Hızlı test listesi:
+	1.	Ana sayfa kartları: tek fiyat, başlık ≤ 4 kelime, isim/puan yok, boşluklar sıkı.
+	2.	Form: Sayısal alanlar düz giriş; stepper yok; TR validasyon mesajları.
+	3.	Adres: Tam adres reddediliyor; maskeli adres kartta/detayda görünüyor.
+	4.	Detay sayfası: rozet/olanaklar doğru, aylık fiyat, güvenlik notu var.
+	5.	Oda Arayanlar: kartlar dolu; boşsa mesaj çıkıyor.
+	6.	“Aramaya geri dön” doğru route’a götürüyor; 404 yok.
+
+Bittiğinde: “Home cards, form numeric inputs, detail sections, seeker cards ve adres gizliliği tamamlandı; Preview’da doğrulandı.” notu bırak.
