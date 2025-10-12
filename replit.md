@@ -34,7 +34,13 @@ Preferred communication style: Simple, everyday language.
 - **Seeker Profiles**: Comprehensive profiles for those seeking accommodation, including preferences and photos
 - **Messaging System**: Real-time communication between users
 - **Favorites System**: Save and manage favorite listings with orange-themed UI
-- **Search & Filtering**: Location-based search with various filters (price, availability, features)
+- **Location-Based Search System**: 
+  - Turkey location dataset (`shared/turkey-locations.json`) with İl → İlçe → Mahalle hierarchy
+  - Cascade location selector (LocationSelect component) with slug-based filtering
+  - Hero section search widget (LocationSearch) navigating to `/arama` route
+  - SearchPage displaying filtered results based on location slugs
+  - Normalized location fields in listings and seekerProfiles schemas (city, district, neighborhood with slugs)
+  - SEO-friendly slug-based URLs for location searches
 - **File Upload System**: Local storage, image validation, multiple image support
 - **Privacy & Security**: Address masking system, frontend validation, security warnings in UI
 
