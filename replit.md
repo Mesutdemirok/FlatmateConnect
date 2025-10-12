@@ -20,19 +20,22 @@ Preferred communication style: Simple, everyday language.
 ### Backend
 - **Framework**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Replit Auth, session-based using `express-session`
+- **Authentication**: JWT-based with httpOnly cookies, bcrypt password hashing
+- **Email Service**: Nodemailer for verification and password reset emails
+- **SMS/OTP Service**: Twilio for phone verification
 - **File Handling**: Multer for image uploads (local storage)
-- **API Design**: RESTful, standardized error handling
+- **API Design**: RESTful, standardized error handling, Turkish error messages
 - **System Design**: Modular schema, proper foreign key relationships with cascade deletes. Health endpoint (`/api/health`) for monitoring.
 
 ### Key Features
-- **User Management**: Profile creation, verification, image uploads.
-- **Listing System**: Detailed room listings with multiple images, descriptions, and filtering.
-- **Seeker Profiles**: Comprehensive profiles for those seeking accommodation, including preferences and photos.
-- **Messaging System**: Real-time communication between users.
-- **Favorites System**: Save and manage favorite listings.
-- **Search & Filtering**: Location-based search with various filters (price, availability, features).
-- **File Upload System**: Local storage, image validation, multiple image support.
+- **Authentication System**: Multi-method authentication (email/password, Google OAuth placeholder, phone/SMS OTP), email verification, password reset, JWT with httpOnly cookies, auto-redirect to /profil after login/register
+- **User Management**: Profile creation, verification, image uploads
+- **Listing System**: Detailed room listings with multiple images, descriptions, and filtering
+- **Seeker Profiles**: Comprehensive profiles for those seeking accommodation, including preferences and photos
+- **Messaging System**: Real-time communication between users
+- **Favorites System**: Save and manage favorite listings
+- **Search & Filtering**: Location-based search with various filters (price, availability, features)
+- **File Upload System**: Local storage, image validation, multiple image support
 
 ## External Dependencies
 
@@ -56,10 +59,12 @@ Preferred communication style: Simple, everyday language.
 - **React Hook Form**: Form state management
 - **Zod**: Schema validation, integrated with Drizzle ORM
 
-### Authentication
-- **Replit Auth**: OIDC-based authentication
-- **Passport.js**: Authentication middleware
-- **memoizee**: Caching for OIDC configuration
+### Authentication & Communication
+- **JWT**: Token-based authentication with httpOnly cookies
+- **bcrypt**: Password hashing
+- **Nodemailer**: Email service for verification and password reset
+- **Twilio**: SMS/OTP service for phone verification
+- **Passport.js**: Authentication middleware (available for OAuth integration)
 
 ### Utilities
 - **i18next**: Internationalization
