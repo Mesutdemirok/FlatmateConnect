@@ -75,15 +75,20 @@ async function executeCleanup() {
       .where(inArray(listingImages.listingId, listingIds));
     
     for (const img of images) {
-      const filePath = path.join(process.cwd(), 'uploads', img.imagePath);
+      // imagePath might start with '/uploads/' or 'uploads/', normalize it
+      const normalizedPath = img.imagePath.startsWith('/') ? img.imagePath.slice(1) : img.imagePath;
+      const filePath = path.join(process.cwd(), normalizedPath);
       try {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
           deletedFiles.push(img.imagePath);
           stats.files++;
+          console.log(`   🗑️  Deleted: ${img.imagePath}`);
+        } else {
+          console.log(`   ⚠️  File not found: ${filePath}`);
         }
       } catch (err) {
-        console.warn(`⚠️  Could not delete file: ${filePath}`);
+        console.warn(`   ❌ Could not delete file: ${filePath} - ${err}`);
       }
     }
     
@@ -99,15 +104,20 @@ async function executeCleanup() {
       .where(inArray(seekerPhotos.seekerId, seekerIds));
     
     for (const photo of photos) {
-      const filePath = path.join(process.cwd(), 'uploads', 'seekers', photo.imagePath);
+      // Construct proper path - photo.imagePath might be relative or absolute
+      const normalizedPath = photo.imagePath.startsWith('/') ? photo.imagePath.slice(1) : photo.imagePath;
+      const filePath = path.join(process.cwd(), normalizedPath);
       try {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
-          deletedFiles.push(`seekers/${photo.imagePath}`);
+          deletedFiles.push(photo.imagePath);
           stats.files++;
+          console.log(`   🗑️  Deleted: ${photo.imagePath}`);
+        } else {
+          console.log(`   ⚠️  File not found: ${filePath}`);
         }
       } catch (err) {
-        console.warn(`⚠️  Could not delete file: ${filePath}`);
+        console.warn(`   ❌ Could not delete file: ${filePath} - ${err}`);
       }
     }
     
