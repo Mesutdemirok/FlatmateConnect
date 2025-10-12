@@ -15,12 +15,11 @@ export default function FeaturedRoomSeekers() {
     isLoading,
     error,
   } = useQuery<SeekerProfileWithRelations[]>({
-    queryKey: ["/api/seekers/featured"],
+    queryKey: ["/api/seekers/public"],
     queryFn: async () => {
-      const res = await fetch("/api/seekers/featured?count=4");
+      const res = await fetch("/api/seekers/public?limit=4");
       if (!res.ok) throw new Error("Failed to fetch seekers");
       const data = await res.json();
-      console.log("Seekers data:", data, "Type:", Array.isArray(data), "Length:", data?.length);
       return data;
     },
   });

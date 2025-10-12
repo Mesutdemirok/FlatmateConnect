@@ -12,6 +12,7 @@ import Search from "@/pages/Search";
 import ListingDetail from "@/pages/ListingDetail";
 import SeekerDetail from "@/pages/SeekerDetail";
 import CreateListing from "@/pages/CreateListing";
+import EditListing from "@/pages/EditListing";
 import CreateSeekerProfile from "@/pages/CreateSeekerProfile";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
@@ -62,6 +63,9 @@ function Router() {
       </Route>
       <Route path="/ilan-olustur">
         <ProtectedRoute component={CreateListing} path="/ilan-olustur" />
+      </Route>
+      <Route path="/ilan-duzenle/:id">
+        <ProtectedRoute component={EditListing} path="/ilan-duzenle/:id" />
       </Route>
       <Route path="/oda-arama-ilani-olustur">
         <ProtectedRoute component={CreateSeekerProfile} path="/oda-arama-ilani-olustur" />

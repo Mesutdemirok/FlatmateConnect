@@ -363,14 +363,24 @@ export default function ListingDetail() {
                 </div>
 
                 <div className="space-y-3">
-                  <Button 
-                    onClick={handleContactOwner}
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                    data-testid="contact-owner-button"
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    {t('listings.contact_owner')}
-                  </Button>
+                  {user?.id === listing.userId ? (
+                    <Button 
+                      onClick={() => setLocation(`/ilan-duzenle/${id}`)}
+                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                      data-testid="edit-listing-button"
+                    >
+                      Düzenle
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleContactOwner}
+                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                      data-testid="contact-owner-button"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      {t('listings.contact_owner')}
+                    </Button>
+                  )}
                   
                   <Button 
                     variant="outline" 
