@@ -22,15 +22,16 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Home, Upload, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { z } from "zod";
+import LocationSelect from "@/components/ui/LocationSelect";
 
 const createListingSchema = z.object({
-  address: z.string()
-    .min(5, 'Lütfen geçerli bir adres giriniz')
-    .refine((val) => {
-      const lower = val.toLowerCase();
-      const hasDetailedInfo = /(\d+\s*(no|numara|daire|kat|kapı|blok)|no:\s*\d+|daire:\s*\d+)/i.test(val);
-      return !hasDetailedInfo;
-    }, 'Güvenlik için lütfen sadece mahalle/semt bilgisi girin (kapı no, daire no vb. eklemeyin)'),
+  city: z.string().min(1, 'Lütfen şehir seçiniz'),
+  citySlug: z.string().min(1, 'Şehir slug gerekli'),
+  district: z.string().min(1, 'Lütfen ilçe seçiniz'),
+  districtSlug: z.string().min(1, 'İlçe slug gerekli'),
+  neighborhood: z.string().optional(),
+  neighborhoodSlug: z.string().optional(),
+  address: z.string().optional(),
   title: z.string().min(10, 'Başlık en az 10 karakter olmalıdır'),
   rentAmount: z.union([z.string(), z.number()]).transform(val => {
     const num = typeof val === 'string' ? Number(val) : val;
@@ -72,6 +73,12 @@ export default function CreateListing() {
   const form = useForm<CreateListingFormData>({
     resolver: zodResolver(createListingSchema),
     defaultValues: {
+      city: '',
+      citySlug: '',
+      district: '',
+      districtSlug: '',
+      neighborhood: '',
+      neighborhoodSlug: '',
       address: '',
       title: '',
       rentAmount: 0,
@@ -111,7 +118,13 @@ export default function CreateListing() {
     mutationFn: async (data: CreateListingFormData) => {
       const response = await apiRequest('POST', '/api/listings', {
         userId: user?.id,
-        address: data.address,
+        city: data.city,
+        citySlug: data.citySlug,
+        district: data.district,
+        districtSlug: data.districtSlug,
+        neighborhood: data.neighborhood || '',
+        neighborhoodSlug: data.neighborhoodSlug || '',
+        address: `${data.neighborhood || data.district}, ${data.city}`,
         title: data.title,
         rentAmount: data.rentAmount.toString(),
         billsIncluded: data.billsIncluded === 'yes',
@@ -247,30 +260,36 @@ export default function CreateListing() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* 1. İlan adresiniz nedir? */}
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>1. İlan adresiniz nedir? *</FormLabel>
-                      <Alert className="mb-3 border-amber-200 bg-amber-50">
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                        <AlertDescription className="text-amber-800">
-                          Güvenliğiniz için sadece mahalle veya semt bilgisi girin. Kapı numarası, daire numarası gibi detayları eklemeyin. Detayları mesajlaşma sırasında paylaşabilirsiniz.
-                        </AlertDescription>
-                      </Alert>
-                      <FormControl>
-                        <Input 
-                          placeholder="örn., Kadıköy, İstanbul" 
-                          {...field} 
-                          data-testid="input-address"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* 1. İlan konumu nedir? */}
+                <div className="space-y-4">
+                  <div>
+                    <FormLabel>1. İlan konumu nedir? *</FormLabel>
+                    <Alert className="mt-2 border-amber-200 bg-amber-50">
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <AlertDescription className="text-amber-800">
+                        Güvenliğiniz için sadece mahalle veya ilçe bilgisi seçin. Detaylı adres bilgilerini mesajlaşma sırasında paylaşabilirsiniz.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                  <LocationSelect
+                    value={{
+                      city: form.watch('city') || '',
+                      citySlug: form.watch('citySlug') || '',
+                      district: form.watch('district') || '',
+                      districtSlug: form.watch('districtSlug') || '',
+                      neighborhood: form.watch('neighborhood') || '',
+                      neighborhoodSlug: form.watch('neighborhoodSlug') || '',
+                    }}
+                    onChange={(location) => {
+                      form.setValue('city', location.city || '');
+                      form.setValue('citySlug', location.citySlug || '');
+                      form.setValue('district', location.district || '');
+                      form.setValue('districtSlug', location.districtSlug || '');
+                      form.setValue('neighborhood', location.neighborhood || '');
+                      form.setValue('neighborhoodSlug', location.neighborhoodSlug || '');
+                    }}
+                  />
+                </div>
 
                 {/* 2. İlan başlığınız nedir? */}
                 <FormField

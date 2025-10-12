@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, User, Upload } from "lucide-react";
 import { z } from "zod";
+import LocationSelect from "@/components/ui/LocationSelect";
 
 const createSeekerSchema = z.object({
   fullName: z.string().min(3, 'Lütfen adınızı ve soyadınızı giriniz'),
@@ -24,7 +25,13 @@ const createSeekerSchema = z.object({
   occupation: z.string().min(1, 'Lütfen durumunuzu seçiniz'),
   budgetMonthly: z.coerce.number().positive('Bütçe 0\'dan büyük olmalıdır'),
   about: z.string().min(10, 'Lütfen kendiniz hakkında bilgi veriniz (en az 10 karakter)'),
-  preferredLocation: z.string().min(3, 'Lütfen tercih ettiğiniz lokasyonu giriniz'),
+  city: z.string().min(1, 'Lütfen şehir seçiniz'),
+  citySlug: z.string().min(1, 'Şehir slug gerekli'),
+  district: z.string().min(1, 'Lütfen ilçe seçiniz'),
+  districtSlug: z.string().min(1, 'İlçe slug gerekli'),
+  neighborhood: z.string().optional(),
+  neighborhoodSlug: z.string().optional(),
+  preferredLocation: z.string().optional(),
   // Preference fields
   smokingPreference: z.string().optional(),
   petPreference: z.string().optional(),
@@ -63,6 +70,12 @@ export default function CreateSeekerProfile() {
       occupation: '',
       budgetMonthly: 0,
       about: '',
+      city: '',
+      citySlug: '',
+      district: '',
+      districtSlug: '',
+      neighborhood: '',
+      neighborhoodSlug: '',
       preferredLocation: '',
       smokingPreference: '',
       petPreference: '',
@@ -79,21 +92,27 @@ export default function CreateSeekerProfile() {
   useEffect(() => {
     if (existingProfile) {
       form.reset({
-        fullName: existingProfile.fullName || '',
-        age: existingProfile.age || 0,
-        gender: existingProfile.gender || '',
-        occupation: existingProfile.occupation || '',
-        budgetMonthly: existingProfile.budgetMonthly ? parseFloat(existingProfile.budgetMonthly) : 0,
-        about: existingProfile.about || '',
-        preferredLocation: existingProfile.preferredLocation || '',
-        smokingPreference: existingProfile.smokingPreference || '',
-        petPreference: existingProfile.petPreference || '',
-        cleanlinessLevel: existingProfile.cleanlinessLevel || '',
-        socialLevel: existingProfile.socialLevel || '',
-        workSchedule: existingProfile.workSchedule || '',
-        agePreferenceMin: existingProfile.agePreferenceMin,
-        agePreferenceMax: existingProfile.agePreferenceMax,
-        genderPreference: existingProfile.genderPreference || '',
+        fullName: (existingProfile as any).fullName || '',
+        age: (existingProfile as any).age || 0,
+        gender: (existingProfile as any).gender || '',
+        occupation: (existingProfile as any).occupation || '',
+        budgetMonthly: (existingProfile as any).budgetMonthly ? parseFloat((existingProfile as any).budgetMonthly) : 0,
+        about: (existingProfile as any).about || '',
+        city: (existingProfile as any).city || '',
+        citySlug: (existingProfile as any).citySlug || '',
+        district: (existingProfile as any).district || '',
+        districtSlug: (existingProfile as any).districtSlug || '',
+        neighborhood: (existingProfile as any).neighborhood || '',
+        neighborhoodSlug: (existingProfile as any).neighborhoodSlug || '',
+        preferredLocation: (existingProfile as any).preferredLocation || '',
+        smokingPreference: (existingProfile as any).smokingPreference || '',
+        petPreference: (existingProfile as any).petPreference || '',
+        cleanlinessLevel: (existingProfile as any).cleanlinessLevel || '',
+        socialLevel: (existingProfile as any).socialLevel || '',
+        workSchedule: (existingProfile as any).workSchedule || '',
+        agePreferenceMin: (existingProfile as any).agePreferenceMin,
+        agePreferenceMax: (existingProfile as any).agePreferenceMax,
+        genderPreference: (existingProfile as any).genderPreference || '',
       });
     }
   }, [existingProfile, form]);
@@ -123,7 +142,13 @@ export default function CreateSeekerProfile() {
         occupation: data.occupation,
         budgetMonthly: data.budgetMonthly.toString(),
         about: data.about,
-        preferredLocation: data.preferredLocation,
+        city: data.city,
+        citySlug: data.citySlug,
+        district: data.district,
+        districtSlug: data.districtSlug,
+        neighborhood: data.neighborhood || '',
+        neighborhoodSlug: data.neighborhoodSlug || '',
+        preferredLocation: `${data.neighborhood || data.district}, ${data.city}`,
         // Include all preference fields
         smokingPreference: data.smokingPreference || null,
         petPreference: data.petPreference || null,
@@ -137,7 +162,7 @@ export default function CreateSeekerProfile() {
 
       // Use PUT for editing, POST for creating
       const method = isEditMode ? 'PUT' : 'POST';
-      const endpoint = isEditMode ? `/api/seekers/${existingProfile.id}` : '/api/seekers';
+      const endpoint = isEditMode ? `/api/seekers/${(existingProfile as any).id}` : '/api/seekers';
       const response = await apiRequest(method, endpoint, payload);
       return response.json();
     },
@@ -400,23 +425,27 @@ export default function CreateSeekerProfile() {
                 />
 
                 {/* 8. Hangi lokasyonda oda/ev arıyorsunuz? */}
-                <FormField
-                  control={form.control}
-                  name="preferredLocation"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>8. Hangi lokasyonda oda/ev arıyorsunuz? *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="örn., Kadıköy, İstanbul" 
-                          {...field} 
-                          data-testid="input-location"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-2">
+                  <FormLabel>8. Hangi lokasyonda oda/ev arıyorsunuz? *</FormLabel>
+                  <LocationSelect
+                    value={{
+                      city: form.watch('city') || '',
+                      citySlug: form.watch('citySlug') || '',
+                      district: form.watch('district') || '',
+                      districtSlug: form.watch('districtSlug') || '',
+                      neighborhood: form.watch('neighborhood') || '',
+                      neighborhoodSlug: form.watch('neighborhoodSlug') || '',
+                    }}
+                    onChange={(location) => {
+                      form.setValue('city', location.city || '');
+                      form.setValue('citySlug', location.citySlug || '');
+                      form.setValue('district', location.district || '');
+                      form.setValue('districtSlug', location.districtSlug || '');
+                      form.setValue('neighborhood', location.neighborhood || '');
+                      form.setValue('neighborhoodSlug', location.neighborhoodSlug || '');
+                    }}
+                  />
+                </div>
               </CardContent>
             </Card>
 
