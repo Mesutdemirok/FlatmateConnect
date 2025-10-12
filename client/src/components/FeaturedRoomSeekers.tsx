@@ -110,7 +110,7 @@ export default function FeaturedRoomSeekers() {
             data-testid={`seeker-card-${seeker.id}`}
           >
             {/* Photo Section */}
-            <div className="relative h-[280px] overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100">
+            <div className="relative h-[240px] overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100">
               <img
                 src={getPhotoUrl(seeker)}
                 alt={getDisplayName(seeker)}
@@ -120,7 +120,7 @@ export default function FeaturedRoomSeekers() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
               
               {seeker.age && (
-                <Badge className="absolute top-3 right-3 bg-white/95 text-indigo-700 border-0">
+                <Badge className="absolute top-3 right-3 bg-indigo-600 text-white border-0">
                   {seeker.age} yaş
                 </Badge>
               )}
