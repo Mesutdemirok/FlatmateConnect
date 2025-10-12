@@ -1,0 +1,96 @@
+Harika. Aşağıdaki tek komutu Replit Agent’e gönder — iki işi (ilan düzenleme + oda arayanların ana sayfada görünmesi) tek seferde uygulasın.
+
+⸻
+
+[COMMAND MODE]
+Uygulamayı şimdi güncelle ve yeniden derle.
+Sadece planlama yapma — dosyaları değiştir, build et ve Preview’da test et.
+Tüm kabul kriterlerini kendin test edip sonucu bildir.
+
+⸻
+
+🎯 Genel Amaç
+	1.	Oda İlanı (room listing) için tam düzenleme akışı (metin + fotoğraf sil/değiştir) ve kart/ayrıntı anında güncellensin.
+	2.	Oda Arayan İlanı (room seeker) kayıtları giriş gerektirmeden ana sayfadaki “Oda Arayanlar” bölümünde listelensin; kart tıklanınca 404 vermeden detay sayfası açılsın.
+	3.	Tüm rotalar Türkçe olsun ve daha önceki “string/number” doğrulama hataları giderilsin.
+
+⸻
+
+1) Oda İlanı DÜZENLEME (fotoğraf dahil)
+
+Backend (server)
+	•	PUT /api/listings/:id
+	•	Güncellenecek alanlar: title, rentAmount (aylık), suburb, availableFrom, description, vb.
+	•	rentAmount ve benzeri sayısal alanlar için validasyon: string veya number kabul et (z.union([z.string(), z.number()])), DB’ye number yaz.
+	•	Fotoğraf yönetimi:
+	•	POST /api/listings/:id/images → tek/çoklu upload (JPG/PNG/WebP, max 5MB), dosyalar /uploads’a kaydedilsin; DB’ye yol/primary bilgisi yazılsın.
+	•	DELETE /api/listings/:id/images/:imageId → dosyayı fiziksel olarak /uploads’tan sil + DB kaydını kaldır.
+	•	PATCH /api/listings/:id/images/:imageId → isPrimary ayarla (diğer tüm görsellerde isPrimary=false).
+	•	Yetki: Sadece ilan sahibi düzenleyebilir; aksi 403.
+
+Frontend (client)
+	•	İlan detay sayfasına “Düzenle” butonu ekle → /ilan-duzenle/:id rotasına götür.
+	•	/ilan-duzenle/:id formu mevcut verilerle prefill olsun.
+	•	Fotoğraf alanı: mevcut görselleri göster, “Kaldır” (DELETE), “Yeni Ekle” (POST), “Ana görsel yap” (PATCH).
+	•	Kaydet sonrası: başarı toast + ilan detayına yönlendir.
+	•	react-query invalidation: /api/listings, /api/listings/:id, /api/favorites gibi sorguları invalidate et ki ana sayfa kartı ve detay anında yenilensin.
+
+Kabul Kriterleri
+	•	Bir ilan seç → Düzenle → başlık/kira/fotoğraf değiştir → Kaydet.
+	•	Değişiklikler detay sayfasında ve ana sayfa kartında görünmeli (sayfayı yenilemeden).
+	•	Fotoğraf silindiğinde /uploads’tan fiziksel dosya da silinmeli.
+	•	İlan sahibi olmayan kullanıcı 403 almalı.
+	•	Konsol/terminal hatasız.
+
+⸻
+
+2) Oda Arayan İlanı ANA SAYFADA (public) + Detay sayfası
+
+Model / API
+	•	Seeker modelinde (oda arayan): isPublished: boolean, status: 'active'|'inactive' alanlarını ekle/koru ve public filtrelemede kullan.
+	•	Listeleme (public): GET /api/seekers/public?limit=4
+	•	Sadece isPublished=true ve status='active' olanları döndür.
+	•	Dönüş alanları: ad (adı + soyad baş harfi), yaş, cinsiyet, bütçe ₺/ay, lokasyon, fotoğraf (varsa), about (kısa açıklama).
+	•	Detay: GET /api/seekers/:id → gerçek veri döndür; 404 olmasın.
+
+Frontend
+	•	Ana sayfada FeaturedRoomSeekers bileşenini auth gerektirmeden GET /api/seekers/public?limit=4 ile besle.
+	•	Kart içeriği (sahte alanları tamamen kaldır):
+	•	Foto, Ad + soyad baş harfi (max 4 kelime), yaş, cinsiyet, bütçe (₺/ay), lokasyon.
+	•	4.8 Rating / Reviews / Member since gibi verisi olmayan süs metinler kaldırılacak.
+	•	Kart tıklanınca /oda-arayan/:id rotasına gitmeli.
+	•	/oda-arayan/:id detay bileşenini oluştur: formdan gelen tüm alanları düzgün göster.
+	•	“Arama’ya geri dön” linki /ara (veya mevcut Türkçe arama rotası) olsun ve 404 vermesin.
+	•	Profil senkronu: Kullanıcı profilde “Oda Arama İlanı Ver / Düzenle” formunu kaydedince kayıt isPublished=true olarak işaretlensin ve ana sayfada görünür olsun. react-query cache invalidate ile kartlar güncellensin.
+
+Görünürlük / Erişim
+	•	Giriş yapılmadan “Oda Arayanlar” bölümü görülebilmeli.
+	•	CORS/Auth engeli olmamalı (public endpoint).
+
+Kabul Kriterleri
+	•	Yeni bir oda arama ilanı oluştur → Ana sayfada görünsün.
+	•	Kart tıklanınca /oda-arayan/:id açılıp 404 vermesin.
+	•	Profilde düzenleyince ana sayfa kartı anında güncellensin.
+	•	Konsol/terminal hatasız.
+
+⸻
+
+3) Rotalar ve Dil (TR)
+	•	Tüm rotalar Türkçe:
+	•	/giris, /uye-ol, /profil, /ilan/:id (oda ilanı detay),
+	•	/ilan-duzenle/:id, /oda-ilani-olustur,
+	•	/oda-arayan/:id (seeker detay), /oda-arama-ilani-olustur,
+	•	/ara (arama sayfası), vb.
+	•	Mevcut İngilizce rotalar varsa Türkçe’ye yönlendir (redirect) veya alias tanımla.
+	•	UI metinlerinde İngilizce kalan kısımları temizle (tam Türkçe).
+
+⸻
+
+4) Test Planı (sen çalıştır)
+	1.	Oda ilanı oluştur → düzenle (başlık/kira/foto) → kaydet → kart + detay yenilensin.
+	2.	Oda arayan ilanı oluştur (isPublished=true) → Ana sayfa “Oda Arayanlar”da görünsün.
+	3.	Bu karta tıkla → /oda-arayan/:id açılmalı (404 yok).
+	4.	Profilden seeker bilgisini değiştir → ana sayfa kartı anında güncellensin.
+	5.	Konsol/terminal hatası olmasın.
+
+Rebuild et, Preview’da test et ve tamamlandığında geçti/kaldi durumlarını ve yapılan dosya değişikliklerini özetle.

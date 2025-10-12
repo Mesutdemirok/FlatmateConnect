@@ -147,6 +147,7 @@ export const seekerProfiles = pgTable("seeker_profiles", {
   // System fields
   isActive: boolean("is_active").default(true),
   isFeatured: boolean("is_featured").default(false),
+  isPublished: boolean("is_published").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
