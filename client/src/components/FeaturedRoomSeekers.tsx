@@ -1,11 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SeekerProfileWithRelations, fetchFeaturedSeekers } from "@/lib/seekerApi";
-import { MapPin, Calendar, DollarSign } from "lucide-react";
+import { SeekerProfileWithRelations } from "@/lib/seekerApi";
+import { ShieldCheck } from "lucide-react";
 
 export default function FeaturedRoomSeekers() {
   const [, navigate] = useLocation();
@@ -48,10 +46,12 @@ export default function FeaturedRoomSeekers() {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(getDisplayName(seeker))}&background=8b5cf6&color=fff&size=400`;
   };
 
-  const formatBudget = (budget: string | null) => {
-    if (!budget) return "Belirtilmemiş";
-    const num = parseFloat(budget);
-    return `₺${num.toLocaleString('tr-TR')}/ay`;
+  const getPreferredLocations = (seeker: SeekerProfileWithRelations) => {
+    if (seeker.preferredLocation) {
+      const locations = seeker.preferredLocation.split(',').slice(0, 2);
+      return locations.join(', ');
+    }
+    return 'Lokasyon belirtilmedi';
   };
 
   if (isLoading) {
@@ -65,12 +65,10 @@ export default function FeaturedRoomSeekers() {
             key={i}
             className="rounded-2xl shadow-md overflow-hidden border border-slate-200"
           >
-            <Skeleton className="w-full h-[280px]" />
-            <CardContent className="p-4 space-y-3">
+            <Skeleton className="w-full aspect-[4/3] md:aspect-[16/10]" />
+            <CardContent className="p-4 space-y-2">
               <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-24" />
               <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-9 w-full" />
             </CardContent>
           </Card>
         ))}
@@ -104,101 +102,40 @@ export default function FeaturedRoomSeekers() {
         >
           {seekers.map((seeker) => (
             <Card
-            key={seeker.id}
-            className="rounded-2xl shadow-md overflow-hidden border border-slate-200 hover:shadow-xl transition-shadow duration-300 cursor-pointer group"
-            onClick={() => navigate(`/oda-arayan/${seeker.id}`)}
-            data-testid={`seeker-card-${seeker.id}`}
-          >
-            {/* Photo Section */}
-            <div className="relative h-[240px] overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100">
-              <img
-                src={getPhotoUrl(seeker)}
-                alt={getDisplayName(seeker)}
-                className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
-                data-testid={`seeker-photo-${seeker.id}`}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-              
-              {seeker.age && (
-                <Badge className="absolute top-3 right-3 bg-indigo-600 text-white border-0">
-                  {seeker.age} yaş
-                </Badge>
-              )}
-            </div>
+              key={seeker.id}
+              className="rounded-2xl bg-card shadow-sm ring-1 ring-black/5 overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group"
+              onClick={() => navigate(`/oda-arayan/${seeker.id}`)}
+              data-testid={`seeker-card-${seeker.id}`}
+            >
+              {/* Photo Section */}
+              <div className="relative aspect-[4/3] md:aspect-[16/10] overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100">
+                <img
+                  src={getPhotoUrl(seeker)}
+                  alt={`${getDisplayName(seeker)} profil fotoğrafı`}
+                  className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+                  data-testid={`seeker-photo-${seeker.id}`}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                
+                {/* Verified Badge */}
+                {seeker.user?.verificationStatus === 'verified' && (
+                  <div className="absolute bottom-3 left-3 bg-emerald-600/95 text-white rounded-full p-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </div>
+                )}
+              </div>
 
-            {/* Info Section */}
-            <CardContent className="p-4 space-y-3">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-1" data-testid={`seeker-name-${seeker.id}`}>
+              {/* Info Section */}
+              <CardContent className="p-4">
+                <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 mb-1" data-testid={`seeker-name-${seeker.id}`}>
                   {getDisplayName(seeker)}
                 </h3>
-                {seeker.gender && (
-                  <p className="text-sm text-slate-500">
-                    {seeker.gender === 'male' ? 'Erkek' : seeker.gender === 'female' ? 'Kadın' : seeker.gender}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2 text-sm text-slate-600">
-                {seeker.budgetMonthly && (
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-indigo-500" />
-                    <span>{formatBudget(seeker.budgetMonthly)}</span>
-                  </div>
-                )}
-                
-                {seeker.preferredLocation && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-indigo-500" />
-                    <span className="truncate">{seeker.preferredLocation}</span>
-                  </div>
-                )}
-
-                {seeker.occupation && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500">{seeker.occupation}</span>
-                  </div>
-                )}
-
-                {/* Preference Badges */}
-                {(seeker.cleanlinessLevel || seeker.smokingPreference || seeker.genderPreference) && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {seeker.cleanlinessLevel && (
-                      <Badge variant="secondary" className="text-xs">
-                        {seeker.cleanlinessLevel === 'very-clean' ? 'Çok Temiz' : 
-                         seeker.cleanlinessLevel === 'clean' ? 'Temiz' : 
-                         seeker.cleanlinessLevel === 'average' ? 'Orta' : 'Rahat'}
-                      </Badge>
-                    )}
-                    {seeker.smokingPreference && seeker.smokingPreference !== 'no-preference' && (
-                      <Badge variant="secondary" className="text-xs">
-                        {seeker.smokingPreference === 'non-smoker' ? 'İçmiyor' : 
-                         seeker.smokingPreference === 'smoker' ? 'İçiyor' : 'Sosyal'}
-                      </Badge>
-                    )}
-                    {seeker.genderPreference && seeker.genderPreference !== 'no-preference' && (
-                      <Badge variant="secondary" className="text-xs">
-                        {seeker.genderPreference === 'male' ? 'Erkek Tercih' : 'Kadın Tercih'}
-                      </Badge>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/oda-arayan/${seeker.id}`);
-                }}
-                data-testid={`seeker-details-btn-${seeker.id}`}
-              >
-                Profili Görüntüle
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+                <p className="text-[13px] sm:text-sm text-slate-600 truncate">
+                  {getPreferredLocations(seeker)}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>
