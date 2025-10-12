@@ -86,24 +86,24 @@ export default function FeaturedRoomSeekers() {
     );
   }
 
-  if (!seekers || seekers.length === 0) {
-    return null;
-  }
-  
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
           Oda Arayanlar
         </h2>
+        {(!seekers || seekers.length === 0) && (
+          <p className="text-slate-500 mt-2">Henüz oda arayan profil bulunmuyor</p>
+        )}
       </div>
 
-      <div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-        data-testid="featured-seekers-grid"
-      >
-        {seekers.map((seeker) => (
-          <Card
+      {seekers && seekers.length > 0 && (
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          data-testid="featured-seekers-grid"
+        >
+          {seekers.map((seeker) => (
+            <Card
             key={seeker.id}
             className="rounded-2xl shadow-md overflow-hidden border border-slate-200 hover:shadow-xl transition-shadow duration-300 cursor-pointer group"
             onClick={() => navigate(`/oda-arayan/${seeker.id}`)}
@@ -199,7 +199,8 @@ export default function FeaturedRoomSeekers() {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
