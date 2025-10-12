@@ -103,6 +103,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Locations endpoint - serve Turkey locations data
+  app.get('/api/locations', (req, res) => {
+    try {
+      const locationsPath = path.join(process.cwd(), 'shared', 'turkey-locations.json');
+      const locationsData = fs.readFileSync(locationsPath, 'utf-8');
+      const locations = JSON.parse(locationsData);
+      
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+      res.json(locations);
+    } catch (error) {
+      console.error("Error loading locations:", error);
+      res.status(500).json({ message: 'Lokasyon verileri yüklenemedi' });
+    }
+  });
+
+  // Search endpoint
+  app.get('/api/search', async (req, res) => {
+    try {
+      const { il, ilce, mahalle } = req.query;
+      
+      if (!il || !ilce) {
+        return res.status(400).json({ message: 'İl ve ilçe parametreleri gerekli' });
+      }
+
+      // Search listings
+      const listingsFilters: any = {
+        citySlug: il as string,
+        districtSlug: ilce as string,
+      };
+      
+      if (mahalle) {
+        listingsFilters.neighborhoodSlug = mahalle as string;
+      }
+
+      const listings = await storage.getListings(listingsFilters);
+      
+      // Mask addresses for privacy
+      const userId = req.userId;
+      const maskedListings = listings.map(listing => ({
+        ...listing,
+        address: userId === listing.userId ? listing.address : maskAddress(listing.address)
+      }));
+
+      // Search seekers
+      const seekers = await storage.getSeekersByLocation(
+        il as string,
+        ilce as string,
+        mahalle as string | undefined
+      );
+
+      res.json({
+        listings: maskedListings,
+        seekers: seekers
+      });
+    } catch (error) {
+      console.error("Error searching:", error);
+      res.status(500).json({ message: 'Arama sırasında bir hata oluştu' });
+    }
+  });
+
   // Auth routes
   app.post('/api/auth/register', async (req, res) => {
     try {
