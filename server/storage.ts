@@ -92,6 +92,7 @@ export interface IStorage {
   }): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User })[]>;
   getSeekerProfile(id: string): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User }) | undefined>;
   getUserSeekerProfile(userId: string): Promise<(SeekerProfile & { photos: SeekerPhoto[] }) | undefined>;
+  getSeekersByLocation(citySlug: string, districtSlug: string, neighborhoodSlug?: string): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User })[]>;
   createSeekerProfile(profile: InsertSeekerProfile): Promise<SeekerProfile>;
   updateSeekerProfile(id: string, profile: Partial<InsertSeekerProfile>): Promise<SeekerProfile>;
   deleteSeekerProfile(id: string): Promise<void>;
@@ -530,6 +531,36 @@ export class DatabaseStorage implements IStorage {
 
     const photos = await this.getSeekerPhotos(profile.id);
     return { ...profile, photos };
+  }
+
+  async getSeekersByLocation(citySlug: string, districtSlug: string, neighborhoodSlug?: string): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User })[]> {
+    const whereConditions = [
+      eq(seekerProfiles.isActive, true),
+      eq(seekerProfiles.citySlug, citySlug),
+      eq(seekerProfiles.districtSlug, districtSlug),
+    ];
+
+    if (neighborhoodSlug) {
+      whereConditions.push(eq(seekerProfiles.neighborhoodSlug, neighborhoodSlug));
+    }
+
+    const profiles = await db
+      .select()
+      .from(seekerProfiles)
+      .where(and(...whereConditions))
+      .orderBy(desc(seekerProfiles.createdAt));
+
+    const profilesWithRelations = await Promise.all(
+      profiles.map(async (profile) => {
+        const [photos, user] = await Promise.all([
+          this.getSeekerPhotos(profile.id),
+          this.getUser(profile.userId)
+        ]);
+        return { ...profile, photos, user: user! };
+      })
+    );
+
+    return profilesWithRelations;
   }
 
   async createSeekerProfile(profileData: InsertSeekerProfile): Promise<SeekerProfile> {
