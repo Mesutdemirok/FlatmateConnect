@@ -5,9 +5,11 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useLocation } from "wouter";
 
-export default function SearchPage() {
+export default function SearchPageNew() {
   const searchString = useSearch();
+  const [, navigate] = useLocation();
   const params = new URLSearchParams(searchString);
   
   const city = params.get('il') || '';
@@ -15,7 +17,7 @@ export default function SearchPage() {
   const neighborhood = params.get('mahalle') || '';
 
   // Fetch search results
-  const { data: results, isLoading } = useQuery({
+  const { data: results, isLoading } = useQuery<any>({
     queryKey: ['/api/search', city, district, neighborhood],
     enabled: !!city && !!district,
   });
@@ -34,7 +36,7 @@ export default function SearchPage() {
               <p className="text-muted-foreground mb-6">
                 İlan ve oda arayan aramak için ana sayfadaki arama çubuğunu kullanın
               </p>
-              <Button onClick={() => window.location.href = '/'}>
+              <Button onClick={() => navigate('/')}>
                 Ana Sayfaya Dön
               </Button>
             </CardContent>

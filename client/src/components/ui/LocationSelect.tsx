@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export interface LocationValue {
   city?: string;
@@ -46,6 +45,7 @@ export default function LocationSelect({
     queryKey: ['/api/locations'],
     staleTime: 24 * 60 * 60 * 1000, // 24 hours
   });
+
 
   // Update internal state when value changes
   useEffect(() => {
@@ -108,61 +108,58 @@ export default function LocationSelect({
 
   return (
     <div className={`${containerClass} ${className}`}>
-      {/* City Select */}
+      {/* City Select - Using Native Select for Testing */}
       <div className="flex-1">
-        <Select value={value.citySlug || ''} onValueChange={handleCityChange}>
-          <SelectTrigger data-testid="select-city" className="w-full">
-            <SelectValue placeholder="İl seçin" />
-          </SelectTrigger>
-          <SelectContent>
-            {locations?.map((city) => (
-              <SelectItem key={city.slug} value={city.slug}>
-                {city.city}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select 
+          data-testid="select-city" 
+          className="w-full h-10 px-3 py-2 bg-white border border-input rounded-md text-sm"
+          value={value.citySlug || ""}
+          onChange={(e) => handleCityChange(e.target.value)}
+        >
+          <option value="">İl seçin</option>
+          {locations && locations.length > 0 && locations.map((city) => (
+            <option key={city.slug} value={city.slug}>
+              {city.city}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* District Select */}
       <div className="flex-1">
-        <Select 
-          value={value.districtSlug || ''} 
-          onValueChange={handleDistrictChange}
+        <select
+          data-testid="select-district"
+          className="w-full h-10 px-3 py-2 bg-white border border-input rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          value={value.districtSlug || ""}
+          onChange={(e) => handleDistrictChange(e.target.value)}
           disabled={!selectedCity}
         >
-          <SelectTrigger data-testid="select-district" className="w-full">
-            <SelectValue placeholder="İlçe seçin" />
-          </SelectTrigger>
-          <SelectContent>
-            {selectedCity?.districts.map((district) => (
-              <SelectItem key={district.slug} value={district.slug}>
-                {district.district}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <option value="">İlçe seçin</option>
+          {selectedCity?.districts.map((district) => (
+            <option key={district.slug} value={district.slug}>
+              {district.district}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Neighborhood Select (Optional) */}
       {requiredLevels.includes('neighborhood') && selectedDistrict && selectedDistrict.neighborhoods.length > 0 && (
         <div className="flex-1">
-          <Select 
-            value={value.neighborhoodSlug || ''} 
-            onValueChange={handleNeighborhoodChange}
+          <select
+            data-testid="select-neighborhood"
+            className="w-full h-10 px-3 py-2 bg-white border border-input rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            value={value.neighborhoodSlug || ""}
+            onChange={(e) => handleNeighborhoodChange(e.target.value)}
             disabled={!selectedDistrict}
           >
-            <SelectTrigger data-testid="select-neighborhood" className="w-full">
-              <SelectValue placeholder="Mahalle (isteğe bağlı)" />
-            </SelectTrigger>
-            <SelectContent>
-              {selectedDistrict.neighborhoods.map((neighborhood) => (
-                <SelectItem key={neighborhood.slug} value={neighborhood.slug}>
-                  {neighborhood.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="">Mahalle (isteğe bağlı)</option>
+            {selectedDistrict.neighborhoods.map((neighborhood) => (
+              <option key={neighborhood.slug} value={neighborhood.slug}>
+                {neighborhood.name}
+              </option>
+            ))}
+          </select>
         </div>
       )}
     </div>
