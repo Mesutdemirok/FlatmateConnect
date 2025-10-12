@@ -125,29 +125,27 @@ export default function LocationSelect({
       </div>
 
       {/* District Select */}
-      {selectedCity && (
-        <div className="flex-1">
-          <Select 
-            value={value.districtSlug || ''} 
-            onValueChange={handleDistrictChange}
-            disabled={!selectedCity}
-          >
-            <SelectTrigger data-testid="select-district" className="w-full">
-              <SelectValue placeholder="İlçe seçin" />
-            </SelectTrigger>
-            <SelectContent>
-              {selectedCity.districts.map((district) => (
-                <SelectItem key={district.slug} value={district.slug}>
-                  {district.district}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <div className="flex-1">
+        <Select 
+          value={value.districtSlug || ''} 
+          onValueChange={handleDistrictChange}
+          disabled={!selectedCity}
+        >
+          <SelectTrigger data-testid="select-district" className="w-full">
+            <SelectValue placeholder="İlçe seçin" />
+          </SelectTrigger>
+          <SelectContent>
+            {selectedCity?.districts.map((district) => (
+              <SelectItem key={district.slug} value={district.slug}>
+                {district.district}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Neighborhood Select (Optional) */}
-      {selectedDistrict && selectedDistrict.neighborhoods.length > 0 && (
+      {requiredLevels.includes('neighborhood') && selectedDistrict && selectedDistrict.neighborhoods.length > 0 && (
         <div className="flex-1">
           <Select 
             value={value.neighborhoodSlug || ''} 
