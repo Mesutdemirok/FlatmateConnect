@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Redirect } from "wouter";
 import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -16,8 +16,7 @@ import EditListing from "@/pages/EditListing";
 import CreateSeekerProfile from "@/pages/CreateSeekerProfile";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
+import Auth from "@/pages/Auth";
 import "./i18n"; // Initialize i18n
 
 function ProtectedRoute({ component: Component, ...rest }: { component: () => JSX.Element; path?: string }) {
@@ -44,12 +43,18 @@ function ProtectedRoute({ component: Component, ...rest }: { component: () => JS
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [location, navigate] = useLocation();
 
   return (
     <Switch>
       {/* Auth routes - Turkish URLs */}
-      <Route path="/giris" component={Login} />
-      <Route path="/uye-ol" component={Register} />
+      <Route path="/giris" component={Auth} />
+      <Route path="/uye-ol">
+        {() => {
+          navigate('/giris?tab=signup', { replace: true });
+          return null;
+        }}
+      </Route>
       
       {/* Home route - Same for all users */}
       <Route path="/" component={Home} />
