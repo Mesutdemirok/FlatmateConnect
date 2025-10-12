@@ -67,6 +67,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));
 
+  // Health check endpoint
+  app.get('/api/health', (req, res) => {
+    res.json({
+      ok: true,
+      version: '1.0.0',
+      env: process.env.NODE_ENV || 'development',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Auth routes
   app.post('/api/auth/register', async (req, res) => {
     try {
