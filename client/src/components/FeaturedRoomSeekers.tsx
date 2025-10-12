@@ -15,7 +15,7 @@ export default function FeaturedRoomSeekers() {
     isLoading,
     error,
   } = useQuery<SeekerProfileWithRelations[]>({
-    queryKey: ["featured-seekers"],
+    queryKey: ["/api/seekers/featured"],
     queryFn: () => fetchFeaturedSeekers(4),
   });
 
@@ -82,11 +82,8 @@ export default function FeaturedRoomSeekers() {
   }
 
   if (!seekers || seekers.length === 0) {
-    return (
-      <div className="text-center py-10 text-slate-600" data-testid="featured-seekers-empty">
-        Henüz öne çıkan oda arayan profil yok.
-      </div>
-    );
+    console.log("FeaturedRoomSeekers: No seekers found", seekers);
+    return null; // Don't show empty state, just hide the section
   }
 
   return (
