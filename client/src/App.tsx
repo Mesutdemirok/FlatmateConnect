@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
+import SearchPage from "@/pages/SearchPage";
 import ListingDetail from "@/pages/ListingDetail";
 import SeekerDetail from "@/pages/SeekerDetail";
 import CreateListing from "@/pages/CreateListing";
@@ -78,6 +79,7 @@ function Router() {
       
       {/* Public routes - Turkish URLs */}
       <Route path="/oda-ilanlari" component={Search} />
+      <Route path="/arama" component={SearchPage} />
       <Route path="/oda-ilani/:id" component={ListingDetail} />
       <Route path="/oda-arayan/:id" component={SeekerDetail} />
       

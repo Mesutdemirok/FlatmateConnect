@@ -1,4 +1,5 @@
 import React from "react";
+import LocationSearch from "./LocationSearch";
 
 export default function Hero() {
   return (
@@ -12,10 +13,15 @@ export default function Hero() {
           <br className="hidden sm:block" /> bir oda arama deneyimi
         </h1>
 
-        <p className="text-lg sm:text-xl leading-relaxed text-white/90 animate-fade-in-delay">
+        <p className="text-lg sm:text-xl leading-relaxed text-white/90 mb-8 animate-fade-in-delay">
           Doğrulanmış profiller ve gerçek ilanlarla sana en uygun oda ya da ev
           arkadaşını hemen bul.
         </p>
+
+        {/* Location Search */}
+        <div className="mt-8 max-w-3xl mx-auto">
+          <LocationSearch />
+        </div>
       </div>
 
       {/* Subtle top fade for depth */}
