@@ -20,12 +20,12 @@ import { z } from "zod";
 const editListingSchema = z.object({
   title: z.string().min(10, 'Başlık en az 10 karakter olmalıdır'),
   address: z.string().min(5, 'Lütfen geçerli bir adres giriniz'),
-  rentAmount: z.union([z.string(), z.number()]).transform(val => String(val)),
+  rentAmount: z.coerce.number().positive('Kira tutarı 0\'dan büyük olmalıdır'),
   billsIncluded: z.boolean(),
   propertyType: z.string().min(1, 'Lütfen konut tipini seçiniz'),
   furnishingStatus: z.string().min(1, 'Lütfen eşya durumunu seçiniz'),
-  totalRooms: z.union([z.string(), z.number()]).transform(val => Number(val)),
-  totalOccupants: z.union([z.string(), z.number()]).transform(val => Number(val)),
+  totalRooms: z.coerce.number().int().positive('Oda sayısı 0\'dan büyük olmalıdır'),
+  totalOccupants: z.coerce.number().int().positive('Kişi sayısı 0\'dan büyük olmalıdır'),
   roommatePreference: z.string(),
   smokingPolicy: z.string(),
 });
@@ -57,7 +57,7 @@ export default function EditListing() {
     defaultValues: {
       title: '',
       address: '',
-      rentAmount: '0',
+      rentAmount: 0,
       billsIncluded: false,
       propertyType: '',
       furnishingStatus: '',
@@ -118,13 +118,28 @@ export default function EditListing() {
           const formData = new FormData();
           newImages.forEach(image => formData.append('images', image));
           
-          await fetch(`/api/listings/${id}/images`, {
+          const response = await fetch(`/api/listings/${id}/images`, {
             method: 'POST',
             body: formData,
             credentials: 'include',
           });
-        } catch (error) {
-          console.error('Image upload error:', error);
+
+          if (!response.ok) {
+            throw new Error('Fotoğraf yüklenemedi');
+          }
+
+          toast({
+            title: 'Fotoğraflar Yüklendi',
+            description: `${newImages.length} fotoğraf başarıyla yüklendi`,
+          });
+        } catch (error: any) {
+          toast({
+            title: 'Fotoğraf Yükleme Hatası',
+            description: error.message || 'Fotoğraflar yüklenemedi',
+            variant: 'destructive',
+          });
+          setIsUploading(false);
+          return;
         } finally {
           setIsUploading(false);
         }
