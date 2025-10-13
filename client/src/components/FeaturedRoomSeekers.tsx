@@ -47,11 +47,11 @@ export default function FeaturedRoomSeekers() {
   };
 
   const getPreferredLocations = (seeker: SeekerProfileWithRelations) => {
-    if (seeker.preferredLocation) {
-      const locations = seeker.preferredLocation.split(',').slice(0, 2);
-      return locations.join(', ');
-    }
-    return 'Lokasyon belirtilmedi';
+    const locations = [];
+    if (seeker.district) locations.push(seeker.district);
+    if (seeker.neighborhood && locations.length < 2) locations.push(seeker.neighborhood);
+    if (seeker.city && locations.length === 0) locations.push(seeker.city);
+    return locations.length > 0 ? locations.join(', ') : 'Lokasyon belirtilmedi';
   };
 
   if (isLoading) {
@@ -103,36 +103,32 @@ export default function FeaturedRoomSeekers() {
           {seekers.map((seeker) => (
             <Card
               key={seeker.id}
-              className="rounded-2xl bg-card shadow-sm ring-1 ring-black/5 overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group"
+              className="rounded-2xl bg-white shadow-sm ring-1 ring-black/10 overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group"
               onClick={() => navigate(`/oda-arayan/${seeker.id}`)}
               data-testid={`seeker-card-${seeker.id}`}
             >
-              {/* Photo Section */}
-              <div className="relative aspect-[4/3] md:aspect-[16/10] overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100">
+              {/* Photo Section - Higher on mobile */}
+              <div className="relative h-[220px] md:h-[200px] overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100">
                 <img
                   src={getPhotoUrl(seeker)}
                   alt={`${getDisplayName(seeker)} profil fotoğrafı`}
-                  className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+                  className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                   data-testid={`seeker-photo-${seeker.id}`}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                 
                 {/* Verified Badge */}
                 {seeker.user?.verificationStatus === 'verified' && (
-                  <div className="absolute bottom-3 left-3 bg-emerald-600/95 text-white rounded-full p-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5" />
+                  <div className="absolute top-3 right-3 bg-emerald-600/95 text-white rounded-full p-1.5">
+                    <ShieldCheck className="w-4 h-4" />
                   </div>
                 )}
               </div>
 
-              {/* Info Section */}
-              <CardContent className="p-4">
-                <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 mb-1" data-testid={`seeker-name-${seeker.id}`}>
-                  {getDisplayName(seeker)}
-                </h3>
-                <p className="text-[13px] sm:text-sm text-slate-600 truncate">
-                  {getPreferredLocations(seeker)}
-                </p>
+              {/* Info Section - Simplified */}
+              <CardContent className="p-3">
+                <div className="text-sm text-slate-800 font-medium truncate" data-testid={`seeker-name-${seeker.id}`}>
+                  {getDisplayName(seeker)} – {getPreferredLocations(seeker)}
+                </div>
               </CardContent>
             </Card>
           ))}

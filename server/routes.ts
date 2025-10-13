@@ -121,42 +121,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search endpoint
   app.get('/api/search', async (req, res) => {
     try {
-      const { il, ilce, mahalle } = req.query;
+      const { type = 'listing', il, ilce, mahalle, q } = req.query;
       
-      if (!il || !ilce) {
-        return res.status(400).json({ message: 'İl ve ilçe parametreleri gerekli' });
-      }
-
-      // Search listings
-      const listingsFilters: any = {
-        citySlug: il as string,
-        districtSlug: ilce as string,
-      };
-      
-      if (mahalle) {
-        listingsFilters.neighborhoodSlug = mahalle as string;
-      }
-
-      const listings = await storage.getListings(listingsFilters);
-      
-      // Mask addresses for privacy
+      const searchType = type as 'listing' | 'seeker';
       const userId = req.userId;
-      const maskedListings = listings.map(listing => ({
-        ...listing,
-        address: userId === listing.userId ? listing.address : maskAddress(listing.address)
-      }));
 
-      // Search seekers
-      const seekers = await storage.getSeekersByLocation(
-        il as string,
-        ilce as string,
-        mahalle as string | undefined
-      );
+      let results: any = { listings: [], seekers: [] };
 
-      res.json({
-        listings: maskedListings,
-        seekers: seekers
-      });
+      // Search based on type
+      if (searchType === 'listing' || !type) {
+        const listingsFilters: any = {};
+        
+        if (il) listingsFilters.citySlug = il as string;
+        if (ilce) listingsFilters.districtSlug = ilce as string;
+        if (mahalle) listingsFilters.neighborhoodSlug = mahalle as string;
+
+        let listings = await storage.getListings(listingsFilters);
+        
+        // Text search if query provided
+        if (q && typeof q === 'string') {
+          const queryLower = q.toLowerCase();
+          listings = listings.filter(listing => 
+            listing.title?.toLowerCase().includes(queryLower) ||
+            listing.address?.toLowerCase().includes(queryLower) ||
+            listing.city?.toLowerCase().includes(queryLower) ||
+            listing.district?.toLowerCase().includes(queryLower) ||
+            listing.neighborhood?.toLowerCase().includes(queryLower)
+          );
+        }
+        
+        // Mask addresses for privacy
+        results.listings = listings.map(listing => ({
+          ...listing,
+          address: userId === listing.userId ? listing.address : maskAddress(listing.address)
+        }));
+      }
+
+      if (searchType === 'seeker') {
+        const seekers = await storage.getSeekersByLocation(
+          il as string || '',
+          ilce as string || '',
+          mahalle as string | undefined
+        );
+
+        // Text search if query provided
+        if (q && typeof q === 'string') {
+          const queryLower = q.toLowerCase();
+          results.seekers = seekers.filter(seeker => 
+            seeker.fullName?.toLowerCase().includes(queryLower) ||
+            seeker.about?.toLowerCase().includes(queryLower) ||
+            seeker.city?.toLowerCase().includes(queryLower) ||
+            seeker.district?.toLowerCase().includes(queryLower) ||
+            seeker.occupation?.toLowerCase().includes(queryLower)
+          );
+        } else {
+          results.seekers = seekers;
+        }
+      }
+
+      res.json(results);
     } catch (error) {
       console.error("Error searching:", error);
       res.status(500).json({ message: 'Arama sırasında bir hata oluştu' });

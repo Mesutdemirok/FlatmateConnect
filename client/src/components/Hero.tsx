@@ -1,5 +1,4 @@
-import React from "react";
-import LocationSearch from "./LocationSearch";
+import SearchBar from "./ui/SearchBar";
 
 export default function Hero() {
   return (
@@ -18,9 +17,11 @@ export default function Hero() {
           arkadaşını hemen bul.
         </p>
 
-        {/* Location Search */}
-        <div className="mt-8 max-w-3xl mx-auto">
-          <LocationSearch />
+        <p className="text-sm text-white/80 mb-4">Oda veya Ev Arkadaşı Ara</p>
+
+        {/* Search Bar */}
+        <div className="mt-4">
+          <SearchBar />
         </div>
       </div>
 
