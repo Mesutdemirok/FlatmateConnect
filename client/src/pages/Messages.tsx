@@ -117,7 +117,7 @@ export default function Messages() {
   };
 
   const selectedConv = conversations?.find((c: any) => 
-    c.otherUser?.id === selectedConversation
+    c.user?.id === selectedConversation
   );
 
   if (authLoading) {
@@ -169,26 +169,26 @@ export default function Messages() {
                 <div className="divide-y divide-border">
                   {conversations.map((conv: any) => (
                     <button
-                      key={conv.otherUser?.id}
-                      onClick={() => setSelectedConversation(conv.otherUser?.id)}
-                      data-testid={`conversation-${conv.otherUser?.id}`}
+                      key={conv.user?.id}
+                      onClick={() => setSelectedConversation(conv.user?.id)}
+                      data-testid={`conversation-${conv.user?.id}`}
                       className={`w-full p-4 hover:bg-accent transition-colors text-left ${
-                        selectedConversation === conv.otherUser?.id ? 'bg-accent' : ''
+                        selectedConversation === conv.user?.id ? 'bg-accent' : ''
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          <AvatarImage src={conv.otherUser?.profileImageUrl} />
-                          <AvatarFallback>{getInitials(conv.otherUser?.firstName || 'A')}</AvatarFallback>
+                          <AvatarImage src={conv.user?.profileImageUrl} />
+                          <AvatarFallback>{getInitials(conv.user?.firstName || 'A')}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-semibold text-foreground truncate">
-                              {conv.otherUser?.firstName} {conv.otherUser?.lastName}
+                              {conv.user?.firstName} {conv.user?.lastName}
                             </span>
-                            <span className="text-xs text-muted-foreground">{formatDateRelative(conv.lastMessageAt)}</span>
+                            <span className="text-xs text-muted-foreground">{formatDateRelative(conv.lastMessage?.createdAt)}</span>
                           </div>
-                          <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>
+                          <p className="text-sm text-muted-foreground truncate">{conv.lastMessage?.message}</p>
                         </div>
                         {conv.unreadCount > 0 && (
                           <div className="bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -227,12 +227,12 @@ export default function Messages() {
                     <ArrowLeft className="h-5 w-5" />
                   </Button>
                   <Avatar>
-                    <AvatarImage src={selectedConv?.otherUser?.profileImageUrl} />
-                    <AvatarFallback>{getInitials(selectedConv?.otherUser?.firstName || 'A')}</AvatarFallback>
+                    <AvatarImage src={selectedConv?.user?.profileImageUrl} />
+                    <AvatarFallback>{getInitials(selectedConv?.user?.firstName || 'A')}</AvatarFallback>
                   </Avatar>
                   <div>
                     <h2 className="font-semibold text-foreground">
-                      {selectedConv?.otherUser?.firstName} {selectedConv?.otherUser?.lastName}
+                      {selectedConv?.user?.firstName} {selectedConv?.user?.lastName}
                     </h2>
                   </div>
                 </div>
