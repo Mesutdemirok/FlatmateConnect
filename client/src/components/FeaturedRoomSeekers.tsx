@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
-import { Skeleton } from "@/components/ui/skeleton";
 import { SeekerProfileWithRelations } from "@/lib/seekerApi";
-import { ShieldCheck } from "lucide-react";
+import SeekerCard, { SeekerCardSkeleton } from "@/components/ui/SeekerCard";
 
 export default function FeaturedRoomSeekers() {
   const [, navigate] = useLocation();
@@ -34,11 +32,9 @@ export default function FeaturedRoomSeekers() {
   };
 
   const getPhotoUrl = (seeker: SeekerProfileWithRelations) => {
-    // Use profilePhotoUrl if available
     if (seeker.profilePhotoUrl) {
       return seeker.profilePhotoUrl;
     }
-    // Fallback to photos array
     const primaryPhoto = seeker.photos?.find((p) => p.sortOrder === 0) || seeker.photos?.[0];
     if (primaryPhoto) {
       return `/uploads/seekers/${primaryPhoto.imagePath}`;
@@ -46,31 +42,14 @@ export default function FeaturedRoomSeekers() {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(getDisplayName(seeker))}&background=8b5cf6&color=fff&size=400`;
   };
 
-  const getPreferredLocations = (seeker: SeekerProfileWithRelations) => {
-    const locations = [];
-    if (seeker.district) locations.push(seeker.district);
-    if (seeker.neighborhood && locations.length < 2) locations.push(seeker.neighborhood);
-    if (seeker.city && locations.length === 0) locations.push(seeker.city);
-    return locations.length > 0 ? locations.join(', ') : 'Lokasyon belirtilmedi';
-  };
-
   if (isLoading) {
     return (
       <div
-        className="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
         data-testid="featured-seekers-loading"
       >
-        {[...Array(4)].map((_, i) => (
-          <Card
-            key={i}
-            className="rounded-2xl shadow-md overflow-hidden border border-slate-200"
-          >
-            <Skeleton className="w-full aspect-[4/3] md:aspect-[16/10]" />
-            <CardContent className="p-4 space-y-2">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-28" />
-            </CardContent>
-          </Card>
+        {[...Array(3)].map((_, i) => (
+          <SeekerCardSkeleton key={i} />
         ))}
       </div>
     );
@@ -97,41 +76,38 @@ export default function FeaturedRoomSeekers() {
 
       {seekers && seekers.length > 0 && (
         <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
           data-testid="featured-seekers-grid"
         >
-          {seekers.map((seeker) => (
-            <Card
-              key={seeker.id}
-              className="rounded-2xl bg-white shadow-sm ring-1 ring-black/10 overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group"
-              onClick={() => navigate(`/oda-arayan/${seeker.id}`)}
-              data-testid={`seeker-card-${seeker.id}`}
-            >
-              {/* Photo Section - Higher on mobile */}
-              <div className="relative h-[220px] md:h-[200px] overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100">
-                <img
-                  src={getPhotoUrl(seeker)}
-                  alt={`${getDisplayName(seeker)} profil fotoğrafı`}
-                  className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                  data-testid={`seeker-photo-${seeker.id}`}
-                />
-                
-                {/* Verified Badge */}
-                {seeker.user?.verificationStatus === 'verified' && (
-                  <div className="absolute top-3 right-3 bg-emerald-600/95 text-white rounded-full p-1.5">
-                    <ShieldCheck className="w-4 h-4" />
-                  </div>
-                )}
-              </div>
+          {seekers.map((seeker) => {
+            const locations = [];
+            if (seeker.district) locations.push(seeker.district);
+            if (seeker.neighborhood && locations.length < 2) locations.push(seeker.neighborhood);
+            if (seeker.city && locations.length === 0) locations.push(seeker.city);
 
-              {/* Info Section - Simplified */}
-              <CardContent className="p-3">
-                <div className="text-sm text-slate-800 font-medium truncate" data-testid={`seeker-name-${seeker.id}`}>
-                  {getDisplayName(seeker)} – {getPreferredLocations(seeker)}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+            const budget = seeker.budgetMonthly 
+              ? (typeof seeker.budgetMonthly === 'string' 
+                  ? parseInt(seeker.budgetMonthly, 10) 
+                  : seeker.budgetMonthly)
+              : undefined;
+
+            return (
+              <SeekerCard
+                key={seeker.id}
+                seeker={{
+                  id: seeker.id,
+                  fullName: getDisplayName(seeker),
+                  avatarUrl: getPhotoUrl(seeker),
+                  age: seeker.age || undefined,
+                  occupation: seeker.occupation || undefined,
+                  preferredLocations: locations,
+                  budgetMonthly: budget,
+                  verified: (seeker.user as any)?.verificationStatus === 'verified',
+                }}
+                onClick={() => navigate(`/oda-arayan/${seeker.id}`)}
+              />
+            );
+          })}
         </div>
       )}
     </div>
