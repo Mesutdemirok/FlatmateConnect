@@ -41,14 +41,14 @@ export default function Messages() {
   }, [isAuthenticated, authLoading, setLocation]);
 
   // Fetch conversations
-  const { data: conversations, isLoading: conversationsLoading } = useQuery({
+  const { data: conversations = [], isLoading: conversationsLoading } = useQuery<any[]>({
     queryKey: ['/api/conversations'],
     enabled: isAuthenticated,
     refetchInterval: 30000,
   });
 
   // Fetch messages
-  const { data: messages, isLoading: messagesLoading } = useQuery({
+  const { data: messages = [], isLoading: messagesLoading } = useQuery<any[]>({
     queryKey: ['/api/messages', selectedConversation],
     enabled: isAuthenticated && !!selectedConversation,
     refetchInterval: 5000,

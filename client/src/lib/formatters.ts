@@ -13,8 +13,10 @@ export function formatCurrency(amount: number): string {
 /**
  * Format date for Turkish locale
  */
-export function formatDate(date: string | Date): string {
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return '';
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (!dateObj || isNaN(dateObj.getTime())) return '';
   return new Intl.DateTimeFormat('tr-TR', {
     year: 'numeric',
     month: 'long',
@@ -25,8 +27,10 @@ export function formatDate(date: string | Date): string {
 /**
  * Format date in short format for Turkish locale
  */
-export function formatDateShort(date: string | Date): string {
+export function formatDateShort(date: string | Date | null | undefined): string {
+  if (!date) return '';
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (!dateObj || isNaN(dateObj.getTime())) return '';
   return new Intl.DateTimeFormat('tr-TR', {
     year: '2-digit',
     month: '2-digit',
@@ -37,8 +41,13 @@ export function formatDateShort(date: string | Date): string {
 /**
  * Format relative time in Turkish
  */
-export function formatDateRelative(date: string | Date): string {
+export function formatDateRelative(date: string | Date | null | undefined): string {
+  if (!date) return '';
+  
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  if (!dateObj || isNaN(dateObj.getTime())) return '';
+  
   const now = new Date();
   const diffMs = now.getTime() - dateObj.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
