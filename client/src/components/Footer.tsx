@@ -20,8 +20,7 @@ const Social = ({ href, label, size = 10, children }: SocialProps) => (
       "bg-orange-600 text-white ring-1 ring-white/10",
       "transition hover:bg-orange-700 hover:ring-white/20",
       "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500",
-      // dynamic size
-      `h-${size} w-${size}`,
+      `h-${size} w-${size}`, // dynamic size
     ].join(" ")}
   >
     {children}
@@ -105,9 +104,15 @@ export default function Footer() {
               <Social href="https://instagram.com/odanet" label="Instagram">
                 <Instagram className="h-5 w-5" />
               </Social>
-              <Social href="https://facebook.com/odanet" label="Facebook">
+
+              {/* Updated Facebook link */}
+              <Social
+                href="https://www.facebook.com/profile.php?id=61573533009698&sk=about"
+                label="Facebook"
+              >
                 <Facebook className="h-5 w-5" />
               </Social>
+
               {/* Emphasize contact (slightly larger button) */}
               <Social
                 href={`${COMPANY.site}/iletisim`}
