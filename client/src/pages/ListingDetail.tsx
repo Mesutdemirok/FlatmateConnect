@@ -9,6 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { ImageViewer } from "@/components/ImageViewer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ export default function ListingDetail() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   const { data: listing, isLoading, error } = useQuery({
     queryKey: [`/api/listings/${id}`],
@@ -195,7 +197,10 @@ export default function ListingDetail() {
           <div className="lg:col-span-2">
             {/* Image gallery */}
             <div className="relative mb-6">
-              <div className="relative h-96 rounded-lg overflow-hidden bg-muted">
+              <div 
+                className="relative h-96 rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-95 transition-opacity"
+                onClick={() => setIsViewerOpen(true)}
+              >
                 <img
                   src={imageUrl}
                   alt={listing.title}
@@ -209,7 +214,10 @@ export default function ListingDetail() {
                       variant="secondary"
                       size="icon"
                       className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-card/80 backdrop-blur-sm"
-                      onClick={previousImage}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        previousImage();
+                      }}
                       data-testid="previous-image-button"
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -218,7 +226,10 @@ export default function ListingDetail() {
                       variant="secondary"
                       size="icon"
                       className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-card/80 backdrop-blur-sm"
-                      onClick={nextImage}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        nextImage();
+                      }}
                       data-testid="next-image-button"
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -253,6 +264,14 @@ export default function ListingDetail() {
                 </div>
               )}
             </div>
+
+            {/* Image Viewer Modal */}
+            <ImageViewer
+              images={listing.images}
+              initialIndex={currentImageIndex}
+              open={isViewerOpen}
+              onOpenChange={setIsViewerOpen}
+            />
 
             {/* Listing details */}
             <div className="space-y-6">

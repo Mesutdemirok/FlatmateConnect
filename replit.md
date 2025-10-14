@@ -31,7 +31,7 @@ Preferred communication style: Simple, everyday language.
 ### Key Features
 - **Authentication System**: Multi-method authentication (email/password, Google OAuth placeholder, phone/SMS OTP), email verification, password reset, JWT with httpOnly cookies, auto-redirect to /profil after login/register
 - **User Management**: Profile creation, verification, image uploads
-- **Listing System**: Detailed room listings with multiple images, descriptions, and filtering. Address privacy protection with masked addresses (only neighborhood/district shown publicly)
+- **Listing System**: Detailed room listings with multiple images, descriptions, and filtering. Address privacy protection with masked addresses (only neighborhood/district shown publicly). Full-screen image viewer modal for opening images in detail pages
 - **Seeker Profiles**: Comprehensive profiles for those seeking accommodation, including preferences and photos
 - **Messaging System**: Real-time communication between users
 - **Favorites System**: Save and manage favorite listings with orange-themed UI
