@@ -1,7 +1,7 @@
 import { ShieldCheck } from "lucide-react";
-import { formatCurrency } from "@/lib/formatters";
 
-interface SeekerCardProps {
+// --- Types and Interfaces (Unchanged) ---
+export interface SeekerCardProps {
   seeker: {
     id: string;
     fullName: string;
@@ -13,132 +13,196 @@ interface SeekerCardProps {
     verified?: boolean;
   };
   onClick?: () => void;
+  onContact?: () => void;
 }
 
-export default function SeekerCard({ seeker, onClick }: SeekerCardProps) {
-  const getInitials = (name: string) => {
-    const parts = name.split(" ");
-    if (parts.length > 1) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
-  };
-
-  const locationDisplay = seeker.preferredLocations && seeker.preferredLocations.length > 0
-    ? seeker.preferredLocations.slice(0, 2).join(", ") + 
-      (seeker.preferredLocations.length > 2 ? "..." : "")
-    : "Lokasyon bilgisi yok";
-
-  const budgetDisplay = seeker.budgetMonthly 
-    ? `${formatCurrency(seeker.budgetMonthly)}/ay`
+// --- Helper Functions (Unchanged) ---
+const formatTRY = (v?: number) =>
+  typeof v === "number"
+    ? `₺${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(
+        Math.round(v),
+      )}`
     : "Bütçe belirtilmedi";
 
-  const occupationDisplay = seeker.occupation || "Durum belirtilmedi";
-  const ageDisplay = seeker.age ? `${seeker.age} yaş` : "Yaş belirtilmedi";
+// --- Info Chip Component and Helpers (Unchanged) ---
+type InfoColor = "success" | "info" | "primary" | "secondary";
+
+const colorClasses: Record<InfoColor, string> = {
+  success: "bg-emerald-100 text-emerald-800 ring-emerald-200",
+  info: "bg-sky-100 text-sky-800 ring-sky-200",
+  primary: "bg-indigo-100 text-indigo-800 ring-indigo-200",
+  secondary: "bg-gray-200 text-gray-700 ring-gray-300",
+};
+
+function Info({
+  label,
+  value,
+  color,
+  titleAll,
+}: {
+  label: string;
+  value: string;
+  color: InfoColor;
+  titleAll?: boolean;
+}) {
+  const chipClasses = colorClasses[color];
 
   return (
-    <div
-      className="relative rounded-2xl bg-white shadow-sm ring-1 ring-black/5 hover:shadow-lg transition-shadow duration-300 p-5 md:p-6 cursor-pointer"
-      onClick={onClick}
-      role="button"
-      aria-label={`Profili aç: ${seeker.fullName}`}
-      data-testid={`seeker-card-${seeker.id}`}
-    >
-      {/* Corner Badges */}
-      {/* Top Left - Location */}
-      <div 
-        className="absolute top-3 left-3 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium px-2.5 py-1 truncate max-w-[45%]"
-        title={seeker.preferredLocations?.join(", ") || "Lokasyon bilgisi yok"}
-        data-testid={`seeker-location-${seeker.id}`}
-      >
-        {locationDisplay}
+    <div className="min-w-0">
+      <div className="text-[10px] uppercase font-medium tracking-wider text-gray-500">
+        {label}
       </div>
-
-      {/* Top Right - Budget */}
-      <div 
-        className="absolute top-3 right-3 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-1 truncate max-w-[45%]"
-        title={budgetDisplay}
-        data-testid={`seeker-budget-${seeker.id}`}
+      <div
+        className={`mt-1 inline-flex max-w-full items-center rounded-lg px-2 py-[3px] text-xs font-semibold ring-1 ${chipClasses}`}
+        title={titleAll ? value : undefined}
       >
-        {budgetDisplay}
-      </div>
-
-      {/* Bottom Left - Occupation */}
-      <div 
-        className="absolute bottom-3 left-3 rounded-full bg-slate-100 text-slate-700 text-xs font-medium px-2.5 py-1 truncate max-w-[45%]"
-        title={occupationDisplay}
-        data-testid={`seeker-occupation-${seeker.id}`}
-      >
-        {occupationDisplay}
-      </div>
-
-      {/* Bottom Right - Age */}
-      <div 
-        className="absolute bottom-3 right-3 rounded-full bg-fuchsia-50 text-fuchsia-700 text-xs font-medium px-2.5 py-1"
-        title={ageDisplay}
-        data-testid={`seeker-age-${seeker.id}`}
-      >
-        {ageDisplay}
-      </div>
-
-      {/* Center Content */}
-      <div className="flex flex-col items-center justify-center py-8 md:py-10">
-        {/* Avatar */}
-        <div className="relative mb-4">
-          {seeker.avatarUrl ? (
-            <img
-              src={seeker.avatarUrl}
-              alt={seeker.fullName}
-              className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover ring-4 ring-white shadow-md"
-              data-testid={`seeker-avatar-${seeker.id}`}
-            />
-          ) : (
-            <div 
-              className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center ring-4 ring-white shadow-md"
-              data-testid={`seeker-avatar-placeholder-${seeker.id}`}
-            >
-              <span className="text-white text-3xl md:text-4xl font-bold">
-                {getInitials(seeker.fullName)}
-              </span>
-            </div>
-          )}
-
-          {/* Verification Badge */}
-          {seeker.verified && (
-            <div 
-              className="absolute -bottom-1 -right-1 rounded-full bg-rose-500 text-white p-1 shadow-md"
-              data-testid={`seeker-verified-${seeker.id}`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-          )}
-        </div>
-
-        {/* Name */}
-        <h3 
-          className="text-xl md:text-2xl font-bold text-slate-900 text-center px-4"
-          data-testid={`seeker-name-${seeker.id}`}
-        >
-          {seeker.fullName}
-        </h3>
+        <span className="truncate">{value}</span>
       </div>
     </div>
   );
 }
 
+// --- Main Component (SeekerCard) ---
+export default function SeekerCard({
+  seeker,
+  onClick,
+  onContact,
+}: SeekerCardProps) {
+  const initials = (() => {
+    const [a = "", b = ""] = (seeker.fullName || "").trim().split(/\s+/);
+    return (a[0] + (b[0] || "")).toUpperCase();
+  })();
+
+  const loc = seeker.preferredLocations?.length
+    ? seeker.preferredLocations.slice(0, 2).join(", ") +
+      (seeker.preferredLocations.length > 2 ? "…" : "")
+    : "Lokasyon bilgisi yok";
+
+  const age = seeker.age ? `${seeker.age} yaş` : "Yaş belirtilmedi";
+  const occ = seeker.occupation || "Durum belirtilmedi";
+  const budget = seeker.budgetMonthly
+    ? `${formatTRY(seeker.budgetMonthly)}/ay`
+    : "Bütçe belirtilmedi";
+
+  const contact = () => {
+    if (onContact) return onContact();
+    window.location.href = `/mesajlar?to=${encodeURIComponent(seeker.id)}`;
+  };
+
+  return (
+    <div
+      role="button"
+      aria-label={`Profili aç: ${seeker.fullName}`}
+      onClick={onClick}
+      className="
+        group rounded-xl bg-gray-50 ring-1 ring-gray-200 shadow-lg 
+        hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300
+      "
+      data-testid={`seeker-card-${seeker.id}`}
+    >
+      <div className="p-4">
+        <div
+          className="
+            grid grid-cols-[96px,1fr] md:grid-cols-[128px,1fr] 
+            gap-4 md:gap-5 items-stretch
+          "
+        >
+          {/* Photo box: Removed fixed width/height so it stretches vertically */}
+          <div
+            className="
+              overflow-hidden rounded-xl border-2 border-gray-200 
+              **h-full** w-[96px] md:w-[128px] **aspect-square md:aspect-auto** bg-white // Aspect-square on mobile, stretches on desktop
+            "
+          >
+            {seeker.avatarUrl ? (
+              <img
+                src={seeker.avatarUrl}
+                alt={seeker.fullName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full grid place-items-center text-slate-500 text-xl md:text-2xl font-extrabold">
+                {initials}
+              </div>
+            )}
+          </div>
+
+          {/* Right side - Info and Action */}
+          <div className="min-w-0 flex flex-col justify-between">
+            {/* Top info */}
+            <div>
+              {/* Name and Verification - Added mb-3 for slightly more space */}
+              <div className="flex items-center gap-2 **mb-3**">
+                <h3
+                  className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 truncate"
+                  title={seeker.fullName}
+                >
+                  {seeker.fullName}
+                </h3>
+                {seeker.verified && (
+                  <span
+                    className="inline-flex rounded-full bg-blue-600 text-white p-1.5 shadow-md"
+                    aria-label="Doğrulanmış"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                  </span>
+                )}
+              </div>
+
+              {/* Chips - Added **mb-2** to increase space before the button area slightly */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 **mb-2**">
+                <Info label="BÜTÇE" value={budget} color="success" />
+                <Info label="LOKASYON" value={loc} color="primary" titleAll />
+                <Info label="MESLEK / DURUM" value={occ} color="info" />
+                <Info label="YAŞ" value={age} color="secondary" />
+              </div>
+            </div>
+
+            {/* Compact action - Now pushed to the bottom of the right column */}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  contact();
+                }}
+                className="
+                  inline-flex items-center justify-center w-full md:w-auto
+                  rounded-xl px-4 **py-2** **text-sm** font-semibold shadow-lg // Reduced height (py) and font size (text-sm)
+                  bg-orange-600 text-white hover:bg-orange-700
+                  focus:outline-none focus:ring-4 focus:ring-orange-300 transition ease-in-out duration-150
+                "
+              >
+                İletişime Geçin
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Skeleton Component (Adjusted) ---
 export function SeekerCardSkeleton() {
   return (
-    <div className="relative rounded-2xl bg-white shadow-sm ring-1 ring-black/5 p-5 md:p-6">
-      {/* Corner placeholders */}
-      <div className="absolute top-3 left-3 h-6 w-24 rounded-full bg-slate-200 animate-pulse" />
-      <div className="absolute top-3 right-3 h-6 w-20 rounded-full bg-slate-200 animate-pulse" />
-      <div className="absolute bottom-3 left-3 h-6 w-20 rounded-full bg-slate-200 animate-pulse" />
-      <div className="absolute bottom-3 right-3 h-6 w-16 rounded-full bg-slate-200 animate-pulse" />
-
-      {/* Center content */}
-      <div className="flex flex-col items-center justify-center py-8 md:py-10">
-        <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-slate-200 animate-pulse mb-4" />
-        <div className="h-7 w-32 bg-slate-200 animate-pulse rounded" />
+    <div className="rounded-xl bg-gray-50 ring-1 ring-gray-200 shadow-lg p-4">
+      <div className="grid grid-cols-[96px,1fr] md:grid-cols-[128px,1fr] gap-4 md:gap-5 items-stretch">
+        {/* Skeleton image box updated to stretch */}
+        <div className="w-[96px] md:w-[128px] **h-full aspect-square md:aspect-auto** rounded-xl border-2 border-gray-200 bg-gray-200 animate-pulse" />
+        <div className="min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="h-6 w-52 bg-gray-200 rounded animate-pulse **mb-3**" />
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 **mb-2**">
+              <div className="h-8 bg-gray-200 rounded-lg animate-pulse" />
+              <div className="h-8 bg-gray-200 rounded-lg animate-pulse" />
+              <div className="h-8 bg-gray-200 rounded-lg animate-pulse" />
+              <div className="h-8 bg-gray-200 rounded-lg animate-pulse" />
+            </div>
+          </div>
+          {/* Skeleton button height adjusted */}
+          <div className="h-9 w-36 bg-gray-200 rounded-xl animate-pulse mt-3" />
+        </div>
       </div>
     </div>
   );

@@ -7,11 +7,17 @@ import { useTranslation } from "react-i18next";
 
 export default function Header() {
   const [location] = useLocation();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
 
-  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+  // Glass icon button style for purple header
+  const iconBtn =
+    "bg-white/10 hover:bg-white/20 text-white rounded-full ring-1 ring-white/15 hover:ring-white/25 " +
+    "shadow-sm transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/40";
+
+  const messagesHref = isAuthenticated ? "/mesajlar" : "/giris?next=/mesajlar";
+  const toggleMobileMenu = () => setIsMobileMenuOpen((s) => !s);
 
   const handleLogout = async () => {
     await logout();
@@ -20,18 +26,42 @@ export default function Header() {
 
   return (
     <header
-      className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 text-white sticky top-0 z-50 shadow-md"
       data-testid="header"
+      className="sticky top-0 z-50 bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 text-white shadow-md"
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Left Section */}
+          {/* Left: brand + desktop nav */}
           <div className="flex items-center space-x-8">
             <div className="flex-shrink-0">
-              <Link href="/" data-testid="logo-link">
-                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight cursor-pointer hover:opacity-90 transition-opacity">
-                  Odanet
-                </h1>
+              <Link
+                href="/"
+                data-testid="logo-link"
+                className="flex items-center"
+              >
+                <img
+                  src="/odanet-logo.svg"
+                  alt="Odanet — Güvenli Oda Kiralama"
+                  className="h-9 sm:h-10 w-auto select-none pointer-events-none"
+                  loading="eager"
+                  decoding="async"
+                  onError={(e) => {
+                    const img = e.currentTarget as HTMLImageElement;
+                    const fallback = Object.assign(
+                      document.createElement("span"),
+                      {
+                        className:
+                          "text-2xl sm:text-3xl font-extrabold tracking-tight",
+                        textContent: "Odanet",
+                      }
+                    );
+                    img.replaceWith(fallback);
+                  }}
+                />
+                <span className="sr-only">Odanet</span>
               </Link>
             </div>
 
@@ -62,41 +92,49 @@ export default function Header() {
             </nav>
           </div>
 
-          {/* Right Section */}
-          <div className="flex items-center space-x-4">
+          {/* Right: glass icon buttons + auth actions */}
+          <div className="flex items-center space-x-3">
+            {isAuthenticated && (
+              <Link href="/favoriler" data-testid="favorites-link">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("nav.favorites")}
+                  className={`${iconBtn} h-11 w-11`}
+                >
+                  <Heart
+                    className="h-5 w-5"
+                    strokeWidth={2.5}
+                    fill="currentColor"
+                  />
+                </Button>
+              </Link>
+            )}
+
+            <Link href={messagesHref} data-testid="messages-link">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("nav.messages")}
+                className={`${iconBtn} h-11 w-11`}
+              >
+                <MessageSquare className="h-5 w-5" strokeWidth={2.5} />
+              </Button>
+            </Link>
+
             {isAuthenticated ? (
               <>
-                <Link href="/favoriler" data-testid="favorites-link">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t("nav.favorites")}
-                    className="text-white hover:bg-white/20 bg-white/10"
-                  >
-                    <Heart className="h-6 w-6" strokeWidth={2.5} fill="currentColor" />
-                  </Button>
-                </Link>
-                <Link href="/mesajlar" data-testid="messages-link">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t("nav.messages")}
-                    className="text-white hover:bg-white/20 bg-white/10"
-                  >
-                    <MessageSquare className="h-6 w-6" strokeWidth={2.5} />
-                  </Button>
-                </Link>
                 <Link href="/profil" data-testid="profile-link">
                   <Button
                     variant="outline"
-                    className="hidden sm:flex bg-white text-indigo-700 border-white hover:bg-indigo-50 font-medium"
+                    className="hidden sm:flex bg-white text-indigo-900 border-white hover:bg-white/90 font-medium"
                   >
                     {t("nav.profile")}
                   </Button>
                 </Link>
                 <Button
                   variant="outline"
-                  className="hidden sm:flex bg-white text-indigo-700 border-white hover:bg-indigo-50 font-medium"
+                  className="hidden sm:flex bg-white text-indigo-900 border-white hover:bg-white/90 font-medium"
                   onClick={handleLogout}
                   data-testid="logout-button"
                 >
@@ -108,35 +146,32 @@ export default function Header() {
                 <Link href="/giris" data-testid="login-link">
                   <Button
                     variant="outline"
-                    className="hidden sm:flex bg-white text-indigo-700 border-white hover:bg-indigo-50 font-medium"
+                    className="hidden sm:flex bg-white text-indigo-900 border-white hover:bg-white/90 font-semibold"
                   >
                     Giriş Yap
                   </Button>
                 </Link>
                 <Link href="/uye-ol" data-testid="signup-link">
-                  <Button className="bg-white text-indigo-700 hover:bg-indigo-100 font-semibold">
+                  <Button className="bg-white text-indigo-900 hover:bg-white/90 font-semibold">
                     Üye Ol
                   </Button>
                 </Link>
               </>
             )}
 
-            {/* Mobile Menu Button */}
+            {/* Mobile menu trigger (glass style) */}
             <Button
               variant="ghost"
               size="icon"
-              className={`md:hidden rounded-full p-2 transition-all duration-300 ${
-                isMobileMenuOpen
-                  ? "bg-white text-indigo-700"
-                  : "bg-white/20 hover:bg-white/30 text-white"
-              }`}
+              className={`${iconBtn} md:hidden h-11 w-11`}
               onClick={toggleMobileMenu}
               data-testid="mobile-menu-toggle"
+              aria-label="Menü"
             >
               {isMobileMenuOpen ? (
-                <X className="h-8 w-8" />
+                <X className="h-6 w-6" />
               ) : (
-                <Menu className="h-8 w-8" />
+                <Menu className="h-6 w-6" />
               )}
             </Button>
           </div>
@@ -146,15 +181,15 @@ export default function Header() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div
-          className="md:hidden border-t border-white/20 bg-gradient-to-b from-orange-100 to-amber-50 text-gray-800"
           data-testid="mobile-menu"
+          className="md:hidden bg-gradient-to-b from-indigo-700 via-indigo-600 to-violet-600 border-t border-white/10 text-white"
         >
           <div className="px-4 py-4 space-y-4">
             <Link
               href={
                 isAuthenticated ? "/ilan-olustur" : "/giris?next=/ilan-olustur"
               }
-              className="block hover:text-orange-600 transition-colors"
+              className="block hover:opacity-90 transition-opacity"
             >
               Oda İlanı Ver
             </Link>
@@ -164,21 +199,27 @@ export default function Header() {
                   ? "/oda-arama-ilani-olustur"
                   : "/giris?next=/oda-arama-ilani-olustur"
               }
-              className="block hover:text-orange-600 transition-colors"
+              className="block hover:opacity-90 transition-opacity"
             >
               Oda Arama İlanı Ver
+            </Link>
+            <Link
+              href={messagesHref}
+              className="block hover:opacity-90 transition-opacity"
+            >
+              {t("nav.messages")}
             </Link>
             {isAuthenticated ? (
               <>
                 <Link
                   href="/profil"
-                  className="block hover:text-orange-600 transition-colors"
+                  className="block hover:opacity-90 transition-opacity"
                 >
                   {t("nav.profile")}
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="block hover:text-orange-600 transition-colors text-left w-full"
+                  className="block hover:opacity-90 transition-opacity text-left w-full"
                   data-testid="mobile-logout-button"
                 >
                   {t("nav.logout")}
@@ -188,13 +229,13 @@ export default function Header() {
               <>
                 <Link
                   href="/giris"
-                  className="block hover:text-orange-600 transition-colors"
+                  className="block hover:opacity-90 transition-opacity"
                 >
                   {t("nav.login")}
                 </Link>
                 <Link
                   href="/uye-ol"
-                  className="block hover:text-orange-600 transition-colors"
+                  className="block hover:opacity-90 transition-opacity"
                 >
                   {t("nav.sign_up")}
                 </Link>

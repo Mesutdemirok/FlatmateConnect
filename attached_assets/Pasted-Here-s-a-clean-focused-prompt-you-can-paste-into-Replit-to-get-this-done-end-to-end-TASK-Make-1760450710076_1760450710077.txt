@@ -1,0 +1,91 @@
+Here’s a clean, focused prompt you can paste into Replit to get this done end-to-end:
+
+⸻
+
+TASK: Make Header match Hero (purple), remove orange, and use our real logo
+
+Goal
+
+Align the Header with the Hero section styling (purple gradient), replace all orange accents with a subtle glass/purple treatment, and swap the “Odanet” text with our logo from /public. No routing or logic changes — design only.
+
+Files to edit
+	•	client/src/components/ui/Header.tsx
+	•	(read-only reference) client/src/components/ui/Hero.tsx ← take the exact gradient/colors from here
+	•	/public/* (for logo selection; do not move or rename assets, just reference)
+
+Design specs
+
+1) Background = same as Hero
+
+Use exactly the same gradient as Hero.tsx. If Hero’s classes are:
+
+bg-gradient-to-b from-indigo-600 via-violet-600 to-fuchsia-600
+
+then Header should use the horizontal version to feel like a bar:
+
+bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600
+
+Remove any orange fallbacks or inline gradient styles.
+
+2) Icon buttons (heart, messages, hamburger)
+
+Replace orange pills with a subtle glass look that works on the purple header:
+	•	Button shape: rounded-full, size h-11 w-11 (44×44 tap target)
+	•	Styles:
+	•	bg-white/10 hover:bg-white/20 text-white
+	•	ring-1 ring-white/15 hover:ring-white/25 shadow-sm
+	•	Keep focus:ring-2 focus:ring-white/40
+	•	Heart icon may still fill when active (fill="currentColor"), colors remain white.
+
+Apply the same style to the mobile menu trigger button.
+
+3) Replace “Odanet” text with our real logo
+	•	Inspect /public and pick the best dark-background logo:
+	•	Prefer SVG first (sharper), then PNG.
+	•	Prefer horizontal wordmark (not square app icon).
+	•	Use the white/monochrome version if available (best on purple).
+	•	Example candidates you might find:
+/public/odanet-logo.svg, /public/logo-odanet-white.svg, /public/odanet-logo.png
+	•	In Header.tsx, replace the text brand with:
+
+<img
+  src="/<chosen-logo-file>"
+  alt="Odanet — Güvenli Oda Kiralama"
+  className="h-9 sm:h-10 w-auto select-none pointer-events-none"
+  loading="eager"
+  decoding="async"
+  onError={(e) => { (e.currentTarget as HTMLImageElement).replaceWith(Object.assign(document.createElement('span'), { className: 'text-2xl sm:text-3xl font-extrabold tracking-tight', textContent: 'Odanet' })); }}
+/>
+
+(The inline onError fallback ensures we never show a broken image.)
+
+4) Mobile menu panel
+
+Use the same hero gradient for the dropdown panel background:
+
+bg-gradient-to-b from-indigo-600 via-violet-600 to-fuchsia-600
+
+Remove any orange backgrounds there, too.
+
+5) Keep behavior the same
+	•	Do not change routes, auth logic, or links.
+	•	Keep Messages button always visible.
+	•	Keep sticky header, height, and safe-area behavior.
+
+Clean-up
+	•	Delete any ORANGE* inline variables or color hexes from Header.tsx.
+	•	Ensure no remaining .text-orange-* or .bg-orange-* classes.
+
+Accessibility
+	•	Maintain 4.5:1 contrast for text on the header.
+	•	Keep aria-labels for icon buttons (favorites, messages, menu).
+
+Acceptance criteria
+	•	Header visually matches the Hero’s purple gradient (horizontal on header).
+	•	All icon buttons use the glassy white-on-purple style (no orange anywhere).
+	•	The brand area shows our chosen logo from /public, crisp on retina, with working fallback to text.
+	•	Mobile menu uses the same purple gradient; no orange remains.
+	•	No change to navigation/auth logic; all links still work.
+	•	Snapshot/screenshots attached of: desktop header, mobile header, and opened mobile menu.
+
+⸻
