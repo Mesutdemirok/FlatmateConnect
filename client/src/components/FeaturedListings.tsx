@@ -64,59 +64,66 @@ export default function FeaturedListings() {
           Güncel İlanlar
         </h2>
 
-        <div
-          className="
-            grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4
-            gap-4
-          "
-          data-testid="featured-listings-section"
-        >
-          {featuredListings.map((listing) => {
-            // Compact title to max 4 words
-            const words = (listing.title || "Oda İlanı").trim().split(/\s+/);
-            const compactTitle = words.slice(0, 4).join(" ") + (words.length > 4 ? "…" : "");
-            
-            return (
-              <article
-                key={listing.id}
-                onClick={() => navigate(`/oda-ilani/${listing.id}`)}
-                className="
-                  bg-white rounded-2xl shadow-md border border-slate-200
-                  overflow-hidden transition-transform duration-300
-                  hover:shadow-xl hover:-translate-y-[3px] cursor-pointer
-                "
-              >
-                {/* Image with price pill overlay */}
-                <div className="relative w-full h-[200px] overflow-hidden">
-                  <img
-                    src={
-                      listing.images?.find((img: any) => img.isPrimary)?.imagePath ||
-                      listing.images?.[0]?.imagePath ||
-                      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop"
-                    }
-                    alt={compactTitle}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                    data-testid={`listing-image-${listing.id}`}
-                  />
-                  {/* Price pill - single badge */}
-                  <div className="absolute bottom-3 left-3 bg-indigo-600 text-white px-3 py-1.5 rounded-full font-semibold text-sm shadow-lg">
-                    {formatMonthlyPrice(listing.rentAmount, "month")}
+        {featuredListings.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-slate-500 text-lg">Henüz oda ilanı bulunmuyor</p>
+            <p className="text-slate-400 text-sm mt-2">İlk ilan veren siz olun!</p>
+          </div>
+        ) : (
+          <div
+            className="
+              grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4
+              gap-4
+            "
+            data-testid="featured-listings-section"
+          >
+            {featuredListings.map((listing) => {
+              // Compact title to max 4 words
+              const words = (listing.title || "Oda İlanı").trim().split(/\s+/);
+              const compactTitle = words.slice(0, 4).join(" ") + (words.length > 4 ? "…" : "");
+              
+              return (
+                <article
+                  key={listing.id}
+                  onClick={() => navigate(`/oda-ilani/${listing.id}`)}
+                  className="
+                    bg-white rounded-2xl shadow-md border border-slate-200
+                    overflow-hidden transition-transform duration-300
+                    hover:shadow-xl hover:-translate-y-[3px] cursor-pointer
+                  "
+                >
+                  {/* Image with price pill overlay */}
+                  <div className="relative w-full h-[200px] overflow-hidden">
+                    <img
+                      src={
+                        listing.images?.find((img: any) => img.isPrimary)?.imagePath ||
+                        listing.images?.[0]?.imagePath ||
+                        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop"
+                      }
+                      alt={compactTitle}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      data-testid={`listing-image-${listing.id}`}
+                    />
+                    {/* Price pill - single badge */}
+                    <div className="absolute bottom-3 left-3 bg-indigo-600 text-white px-3 py-1.5 rounded-full font-semibold text-sm shadow-lg">
+                      {formatMonthlyPrice(listing.rentAmount, "month")}
+                    </div>
                   </div>
-                </div>
 
-                {/* Compact text section - tighter spacing */}
-                <div className="p-3">
-                  <h3 className="text-base font-semibold text-slate-900 mb-1">
-                    {compactTitle}
-                  </h3>
-                  <p className="text-xs text-slate-500 line-clamp-1">
-                    {listing.address || "Konum bilgisi mevcut değil"}
-                  </p>
-                </div>
-              </article>
-            );
+                  {/* Compact text section - tighter spacing */}
+                  <div className="p-3">
+                    <h3 className="text-base font-semibold text-slate-900 mb-1">
+                      {compactTitle}
+                    </h3>
+                    <p className="text-xs text-slate-500 line-clamp-1">
+                      {listing.address || "Konum bilgisi mevcut değil"}
+                    </p>
+                  </div>
+                </article>
+              );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );
