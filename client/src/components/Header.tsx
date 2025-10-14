@@ -43,7 +43,7 @@ export default function Header() {
                 className="flex items-center"
               >
                 <img
-                  src="/odanet-logo.svg"
+                  src="/odanet logo/Logo Files/svg/Color logo with background.svg"
                   alt="Odanet — Güvenli Oda Kiralama"
                   className="h-9 sm:h-10 w-auto select-none pointer-events-none"
                   loading="eager"
@@ -127,14 +127,14 @@ export default function Header() {
                 <Link href="/profil" data-testid="profile-link">
                   <Button
                     variant="outline"
-                    className="hidden sm:flex bg-white text-indigo-900 border-white hover:bg-white/90 font-medium"
+                    className="hidden sm:flex bg-white text-orange-600 border-white hover:bg-white/90 font-medium"
                   >
                     {t("nav.profile")}
                   </Button>
                 </Link>
                 <Button
                   variant="outline"
-                  className="hidden sm:flex bg-white text-indigo-900 border-white hover:bg-white/90 font-medium"
+                  className="hidden sm:flex bg-white text-orange-600 border-white hover:bg-white/90 font-medium"
                   onClick={handleLogout}
                   data-testid="logout-button"
                 >
@@ -146,13 +146,13 @@ export default function Header() {
                 <Link href="/giris" data-testid="login-link">
                   <Button
                     variant="outline"
-                    className="hidden sm:flex bg-white text-indigo-900 border-white hover:bg-white/90 font-semibold"
+                    className="hidden sm:flex bg-white text-orange-600 border-white hover:bg-white/90 font-semibold"
                   >
                     Giriş Yap
                   </Button>
                 </Link>
                 <Link href="/uye-ol" data-testid="signup-link">
-                  <Button className="bg-white text-indigo-900 hover:bg-white/90 font-semibold">
+                  <Button className="bg-white text-orange-600 hover:bg-white/90 font-semibold">
                     Üye Ol
                   </Button>
                 </Link>
