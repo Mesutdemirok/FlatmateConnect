@@ -15,7 +15,7 @@ Preferred communication style: Simple, everyday language.
 - **Routing**: Wouter for client-side routing
 - **Internationalization**: i18next (Turkish primary locale)
 - **Authentication**: Replit Auth integration
-- **UI/UX**: Focus on consistent design, improved contrast, and clear typography. All URLs are localized to Turkish.
+- **UI/UX**: Focus on consistent design, improved contrast, and clear typography. All URLs are localized to Turkish. Header features purple gradient background matching Hero section, with compact red Odanet logo and orange accent buttons. Seeker cards redesigned with circular avatars and 4-corner badges in 3-column grid layout.
 
 ### Backend
 - **Framework**: Express.js with TypeScript

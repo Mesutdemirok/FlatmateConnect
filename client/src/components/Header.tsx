@@ -36,7 +36,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Left: brand + desktop nav */}
           <div className="flex items-center space-x-8">
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 -ml-1 sm:ml-0">
               <Link
                 href="/"
                 data-testid="logo-link"
@@ -44,8 +44,8 @@ export default function Header() {
               >
                 <img
                   src="/odanet logo/Logo Files/svg/Color logo with background.svg"
-                  alt="Odanet — Güvenli Oda Kiralama"
-                  className="h-13 sm:h-13 w-auto select-none pointer-events-none"
+                  alt="Odanet"
+                  className="h-7 sm:h-9 w-auto select-none pointer-events-none"
                   loading="eager"
                   decoding="async"
                   onError={(e) => {
@@ -54,9 +54,9 @@ export default function Header() {
                       document.createElement("span"),
                       {
                         className:
-                          "text-2xl sm:text-3xl font-extrabold tracking-tight",
+                          "text-xl sm:text-2xl font-extrabold tracking-tight",
                         textContent: "Odanet",
-                      }
+                      },
                     );
                     img.replaceWith(fallback);
                   }}
