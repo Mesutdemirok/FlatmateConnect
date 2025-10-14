@@ -1,10 +1,16 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import path from "path";
+import fs from "fs";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Persistent dir (survives Autoscale)
+const UPLOAD_DIR = path.join(process.cwd(), "shared", "uploads");
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 // CORS configuration for production domain
 const allowedOrigins = [
@@ -34,8 +40,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+// IMPORTANT: mount /uploads BEFORE any other routes or catch-alls
+// This ensures static files are served correctly on Autoscale
+app.use(
+  "/uploads",
+  express.static(UPLOAD_DIR, {
+    fallthrough: false,
+    immutable: true,
+    maxAge: "1y",
+    setHeaders(res) {
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    },
+  })
+);
 
 app.use((req, res, next) => {
   const start = Date.now();

@@ -14,8 +14,9 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-// Configure multer for file uploads
-const uploadDir = 'uploads/listings';
+// Configure multer for file uploads - using persistent directory for Autoscale
+const UPLOAD_DIR = path.join(process.cwd(), 'shared', 'uploads');
+const uploadDir = path.join(UPLOAD_DIR, 'listings');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -41,8 +42,8 @@ const upload = multer({
   }
 });
 
-// Configure multer for seeker photo uploads
-const seekerUploadDir = 'uploads/seekers';
+// Configure multer for seeker photo uploads - using persistent directory for Autoscale
+const seekerUploadDir = path.join(UPLOAD_DIR, 'seekers');
 if (!fs.existsSync(seekerUploadDir)) {
   fs.mkdirSync(seekerUploadDir, { recursive: true });
 }
@@ -68,6 +69,12 @@ const seekerUpload = multer({
   }
 });
 
+// URL normalization helper for uploads
+function toUploadUrl(name: string | null | undefined): string {
+  if (!name) return "";
+  return name.startsWith("/") ? name : `/uploads/${name.replace(/^uploads[\\/]/, "")}`;
+}
+
 // Address masking function for privacy
 function maskAddress(address: string): string {
   // Remove detailed info like building numbers, apartment numbers, etc.
@@ -90,9 +97,6 @@ function maskAddress(address: string): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Serve uploaded files
-  app.use('/uploads', express.static('uploads'));
-
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.json({
@@ -1050,7 +1054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const photoPromises = files.map((file, index) => 
         storage.addSeekerPhoto({
           seekerId: req.params.id,
-          imagePath: file.filename,
+          imagePath: `/uploads/seekers/${file.filename}`,
           sortOrder: existingPhotos.length + index,
         })
       );

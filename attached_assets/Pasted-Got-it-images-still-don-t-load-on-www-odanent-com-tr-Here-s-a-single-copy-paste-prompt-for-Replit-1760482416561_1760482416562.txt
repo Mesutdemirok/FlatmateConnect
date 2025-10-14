@@ -1,0 +1,69 @@
+Got it — images still don’t load on www.odanent.com.tr. Here’s a single copy-paste prompt for Replit AI to apply the minimal, safe fix that usually resolves this on Autoscale (static middleware order + persistent dir).
+
+Paste this into Replit AI
+
+Task: Make /uploads/* work on Autoscale (images are 404 on www.odanent.com.tr but OK in preview).
+Do exactly the steps below.
+
+	1.	Serve /uploads from a persistent path and do it BEFORE any other routes/SSR.
+Open server/index.ts (or server/app.ts) and at the very top after express() add:
+
+import path from "path";
+import fs from "fs";
+import express from "express";
+
+// Persistent dir (survives Autoscale) 
+const UPLOAD_DIR = path.join(process.cwd(), "shared", "uploads");
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+// IMPORTANT: mount before any other routes or catch-alls
+app.use(
+  "/uploads",
+  express.static(UPLOAD_DIR, {
+    fallthrough: false,
+    immutable: true,
+    maxAge: "1y",
+    setHeaders(res) {
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    },
+  })
+);
+
+Ensure this block is above any app.use("*", ...), app.get("*", ...), Next/Vite/SSR handlers, or other routers.
+
+	2.	Normalize image URLs saved in DB/code.
+If any URLs are stored without a leading slash, fix them. In the code that builds image URLs, add:
+
+function toUploadUrl(name: string) {
+  if (!name) return "";
+  return name.startsWith("/") ? name : `/uploads/${name.replace(/^uploads[\\/]/, "")}`;
+}
+
+And use toUploadUrl(imageName) wherever list cards render <img src=...>.
+	3.	Smoke-test the path.
+Add one test file:
+
+mkdir -p shared/uploads && echo ok > shared/uploads/health.txt
+
+Then Republish and confirm:
+https://www.odanent.com.tr/uploads/health.txt returns ok.
+	4.	Keep uploads persistent.
+Confirm any upload code writes to shared/uploads (not ./uploads). Example:
+
+const savePath = path.join(UPLOAD_DIR, fileName);
+await fs.promises.writeFile(savePath, fileBuffer);
+
+	5.	Do not let other middleware shadow /uploads.
+Search for catch-alls like:
+
+app.use("*", ssrHandler);
+
+Make sure they come after the /uploads static line.
+	6.	Rebuild & Republish.
+After changes, republish Autoscale and verify that listing thumbnails now load on www.odanent.com.tr.
+
+⸻
+
+If the test file loads but listing thumbnails still don’t, update the card component to log the exact src it’s using (Network tab) — it must start with /uploads/… and not a relative path like uploads/….
+
+Want me to give you the next single step after this?
