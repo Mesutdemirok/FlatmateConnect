@@ -45,7 +45,7 @@ export default function Header() {
                 <img
                   src="/odanet logo/Logo Files/svg/Color logo with background.svg"
                   alt="Odanet — Güvenli Oda Kiralama"
-                  className="h-9 sm:h-10 w-auto select-none pointer-events-none"
+                  className="h-13 sm:h-13 w-auto select-none pointer-events-none"
                   loading="eager"
                   decoding="async"
                   onError={(e) => {
