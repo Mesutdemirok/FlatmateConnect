@@ -14,57 +14,63 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 // CORS configuration for production domain
 const allowedOrigins = [
-  'https://www.odanent.com.tr',
-  'https://odanent.com.tr',
-  'http://localhost:5000',
-  'http://localhost:5173',
+  "https://www.odanent.com.tr",
+  "https://odanent.com.tr",
+  "http://localhost:5000",
+  "http://localhost:5173",
 ];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(null, true); // For development, allow all origins
-    }
-  },
-  credentials: true, // Allow cookies to be sent
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(null, true); // For development, allow all origins
+      }
+    },
+    credentials: true, // Allow cookies to be sent
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 // TEMP admin hook — remove after success
-app.post('/admin/run-migration', (req, res) => {
+app.post("/admin/run-migration", (req, res) => {
   const token = req.query.token;
   if (token !== process.env.ADMIN_MIGRATE_TOKEN) return res.sendStatus(401);
-  require('./scripts/migrateUploads').run().then(
-    (count: number) => res.json({ ok: true, copied: count }),
-    (err: Error) => res.status(500).json({ ok: false, error: String(err) })
-  );
+  require("./scripts/migrateUploads")
+    .run()
+    .then(
+      (count: number) => res.json({ ok: true, copied: count }),
+      (err: Error) => res.status(500).json({ ok: false, error: String(err) }),
+    );
 });
 
 // Tiny health check for static serving (MUST come before static middleware)
-app.get('/uploads/health.txt', (_req, res) => res.type('text/plain').send('ok'));
+app.get("/uploads/health.txt", (_req, res) =>
+  res.type("text/plain").send("ok"),
+);
 
 // IMPORTANT: mount /uploads AFTER health check but BEFORE any other routes or catch-alls
 // This ensures static files are served correctly on Autoscale
 app.use(
   "/uploads",
   express.static(UPLOAD_DIR, {
-    fallthrough: true,  // Allow falling through to other routes if file not found
+    fallthrough: true, // Allow falling through to other routes if file not found
     immutable: true,
     maxAge: "1y",
     setHeaders(res) {
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     },
-  })
+  }),
 );
 
 app.use((req, res, next) => {
@@ -121,12 +127,80 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  const port = parseInt(process.env.PORT || "5000", 10);
+  server.listen(
+    {
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    },
+    () => {
+      log(`serving on port ${port}`);
+    },
+  );
 })();
+// --- TEMP: ONE-CLICK MIGRATION (delete after success) ---
+import fs from "fs";
+import path from "path";
+
+const persist = (...segs: string[]) =>
+  path.join(process.cwd(), "shared", "uploads", ...segs);
+
+function safeCopyDir(src: string, dst: string) {
+  if (!fs.existsSync(src)) return 0;
+  fs.mkdirSync(dst, { recursive: true });
+  let count = 0;
+  for (const name of fs.readdirSync(src)) {
+    const s = path.join(src, name);
+    const d = path.join(dst, name);
+    const stat = fs.statSync(s);
+    if (stat.isDirectory()) {
+      count += safeCopyDir(s, d);
+    } else {
+      if (!fs.existsSync(d)) {
+        fs.copyFileSync(s, d);
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+// Tek tıkla migrasyon: çağrılınca shared/uploads'a kopyalar ve kendini kapatır
+app.get("/__migrate_once__", (_req, res) => {
+  try {
+    const sentinel = persist(".migrated");
+    if (fs.existsSync(sentinel)) {
+      return res.status(410).type("text/plain").send("already migrated");
+    }
+
+    const copied =
+      safeCopyDir(
+        path.join(process.cwd(), "uploads", "listings"),
+        persist("listings"),
+      ) +
+      safeCopyDir(
+        path.join(process.cwd(), "uploads", "seekers"),
+        persist("seekers"),
+      ) +
+      safeCopyDir(
+        path.join(process.cwd(), "attached_assets", "seed", "listings"),
+        persist("listings"),
+      ) +
+      safeCopyDir(
+        path.join(process.cwd(), "attached_assets", "seed", "seekers"),
+        persist("seekers"),
+      );
+
+    fs.mkdirSync(path.dirname(sentinel), { recursive: true });
+    fs.writeFileSync(sentinel, new Date().toISOString());
+
+    res.type("text/plain").send(`ok copied=${copied}`);
+  } catch (e: any) {
+    res
+      .status(500)
+      .type("text/plain")
+      .send(String(e?.stack || e));
+  }
+});
+// --- /TEMP ---
