@@ -139,6 +139,7 @@ export default function Profile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/seekers/user', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['/api/seekers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/seekers/public'] });
       toast({
         title: "Başarılı!",
         description: "Tercihleriniz güncellendi"

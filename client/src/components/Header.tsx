@@ -11,9 +11,14 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
 
-  // Glass icon button style for purple header
+  // Glass button (kept for non-orange icons)
   const iconBtn =
     "bg-white/10 hover:bg-white/20 text-white rounded-full ring-1 ring-white/15 hover:ring-white/25 " +
+    "shadow-sm transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/40";
+
+  // Red-orange solid pill for Message + Menu + Üye Ol
+  const iconBtnOrange =
+    "bg-orange-600 hover:bg-orange-500 text-white rounded-full ring-1 ring-white/20 " +
     "shadow-sm transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/40";
 
   const messagesHref = isAuthenticated ? "/mesajlar" : "/giris?next=/mesajlar";
@@ -28,40 +33,34 @@ export default function Header() {
     <header
       data-testid="header"
       className="sticky top-0 z-50 bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 text-white shadow-md"
-      style={{
-        paddingTop: "env(safe-area-inset-top)",
-      }}
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left: brand + desktop nav */}
           <div className="flex items-center space-x-8">
-            <div className="flex-shrink-0 -ml-1 sm:ml-0">
+            <div className="flex-shrink-0">
               <Link
                 href="/"
                 data-testid="logo-link"
                 className="flex items-center"
               >
-                <img
-                  src="/odanet logo/Logo Files/svg/Color logo with background.svg"
-                  alt="Odanet"
-                  className="h-7 sm:h-9 w-auto select-none pointer-events-none"
-                  loading="eager"
-                  decoding="async"
-                  onError={(e) => {
-                    const img = e.currentTarget as HTMLImageElement;
-                    const fallback = Object.assign(
-                      document.createElement("span"),
-                      {
-                        className:
-                          "text-xl sm:text-2xl font-extrabold tracking-tight",
-                        textContent: "Odanet",
-                      },
-                    );
-                    img.replaceWith(fallback);
+                {/* ALL-CAPS, thinner white text logo */}
+                <span
+                  className="
+                    uppercase font-semibold tracking-tight leading-none select-none
+                    text-white drop-shadow-sm
+                    text-[1.85rem] sm:text-[2.05rem] md:text-[2.2rem]
+                  "
+                  // a slightly different sans family feel without adding webfonts
+                  style={{
+                    fontFamily:
+                      'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                   }}
-                />
-                <span className="sr-only">Odanet</span>
+                  aria-label="Odanet"
+                >
+                  ODANET
+                </span>
               </Link>
             </div>
 
@@ -92,7 +91,7 @@ export default function Header() {
             </nav>
           </div>
 
-          {/* Right: glass icon buttons + auth actions */}
+          {/* Right: icon buttons + auth actions */}
           <div className="flex items-center space-x-3">
             {isAuthenticated && (
               <Link href="/favoriler" data-testid="favorites-link">
@@ -111,12 +110,13 @@ export default function Header() {
               </Link>
             )}
 
+            {/* MESSAGE = red-orange pill */}
             <Link href={messagesHref} data-testid="messages-link">
               <Button
                 variant="ghost"
                 size="icon"
                 aria-label={t("nav.messages")}
-                className={`${iconBtn} h-11 w-11`}
+                className={`${iconBtnOrange} h-11 w-11`}
               >
                 <MessageSquare className="h-5 w-5" strokeWidth={2.5} />
               </Button>
@@ -127,14 +127,14 @@ export default function Header() {
                 <Link href="/profil" data-testid="profile-link">
                   <Button
                     variant="outline"
-                    className="hidden sm:flex bg-white text-orange-600 border-white hover:bg-white/90 font-medium"
+                    className="hidden sm:flex bg-white text-indigo-700 border-white hover:bg-white/90 font-medium"
                   >
                     {t("nav.profile")}
                   </Button>
                 </Link>
                 <Button
                   variant="outline"
-                  className="hidden sm:flex bg-white text-orange-600 border-white hover:bg-white/90 font-medium"
+                  className="hidden sm:flex bg-white text-indigo-700 border-white hover:bg-white/90 font-medium"
                   onClick={handleLogout}
                   data-testid="logout-button"
                 >
@@ -146,24 +146,25 @@ export default function Header() {
                 <Link href="/giris" data-testid="login-link">
                   <Button
                     variant="outline"
-                    className="hidden sm:flex bg-white text-orange-600 border-white hover:bg-white/90 font-semibold"
+                    className="hidden sm:flex bg-white text-indigo-700 border-white hover:bg-white/90 font-semibold"
                   >
                     Giriş Yap
                   </Button>
                 </Link>
+                {/* ÜYE OL = red-orange solid */}
                 <Link href="/uye-ol" data-testid="signup-link">
-                  <Button className="bg-white text-orange-600 hover:bg-white/90 font-semibold">
+                  <Button className="bg-orange-600 hover:bg-orange-500 text-white font-semibold">
                     Üye Ol
                   </Button>
                 </Link>
               </>
             )}
 
-            {/* Mobile menu trigger (glass style) */}
+            {/* MENU = red-orange pill */}
             <Button
               variant="ghost"
               size="icon"
-              className={`${iconBtn} md:hidden h-11 w-11`}
+              className={`${iconBtnOrange} md:hidden h-11 w-11`}
               onClick={toggleMobileMenu}
               data-testid="mobile-menu-toggle"
               aria-label="Menü"
@@ -178,7 +179,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu (purple) */}
       {isMobileMenuOpen && (
         <div
           data-testid="mobile-menu"
@@ -235,9 +236,9 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/uye-ol"
-                  className="block hover:opacity-90 transition-opacity"
+                  className="inline-flex items-center justify-center rounded-lg px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white font-semibold transition"
                 >
-                  {t("nav.sign_up")}
+                  Üye Ol
                 </Link>
               </>
             )}

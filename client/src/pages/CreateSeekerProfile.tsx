@@ -184,6 +184,7 @@ export default function CreateSeekerProfile() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['/api/seekers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/seekers/public'] });
       queryClient.invalidateQueries({ queryKey: ['/api/seekers/user', user?.id] });
       
       toast({
