@@ -107,7 +107,7 @@ export default function Footer() {
 
               {/* Updated Facebook link */}
               <Social
-                href="https://www.facebook.com/profile.php?id=61573533009698&sk=about"
+                href="https://www.facebook.com/odanet"
                 label="Facebook"
               >
                 <Facebook className="h-5 w-5" />
