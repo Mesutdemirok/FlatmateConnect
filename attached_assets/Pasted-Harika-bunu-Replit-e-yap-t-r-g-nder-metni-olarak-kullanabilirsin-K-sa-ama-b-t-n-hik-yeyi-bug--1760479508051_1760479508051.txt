@@ -1,0 +1,46 @@
+Harika – bunu Replit’e yapıştır-gönder metni olarak kullanabilirsin. Kısa ama bütün hikâyeyi, bug’ı ve istediklerimizi net anlatıyor.
+
+⸻
+
+Odanet – Apex domainde görseller görünmüyor (Autoscale)
+
+Proje: FlatmateConnect-1 (Autoscale)
+Önemli alan adları:
+	•	www.odanet.com.tr → çalışıyor (görseller var)
+	•	odanet.com.tr (apex) → site açılıyor ama ilan görselleri kırık (preview’da sorun yok)
+
+DNS (Natro):
+A @ → 34.111.179.208, A www → 34.111.179.208, TXT replit-verify=… hem @ hem www için eklendi.
+www zaten “Verified”, apex de Replit’te “Verifying/Verified” gördük (duruma göre değişiyor), fakat asıl sorun apex üzerinde görsellerin görünmemesi.
+
+Sorunun özeti (reprodüksiyon)
+	1.	https://odanet.com.tr → Ana sayfadaki “Güncel İlanlar” kartlarında görseller kırık (mavi soru işareti).
+	2.	https://www.odanet.com.tr veya Replit preview → aynı veri ve aynı kod ile görseller normal görünüyor.
+	3.	Preview ve www tarafında yeni eklediğimiz UI/özellikler (image viewer vb.) görülürken, apexte görseller 404/403 gibi davranıyor.
+
+Bu tablo, apex isteğinde statik dosya servisinin /uploads için doğru bağlanmaması, CDN/host binding cache’i, CORS/CSP ya da Autoscale’de kalıcı depolama (persistent storage) olmaması gibi bir domain-bağımlı farklılığa işaret ediyor.
+
+Yapmanızı rica ettiğimiz kontroller
+	1.	Apex domain binding/cache temizliği
+	•	odanet.com.tr için Replit tarafında hard unbind → re-add → re-verify yapıp, Replit CDN cache’ini apex ve www için temizler misiniz?
+	2.	/uploads kalıcılık & statik servis
+	•	Proje; ilan görsellerini repo içindeki /uploads klasöründen express.static ile servis ediyor.
+	•	Autoscale üzerinde /uploads için kalıcı depolama (persistent volume) bağlı mı? Değilse, container yeniden başlatmalarında dosyalar kayboluyor olabilir.
+	•	Çözüm seçenekleri:
+	•	Replit’te /uploads için kalıcı disk bağlamak (varsa önerdiğiniz yol) ve çalışan deploy’a mount etmek, veya
+	•	Bizi S3/R2 gibi harici depoya yönlendirip minimal örnek konfigürasyon vermek (put/get URL, public read, CORS).
+	•	Rica: Apex ismiyle istenen örnek bir görsel URL’sini Replit tarafında test edip, response code / header’ları paylaşabilir misiniz?
+	3.	Host header / CORS / CSP
+	•	Reverse proxy Host başlığını uygulamaya aynen iletiyor mu? (Apex ile www aynı davranıyor mu?)
+	•	CORS / Cross-Origin-Resource-Policy / Content-Security-Policy görselleri engelliyor olabilir. Özellikle apex domaini için img-src ve CORP/CORP başlıklarını kontrol eder misiniz?
+	4.	Tek canonical host
+	•	Uzun vadede 301 redirect www → apex istiyoruz. Şimdilik her iki hostu da CORS/allowed origins listesinde tutuyoruz; redirect’te sorun yoksa apex’i canonical yapacağız.
+
+Beklenen sonuç
+	•	https://odanet.com.tr üzerinde ilan görselleri her kartta görünür, tıklandığında büyük görüntüleyici çalışır (www ve preview ile birebir aynı).
+	•	Replit tarafında apex domain Verified, CDN temiz, /uploads kalıcı ve doğru header’larla servis edilir.
+
+Ekran görüntüsü ve tüm geçmiş adımdan sonra sorun hâlâ apex’in statik dosya/depoyla ilişkili görünüyor. İnceleyip (gerekirse geçici olarak apex’i unbind→rebind) /uploads için kalıcı depolama ve/veya CDN/başlık düzeltmesi yapabilir misiniz?
+Gerekiyorsa elimizdeki görselleri önerdiğiniz kalıcı depoya taşıyıp URL’leri güncelleriz—kısa bir rehber rica ediyoruz.
+
+Teşekkürler!
