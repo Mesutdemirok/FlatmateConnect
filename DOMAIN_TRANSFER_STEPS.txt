@@ -1,0 +1,94 @@
+╔══════════════════════════════════════════════════════════════════╗
+║           TRANSFER DOMAIN TO FLATMATECONNECT-1                   ║
+║           www.odanent.com.tr                                     ║
+╚══════════════════════════════════════════════════════════════════╝
+
+PROBLEM: Domain is linked to old "Create Next App" project
+SOLUTION: Unlink from old project → Link to FlatmateConnect-1
+
+┌──────────────────────────────────────────────────────────────────┐
+│  STEP 1: REMOVE DOMAIN FROM OLD PROJECT                         │
+└──────────────────────────────────────────────────────────────────┘
+
+1. Go to Replit Dashboard (https://replit.com/~)
+2. Find and open "Create Next App" project
+3. Click "Deploy" tab
+4. Click on the deployment with www.odanent.com.tr
+5. Go to "Domains" or "Settings" tab
+6. Find www.odanent.com.tr
+7. Click "Remove" or "Unlink"
+8. Confirm removal
+
+┌──────────────────────────────────────────────────────────────────┐
+│  STEP 2: ADD DOMAIN TO THIS PROJECT (FLATMATECONNECT-1)         │
+└──────────────────────────────────────────────────────────────────┘
+
+1. Return to FlatmateConnect-1 project (this project)
+2. Click "Deploy" button
+
+   IF YOU HAVE AUTOSCALE DEPLOYMENT ALREADY:
+   ├─ Click on it
+   └─ Skip to step 3
+
+   IF YOU DON'T HAVE AUTOSCALE DEPLOYMENT:
+   ├─ Click "+ New Deployment"
+   ├─ Choose "Autoscale" (NOT Static)
+   ├─ Build: npm run build
+   ├─ Run: npm run start
+   └─ Click "Deploy" and wait
+
+3. In deployment, go to "Domains" or "Settings" tab
+4. Click "Add custom domain" or "Link a domain"
+5. Enter: www.odanent.com.tr
+6. Click "Add" or "Link"
+
+7. CHECK DNS SETTINGS:
+   ├─ Replit will show DNS records (A record + TXT)
+   └─ IF IP changed: Update A record at your domain registrar
+   └─ IF IP same: No changes needed
+
+┌──────────────────────────────────────────────────────────────────┐
+│  STEP 3: WAIT & VERIFY                                           │
+└──────────────────────────────────────────────────────────────────┘
+
+⏱ Wait: 2-5 minutes (or up to 60 min if DNS changed)
+
+✅ TEST THESE URLS:
+
+1. https://www.odanent.com.tr/api/health
+   Expected: {"status":"ok"}
+
+2. https://www.odanent.com.tr/api/listings
+   Expected: JSON array with listings
+
+3. https://www.odanent.com.tr
+   Expected: Full Odanet website with data
+
+┌──────────────────────────────────────────────────────────────────┐
+│  TROUBLESHOOTING                                                 │
+└──────────────────────────────────────────────────────────────────┘
+
+❓ Can't find "Create Next App" project?
+   → Check your Replit dashboard for older projects
+   → Search for "Next" in your projects list
+
+❓ Domain still shows old site?
+   → Clear browser cache (Ctrl+Shift+R)
+   → Wait longer (up to 30 min)
+   → Check DNS at https://dnschecker.org
+
+❓ "Domain already in use" error?
+   → Make sure you removed it from old project
+   → Wait 5-10 minutes after removal
+   → Try again
+
+✅ SUCCESS CHECKLIST:
+   [ ] Removed domain from "Create Next App"
+   [ ] Added domain to FlatmateConnect-1 Autoscale deployment
+   [ ] Waited for activation
+   [ ] Tested /api/health endpoint
+   [ ] Website loads with all data
+
+────────────────────────────────────────────────────────────────────
+
+For detailed instructions, see: MOVE_DOMAIN_GUIDE.md
