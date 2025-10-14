@@ -40,12 +40,25 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// IMPORTANT: mount /uploads BEFORE any other routes or catch-alls
+// TEMP admin hook — remove after success
+app.post('/admin/run-migration', (req, res) => {
+  const token = req.query.token;
+  if (token !== process.env.ADMIN_MIGRATE_TOKEN) return res.sendStatus(401);
+  require('./scripts/migrateUploads').run().then(
+    (count: number) => res.json({ ok: true, copied: count }),
+    (err: Error) => res.status(500).json({ ok: false, error: String(err) })
+  );
+});
+
+// Tiny health check for static serving (MUST come before static middleware)
+app.get('/uploads/health.txt', (_req, res) => res.type('text/plain').send('ok'));
+
+// IMPORTANT: mount /uploads AFTER health check but BEFORE any other routes or catch-alls
 // This ensures static files are served correctly on Autoscale
 app.use(
   "/uploads",
   express.static(UPLOAD_DIR, {
-    fallthrough: false,
+    fallthrough: true,  // Allow falling through to other routes if file not found
     immutable: true,
     maxAge: "1y",
     setHeaders(res) {
