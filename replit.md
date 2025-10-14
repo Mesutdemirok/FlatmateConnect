@@ -25,6 +25,7 @@ Preferred communication style: Simple, everyday language.
 - **SMS/OTP Service**: Twilio for phone verification
 - **File Handling**: Multer for image uploads (local storage)
 - **API Design**: RESTful, standardized error handling, Turkish error messages
+- **CORS Configuration**: Configured for production domains (https://www.odanent.com.tr, https://odanent.com.tr) with credentials support
 - **System Design**: Modular schema, proper foreign key relationships with cascade deletes. Health endpoint (`/api/health`) for monitoring.
 
 ### Key Features
