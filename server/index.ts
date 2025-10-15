@@ -67,10 +67,11 @@ app.use(
 
 /* -----------------------------------------------------
    💾 Replit Object Storage (App Storage)
-   Reads bucket name from Secret to avoid hardcoding
+   Authenticated with internal service token
 ----------------------------------------------------- */
 const bucketName = process.env.REPLIT_APP_STORAGE_BUCKET || "odanent-uploads";
-const bucket = new AppStorage(bucketName);
+const authToken = process.env.REPLIT_APP_STORAGE_TOKEN; // ← ensure this exists
+const bucket = new AppStorage(bucketName, { auth: authToken });
 
 app.get("/uploads/:folder/:filename", async (req, res) => {
   try {
@@ -88,7 +89,10 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
     stream.pipe(res);
   } catch (err: any) {
     log(`❌ Storage error serving ${req.url}: ${err.message}`);
-    res.status(500).send("Internal error");
+    res
+      .status(500)
+      .type("text/plain")
+      .send(`Internal error: ${err.message || "Unknown error"}`);
   }
 });
 
