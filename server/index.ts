@@ -2,19 +2,108 @@ import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import path from "path";
+import fs from "fs";
+import { Client as AppStorage } from "@replit/object-storage";
 
 const app = express();
+
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+// 🔧 Local upload path
+const LOCAL_UPLOAD_DIR = path.join(process.cwd(), "uploads");
+fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
 
+// 🧠 MIME type map
+const mimeMap: Record<string, string> = {
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".avif": "image/avif",
+  ".pdf": "application/pdf",
+  ".txt": "text/plain",
+  ".json": "application/json",
+};
+
+// ✅ Health check
+app.get("/uploads/health.txt", (_req, res) =>
+  res.type("text/plain").send("ok"),
+);
+
+// ✅ Serve local uploads (priority 1)
+app.use(
+  "/uploads",
+  express.static(LOCAL_UPLOAD_DIR, {
+    immutable: true,
+    maxAge: "1y",
+    setHeaders(res, filePath) {
+      const ext = path.extname(filePath).toLowerCase();
+      if (mimeMap[ext]) {
+        res.setHeader("Content-Type", mimeMap[ext]);
+      }
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    },
+  }),
+);
+
+// ✅ Fallback: Object Storage (priority 2)
+const bucket = new AppStorage();
+
+app.get("/uploads/:folder/:filename", async (req, res) => {
+  try {
+    const { folder, filename } = req.params;
+    const key = `${folder}/${filename}`;
+    log(`🔎 Fetching from Object Storage: ${key}`);
+
+    // First: check if file exists locally
+    const localPath = path.join(LOCAL_UPLOAD_DIR, folder, filename);
+    if (fs.existsSync(localPath)) {
+      const ext = path.extname(filename).toLowerCase();
+      const contentType = mimeMap[ext] || "application/octet-stream";
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      return fs.createReadStream(localPath).pipe(res);
+    }
+
+    // Otherwise: fetch from Object Storage
+    const result = await bucket.downloadAsBytes(key);
+    if (!result.ok || !result.value) {
+      log(`⚠️ Not found in Object Storage: ${key}`);
+      return res.status(404).send("Not found");
+    }
+
+    // Fix: handle Array type properly
+    const fileData = Array.isArray(result.value)
+      ? Buffer.from(result.value)
+      : result.value;
+
+    const ext = path.extname(filename).toLowerCase();
+    const contentType = mimeMap[ext] || "application/octet-stream";
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    res.setHeader("Content-Length", fileData.length);
+
+    res.end(fileData);
+  } catch (err: any) {
+    log(`❌ Error serving upload: ${err.message}`);
+    res
+      .status(500)
+      .type("text/plain")
+      .send(`Internal error: ${err.message || "Unknown error"}`);
+  }
+});
+
+// ✅ API request logger
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let capturedJsonResponse: Record<string, any> | undefined;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
@@ -23,17 +112,15 @@ app.use((req, res, next) => {
   };
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
     if (path.startsWith("/api")) {
+      const duration = Date.now() - start;
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      if (logLine.length > 120) {
+        logLine = logLine.slice(0, 119) + "…";
       }
-
       log(logLine);
     }
   });
@@ -41,36 +128,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// 🚀 App startup
 (async () => {
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
     res.status(status).json({ message });
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  const port = parseInt(process.env.PORT || "5000", 10);
+  server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
+    log(`✅ Server running on port ${port}`),
+  );
 })();
