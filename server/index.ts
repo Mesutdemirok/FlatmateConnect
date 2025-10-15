@@ -59,7 +59,22 @@ app.use(
   express.static(LOCAL_UPLOAD_DIR, {
     immutable: true,
     maxAge: "1y",
-    setHeaders(res) {
+    setHeaders(res, filePath) {
+      // Ensure correct Content-Type for images
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeMap: Record<string, string> = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+        ".avif": "image/avif",
+      };
+      
+      if (mimeMap[ext]) {
+        res.setHeader("Content-Type", mimeMap[ext]);
+      }
+      
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     },
   }),
@@ -83,6 +98,7 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
       return res.status(404).send("Not found");
     }
 
+    // Detect file extension and set MIME type
     const ext = path.extname(filename).toLowerCase();
     const mimeMap: Record<string, string> = {
       ".jpg": "image/jpeg",
@@ -95,9 +111,15 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
       ".json": "application/json",
     };
 
-    res.setHeader("Content-Type", mimeMap[ext] || "application/octet-stream");
+    const contentType = mimeMap[ext] || "application/octet-stream";
+    
+    // Set headers before sending binary data
+    res.setHeader("Content-Type", contentType);
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    res.send(result.value);
+    res.setHeader("Content-Length", result.value.length);
+    
+    // Send raw binary data
+    res.end(result.value);
   } catch (err: any) {
     log(`❌ Storage error serving ${req.url}: ${err.message}`);
     res
