@@ -19,8 +19,8 @@ fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
    🌍 CORS Configuration
 ----------------------------------------------------- */
 const allowedOrigins = [
-  "https://www.odanent.com.tr",
-  "https://odanent.com.tr",
+  "https://www.odanet.com.tr",
+  "https://odanet.com.tr",
   "http://localhost:5000",
   "http://localhost:5173",
 ];
