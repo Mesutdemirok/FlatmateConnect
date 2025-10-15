@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { formatMonthlyPrice } from "@/lib/formatters";
+import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 
 export default function FeaturedListings() {
   const { t } = useTranslation();
@@ -89,11 +90,10 @@ export default function FeaturedListings() {
                 {/* Image with price pill overlay */}
                 <div className="relative w-full h-[200px] overflow-hidden">
                   <img
-                    src={
+                    src={getAbsoluteImageUrl(
                       listing.images?.find((img: any) => img.isPrimary)?.imagePath ||
-                      listing.images?.[0]?.imagePath ||
-                      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop"
-                    }
+                      listing.images?.[0]?.imagePath
+                    )}
                     alt={compactTitle}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     data-testid={`listing-image-${listing.id}`}

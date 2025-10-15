@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SeekerProfileWithRelations, fetchFeaturedSeekers } from "@/lib/seekerApi";
 import { MapPin, Calendar, DollarSign } from "lucide-react";
+import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 
 export default function FeaturedRoomSeekers() {
   const [, navigate] = useLocation();
@@ -38,12 +39,12 @@ export default function FeaturedRoomSeekers() {
   const getPhotoUrl = (seeker: SeekerProfileWithRelations) => {
     // Use profilePhotoUrl if available
     if (seeker.profilePhotoUrl) {
-      return seeker.profilePhotoUrl;
+      return getAbsoluteImageUrl(seeker.profilePhotoUrl);
     }
     // Fallback to photos array
     const primaryPhoto = seeker.photos?.find((p) => p.sortOrder === 0) || seeker.photos?.[0];
     if (primaryPhoto) {
-      return `/uploads/seekers/${primaryPhoto.imagePath}`;
+      return getAbsoluteImageUrl(`/uploads/seekers/${primaryPhoto.imagePath}`);
     }
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(getDisplayName(seeker))}&background=8b5cf6&color=fff&size=400`;
   };

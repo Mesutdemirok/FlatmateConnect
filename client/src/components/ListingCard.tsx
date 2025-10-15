@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatCurrency } from "@/lib/formatters";
+import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 
 interface ListingCardProps {
   listing?: {
@@ -71,7 +72,7 @@ export default function ListingCard({
 
   const primaryImage = imgs.find((img) => img?.isPrimary) ??
     imgs[0] ?? { imagePath: FALLBACK_IMG };
-  const imageUrl = primaryImage?.imagePath || FALLBACK_IMG;
+  const imageUrl = getAbsoluteImageUrl(primaryImage?.imagePath || FALLBACK_IMG);
 
   const isVerified = listing?.user?.verificationStatus === "verified";
 

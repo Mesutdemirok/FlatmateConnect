@@ -1,0 +1,52 @@
+TASK: Fix production image display issue on www.odanet.com.tr once and for all. 
+Preview works fine (.replit.dev), but production shows broken images in listing cards and seeker cards.
+
+The backend (server/index.ts) is 100% working — direct access like:
+https://www.odanet.com.tr/uploads/listings/test.jpg
+loads images perfectly. 
+Therefore, the issue is purely in the frontend code — how image URLs are constructed or used inside React components.
+
+ROOT CAUSE (confirmed by logs and multiple tests):
+- In preview, frontend references relative paths like `/uploads/listings/...`
+- In production, these paths resolve incorrectly because they are relative to the Next.js frontend origin, not the backend host.
+- The frontend must prepend the correct absolute domain (https://www.odanet.com.tr) for all uploaded image paths.
+
+GOAL:
+✅ 100% of listing and seeker images load correctly on www.odanet.com.tr (production).
+✅ Works seamlessly both in preview and production.
+✅ No placeholder or broken image icons.
+✅ Fix must persist after rebuild, deploy, and cache refresh.
+
+SCOPE OF FIX:
+1. Update `client/src/components/ListingCard.tsx`:
+   - Use a helper that ensures all images use full absolute URLs.
+   - Example implementation:
+     ```tsx
+     const getImageUrl = (path: string) => {
+       if (!path) return "/placeholder.jpg";
+       if (path.startsWith("http")) return path;
+       return `https://www.odanet.com.tr${path}`;
+     };
+     ```
+   - Use it for all `<img>` or `<Image>` components.
+
+2. Apply the same logic in:
+   - `client/src/components/FeaturedListings.tsx`
+   - `client/src/components/FeaturedRoomSeekers.tsx`
+   - `client/src/components/ui/SeekerCard.tsx`
+   - Any component using listing.imageUrl or seeker.image
+
+3. Rebuild frontend (`npm run build`) and republish to production.
+4. Verify in browser:
+   - https://www.odanet.com.tr/uploads/health.txt → ok
+   - https://www.odanet.com.tr/oda-ilanlari?v=4 → all images visible
+   - https://www.odanet.com.tr/oda-aramalari?v=4 → all seeker photos visible
+
+5. Confirm no CORS, mixed-content, or 404 errors in the browser console.
+
+STRICT REQUIREMENT:
+- Do not skip or claim "fixed" unless verified on production domain.
+- Fix must survive cache invalidation and rebuild.
+- Focus only on frontend-side absolute path resolution (do not modify backend or vite setup).
+
+After implementing, test manually and confirm screenshots of working images on production.
