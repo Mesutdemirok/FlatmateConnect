@@ -70,7 +70,7 @@ app.use(
    Authenticated with internal service token
 ----------------------------------------------------- */
 const bucketName = process.env.REPLIT_APP_STORAGE_BUCKET || "odanent-uploads";
-const authToken = process.env.REPLIT_APP_STORAGE_TOKEN; // ← ensure this exists
+const authToken = process.env.REPLIT_APP_STORAGE_TOKEN;
 const bucket = new AppStorage(bucketName, { auth: authToken });
 
 app.get("/uploads/:folder/:filename", async (req, res) => {
@@ -79,14 +79,26 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
     const key = `${folder}/${filename}`;
     log(`🔎 Fetching from AppStorage [${bucketName}]: ${key}`);
 
-    const stream = await bucket.getStream(key);
-    if (!stream) {
+    const file = await bucket.get(key);
+    if (!file) {
       log(`⚠️ Not found in AppStorage: ${key}`);
       return res.status(404).send("Not found");
     }
 
+    const ext = path.extname(filename).toLowerCase();
+    const mimeMap: Record<string, string> = {
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+      ".txt": "text/plain",
+      ".json": "application/json",
+    };
+
+    res.setHeader("Content-Type", mimeMap[ext] || "application/octet-stream");
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    stream.pipe(res);
+    res.send(file);
   } catch (err: any) {
     log(`❌ Storage error serving ${req.url}: ${err.message}`);
     res
