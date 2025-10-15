@@ -140,8 +140,8 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     res.setHeader("Content-Length", fileBytes.value.length);
 
-    // ✅ Convert to Buffer before sending (fixes "chunk must be Buffer" error)
-    res.end(Buffer.from(fileBytes.value));
+    // Send binary data (already a Buffer from downloadAsBytes)
+    res.end(fileBytes.value);
   } catch (err: any) {
     log(`❌ Storage error serving ${req.url}: ${err.message}`);
     res
