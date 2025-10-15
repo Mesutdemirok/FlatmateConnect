@@ -8,31 +8,25 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
-// Persistent dir (survives Autoscale)
-const UPLOAD_DIR = path.join(process.cwd(), "shared", "uploads");
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Persistent dir for Autoscale (used as a fallback cache)
+const LOCAL_UPLOAD_DIR = path.join(process.cwd(), "shared", "uploads");
+fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
 
-// CORS configuration for production domain
+// CORS for all allowed origins
 const allowedOrigins = [
   "https://www.odanent.com.tr",
   "https://odanent.com.tr",
   "http://localhost:5000",
   "http://localhost:5173",
 ];
-
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(null, true); // For development, allow all origins
-      }
+      if (!origin || allowedOrigins.includes(origin))
+        return callback(null, true);
+      callback(null, true);
     },
-    credentials: true, // Allow cookies to be sent
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
@@ -42,29 +36,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// TEMP admin hook — remove after success
-app.post("/admin/run-migration", (req, res) => {
-  const token = req.query.token;
-  if (token !== process.env.ADMIN_MIGRATE_TOKEN) return res.sendStatus(401);
-  require("./scripts/migrateUploads")
-    .run()
-    .then(
-      (count: number) => res.json({ ok: true, copied: count }),
-      (err: Error) => res.status(500).json({ ok: false, error: String(err) }),
-    );
-});
-
-// Tiny health check for static serving (MUST come before static middleware)
+/* -----------------------------------------------------
+   ✅ HEALTH CHECK — to verify /uploads serving
+----------------------------------------------------- */
 app.get("/uploads/health.txt", (_req, res) =>
   res.type("text/plain").send("ok"),
 );
 
-// IMPORTANT: mount /uploads AFTER health check but BEFORE any other routes or catch-alls
-// This ensures static files are served correctly on Autoscale
+/* -----------------------------------------------------
+   ✅ STATIC FILES (LOCAL FALLBACK)
+   In production, uploads are stored in Replit App Storage
+----------------------------------------------------- */
 app.use(
   "/uploads",
-  express.static(UPLOAD_DIR, {
-    fallthrough: true, // Allow falling through to other routes if file not found
+  express.static(LOCAL_UPLOAD_DIR, {
     immutable: true,
     maxAge: "1y",
     setHeaders(res) {
@@ -73,29 +58,26 @@ app.use(
   }),
 );
 
+/* -----------------------------------------------------
+   ✅ REQUEST LOGGING
+----------------------------------------------------- */
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let capturedJson: Record<string, any> | undefined;
 
-  const originalResJson = res.json;
+  const originalJson = res.json;
   res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
+    capturedJson = bodyJson;
+    return originalJson.apply(res, [bodyJson, ...args]);
   };
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
     if (path.startsWith("/api")) {
+      const duration = Date.now() - start;
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
+      if (capturedJson) logLine += ` :: ${JSON.stringify(capturedJson)}`;
+      if (logLine.length > 120) logLine = logLine.slice(0, 119) + "…";
       log(logLine);
     }
   });
@@ -103,104 +85,53 @@ app.use((req, res, next) => {
   next();
 });
 
+/* -----------------------------------------------------
+   ✅ APP STORAGE HELPER (Replit Object Storage)
+   Optional: file persistence using @replit/object-storage
+----------------------------------------------------- */
+import { Client as AppStorage } from "@replit/object-storage";
+
+const bucket = new AppStorage("uploads");
+
+/**
+ * This ensures uploaded files are automatically
+ * saved to Replit's persistent App Storage.
+ */
+app.get("/uploads/:type/:filename", async (req, res) => {
+  try {
+    const { type, filename } = req.params;
+    const key = `${type}/${filename}`;
+    const stream = await bucket.getStream(key);
+    if (!stream) return res.status(404).send("Not found");
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    stream.pipe(res);
+  } catch (e: any) {
+    log(`Error serving ${req.url}: ${e.message}`);
+    res.status(404).send("Not found");
+  }
+});
+
+/* -----------------------------------------------------
+   ✅ ERROR HANDLER
+----------------------------------------------------- */
 (async () => {
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+    const status = err.status || 500;
+    res
+      .status(status)
+      .json({ message: err.message || "Internal Server Error" });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
+  server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
+    log(`Serving on port ${port}`),
   );
 })();
-// --- TEMP: ONE-CLICK MIGRATION (delete after success) ---
-import fs from "fs";
-import path from "path";
-
-const persist = (...segs: string[]) =>
-  path.join(process.cwd(), "shared", "uploads", ...segs);
-
-function safeCopyDir(src: string, dst: string) {
-  if (!fs.existsSync(src)) return 0;
-  fs.mkdirSync(dst, { recursive: true });
-  let count = 0;
-  for (const name of fs.readdirSync(src)) {
-    const s = path.join(src, name);
-    const d = path.join(dst, name);
-    const stat = fs.statSync(s);
-    if (stat.isDirectory()) {
-      count += safeCopyDir(s, d);
-    } else {
-      if (!fs.existsSync(d)) {
-        fs.copyFileSync(s, d);
-        count++;
-      }
-    }
-  }
-  return count;
-}
-
-// Tek tıkla migrasyon: çağrılınca shared/uploads'a kopyalar ve kendini kapatır
-app.get("/__migrate_once__", (_req, res) => {
-  try {
-    const sentinel = persist(".migrated");
-    if (fs.existsSync(sentinel)) {
-      return res.status(410).type("text/plain").send("already migrated");
-    }
-
-    const copied =
-      safeCopyDir(
-        path.join(process.cwd(), "uploads", "listings"),
-        persist("listings"),
-      ) +
-      safeCopyDir(
-        path.join(process.cwd(), "uploads", "seekers"),
-        persist("seekers"),
-      ) +
-      safeCopyDir(
-        path.join(process.cwd(), "attached_assets", "seed", "listings"),
-        persist("listings"),
-      ) +
-      safeCopyDir(
-        path.join(process.cwd(), "attached_assets", "seed", "seekers"),
-        persist("seekers"),
-      );
-
-    fs.mkdirSync(path.dirname(sentinel), { recursive: true });
-    fs.writeFileSync(sentinel, new Date().toISOString());
-
-    res.type("text/plain").send(`ok copied=${copied}`);
-  } catch (e: any) {
-    res
-      .status(500)
-      .type("text/plain")
-      .send(String(e?.stack || e));
-  }
-});
-// --- /TEMP ---
