@@ -67,25 +67,27 @@ app.use(
 
 /* -----------------------------------------------------
    💾 Replit Object Storage (App Storage)
+   Reads bucket name from Secret to avoid hardcoding
 ----------------------------------------------------- */
-const bucket = new AppStorage("odanent-uploads"); // ✅ match your actual bucket name!
+const bucketName = process.env.REPLIT_APP_STORAGE_BUCKET || "odanent-uploads";
+const bucket = new AppStorage(bucketName);
 
 app.get("/uploads/:folder/:filename", async (req, res) => {
   try {
     const { folder, filename } = req.params;
     const key = `${folder}/${filename}`;
-    log(`🔎 Fetching from AppStorage: ${key}`);
-    const stream = await bucket.getStream(key);
+    log(`🔎 Fetching from AppStorage [${bucketName}]: ${key}`);
 
+    const stream = await bucket.getStream(key);
     if (!stream) {
-      log(`⚠️ File not found in AppStorage: ${key}`);
+      log(`⚠️ Not found in AppStorage: ${key}`);
       return res.status(404).send("Not found");
     }
 
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     stream.pipe(res);
   } catch (err: any) {
-    log(`❌ Error serving ${req.url}: ${err.message}`);
+    log(`❌ Storage error serving ${req.url}: ${err.message}`);
     res.status(500).send("Internal error");
   }
 });
