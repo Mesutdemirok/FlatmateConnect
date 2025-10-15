@@ -1,7 +1,7 @@
 /**
  * Converts relative image paths to absolute URLs for production compatibility
  * @param path - The image path (can be relative or absolute)
- * @returns Absolute URL with the production domain
+ * @returns Absolute URL with the appropriate domain
  */
 export function getAbsoluteImageUrl(path: string | null | undefined): string {
   // Default fallback image
@@ -14,8 +14,9 @@ export function getAbsoluteImageUrl(path: string | null | undefined): string {
     return path;
   }
   
-  // If relative path, prepend production domain
-  // This ensures images work both in preview (.replit.dev) and production (www.odanet.com.tr)
-  const domain = "https://www.odanet.com.tr";
+  // If relative path, prepend the current origin (works for both preview and production)
+  // In production: https://www.odanet.com.tr
+  // In preview: https://...replit.dev
+  const domain = typeof window !== 'undefined' ? window.location.origin : "https://www.odanet.com.tr";
   return `${domain}${path.startsWith("/") ? path : `/${path}`}`;
 }
