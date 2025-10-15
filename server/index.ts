@@ -60,7 +60,7 @@ app.use(
     immutable: true,
     maxAge: "1y",
     setHeaders(res, filePath) {
-      // Ensure correct Content-Type for images
+      // Ensure correct Content-Type for images and text
       const ext = path.extname(filePath).toLowerCase();
       const mimeMap: Record<string, string> = {
         ".jpg": "image/jpeg",
@@ -69,36 +69,59 @@ app.use(
         ".gif": "image/gif",
         ".webp": "image/webp",
         ".avif": "image/avif",
+        ".txt": "text/plain",
+        ".json": "application/json",
+        ".pdf": "application/pdf",
       };
-      
+
       if (mimeMap[ext]) {
         res.setHeader("Content-Type", mimeMap[ext]);
       }
-      
+
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     },
   }),
 );
 
 /* -----------------------------------------------------
-   💾 Replit Object Storage (App Storage)
-   Authenticated with internal service token
+   💾 Object Storage File Fetch (with local fallback)
 ----------------------------------------------------- */
-const bucket = new AppStorage();
-
 app.get("/uploads/:folder/:filename", async (req, res) => {
   try {
     const { folder, filename } = req.params;
     const key = `${folder}/${filename}`;
     log(`🔎 Fetching from AppStorage: ${key}`);
 
-    const result = await bucket.downloadAsBytes(key);
-    if (!result.ok) {
-      log(`⚠️ Not found in AppStorage: ${key} - ${result.error}`);
+    // 1️⃣ Check local persistent dir (faster)
+    const localPath = path.join(LOCAL_UPLOAD_DIR, folder, filename);
+    if (fs.existsSync(localPath)) {
+      const ext = path.extname(filename).toLowerCase();
+      const mimeMap: Record<string, string> = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+        ".avif": "image/avif",
+        ".txt": "text/plain",
+        ".json": "application/json",
+        ".pdf": "application/pdf",
+      };
+      const contentType = mimeMap[ext] || "application/octet-stream";
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      return fs.createReadStream(localPath).pipe(res);
+    }
+
+    // 2️⃣ Otherwise, fetch from Replit Object Storage
+    const bucket = new AppStorage();
+    const fileBytes = await bucket.downloadAsBytes(key);
+
+    if (!fileBytes?.value || !fileBytes.value.length) {
+      log(`⚠️ Not found in Object Storage: ${key}`);
       return res.status(404).send("Not found");
     }
 
-    // Detect file extension and set MIME type
     const ext = path.extname(filename).toLowerCase();
     const mimeMap: Record<string, string> = {
       ".jpg": "image/jpeg",
@@ -109,17 +132,16 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
       ".avif": "image/avif",
       ".txt": "text/plain",
       ".json": "application/json",
+      ".pdf": "application/pdf",
     };
-
     const contentType = mimeMap[ext] || "application/octet-stream";
-    
-    // Set headers before sending binary data
+
     res.setHeader("Content-Type", contentType);
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    res.setHeader("Content-Length", result.value.length);
-    
-    // Send raw binary data
-    res.end(result.value);
+    res.setHeader("Content-Length", fileBytes.value.length);
+
+    // ✅ Convert to Buffer before sending (fixes "chunk must be Buffer" error)
+    res.end(Buffer.from(fileBytes.value));
   } catch (err: any) {
     log(`❌ Storage error serving ${req.url}: ${err.message}`);
     res
@@ -134,7 +156,7 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
 ----------------------------------------------------- */
 app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
+  const pathUrl = req.path;
   let capturedJson: Record<string, any> | undefined;
 
   const originalJson = res.json;
@@ -144,9 +166,9 @@ app.use((req, res, next) => {
   };
 
   res.on("finish", () => {
-    if (path.startsWith("/api")) {
+    if (pathUrl.startsWith("/api")) {
       const duration = Date.now() - start;
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      let logLine = `${req.method} ${pathUrl} ${res.statusCode} in ${duration}ms`;
       if (capturedJson) logLine += ` :: ${JSON.stringify(capturedJson)}`;
       if (logLine.length > 120) logLine = logLine.slice(0, 119) + "…";
       log(logLine);
@@ -157,9 +179,9 @@ app.use((req, res, next) => {
 });
 
 /* -----------------------------------------------------
-   🚀 Initialize Server
+   🚀 Start Server (wrapped safely)
 ----------------------------------------------------- */
-(async () => {
+async function startServer() {
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -179,4 +201,10 @@ app.use((req, res, next) => {
   server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
     log(`✅ Server running on port ${port}`),
   );
-})();
+}
+
+startServer().catch((err) => {
+  console.error("❌ Failed to start server:", err);
+});
+
+export default app;
