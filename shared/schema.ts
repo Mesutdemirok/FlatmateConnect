@@ -83,9 +83,6 @@ export const listings = pgTable("listings", {
   roommatePreference: varchar("roommate_preference"), // Kadın/Erkek/Farketmez
   smokingPolicy: varchar("smoking_policy"), // İçilebilir/İçilemez/Balkon Dahil İçilemez
   
-  // Images
-  images: text("images").array().default(sql`ARRAY[]::text[]`),
-  
   // System fields
   status: varchar("status").default('active'),
   createdAt: timestamp("created_at").defaultNow(),
@@ -167,9 +164,6 @@ export const seekerProfiles = pgTable("seeker_profiles", {
   agePreferenceMin: integer("age_preference_min"),
   agePreferenceMax: integer("age_preference_max"),
   genderPreference: varchar("gender_preference"),
-  
-  // Images
-  images: text("images").array().default(sql`ARRAY[]::text[]`),
   
   // System fields
   isActive: boolean("is_active").default(true),
