@@ -106,10 +106,7 @@ export default function Footer() {
               </Social>
 
               {/* Updated Facebook link */}
-              <Social
-                href="https://www.facebook.com/odanet"
-                label="Facebook"
-              >
+              <Social href="https://facebook.com/odanet" label="Facebook">
                 <Facebook className="h-5 w-5" />
               </Social>
 
