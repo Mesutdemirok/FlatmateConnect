@@ -19,8 +19,8 @@ fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
    🌍 CORS Configuration
 ----------------------------------------------------- */
 const allowedOrigins = [
-  "https://www.odanet.com.tr",
-  "https://odanet.com.tr",
+  "https://www.odanent.com.tr",
+  "https://odanent.com.tr",
   "http://localhost:5000",
   "http://localhost:5173",
 ];
@@ -31,7 +31,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      // allow all temporarily (development fallback)
+      // Allow all temporarily (development fallback)
       callback(null, true);
     },
     credentials: true,
@@ -68,21 +68,25 @@ app.use(
 /* -----------------------------------------------------
    💾 Replit Object Storage (App Storage)
 ----------------------------------------------------- */
-const bucket = new AppStorage("uploads");
+const bucket = new AppStorage("odanent-uploads"); // ✅ match your actual bucket name!
 
-app.get("/uploads/:type/:filename", async (req, res) => {
+app.get("/uploads/:folder/:filename", async (req, res) => {
   try {
-    const { type, filename } = req.params;
-    const key = `${type}/${filename}`;
+    const { folder, filename } = req.params;
+    const key = `${folder}/${filename}`;
+    log(`🔎 Fetching from AppStorage: ${key}`);
     const stream = await bucket.getStream(key);
 
-    if (!stream) return res.status(404).send("Not found");
+    if (!stream) {
+      log(`⚠️ File not found in AppStorage: ${key}`);
+      return res.status(404).send("Not found");
+    }
 
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     stream.pipe(res);
   } catch (err: any) {
-    log(`Error serving ${req.url}: ${err.message}`);
-    res.status(404).send("Not found");
+    log(`❌ Error serving ${req.url}: ${err.message}`);
+    res.status(500).send("Internal error");
   }
 });
 
@@ -133,7 +137,7 @@ app.use((req, res, next) => {
   }
 
   const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
-    log(`✅ Server running on port ${port}`);
-  });
+  server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
+    log(`✅ Server running on port ${port}`),
+  );
 })();
