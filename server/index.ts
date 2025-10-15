@@ -5,25 +5,33 @@ import path from "path";
 import fs from "fs";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { Client as AppStorage } from "@replit/object-storage";
 
 const app = express();
 
-// Persistent dir for Autoscale (used as a fallback cache)
+/* -----------------------------------------------------
+   🧱 Persistent Local Dir (used as fallback on Autoscale)
+----------------------------------------------------- */
 const LOCAL_UPLOAD_DIR = path.join(process.cwd(), "shared", "uploads");
 fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
 
-// CORS for all allowed origins
+/* -----------------------------------------------------
+   🌍 CORS Configuration
+----------------------------------------------------- */
 const allowedOrigins = [
-  "https://www.odanent.com.tr",
-  "https://odanent.com.tr",
+  "https://www.odanet.com.tr",
+  "https://odanet.com.tr",
   "http://localhost:5000",
   "http://localhost:5173",
 ];
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin))
+      if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
+      }
+      // allow all temporarily (development fallback)
       callback(null, true);
     },
     credentials: true,
@@ -37,15 +45,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 /* -----------------------------------------------------
-   ✅ HEALTH CHECK — to verify /uploads serving
+   💓 Health Check (verifies static serving)
 ----------------------------------------------------- */
 app.get("/uploads/health.txt", (_req, res) =>
   res.type("text/plain").send("ok"),
 );
 
 /* -----------------------------------------------------
-   ✅ STATIC FILES (LOCAL FALLBACK)
-   In production, uploads are stored in Replit App Storage
+   🗂️ Local Static Uploads (fallback)
 ----------------------------------------------------- */
 app.use(
   "/uploads",
@@ -59,7 +66,28 @@ app.use(
 );
 
 /* -----------------------------------------------------
-   ✅ REQUEST LOGGING
+   💾 Replit Object Storage (App Storage)
+----------------------------------------------------- */
+const bucket = new AppStorage("uploads");
+
+app.get("/uploads/:type/:filename", async (req, res) => {
+  try {
+    const { type, filename } = req.params;
+    const key = `${type}/${filename}`;
+    const stream = await bucket.getStream(key);
+
+    if (!stream) return res.status(404).send("Not found");
+
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    stream.pipe(res);
+  } catch (err: any) {
+    log(`Error serving ${req.url}: ${err.message}`);
+    res.status(404).send("Not found");
+  }
+});
+
+/* -----------------------------------------------------
+   🧾 Request Logger
 ----------------------------------------------------- */
 app.use((req, res, next) => {
   const start = Date.now();
@@ -86,33 +114,7 @@ app.use((req, res, next) => {
 });
 
 /* -----------------------------------------------------
-   ✅ APP STORAGE HELPER (Replit Object Storage)
-   Optional: file persistence using @replit/object-storage
------------------------------------------------------ */
-import { Client as AppStorage } from "@replit/object-storage";
-
-const bucket = new AppStorage("uploads");
-
-/**
- * This ensures uploaded files are automatically
- * saved to Replit's persistent App Storage.
- */
-app.get("/uploads/:type/:filename", async (req, res) => {
-  try {
-    const { type, filename } = req.params;
-    const key = `${type}/${filename}`;
-    const stream = await bucket.getStream(key);
-    if (!stream) return res.status(404).send("Not found");
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    stream.pipe(res);
-  } catch (e: any) {
-    log(`Error serving ${req.url}: ${e.message}`);
-    res.status(404).send("Not found");
-  }
-});
-
-/* -----------------------------------------------------
-   ✅ ERROR HANDLER
+   🚀 Initialize Server
 ----------------------------------------------------- */
 (async () => {
   const server = await registerRoutes(app);
@@ -131,7 +133,7 @@ app.get("/uploads/:type/:filename", async (req, res) => {
   }
 
   const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
-    log(`Serving on port ${port}`),
-  );
+  server.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
+    log(`✅ Server running on port ${port}`);
+  });
 })();
