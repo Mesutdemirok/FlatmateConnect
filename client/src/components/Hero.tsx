@@ -1,4 +1,4 @@
-import SearchBar from "./ui/SearchBar";
+import React from "react";
 
 export default function Hero() {
   return (
@@ -12,17 +12,10 @@ export default function Hero() {
           <br className="hidden sm:block" /> bir oda arama deneyimi
         </h1>
 
-        <p className="text-lg sm:text-xl leading-relaxed text-white/90 mb-8 animate-fade-in-delay">
+        <p className="text-lg sm:text-xl leading-relaxed text-white/90 animate-fade-in-delay">
           Doğrulanmış profiller ve gerçek ilanlarla sana en uygun oda ya da ev
           arkadaşını hemen bul.
         </p>
-
-        <p className="text-sm text-white/80 mb-4">Oda veya Ev Arkadaşı Ara</p>
-
-        {/* Search Bar */}
-        <div className="mt-4">
-          <SearchBar />
-        </div>
       </div>
 
       {/* Subtle top fade for depth */}

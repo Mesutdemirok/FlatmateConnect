@@ -38,13 +38,12 @@ export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-export async function register(data: RegisterData): Promise<{ user: AuthUser }> {
+export async function register(data: RegisterData): Promise<{ user: AuthUser; token: string }> {
   const response = await fetch('/api/auth/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    credentials: 'include', // Send/receive cookies
     body: JSON.stringify(data),
   });
 
@@ -54,17 +53,17 @@ export async function register(data: RegisterData): Promise<{ user: AuthUser }> 
   }
 
   const result = await response.json();
-  // No need to set token - it's in httpOnly cookie
+  setToken(result.token);
   return result;
 }
 
-export async function login(data: LoginData): Promise<{ user: AuthUser }> {
+export async function login(data: LoginData): Promise<{ user: AuthUser; token: string }> {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    credentials: 'include', // Send/receive cookies
+    credentials: 'include',
     body: JSON.stringify(data),
   });
 
@@ -74,7 +73,7 @@ export async function login(data: LoginData): Promise<{ user: AuthUser }> {
   }
 
   const result = await response.json();
-  // No need to set token - it's in httpOnly cookie
+  setToken(result.token);
   return result;
 }
 
@@ -92,14 +91,22 @@ export async function logout(): Promise<void> {
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
+  const token = getToken();
+  if (!token) {
+    return null;
+  }
+
   try {
     const response = await fetch('/api/auth/me', {
-      credentials: 'include', // Send httpOnly cookie
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      credentials: 'include',
     });
 
     if (!response.ok) {
       if (response.status === 401) {
-        removeToken(); // Clean up any old localStorage token
+        removeToken();
       }
       return null;
     }
@@ -107,6 +114,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     return await response.json();
   } catch (error) {
     console.error('Get current user error:', error);
+    removeToken();
     return null;
   }
 }

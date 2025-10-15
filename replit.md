@@ -15,35 +15,24 @@ Preferred communication style: Simple, everyday language.
 - **Routing**: Wouter for client-side routing
 - **Internationalization**: i18next (Turkish primary locale)
 - **Authentication**: Replit Auth integration
-- **UI/UX**: Focus on consistent design, improved contrast, and clear typography. All URLs are localized to Turkish. Header features purple gradient background matching Hero section, with compact red Odanet logo and orange accent buttons. Seeker cards redesigned with circular avatars and 4-corner badges in 3-column grid layout.
+- **UI/UX**: Focus on consistent design, improved contrast, and clear typography. All URLs are localized to Turkish.
 
 ### Backend
 - **Framework**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: JWT-based with httpOnly cookies, bcrypt password hashing
-- **Email Service**: Nodemailer for verification and password reset emails
-- **SMS/OTP Service**: Twilio for phone verification
+- **Authentication**: Replit Auth, session-based using `express-session`
 - **File Handling**: Multer for image uploads (local storage)
-- **API Design**: RESTful, standardized error handling, Turkish error messages
-- **CORS Configuration**: Configured for production domains (https://www.odanent.com.tr, https://odanent.com.tr) with credentials support
+- **API Design**: RESTful, standardized error handling
 - **System Design**: Modular schema, proper foreign key relationships with cascade deletes. Health endpoint (`/api/health`) for monitoring.
 
 ### Key Features
-- **Authentication System**: Multi-method authentication (email/password, Google OAuth placeholder, phone/SMS OTP), email verification, password reset, JWT with httpOnly cookies, auto-redirect to /profil after login/register
-- **User Management**: Profile creation, verification, image uploads
-- **Listing System**: Detailed room listings with multiple images, descriptions, and filtering. Address privacy protection with masked addresses (only neighborhood/district shown publicly). Full-screen image viewer modal for opening images in detail pages
-- **Seeker Profiles**: Comprehensive profiles for those seeking accommodation, including preferences and photos
-- **Messaging System**: Real-time communication between users
-- **Favorites System**: Save and manage favorite listings with orange-themed UI
-- **Location-Based Search System**: 
-  - Turkey location dataset (`shared/turkey-locations.json`) with İl → İlçe → Mahalle hierarchy
-  - Cascade location selector (LocationSelect component) with slug-based filtering
-  - Hero section search widget (LocationSearch) navigating to `/arama` route
-  - SearchPage displaying filtered results based on location slugs
-  - Normalized location fields in listings and seekerProfiles schemas (city, district, neighborhood with slugs)
-  - SEO-friendly slug-based URLs for location searches
-- **File Upload System**: Local storage, image validation, multiple image support
-- **Privacy & Security**: Address masking system, frontend validation, security warnings in UI
+- **User Management**: Profile creation, verification, image uploads.
+- **Listing System**: Detailed room listings with multiple images, descriptions, and filtering.
+- **Seeker Profiles**: Comprehensive profiles for those seeking accommodation, including preferences and photos.
+- **Messaging System**: Real-time communication between users.
+- **Favorites System**: Save and manage favorite listings.
+- **Search & Filtering**: Location-based search with various filters (price, availability, features).
+- **File Upload System**: Local storage, image validation, multiple image support.
 
 ## External Dependencies
 
@@ -67,12 +56,10 @@ Preferred communication style: Simple, everyday language.
 - **React Hook Form**: Form state management
 - **Zod**: Schema validation, integrated with Drizzle ORM
 
-### Authentication & Communication
-- **JWT**: Token-based authentication with httpOnly cookies
-- **bcrypt**: Password hashing
-- **Nodemailer**: Email service for verification and password reset
-- **Twilio**: SMS/OTP service for phone verification
-- **Passport.js**: Authentication middleware (available for OAuth integration)
+### Authentication
+- **Replit Auth**: OIDC-based authentication
+- **Passport.js**: Authentication middleware
+- **memoizee**: Caching for OIDC configuration
 
 ### Utilities
 - **i18next**: Internationalization

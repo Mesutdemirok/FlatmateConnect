@@ -9,7 +9,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { ImageViewer } from "@/components/ImageViewer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +38,6 @@ export default function ListingDetail() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   const { data: listing, isLoading, error } = useQuery({
     queryKey: [`/api/listings/${id}`],
@@ -185,10 +183,10 @@ export default function ListingDetail() {
       
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back button */}
-        <Link href="/">
+        <Link href="/oda-ilanlari">
           <Button variant="ghost" className="mb-6" data-testid="back-button">
             <ChevronLeft className="h-4 w-4 mr-2" />
-            Ana Sayfaya Dön
+            Aramaya Geri Dön
           </Button>
         </Link>
 
@@ -197,10 +195,7 @@ export default function ListingDetail() {
           <div className="lg:col-span-2">
             {/* Image gallery */}
             <div className="relative mb-6">
-              <div 
-                className="relative h-96 rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-95 transition-opacity"
-                onClick={() => setIsViewerOpen(true)}
-              >
+              <div className="relative h-96 rounded-lg overflow-hidden bg-muted">
                 <img
                   src={imageUrl}
                   alt={listing.title}
@@ -214,10 +209,7 @@ export default function ListingDetail() {
                       variant="secondary"
                       size="icon"
                       className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-card/80 backdrop-blur-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        previousImage();
-                      }}
+                      onClick={previousImage}
                       data-testid="previous-image-button"
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -226,10 +218,7 @@ export default function ListingDetail() {
                       variant="secondary"
                       size="icon"
                       className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-card/80 backdrop-blur-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        nextImage();
-                      }}
+                      onClick={nextImage}
                       data-testid="next-image-button"
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -265,14 +254,6 @@ export default function ListingDetail() {
               )}
             </div>
 
-            {/* Image Viewer Modal */}
-            <ImageViewer
-              images={listing.images}
-              initialIndex={currentImageIndex}
-              open={isViewerOpen}
-              onOpenChange={setIsViewerOpen}
-            />
-
             {/* Listing details */}
             <div className="space-y-6">
               <div>
@@ -286,31 +267,21 @@ export default function ListingDetail() {
                   </span>
                 </div>
                 
-                <div className="text-2xl font-bold text-primary mb-4" data-testid="listing-price-main">
-                  {formatCurrency(Number(listing.rentAmount))}
-                  <span className="text-lg font-normal text-muted-foreground">/ay</span>
-                </div>
-                
                 <div className="flex flex-wrap gap-2 mb-4">
                   {listing.propertyType && (
-                    <Badge className="bg-indigo-100 text-indigo-800 hover:bg-indigo-200" data-testid="property-type-badge">
-                      Konut: {listing.propertyType === 'rezidans' ? 'Rezidans' : listing.propertyType === 'daire' ? 'Daire' : listing.propertyType === 'mustakil' ? 'Müstakil Ev' : 'Diğer'}
-                    </Badge>
-                  )}
-                  {listing.bathroomType && (
-                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200" data-testid="bathroom-badge">
-                      Banyo: {listing.bathroomType === 'ortak' ? 'Ortak' : 'Özel'}
+                    <Badge variant="secondary" data-testid="property-type-badge">
+                      <Home className="h-3 w-3 mr-1" />
+                      {listing.propertyType}
                     </Badge>
                   )}
                   {listing.furnishingStatus && (
-                    <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200" data-testid="furnishing-badge">
-                      {listing.furnishingStatus === 'esyali' ? 'Eşyalı' : listing.furnishingStatus === 'esyasiz' ? 'Eşyasız' : 'Kısmen Eşyalı'}
+                    <Badge variant="outline" data-testid="furnishing-badge">
+                      {listing.furnishingStatus}
                     </Badge>
                   )}
-                  {listing.internetIncluded && (
-                    <Badge className="bg-green-100 text-green-800 hover:bg-green-200" data-testid="internet-badge">
-                      <Wifi className="h-3 w-3 mr-1" />
-                      İnternet Var
+                  {listing.bathroomType && (
+                    <Badge variant="outline" data-testid="bathroom-badge">
+                      Banyo: {listing.bathroomType}
                     </Badge>
                   )}
                 </div>
@@ -350,24 +321,30 @@ export default function ListingDetail() {
 
               {/* Features & Amenities */}
               <div>
-                <h2 className="text-xl font-semibold mb-4">Olanaklar</h2>
-                <div className="flex flex-wrap gap-2">
-                  {listing.amenities && listing.amenities.length > 0 && listing.amenities.map((amenity, index) => (
-                    <Badge key={index} variant="secondary" className="text-sm" data-testid={`amenity-${index}`}>
-                      {amenity === 'yatak' ? 'Yatak' : amenity === 'dolap' ? 'Dolap' : amenity === 'masa' ? 'Masa' : amenity === 'sandalye' ? 'Sandalye' : amenity === 'klima' ? 'Klima' : amenity === 'tv' ? 'TV' : 'Diğer'}
-                    </Badge>
+                <h2 className="text-xl font-semibold mb-4">Özellikler ve Olanaklar</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {listing.internetIncluded && (
+                    <div className="flex items-center" data-testid="internet-feature">
+                      <Wifi className="h-4 w-4 mr-2 text-secondary" />
+                      <span>İnternet Dahil</span>
+                    </div>
+                  )}
+                  {listing.billsIncluded ? (
+                    <div className="flex items-center" data-testid="bills-included-feature">
+                      <Zap className="h-4 w-4 mr-2 text-secondary" />
+                      <span>Faturalar Dahil</span>
+                    </div>
+                  ) : listing.excludedBills && listing.excludedBills.length > 0 && (
+                    <div className="flex items-center" data-testid="bills-excluded-feature">
+                      <Zap className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>Dahil Değil: {listing.excludedBills.join(', ')}</span>
+                    </div>
+                  )}
+                  {listing.amenities && listing.amenities.map((amenity, index) => (
+                    <div key={index} className="flex items-center" data-testid={`amenity-${index}`}>
+                      <span>{amenity}</span>
+                    </div>
                   ))}
-                  {listing.billsIncluded && (
-                    <Badge variant="secondary" className="text-sm bg-emerald-100 text-emerald-800 hover:bg-emerald-200" data-testid="bills-included-feature">
-                      <Zap className="h-3 w-3 mr-1" />
-                      Faturalar Dahil
-                    </Badge>
-                  )}
-                  {!listing.billsIncluded && listing.excludedBills && listing.excludedBills.length > 0 && (
-                    <Badge variant="outline" className="text-sm" data-testid="bills-excluded-feature">
-                      Dahil Değil: {listing.excludedBills.join(', ')}
-                    </Badge>
-                  )}
                 </div>
               </div>
             </div>
@@ -375,9 +352,16 @@ export default function ListingDetail() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Contact */}
+            {/* Price and contact */}
             <Card>
               <CardContent className="p-6">
+                <div className="text-center mb-6">
+                  <div className="text-3xl font-bold text-foreground" data-testid="listing-price">
+                    {formatCurrency(Number(listing.rentAmount))}
+                    <span className="text-lg font-normal text-muted-foreground">/ay</span>
+                  </div>
+                </div>
+
                 <div className="space-y-3">
                   {user?.id === listing.userId ? (
                     <Button 
@@ -394,7 +378,7 @@ export default function ListingDetail() {
                       data-testid="contact-owner-button"
                     >
                       <MessageSquare className="h-4 w-4 mr-2" />
-                      Sahibiyle İletişime Geç
+                      {t('listings.contact_owner')}
                     </Button>
                   )}
                   
@@ -406,15 +390,8 @@ export default function ListingDetail() {
                     data-testid="favorite-button"
                   >
                     <Heart className={`h-4 w-4 mr-2 ${favoriteStatus?.isFavorite ? 'fill-destructive text-destructive' : ''}`} />
-                    {favoriteStatus?.isFavorite ? 'Favorilerden Çıkar' : 'Favorilere Ekle'}
+                    {favoriteStatus?.isFavorite ? t('listings.remove_from_favorites') : t('listings.add_to_favorites')}
                   </Button>
-                </div>
-                
-                {/* Security note */}
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-xs text-muted-foreground">
-                    🔒 Tam adres ve buluşma detaylarını mesajlarda paylaşın. İlanlarda tam adres gösterilmez.
-                  </p>
                 </div>
               </CardContent>
             </Card>

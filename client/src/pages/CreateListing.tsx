@@ -19,42 +19,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Loader2, Home, Upload, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Home, Upload } from "lucide-react";
 import { z } from "zod";
-import LocationSelect from "@/components/ui/LocationSelect";
 
 const createListingSchema = z.object({
-  city: z.string().min(1, 'Lütfen şehir seçiniz'),
-  citySlug: z.string().min(1, 'Şehir slug gerekli'),
-  district: z.string().min(1, 'Lütfen ilçe seçiniz'),
-  districtSlug: z.string().min(1, 'İlçe slug gerekli'),
-  neighborhood: z.string().optional(),
-  neighborhoodSlug: z.string().optional(),
-  address: z.string().optional(),
+  address: z.string().min(5, 'Lütfen geçerli bir adres giriniz'),
   title: z.string().min(10, 'Başlık en az 10 karakter olmalıdır'),
-  rentAmount: z.union([z.string(), z.number()]).transform(val => {
-    const num = typeof val === 'string' ? Number(val) : val;
-    if (isNaN(num) || num <= 0) throw new Error('Kira tutarı 0\'dan büyük olmalıdır');
-    return num;
-  }),
+  rentAmount: z.coerce.number().positive('Kira tutarı 0\'dan büyük olmalıdır'),
   billsIncluded: z.enum(['yes', 'no']),
   excludedBills: z.array(z.string()).optional().default([]),
   propertyType: z.string().min(1, 'Lütfen konut tipini seçiniz'),
   internetIncluded: z.enum(['yes', 'no']),
-  totalRooms: z.union([z.string(), z.number()]).transform(val => {
-    const num = typeof val === 'string' ? Number(val) : val;
-    if (isNaN(num) || num <= 0 || !Number.isInteger(num)) throw new Error('Oda sayısı geçerli bir tam sayı olmalıdır');
-    return num;
-  }),
+  totalRooms: z.coerce.number().int().positive('Oda sayısı 0\'dan büyük olmalıdır'),
   bathroomType: z.string().min(1, 'Lütfen banyo tipini seçiniz'),
   furnishingStatus: z.string().min(1, 'Lütfen eşya durumunu seçiniz'),
   amenities: z.array(z.string()).default([]),
-  totalOccupants: z.union([z.string(), z.number()]).transform(val => {
-    const num = typeof val === 'string' ? Number(val) : val;
-    if (isNaN(num) || num <= 0 || !Number.isInteger(num)) throw new Error('Kişi sayısı geçerli bir tam sayı olmalıdır');
-    return num;
-  }),
+  totalOccupants: z.coerce.number().int().positive('Kişi sayısı 0\'dan büyük olmalıdır'),
   roommatePreference: z.string().min(1, 'Lütfen ev arkadaşı tercihinizi seçiniz'),
   smokingPolicy: z.string().min(1, 'Lütfen sigara politikasını seçiniz'),
 });
@@ -73,12 +53,6 @@ export default function CreateListing() {
   const form = useForm<CreateListingFormData>({
     resolver: zodResolver(createListingSchema),
     defaultValues: {
-      city: '',
-      citySlug: '',
-      district: '',
-      districtSlug: '',
-      neighborhood: '',
-      neighborhoodSlug: '',
       address: '',
       title: '',
       rentAmount: 0,
@@ -118,13 +92,7 @@ export default function CreateListing() {
     mutationFn: async (data: CreateListingFormData) => {
       const response = await apiRequest('POST', '/api/listings', {
         userId: user?.id,
-        city: data.city,
-        citySlug: data.citySlug,
-        district: data.district,
-        districtSlug: data.districtSlug,
-        neighborhood: data.neighborhood || '',
-        neighborhoodSlug: data.neighborhoodSlug || '',
-        address: `${data.neighborhood || data.district}, ${data.city}`,
+        address: data.address,
         title: data.title,
         rentAmount: data.rentAmount.toString(),
         billsIncluded: data.billsIncluded === 'yes',
@@ -260,36 +228,24 @@ export default function CreateListing() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* 1. İlan konumu nedir? */}
-                <div className="space-y-4">
-                  <div>
-                    <FormLabel>1. İlan konumu nedir? *</FormLabel>
-                    <Alert className="mt-2 border-amber-200 bg-amber-50">
-                      <AlertCircle className="h-4 w-4 text-amber-600" />
-                      <AlertDescription className="text-amber-800">
-                        Güvenliğiniz için sadece mahalle veya ilçe bilgisi seçin. Detaylı adres bilgilerini mesajlaşma sırasında paylaşabilirsiniz.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                  <LocationSelect
-                    value={{
-                      city: form.watch('city') || '',
-                      citySlug: form.watch('citySlug') || '',
-                      district: form.watch('district') || '',
-                      districtSlug: form.watch('districtSlug') || '',
-                      neighborhood: form.watch('neighborhood') || '',
-                      neighborhoodSlug: form.watch('neighborhoodSlug') || '',
-                    }}
-                    onChange={(location) => {
-                      form.setValue('city', location.city || '');
-                      form.setValue('citySlug', location.citySlug || '');
-                      form.setValue('district', location.district || '');
-                      form.setValue('districtSlug', location.districtSlug || '');
-                      form.setValue('neighborhood', location.neighborhood || '');
-                      form.setValue('neighborhoodSlug', location.neighborhoodSlug || '');
-                    }}
-                  />
-                </div>
+                {/* 1. İlan adresiniz nedir? */}
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>1. İlan adresiniz nedir? *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="örn., Kadıköy, İstanbul" 
+                          {...field} 
+                          data-testid="input-address"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* 2. İlan başlığınız nedir? */}
                 <FormField
@@ -321,13 +277,12 @@ export default function CreateListing() {
                         <div className="relative">
                           <span className="absolute left-3 top-2.5">₺</span>
                           <Input 
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
+                            type="number"
+                            min="0"
                             placeholder="5000" 
-                            className="pl-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="pl-8"
                             {...field}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                             data-testid="input-rent"
                           />
                         </div>
@@ -471,13 +426,11 @@ export default function CreateListing() {
                       <FormLabel>7. Evde toplam kaç oda var? *</FormLabel>
                       <FormControl>
                         <Input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
+                          type="number"
+                          min="1"
                           placeholder="örn., 3"
-                          className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           {...field}
-                          onChange={(e) => field.onChange(e.target.value)}
+                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                           data-testid="input-total-rooms"
                         />
                       </FormControl>
@@ -589,13 +542,11 @@ export default function CreateListing() {
                       <FormLabel>11. Evde toplam kaç kişi yaşamaktadır? *</FormLabel>
                       <FormControl>
                         <Input 
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
+                          type="number" 
+                          min="1"
                           placeholder="2" 
-                          className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           {...field}
-                          onChange={(e) => field.onChange(e.target.value)}
+                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                           data-testid="input-occupants"
                         />
                       </FormControl>

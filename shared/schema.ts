@@ -33,9 +33,6 @@ export const users = pgTable("users", {
   password: varchar("password"),
   passwordResetToken: varchar("password_reset_token"),
   passwordResetExpires: timestamp("password_reset_expires"),
-  emailVerificationToken: varchar("email_verification_token"),
-  emailVerificationExpires: timestamp("email_verification_expires"),
-  isEmailVerified: boolean("is_email_verified").default(false),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -60,14 +57,6 @@ export const listings = pgTable("listings", {
   billsIncluded: boolean("bills_included").default(false), // Utilities included
   excludedBills: text("excluded_bills").array().default(sql`ARRAY[]::text[]`), // Bills not included when billsIncluded is false
   
-  // Location fields (normalized)
-  city: varchar("city"),
-  citySlug: varchar("city_slug"),
-  district: varchar("district"),
-  districtSlug: varchar("district_slug"),
-  neighborhood: varchar("neighborhood"),
-  neighborhoodSlug: varchar("neighborhood_slug"),
-  
   // Property Details  
   propertyType: varchar("property_type"), // Rezidans/Apartman/Daire/Müstakil Ev/Diğer
   internetIncluded: boolean("internet_included").default(false),
@@ -87,9 +76,7 @@ export const listings = pgTable("listings", {
   status: varchar("status").default('active'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_listings_location").on(table.citySlug, table.districtSlug, table.neighborhoodSlug),
-]);
+});
 
 export const listingImages = pgTable("listing_images", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -145,15 +132,7 @@ export const seekerProfiles = pgTable("seeker_profiles", {
   // Search Preferences
   budgetMonthly: varchar("budget_monthly"), // Monthly budget (stored as string to avoid validation issues)
   about: text("about"), // Bio/description
-  preferredLocation: text("preferred_location"), // Single location preference (deprecated, use normalized fields)
-  
-  // Location fields (normalized)
-  city: varchar("city"),
-  citySlug: varchar("city_slug"),
-  district: varchar("district"),
-  districtSlug: varchar("district_slug"),
-  neighborhood: varchar("neighborhood"),
-  neighborhoodSlug: varchar("neighborhood_slug"),
+  preferredLocation: text("preferred_location"), // Single location preference
   
   // Lifestyle Preferences (merged from userPreferences)
   smokingPreference: varchar("smoking_preference"),
@@ -171,9 +150,7 @@ export const seekerProfiles = pgTable("seeker_profiles", {
   isPublished: boolean("is_published").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_seeker_location").on(table.citySlug, table.districtSlug, table.neighborhoodSlug),
-]);
+});
 
 export const seekerPhotos = pgTable("seeker_photos", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

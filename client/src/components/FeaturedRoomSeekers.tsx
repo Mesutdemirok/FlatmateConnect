@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
-import { SeekerProfileWithRelations } from "@/lib/seekerApi";
-import SeekerCard, { SeekerCardSkeleton } from "@/components/ui/SeekerCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SeekerProfileWithRelations, fetchFeaturedSeekers } from "@/lib/seekerApi";
+import { MapPin, Calendar, DollarSign } from "lucide-react";
 
 export default function FeaturedRoomSeekers() {
   const [, navigate] = useLocation();
@@ -32,9 +36,11 @@ export default function FeaturedRoomSeekers() {
   };
 
   const getPhotoUrl = (seeker: SeekerProfileWithRelations) => {
+    // Use profilePhotoUrl if available
     if (seeker.profilePhotoUrl) {
       return seeker.profilePhotoUrl;
     }
+    // Fallback to photos array
     const primaryPhoto = seeker.photos?.find((p) => p.sortOrder === 0) || seeker.photos?.[0];
     if (primaryPhoto) {
       return `/uploads/seekers/${primaryPhoto.imagePath}`;
@@ -42,14 +48,31 @@ export default function FeaturedRoomSeekers() {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(getDisplayName(seeker))}&background=8b5cf6&color=fff&size=400`;
   };
 
+  const formatBudget = (budget: string | null) => {
+    if (!budget) return "Belirtilmemiş";
+    const num = parseFloat(budget);
+    return `₺${num.toLocaleString('tr-TR')}/ay`;
+  };
+
   if (isLoading) {
     return (
       <div
-        className="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+        className="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
         data-testid="featured-seekers-loading"
       >
-        {[...Array(3)].map((_, i) => (
-          <SeekerCardSkeleton key={i} />
+        {[...Array(4)].map((_, i) => (
+          <Card
+            key={i}
+            className="rounded-2xl shadow-md overflow-hidden border border-slate-200"
+          >
+            <Skeleton className="w-full h-[280px]" />
+            <CardContent className="p-4 space-y-3">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-9 w-full" />
+            </CardContent>
+          </Card>
         ))}
       </div>
     );
@@ -63,53 +86,120 @@ export default function FeaturedRoomSeekers() {
     );
   }
 
+  if (!seekers || seekers.length === 0) {
+    return null;
+  }
+  
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
           Oda Arayanlar
         </h2>
-        {(!seekers || seekers.length === 0) && (
-          <p className="text-slate-500 mt-2">Henüz oda arayan profil bulunmuyor</p>
-        )}
       </div>
 
-      {seekers && seekers.length > 0 && (
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
-          data-testid="featured-seekers-grid"
-        >
-          {seekers.map((seeker) => {
-            const locations = [];
-            if (seeker.district) locations.push(seeker.district);
-            if (seeker.neighborhood && locations.length < 2) locations.push(seeker.neighborhood);
-            if (seeker.city && locations.length === 0) locations.push(seeker.city);
-
-            const budget = seeker.budgetMonthly 
-              ? (typeof seeker.budgetMonthly === 'string' 
-                  ? parseInt(seeker.budgetMonthly, 10) 
-                  : seeker.budgetMonthly)
-              : undefined;
-
-            return (
-              <SeekerCard
-                key={seeker.id}
-                seeker={{
-                  id: seeker.id,
-                  fullName: getDisplayName(seeker),
-                  avatarUrl: getPhotoUrl(seeker),
-                  age: seeker.age || undefined,
-                  occupation: seeker.occupation || undefined,
-                  preferredLocations: locations,
-                  budgetMonthly: budget,
-                  verified: (seeker.user as any)?.verificationStatus === 'verified',
-                }}
-                onClick={() => navigate(`/oda-arayan/${seeker.id}`)}
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        data-testid="featured-seekers-grid"
+      >
+        {seekers.map((seeker) => (
+          <Card
+            key={seeker.id}
+            className="rounded-2xl shadow-md overflow-hidden border border-slate-200 hover:shadow-xl transition-shadow duration-300 cursor-pointer group"
+            onClick={() => navigate(`/oda-arayan/${seeker.id}`)}
+            data-testid={`seeker-card-${seeker.id}`}
+          >
+            {/* Photo Section */}
+            <div className="relative h-[280px] overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100">
+              <img
+                src={getPhotoUrl(seeker)}
+                alt={getDisplayName(seeker)}
+                className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+                data-testid={`seeker-photo-${seeker.id}`}
               />
-            );
-          })}
-        </div>
-      )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+              
+              {seeker.age && (
+                <Badge className="absolute top-3 right-3 bg-white/95 text-indigo-700 border-0">
+                  {seeker.age} yaş
+                </Badge>
+              )}
+            </div>
+
+            {/* Info Section */}
+            <CardContent className="p-4 space-y-3">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-1" data-testid={`seeker-name-${seeker.id}`}>
+                  {getDisplayName(seeker)}
+                </h3>
+                {seeker.gender && (
+                  <p className="text-sm text-slate-500">
+                    {seeker.gender === 'male' ? 'Erkek' : seeker.gender === 'female' ? 'Kadın' : seeker.gender}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2 text-sm text-slate-600">
+                {seeker.budgetMonthly && (
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-indigo-500" />
+                    <span>{formatBudget(seeker.budgetMonthly)}</span>
+                  </div>
+                )}
+                
+                {seeker.preferredLocation && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-indigo-500" />
+                    <span className="truncate">{seeker.preferredLocation}</span>
+                  </div>
+                )}
+
+                {seeker.occupation && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500">{seeker.occupation}</span>
+                  </div>
+                )}
+
+                {/* Preference Badges */}
+                {(seeker.cleanlinessLevel || seeker.smokingPreference || seeker.genderPreference) && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {seeker.cleanlinessLevel && (
+                      <Badge variant="secondary" className="text-xs">
+                        {seeker.cleanlinessLevel === 'very-clean' ? 'Çok Temiz' : 
+                         seeker.cleanlinessLevel === 'clean' ? 'Temiz' : 
+                         seeker.cleanlinessLevel === 'average' ? 'Orta' : 'Rahat'}
+                      </Badge>
+                    )}
+                    {seeker.smokingPreference && seeker.smokingPreference !== 'no-preference' && (
+                      <Badge variant="secondary" className="text-xs">
+                        {seeker.smokingPreference === 'non-smoker' ? 'İçmiyor' : 
+                         seeker.smokingPreference === 'smoker' ? 'İçiyor' : 'Sosyal'}
+                      </Badge>
+                    )}
+                    {seeker.genderPreference && seeker.genderPreference !== 'no-preference' && (
+                      <Badge variant="secondary" className="text-xs">
+                        {seeker.genderPreference === 'male' ? 'Erkek Tercih' : 'Kadın Tercih'}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/oda-arayan/${seeker.id}`);
+                }}
+                data-testid={`seeker-details-btn-${seeker.id}`}
+              >
+                Profili Görüntüle
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

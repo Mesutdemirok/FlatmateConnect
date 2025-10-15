@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation, Redirect } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -9,7 +9,6 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
-import SearchResults from "@/pages/SearchResults";
 import ListingDetail from "@/pages/ListingDetail";
 import SeekerDetail from "@/pages/SeekerDetail";
 import CreateListing from "@/pages/CreateListing";
@@ -17,7 +16,8 @@ import EditListing from "@/pages/EditListing";
 import CreateSeekerProfile from "@/pages/CreateSeekerProfile";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
-import Auth from "@/pages/Auth";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import "./i18n"; // Initialize i18n
 
 function ProtectedRoute({ component: Component, ...rest }: { component: () => JSX.Element; path?: string }) {
@@ -44,18 +44,12 @@ function ProtectedRoute({ component: Component, ...rest }: { component: () => JS
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
-  const [location, navigate] = useLocation();
 
   return (
     <Switch>
       {/* Auth routes - Turkish URLs */}
-      <Route path="/giris" component={Auth} />
-      <Route path="/uye-ol">
-        {() => {
-          navigate('/giris?tab=signup', { replace: true });
-          return null;
-        }}
-      </Route>
+      <Route path="/giris" component={Login} />
+      <Route path="/uye-ol" component={Register} />
       
       {/* Home route - Same for all users */}
       <Route path="/" component={Home} />
@@ -79,7 +73,6 @@ function Router() {
       
       {/* Public routes - Turkish URLs */}
       <Route path="/oda-ilanlari" component={Search} />
-      <Route path="/arama" component={SearchResults} />
       <Route path="/oda-ilani/:id" component={ListingDetail} />
       <Route path="/oda-arayan/:id" component={SeekerDetail} />
       
