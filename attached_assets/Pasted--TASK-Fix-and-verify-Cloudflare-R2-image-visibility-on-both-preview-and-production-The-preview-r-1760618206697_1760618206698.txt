@@ -1,0 +1,58 @@
+
+TASK: Fix and verify Cloudflare R2 image visibility on both preview and production
+
+The preview (.replit.dev) shows all listing and seeker images correctly, but www.odanet.com.tr still shows broken icons.
+The backend and R2 integration are working perfectly — the issue is only in the frontend build (Vite SSR) not using the R2 public URL consistently.
+
+⸻
+
+🧩 Current Setup
+	•	Cloudflare R2 bucket: odanet-uploads
+	•	Public R2 URL: https://pub-f084c4d11d4541f2a83f290d3f7f761e.r2.dev
+	•	Backend logic already returns full R2 URLs correctly.
+	•	Preview uses client-side rendering → works fine.
+	•	Production SSR build still outputs /uploads/... paths.
+
+⸻
+
+🎯 Goal
+
+Make both preview and production use the exact same image URL base and confirm visually.
+
+⸻
+
+🧠 Actions to Perform
+	1.	Create or confirm a Replit Secret:
+
+VITE_R2_PUBLIC_URL=https://pub-f084c4d11d4541f2a83f290d3f7f761e.r2.dev
+
+
+	2.	Update client/src/lib/imageUtils.ts (or equivalent):
+
+export function getImageUrl(relativePath: string) {
+  const baseUrl =
+    import.meta.env.VITE_R2_PUBLIC_URL ||
+    process.env.R2_PUBLIC_URL ||
+    "";
+  if (!relativePath) return "/fallback.jpg";
+  return `${baseUrl}/${relativePath.replace(/^\/+/, "")}`;
+}
+
+
+	3.	Make sure vite.config.ts exposes this variable in define or via loadEnv.
+	4.	Rebuild the project (npm run build) and republish automatically.
+	5.	After deployment, verify:
+	•	https://flatmate-connect-1-mesudemirok.replit.app/oda-ilanlari
+	•	https://www.odanet.com.tr/oda-ilanlari
+	•	Both render the same absolute image URLs from R2.
+	6.	Automatically fetch one image URL (e.g. first listing image) from both preview and production, and confirm both return HTTP 200 with identical URLs.
+	7.	Print confirmation message only if both URLs match and images load.
+
+⸻
+
+✅ Expected Outcome
+	•	All images load successfully from Cloudflare R2 on both domains.
+	•	No /uploads/... paths remain.
+	•	The same HTML <img src> is used in both preview and production.
+	•	Replit Agent confirms successful match and prints one verified working R2 image URL.
+
