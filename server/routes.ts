@@ -308,11 +308,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const files = req.files as Express.Multer.File[];
       const images = [];
       
+      // Dynamically import R2 utilities
+      const { uploadToR2 } = await import('./r2-utils');
+      
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        const imagePath = `/uploads/listings/${file.filename}`;
+        
+        // Upload to R2 in production
+        if (process.env.NODE_ENV === 'production') {
+          try {
+            await uploadToR2(file.path, imagePath.replace(/^\/+/, ''));
+            console.log(`✅ Uploaded to R2: ${imagePath}`);
+          } catch (r2Error) {
+            console.error(`❌ R2 upload failed for ${imagePath}:`, r2Error);
+            // Continue anyway - file is saved locally
+          }
+        }
+        
         const image = await storage.addListingImage({
           listingId: req.params.id,
-          imagePath: `/uploads/listings/${file.filename}`,
+          imagePath,
           isPrimary: i === 0 // First image is primary
         });
         images.push(image);
@@ -680,13 +696,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const files = req.files as Express.Multer.File[];
       const existingPhotos = await storage.getSeekerPhotos(req.params.id);
       
-      const photoPromises = files.map((file, index) => 
-        storage.addSeekerPhoto({
+      // Dynamically import R2 utilities
+      const { uploadToR2 } = await import('./r2-utils');
+      
+      const photoPromises = files.map(async (file, index) => {
+        const photoPath = `/uploads/seekers/${file.filename}`;
+        
+        // Upload to R2 in production
+        if (process.env.NODE_ENV === 'production') {
+          try {
+            await uploadToR2(file.path, photoPath.replace(/^\/+/, ''));
+            console.log(`✅ Uploaded to R2: ${photoPath}`);
+          } catch (r2Error) {
+            console.error(`❌ R2 upload failed for ${photoPath}:`, r2Error);
+            // Continue anyway - file is saved locally
+          }
+        }
+        
+        return storage.addSeekerPhoto({
           seekerId: req.params.id,
-          imagePath: file.filename,
+          imagePath: photoPath,
           sortOrder: existingPhotos.length + index,
-        })
-      );
+        });
+      });
       
       const photos = await Promise.all(photoPromises);
       
