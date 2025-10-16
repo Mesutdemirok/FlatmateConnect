@@ -48,13 +48,15 @@ const LOCAL_UPLOADS = path.join(process.cwd(), "uploads");
 // Helper: get image URL for production or local
 function getImageUrl(relativePath: string): string {
   const publicUrl = process.env.R2_PUBLIC_URL;
-  if (process.env.NODE_ENV === "production" && publicUrl) {
-    // Use R2 bucket public URL
+  const isProduction = process.env.NODE_ENV?.trim().toLowerCase() === "production";
+  
+  // Use R2 in production, local otherwise
+  if (isProduction && publicUrl) {
     return `${publicUrl}/${relativePath.replace(/^\/+/, "")}`;
-  } else {
-    // Use local /uploads path
-    return `/uploads/${relativePath.replace(/^\/+/, "")}`;
   }
+  
+  // Development: use local path
+  return relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
 }
 
 export interface IStorage {

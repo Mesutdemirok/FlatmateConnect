@@ -21,9 +21,10 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: Replit Auth, session-based using `express-session`
-- **File Handling**: Multer for image uploads (local storage)
+- **File Handling**: Multer for image uploads, Cloudflare R2 for storage (production), local disk (development)
 - **API Design**: RESTful, standardized error handling
 - **System Design**: Modular schema, proper foreign key relationships with cascade deletes. Health endpoint (`/api/health`) for monitoring.
+- **Image Storage**: Cloudflare R2 bucket (odanet-uploads) for production, automatic upload on file submission
 
 ### Key Features
 - **User Management**: Profile creation, verification, image uploads.
@@ -32,7 +33,7 @@ Preferred communication style: Simple, everyday language.
 - **Messaging System**: Real-time communication between users.
 - **Favorites System**: Save and manage favorite listings.
 - **Search & Filtering**: Location-based search with various filters (price, availability, features).
-- **File Upload System**: Local storage, image validation, multiple image support.
+- **File Upload System**: Cloudflare R2 CDN storage (production), local storage (development), image validation, multiple image support.
 
 ## External Dependencies
 
@@ -65,3 +66,7 @@ Preferred communication style: Simple, everyday language.
 - **i18next**: Internationalization
 - **date-fns**: Date manipulation
 - **PostCSS & Autoprefixer**: CSS processing
+
+### Cloud Services
+- **Cloudflare R2**: Object storage for production images (bucket: odanet-uploads)
+- **AWS SDK S3 Client**: R2 API compatibility for uploads/downloads
