@@ -53,6 +53,13 @@ async function migrateImagesToR2() {
   let seekerFailed = 0;
 
   for (const photo of seekerPhotosData) {
+    // Skip if photoPath is null or undefined
+    if (!photo.photoPath) {
+      console.log(`  ⚠️  Photo path is null or undefined for photo ID: ${photo.id}`);
+      seekerSkipped++;
+      continue;
+    }
+
     const localPath = path.join(process.cwd(), photo.photoPath.replace(/^\/+/, ""));
     
     if (!fs.existsSync(localPath)) {
