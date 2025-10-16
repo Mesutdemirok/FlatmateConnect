@@ -48,14 +48,14 @@ var init_r2_utils = __esm({
     "use strict";
     r22 = new S3Client2({
       region: "auto",
-      endpoint: process.env.R2_S3_ENDPOINT,
+      endpoint: process.env.R2_S3_ENDPOINT?.trim(),
       credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
+        accessKeyId: process.env.R2_ACCESS_KEY_ID?.trim(),
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY?.trim()
       }
     });
-    R2_BUCKET2 = process.env.R2_BUCKET_NAME;
-    R2_PUBLIC_URL = process.env.R2_PUBLIC_URL;
+    R2_BUCKET2 = process.env.R2_BUCKET_NAME?.trim();
+    R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.trim();
   }
 });
 
