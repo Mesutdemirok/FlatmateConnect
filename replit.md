@@ -7,6 +7,8 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 16, 2025)
+- **Fixed Deployment Configuration**: Corrected incomplete run command in `.replit` from `["npm", "run"]` to `["npm", "run", "start"]`
+- **Added Root Health Check**: Implemented health check endpoint at `/` for deployment health monitoring
 - **Fixed Image Loading**: Configured frontend to use Cloudflare R2 URLs directly via `VITE_R2_PUBLIC_URL` environment variable
 - **CORS Configuration**: Set up proper CORS headers on R2 bucket for production domain access
 - **Unified Image URLs**: Both preview and production now use identical R2 URLs for all images
@@ -29,7 +31,7 @@ Preferred communication style: Simple, everyday language.
 - **Authentication**: Replit Auth, session-based using `express-session`
 - **File Handling**: Multer for image uploads, Cloudflare R2 for storage (production), local disk (development)
 - **API Design**: RESTful, standardized error handling
-- **System Design**: Modular schema, proper foreign key relationships with cascade deletes. Health endpoint (`/api/health`) for monitoring.
+- **System Design**: Modular schema, proper foreign key relationships with cascade deletes. Health endpoints at `/` and `/api/health` for monitoring and deployment health checks.
 - **Image Storage**: Cloudflare R2 bucket (odanet-uploads) for production, automatic upload on file submission
 
 ### Key Features
