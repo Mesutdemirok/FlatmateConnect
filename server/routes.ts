@@ -67,17 +67,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
   app.use('/uploads', express.static('uploads'));
 
-  // Root health check endpoint for deployment health checks
-  app.get('/', (req, res) => {
-    res.json({
-      ok: true,
-      service: 'Odanet',
-      version: '1.0.0',
-      env: process.env.NODE_ENV || 'development',
-      timestamp: new Date().toISOString()
-    });
-  });
-
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.json({
