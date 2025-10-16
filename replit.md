@@ -6,6 +6,12 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (October 16, 2025)
+- **Fixed Image Loading**: Configured frontend to use Cloudflare R2 URLs directly via `VITE_R2_PUBLIC_URL` environment variable
+- **CORS Configuration**: Set up proper CORS headers on R2 bucket for production domain access
+- **Unified Image URLs**: Both preview and production now use identical R2 URLs for all images
+- **Build Updated**: New production build ready for deployment with R2 integration
+
 ## System Architecture
 
 ### Frontend

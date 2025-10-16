@@ -1,7 +1,7 @@
 /**
- * Converts relative image paths to absolute URLs for production compatibility
+ * Converts relative image paths to absolute URLs using Cloudflare R2
  * @param path - The image path (can be relative or absolute)
- * @returns Absolute URL with the appropriate domain
+ * @returns Absolute URL with the R2 CDN
  */
 export function getAbsoluteImageUrl(path: string | null | undefined): string {
   // Default fallback image
@@ -14,9 +14,22 @@ export function getAbsoluteImageUrl(path: string | null | undefined): string {
     return path;
   }
   
-  // If relative path, prepend the current origin (works for both preview and production)
-  // In production: https://www.odanet.com.tr
-  // In preview: https://...replit.dev
+  // Use R2 public URL from environment variable (with fallback)
+  // Fix missing protocol if needed
+  let r2BaseUrl = import.meta.env.VITE_R2_PUBLIC_URL || "";
+  
+  // Add https: if the URL starts with //
+  if (r2BaseUrl.startsWith("//")) {
+    r2BaseUrl = `https:${r2BaseUrl}`;
+  }
+  
+  // If R2 URL is available, use it directly
+  if (r2BaseUrl) {
+    const cleanPath = path.replace(/^\/+/, "");
+    return `${r2BaseUrl}/${cleanPath}`;
+  }
+  
+  // Fallback: use current origin (shouldn't happen in production)
   const domain = typeof window !== 'undefined' ? window.location.origin : "https://www.odanet.com.tr";
   return `${domain}${path.startsWith("/") ? path : `/${path}`}`;
 }
