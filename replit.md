@@ -8,6 +8,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 17, 2025)
 
+### Latest Features Added
+- **Mobile-First Search Box**:
+  - Added SearchBox component below Hero on homepage
+  - Toggle tabs: "Oda Ara" (room listings) vs "Oda Arkadaşı Ara" (flatmates/seekers)
+  - Location and budget/price range filters
+  - Mobile-responsive with stacked inputs and large tap targets
+  - Navigates to filtered results pages with query parameters
+  - Created new `/oda-aramalari` route for seeker listings with full filtering support
+
 ### Latest UI/UX Improvements
 - **Authentication Page Enhanced**: 
   - Unified login/register page with purple gradient tab switching (purple-600 to pink-600)
