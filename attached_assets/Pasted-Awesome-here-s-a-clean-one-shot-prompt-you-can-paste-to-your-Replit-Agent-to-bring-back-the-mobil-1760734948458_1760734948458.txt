@@ -1,0 +1,173 @@
+Awesome — here’s a clean, one-shot prompt you can paste to your Replit Agent to bring back the mobile-friendly search box and place it under the Hero, above “Güncel İlanlar”, with a toggle for “oda ara” (room listings) vs “oda arkadaşı ara” (flatmate/seekers). It keeps your current backend, auth, DB, and image logic intact — it only wires UI → query params → existing list pages.
+
+⸻
+
+COMMAND MODE — Add Mobile Search Box under Hero (Listings/Seekers)
+
+Goals
+	•	Add a polished, mobile-first SearchBox below the Hero and above Güncel İlanlar on the homepage.
+	•	Toggle: Oda Ara (search room listings) / Oda Arkadaşı Ara (search flatmates).
+	•	On submit, navigate (no SSR change) to the correct page with query params the pages already understand:
+	•	GET /api/listings?location=&minPrice=&maxPrice=
+	•	GET /api/seeker-profiles?location=&minBudget=&maxBudget=&isActive=true
+	•	Do not change auth/DB/storage; only add UI + query param wiring.
+	•	Maintain i18n keys (fallback to Turkish strings if key missing).
+	•	Keep styling consistent with current Tailwind/shadcn UI.
+
+Files to Add/Update (exact paths)
+	1.	client/src/components/SearchBox.tsx (new)
+	2.	Insert component into homepage container (whichever your app uses):
+	•	If you have client/src/App.tsx composing sections: place <SearchBox /> just after Hero, before Featured listings section.
+	•	If you have a dedicated home page like client/src/pages/Home.tsx, do the same there.
+	3.	Update list pages to read query params if not already:
+	•	client/src/pages/OdaIlanlari.tsx (or your listings page): read location, minPrice, maxPrice and pass them to the /api/listings query.
+	•	client/src/pages/OdaAramalari.tsx (seekers page): read location, minBudget, maxBudget and pass them to /api/seeker-profiles.
+
+SearchBox spec
+	•	Tabs (shadcn Tabs):
+	•	Tab A label: t('search.rooms_tab', 'Oda Ara')
+	•	Tab B label: t('search.flatmates_tab', 'Oda Arkadaşı Ara')
+	•	Fields (mobile-first, stacked):
+	•	Location text input: name="location" placeholder t('search.location_ph', 'Semt / İlçe / Şehir')
+	•	Budget min/max number inputs:
+	•	For “Oda Ara”: minPrice, maxPrice
+	•	For “Oda Arkadaşı Ara”: minBudget, maxBudget
+	•	Button: primary; label changes by tab: “Ara”
+	•	Behavior:
+	•	If rooms tab: navigate to /oda-ilanlari?location=…&minPrice=…&maxPrice=…
+	•	If flatmates tab: navigate to /oda-aramalari?location=…&minBudget=…&maxBudget=…
+	•	Use wouter navigation (useLocation) you already have.
+	•	Accessibility: inputs have labels; button has aria-label.
+	•	Styling:
+	•	Wrapper card with soft shadow and rounded 2xl
+	•	Paddings suitable for mobile: p-4 sm:p-6
+	•	Grid for inputs on md+: grid sm:grid-cols-2 lg:grid-cols-4 gap-3
+	•	Stays visually consistent with existing components
+
+Minimal Component (implement this)
+
+Create client/src/components/SearchBox.tsx:
+
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
+
+export default function SearchBox() {
+  const { t } = useTranslation();
+  const [, navigate] = useLocation();
+  const [mode, setMode] = useState<"rooms"|"flatmates">("rooms");
+  const [location, setLocation] = useState("");
+  const [min, setMin] = useState<string>("");
+  const [max, setMax] = useState<string>("");
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const qp = new URLSearchParams();
+    if (location) qp.set("location", location);
+    if (min) qp.set(mode === "rooms" ? "minPrice" : "minBudget", min);
+    if (max) qp.set(mode === "rooms" ? "maxPrice" : "maxBudget", max);
+    navigate(mode === "rooms" ? `/oda-ilanlari?${qp.toString()}` : `/oda-aramalari?${qp.toString()}`);
+  }
+
+  return (
+    <section className="w-full -mt-6 sm:-mt-10">
+      <div className="mx-auto max-w-[1100px] px-3">
+        <div className="rounded-2xl shadow-md bg-white/90 backdrop-blur border border-slate-200">
+          {/* Tabs */}
+          <div className="flex p-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setMode("rooms")}
+              className={`px-4 py-2 rounded-xl text-sm font-medium ${mode==="rooms" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700"}`}
+            >
+              {t("search.rooms_tab", "Oda Ara")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("flatmates")}
+              className={`px-4 py-2 rounded-xl text-sm font-medium ${mode==="flatmates" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700"}`}
+            >
+              {t("search.flatmates_tab", "Oda Arkadaşı Ara")}
+            </button>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={onSubmit} className="p-4 sm:p-6 pt-2">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="flex flex-col">
+                <label className="text-xs font-medium text-slate-600 mb-1">
+                  {t("search.location_label", "Konum")}
+                </label>
+                <input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder={t("search.location_ph", "Semt / İlçe / Şehir")}
+                  className="h-11 rounded-xl border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs font-medium text-slate-600 mb-1">
+                  {mode==="rooms" ? t("search.min_price","Min Kira") : t("search.min_budget","Min Bütçe")}
+                </label>
+                <input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={min}
+                  onChange={(e) => setMin(e.target.value)}
+                  placeholder="0"
+                  className="h-11 rounded-xl border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs font-medium text-slate-600 mb-1">
+                  {mode==="rooms" ? t("search.max_price","Maks Kira") : t("search.max_budget","Maks Bütçe")}
+                </label>
+                <input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={max}
+                  onChange={(e) => setMax(e.target.value)}
+                  placeholder="10000"
+                  className="h-11 rounded-xl border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  aria-label={t("search.submit","Ara")}
+                  className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+                >
+                  {t("search.submit", "Ara")}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+Wire it on the homepage
+	•	In the homepage container (after Hero, before Featured listings), import and render:
+
+import SearchBox from "@/components/SearchBox";
+
+{/* Hero here */}
+<SearchBox />
+{/* Featured listings section follows */}
+
+Read params on list pages
+	•	Listings page: read location, minPrice, maxPrice from new URLSearchParams(location.search) (wouter) and include them in the fetch("/api/listings?...").
+	•	Seekers page: read location, minBudget, maxBudget and include them in fetch("/api/seeker-profiles?...&isActive=true").
+	•	Keep your existing pagination/cards; just initialize queries with these params.
+
+Acceptance
+	•	On mobile, fields stack with large tap targets; the box sits under Hero and above “Güncel İlanlar”.
+	•	Switching tab changes which params are sent and the destination route.
+	•	Visiting the target pages shows filtered results immediately (based on the backend’s existing filters).
+	•	No changes to auth, DB, storage, or image handling.
+
+⸻
+
+Paste this as-is to your Replit Agent. If you want, I can also give you a follow-up prompt to add advanced filters (room type, property type, bills included) later.

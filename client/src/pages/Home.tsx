@@ -1,6 +1,7 @@
 import React from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
+import SearchBox from "@/components/SearchBox";
 import FeaturedRoomSeekers from "@/components/FeaturedRoomSeekers";
 import FeaturedListings from "@/components/FeaturedListings";
 import Footer from "@/components/Footer";
@@ -18,6 +19,9 @@ export default function Home() {
       <main className="flex-grow">
         {/* Hero Section */}
         <Hero />
+
+        {/* Search Box */}
+        <SearchBox />
 
         {/* Featured Listings Section */}
         <FeaturedListings />
