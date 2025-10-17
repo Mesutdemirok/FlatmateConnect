@@ -145,8 +145,23 @@ export default function CreateSeekerProfile() {
       // Upload profile photo if provided
       if (profilePhoto) {
         try {
+          // If editing and there's an existing photo, delete old photos first
+          if (isEditMode && existingProfile?.photos && existingProfile.photos.length > 0) {
+            for (const photo of existingProfile.photos) {
+              try {
+                await fetch(`/api/seekers/${seeker.id}/photos/${photo.id}`, {
+                  method: 'DELETE',
+                  credentials: 'include',
+                });
+              } catch (deleteError) {
+                console.error('Error deleting old photo:', deleteError);
+              }
+            }
+          }
+          
+          // Upload new photo
           const formData = new FormData();
-          formData.append('photos', profilePhoto); // Changed from 'images' to 'photos' to match the backend route
+          formData.append('photos', profilePhoto);
           
           await fetch(`/api/seekers/${seeker.id}/photos`, {
             method: 'POST',
@@ -160,6 +175,7 @@ export default function CreateSeekerProfile() {
 
       queryClient.invalidateQueries({ queryKey: ['/api/seekers'] });
       queryClient.invalidateQueries({ queryKey: ['/api/seekers/user', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/seekers/public'] });
       
       toast({
         title: 'Başarılı!',
