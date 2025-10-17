@@ -23,10 +23,20 @@ Preferred communication style: Simple, everyday language.
   - Name and gender overlaid at bottom of photo with elegant drop shadow
   - Compact info section with location, occupation, and preference badges
   - Improved mobile-friendly layout
-- **Image Management Fixed**: 
-  - Seeker photo deletion now properly removes files from Cloudflare R2
+- **Image Management Completely Fixed**: 
+  - All seeker images now display correctly using `getAbsoluteImageUrl` utility
+  - Fixed SeekerDetail page to properly show photos from R2
+  - Fixed FeaturedRoomSeekers component image URLs
+  - Seeker photo deletion properly removes files from Cloudflare R2
   - Handles both full R2 URLs and relative paths
   - Local file fallback for development
+- **Delete Functionality Added**:
+  - Added "İlanı Sil" button to listing edit page (EditListing.tsx)
+  - Added "İlanı Sil" button to seeker profile edit page (CreateSeekerProfile.tsx)
+  - Both deletion flows include confirmation dialogs
+  - Proper cleanup of R2 storage on deletion
+  - Ownership verification before deletion
+  - Cache invalidation after deletion
 
 ### Production Environment
 - **Environment Detection Fixed**: Changed from `app.get("env")` to `process.env.NODE_ENV` for reliable production detection
