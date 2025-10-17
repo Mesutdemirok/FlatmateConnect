@@ -1619,39 +1619,44 @@ app.use(
     }
   })
 );
-var bucket = new AppStorage();
+var DISABLE_REPLIT_OBJECT_STORAGE = process.env.DISABLE_REPLIT_OBJECT_STORAGE === "true";
+var bucket = DISABLE_REPLIT_OBJECT_STORAGE ? null : new AppStorage();
 app.get("/uploads/:folder/:filename", async (req, res) => {
   try {
     const { folder, filename } = req.params;
     const key = `${folder}/${filename}`;
-    log(`\u{1F50E} Fetching from Object Storage: ${key}`);
+    log(`\u{1F50E} Fetching from storage: ${key}`);
     const localPath = path6.join(LOCAL_UPLOAD_DIR, folder, filename);
     if (fs5.existsSync(localPath)) {
-      const ext2 = path6.extname(filename).toLowerCase();
-      const contentType2 = mimeMap[ext2] || "application/octet-stream";
-      res.setHeader("Content-Type", contentType2);
+      const ext = path6.extname(filename).toLowerCase();
+      const contentType = mimeMap[ext] || "application/octet-stream";
+      res.setHeader("Content-Type", contentType);
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
       return fs5.createReadStream(localPath).pipe(res);
     }
-    const result = await bucket.downloadAsBytes(key);
-    if (!result.ok || !result.value) {
-      log(`\u26A0\uFE0F Not found in Object Storage: ${key}`);
-      return res.status(404).send("Not found");
+    if (!DISABLE_REPLIT_OBJECT_STORAGE && bucket) {
+      const result = await bucket.downloadAsBytes(key);
+      if (!result.ok || !result.value) {
+        log(`\u26A0\uFE0F Not found in Object Storage: ${key}`);
+        return res.status(404).send("Not found");
+      }
+      let fileData;
+      if (Buffer.isBuffer(result.value)) {
+        fileData = result.value;
+      } else if (Array.isArray(result.value)) {
+        fileData = Buffer.from(result.value);
+      } else {
+        fileData = Buffer.from(result.value);
+      }
+      const ext = path6.extname(filename).toLowerCase();
+      const contentType = mimeMap[ext] || "application/octet-stream";
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.setHeader("Content-Length", fileData.length);
+      return res.end(fileData);
     }
-    let fileData;
-    if (Buffer.isBuffer(result.value)) {
-      fileData = result.value;
-    } else if (Array.isArray(result.value)) {
-      fileData = Buffer.from(result.value);
-    } else {
-      fileData = Buffer.from(result.value);
-    }
-    const ext = path6.extname(filename).toLowerCase();
-    const contentType = mimeMap[ext] || "application/octet-stream";
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    res.setHeader("Content-Length", fileData.length);
-    res.end(fileData);
+    log(`\u26A0\uFE0F Not found locally and object storage disabled: ${key}`);
+    return res.status(404).send("Not found");
   } catch (err) {
     log(`\u274C Error serving upload: ${err.message}`);
     res.status(500).type("text/plain").send(`Internal error: ${err.message || "Unknown error"}`);
