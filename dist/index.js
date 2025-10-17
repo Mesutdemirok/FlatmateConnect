@@ -403,9 +403,17 @@ var r2 = new S3Client({
 });
 var R2_BUCKET = process.env.R2_BUCKET_NAME;
 var LOCAL_UPLOADS = path.join(process.cwd(), "uploads");
+function normalizeR2Url(url) {
+  const customDomain = process.env.R2_PUBLIC_URL || "";
+  if (customDomain && url.includes(".r2.dev")) {
+    const r2Pattern = /https?:\/\/pub-[a-zA-Z0-9]+\.r2\.dev/;
+    return url.replace(r2Pattern, customDomain);
+  }
+  return url;
+}
 function getImageUrl(relativePath) {
   if (relativePath.startsWith("http://") || relativePath.startsWith("https://")) {
-    return relativePath;
+    return normalizeR2Url(relativePath);
   }
   const publicUrl = process.env.R2_PUBLIC_URL;
   const isProduction = process.env.NODE_ENV?.trim().toLowerCase() === "production";
