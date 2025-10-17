@@ -1063,13 +1063,11 @@ async function registerRoutes(app2) {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const imagePath = `/uploads/listings/${file.filename}`;
-        if (process.env.NODE_ENV === "production") {
-          try {
-            await uploadToR22(file.path, imagePath.replace(/^\/+/, ""));
-            console.log(`\u2705 Uploaded to R2: ${imagePath}`);
-          } catch (r2Error) {
-            console.error(`\u274C R2 upload failed for ${imagePath}:`, r2Error);
-          }
+        try {
+          await uploadToR22(file.path, imagePath.replace(/^\/+/, ""));
+          console.log(`\u2705 Uploaded to R2: ${imagePath}`);
+        } catch (r2Error) {
+          console.error(`\u274C R2 upload failed for ${imagePath}:`, r2Error);
         }
         const image = await storage.addListingImage({
           listingId: req.params.id,
@@ -1398,13 +1396,11 @@ async function registerRoutes(app2) {
       const { uploadToR2: uploadToR22 } = await Promise.resolve().then(() => (init_r2_utils(), r2_utils_exports));
       const photoPromises = files.map(async (file, index2) => {
         const photoPath = `/uploads/seekers/${file.filename}`;
-        if (process.env.NODE_ENV === "production") {
-          try {
-            await uploadToR22(file.path, photoPath.replace(/^\/+/, ""));
-            console.log(`\u2705 Uploaded to R2: ${photoPath}`);
-          } catch (r2Error) {
-            console.error(`\u274C R2 upload failed for ${photoPath}:`, r2Error);
-          }
+        try {
+          await uploadToR22(file.path, photoPath.replace(/^\/+/, ""));
+          console.log(`\u2705 Uploaded to R2: ${photoPath}`);
+        } catch (r2Error) {
+          console.error(`\u274C R2 upload failed for ${photoPath}:`, r2Error);
         }
         return storage.addSeekerPhoto({
           seekerId: req.params.id,

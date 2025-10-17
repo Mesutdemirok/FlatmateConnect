@@ -315,15 +315,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const file = files[i];
         const imagePath = `/uploads/listings/${file.filename}`;
         
-        // Upload to R2 in production
-        if (process.env.NODE_ENV === 'production') {
-          try {
-            await uploadToR2(file.path, imagePath.replace(/^\/+/, ''));
-            console.log(`✅ Uploaded to R2: ${imagePath}`);
-          } catch (r2Error) {
-            console.error(`❌ R2 upload failed for ${imagePath}:`, r2Error);
-            // Continue anyway - file is saved locally
-          }
+        // Always upload to R2 for consistent image storage across environments
+        try {
+          await uploadToR2(file.path, imagePath.replace(/^\/+/, ''));
+          console.log(`✅ Uploaded to R2: ${imagePath}`);
+        } catch (r2Error) {
+          console.error(`❌ R2 upload failed for ${imagePath}:`, r2Error);
+          // Continue anyway - file is saved locally as fallback
         }
         
         const image = await storage.addListingImage({
@@ -702,15 +700,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const photoPromises = files.map(async (file, index) => {
         const photoPath = `/uploads/seekers/${file.filename}`;
         
-        // Upload to R2 in production
-        if (process.env.NODE_ENV === 'production') {
-          try {
-            await uploadToR2(file.path, photoPath.replace(/^\/+/, ''));
-            console.log(`✅ Uploaded to R2: ${photoPath}`);
-          } catch (r2Error) {
-            console.error(`❌ R2 upload failed for ${photoPath}:`, r2Error);
-            // Continue anyway - file is saved locally
-          }
+        // Always upload to R2 for consistent image storage across environments
+        try {
+          await uploadToR2(file.path, photoPath.replace(/^\/+/, ''));
+          console.log(`✅ Uploaded to R2: ${photoPath}`);
+        } catch (r2Error) {
+          console.error(`❌ R2 upload failed for ${photoPath}:`, r2Error);
+          // Continue anyway - file is saved locally as fallback
         }
         
         return storage.addSeekerPhoto({
