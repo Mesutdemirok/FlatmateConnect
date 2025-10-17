@@ -1,0 +1,167 @@
+Aşağıdaki değişiklikleri tek bir görev olarak uygula.
+Önemli kurallar:
+
+Backend/auth mantığına dokunma (endpoint’ler aynı kalacak).
+Mevcut depolama ve CDN ayarları (R2 + VITE_R2_PUBLIC_URL) değişmeyecek.
+Çalışma mobil-öncelikli olacak; Tailwind + mevcut tasarım dili/shadcn bileşenleri kullanılacak.
+Hem Preview (.replit.app) hem Production (www.odanet.com.tr) birebir aynı davranış gösterecek.
+
+
+
+
+1) Giriş & Kayıt sayfalarını 
+tek ekranda
+ birleştir (mobile-first)
+
+
+/giris (veya tek rota /auth) üzerinde iki sekmeli yapı: “Giriş Yap” ve “Üye Ol”.
+Sekme geçişi sayfa yenilemeden (React state) çalışsın.
+Var olan doğrulama ve API çağrılarını aynen kullan:
+Login → POST /api/auth/login
+Register → POST /api/auth/register
+Alt kısımda geçici sosyal giriş butonları bırak:
+“Google ile giriş yap” (beyaz zemin, gri sınır)
+“Facebook ile giriş yap” (mavi #1877F2, beyaz yazı)
+Tüm alanlar mobilde tam genişlik, okunaklı boşluklar, erişilebilir odak durumları.
+
+
+Kabul Kriterleri
+
+Küçük ekranda yatay kaydırma yok.
+Sekmeler arasında geçiş anında form state’leri birbirini bozmuyor.
+/giris veya /uye-ol ziyaretinde aynı birleşik ekran görülür.
+
+
+
+
+2) Başarılı girişte 
+otomatik profil yönlendirmesi
+
+
+Login başarılı olduğunda /profil sayfasına yönlendir.
+Oturum açıkken /giris veya /uye-ol ziyaret edilirse otomatik /profil’e yönlendir.
+Logout mevcut davranışını korusun.
+
+
+
+
+3) Mesajlar sayfasında 
+footer olmasın
+ (özellikle mobilde)
+
+
+/mesajlar (veya mevcut mesajlaşma route’u) açıkken global <Footer> render edilmesin.
+Uygulamanın genel layout’unda route tabanlı koşullu render uygula (örn. noFooterRoutes listesi).
+
+
+
+
+4) Header ikonları (mobil uyumlu)
+
+
+Mesaj ikonu header’a taşınsın (sağ tarafta).
+Favori (beğeni) ikonu kan kırmızı-turuncu arka plan ile rozet şeklinde görünsün:
+Renk: gradient #FF3B30 → #FF7A00 (blood-orange hissi)
+Yuvarlak, hafif gölge, ikon rengi beyaz.
+İkonlar lucide-react (MessageSquare / Heart) kullanabilir.
+
+
+
+
+5) 
+Oda arayanlar ilan kartı
+ – daha önceki düzenlemeleri geri getir
+
+
+(Önceki düzenlere denk gelecek net kurallar:)
+
+Kart fotoğraf üstte ve 16:9 / 4:3 oranında, köşeler radius’lu.
+Sağ üstte fiyat rozeti (₺xx.xxx/ay) – mor temayla uyumlu.
+Başlık 2 satırda kırpılsın; alt satırda ilçe, şehir küçük metin.
+Küçük rozetler / etiketler (örn. öğrenci/çalışan, sigara/eşyalı vb.) satır içinde.
+Skeleton durumları düzgün (yükleme esnasında titreme yok).
+Kart, dokunma alanı geniş ve mobilde rahat tıklanır.
+
+
+
+
+6) Oda arayan 
+ilan düzenlemede resim güncellenmiyor
+ – düzelt
+
+
+Profili/ilanı düzenlerken yeni resim yüklendiğinde:
+Eski R2 objesini (varsa) sil,
+Yeniyi uploads/seekers/{userId}/... altına timestamp’li dosya adıyla yükle,
+DB’de görsel alanını yeni URL ile güncelle,
+Cache bust: kart ve detay img kaynaklarına ?v={updatedAt} ekle.
+Frontend tüm img src’lerinde mutlak CDN URL’si kullanmalı (VITE_R2_PUBLIC_URL).
+Cloudflare cache-control korunur; sorgu parametresi ile yeni görsel anında görünür.
+
+
+Kabul Kriterleri
+
+Düzenleme sonrası ana sayfa kartında yeni görsel anında görünür.
+Eski dosya R2’den kaldırılır; DB’de yetim URL kalmaz.
+
+
+
+
+7) Oda arayan 
+form soruları
+ – bağlam ve doğrulamalar toparlansın
+
+
+Alanlar ve doğrulamalar net olsun (örnek set):
+Bütçe (₺), İl/İlçe, (opsiyonel Mahalle)
+Giriş Tarihi, Kalış Süresi
+Cinsiyet Tercihi, Sigara, Evcil Hayvan
+Öğrenci/Çalışan, Evde Kaç Kişi
+Kısa açıklama (maks. 300–500 karakter)
+Kaydet → kart ve detay sayfasına tutarlı yansısın.
+Zorunlu alanlar hatada net mesaj versin.
+
+
+
+
+8) 
+Detay sayfaları
+ (Oda ilanı + Oda arayan) – mobilde okunaklı bloklar
+
+
+Bölümleri başlıklarla ayır:
+“Genel Bilgiler”, “Fiyat / Depozito”, “Kurallar”, “Konum”, “İletişim”
+Başlık yanında küçük ikonlar (lucide).
+Bilgileri madde işaretleri / chip’lerle okunaklı ver.
+Görsel galeri mobilde yatay scroll ile kolay gezilebilir.
+Mesajlar sayfasındaki gibi bu detay sayfalarında da gereksiz footer kullanılmasın.
+
+
+
+
+9) Teknik Notlar
+
+
+Stil: Mevcut Tailwind teması + shadcn/ui bileşenleri.
+Rota korumaları: Auth varsa /giris’ten /profil’e yönlendir.
+Görsel URL’leri: her yerde VITE_R2_PUBLIC_URL baz alınsın.
+SSR/Cache: Cloudflare cache ile çakışma yaşamamak için görsellerde ?v= uygula.
+Kod kalitesi: Dosya-bileşen isimleri mevcut mimariye uygun kalsın.
+
+
+
+
+10) Test / Doğrulama (ikisi de aynı sonucu vermeli)
+
+
+Preview: https://flatmate-connect-1-…replit.app/
+Prod: https://www.odanet.com.tr/
+Adımlar:
+/giris → tek ekranda login/register sekmeli yapı görünüyor.
+Login → otomatik /profil.
+/mesajlar → footer yok (mobil).
+Favori ikonu kırmızı-turuncu gradient rozeti ile header’da.
+Oda arayan ilan kartı istenen düzenle.
+Oda arayan ilanında resmi değiştir → ana sayfa kartında anında güncel.
+Oda ilanı & Oda arayan detay sayfaları mobilde temiz blok düzeni.
+

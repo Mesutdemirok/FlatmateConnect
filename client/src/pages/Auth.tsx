@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { LogIn, UserPlus } from "lucide-react";
 
 export default function Auth() {
   const [, navigate] = useLocation();
-  const { login, register } = useAuth();
+  const { login, register, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -39,6 +39,13 @@ export default function Auth() {
   const [activeTab, setActiveTab] = useState<string>(
     window.location.pathname === '/uye-ol' ? 'register' : 'login'
   );
+
+  // Redirect authenticated users to /profil
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate('/profil');
+    }
+  }, [isLoading, isAuthenticated, navigate]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

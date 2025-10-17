@@ -71,9 +71,9 @@ export default function Header() {
                     variant="ghost"
                     size="icon"
                     aria-label={t("nav.favorites")}
-                    className="text-white hover:bg-white/20 bg-white/10"
+                    className="bg-gradient-to-br from-[#FF3B30] to-[#FF7A00] hover:from-[#FF2820] hover:to-[#FF6A00] text-white shadow-md rounded-full"
                   >
-                    <Heart className="h-6 w-6" strokeWidth={2.5} fill="currentColor" />
+                    <Heart className="h-5 w-5" strokeWidth={2.5} fill="currentColor" />
                   </Button>
                 </Link>
                 <Link href="/mesajlar" data-testid="messages-link">
@@ -83,7 +83,7 @@ export default function Header() {
                     aria-label={t("nav.messages")}
                     className="text-white hover:bg-white/20 bg-white/10"
                   >
-                    <MessageSquare className="h-6 w-6" strokeWidth={2.5} />
+                    <MessageSquare className="h-5 w-5" strokeWidth={2.5} />
                   </Button>
                 </Link>
                 <Link href="/profil" data-testid="profile-link">
