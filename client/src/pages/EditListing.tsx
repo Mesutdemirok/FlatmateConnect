@@ -169,6 +169,33 @@ export default function EditListing() {
     },
   });
 
+  const deleteListingMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest('DELETE', `/api/listings/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/listings'] });
+      toast({
+        title: 'Başarılı',
+        description: 'İlan silindi',
+      });
+      setLocation('/profil');
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Hata',
+        description: error.message || 'İlan silinemedi',
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteListing = () => {
+    if (window.confirm('Bu ilanı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+      deleteListingMutation.mutate();
+    }
+  };
+
   const onSubmit = (data: EditListingFormData) => {
     updateListingMutation.mutate(data);
   };
@@ -322,23 +349,40 @@ export default function EditListing() {
                 </div>
 
                 {/* Submit */}
-                <div className="flex gap-4">
-                  <Button
-                    type="submit"
-                    disabled={updateListingMutation.isPending || isUploading}
-                    className="flex-1"
-                  >
-                    {(updateListingMutation.isPending || isUploading) && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Kaydet
-                  </Button>
+                <div className="flex flex-col gap-4">
+                  <div className="flex gap-4">
+                    <Button
+                      type="submit"
+                      disabled={updateListingMutation.isPending || isUploading}
+                      className="flex-1"
+                    >
+                      {(updateListingMutation.isPending || isUploading) && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Kaydet
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setLocation(`/oda-ilani/${id}`)}
+                    >
+                      İptal
+                    </Button>
+                  </div>
+                  
+                  {/* Delete Listing Button */}
                   <Button
                     type="button"
-                    variant="outline"
-                    onClick={() => setLocation(`/oda-ilani/${id}`)}
+                    variant="destructive"
+                    onClick={handleDeleteListing}
+                    disabled={deleteListingMutation.isPending}
+                    className="w-full"
+                    data-testid="button-delete-listing"
                   >
-                    İptal
+                    {deleteListingMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    İlanı Sil
                   </Button>
                 </div>
               </form>
