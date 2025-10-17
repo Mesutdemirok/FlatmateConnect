@@ -16,8 +16,7 @@ import EditListing from "@/pages/EditListing";
 import CreateSeekerProfile from "@/pages/CreateSeekerProfile";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
+import Auth from "@/pages/Auth";
 import "./i18n"; // Initialize i18n
 
 function ProtectedRoute({ component: Component, ...rest }: { component: () => JSX.Element; path?: string }) {
@@ -47,9 +46,9 @@ function Router() {
 
   return (
     <Switch>
-      {/* Auth routes - Turkish URLs */}
-      <Route path="/giris" component={Login} />
-      <Route path="/uye-ol" component={Register} />
+      {/* Auth routes - Turkish URLs - Unified auth page */}
+      <Route path="/giris" component={Auth} />
+      <Route path="/uye-ol" component={Auth} />
       
       {/* Home route - Same for all users */}
       <Route path="/" component={Home} />
