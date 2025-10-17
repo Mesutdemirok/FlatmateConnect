@@ -521,6 +521,9 @@ export class DatabaseStorage implements IStorage {
     if (filters?.gender) {
       whereConditions.push(eq(seekerProfiles.gender, filters.gender));
     }
+    if (filters?.location) {
+      whereConditions.push(ilike(seekerProfiles.preferredLocation, `%${filters.location}%`));
+    }
     if (filters?.isFeatured !== undefined) {
       whereConditions.push(eq(seekerProfiles.isFeatured, filters.isFeatured));
     }
