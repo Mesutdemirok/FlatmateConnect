@@ -100,7 +100,7 @@ export default function Footer() {
               <Social href="https://instagram.com/odanet" label="Instagram">
                 <Instagram className="h-5 w-5" />
               </Social>
-              <Social href="https://www.facebook.com/odanet.com.tr" label="Facebook">
+              <Social href="https://www.facebook.com/odanet.com.tr/" label="Facebook">
                 <Facebook className="h-5 w-5" />
               </Social>
               <Social href={`${COMPANY.site}/iletisim`} label="İletişim">
