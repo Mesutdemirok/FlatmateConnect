@@ -69,23 +69,28 @@ export default function Footer() {
             </p>
             <ul className="space-y-2 text-white/90">
               <li>
-                <a className="hover:opacity-90" href="/oda-ilani-ver">
+                <a className="hover:opacity-90" href="/ilan-olustur">
                   Oda İlanı Ver
                 </a>
               </li>
               <li>
-                <a className="hover:opacity-90" href="/oda-arama-ilani-ver">
+                <a className="hover:opacity-90" href="/oda-arama-ilani-olustur">
                   Oda Arama İlanı Ver
+                </a>
+              </li>
+              <li>
+                <a className="hover:opacity-90" href="/oda-ilanlari">
+                  Oda İlanları
+                </a>
+              </li>
+              <li>
+                <a className="hover:opacity-90" href="/oda-aramalari">
+                  Oda Arayanlar
                 </a>
               </li>
               <li>
                 <a className="hover:opacity-90" href="/profil">
                   Profilim
-                </a>
-              </li>
-              <li>
-                <a className="hover:opacity-90" href="/yardim">
-                  Yardım &amp; Destek
                 </a>
               </li>
             </ul>
