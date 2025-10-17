@@ -118,13 +118,30 @@ export default function CreateListing() {
             formData.append('images', image);
           });
           
-          await fetch(`/api/listings/${listing.id}/images`, {
+          const imageResponse = await fetch(`/api/listings/${listing.id}/images`, {
             method: 'POST',
             body: formData,
             credentials: 'include',
           });
+
+          if (!imageResponse.ok) {
+            const errorData = await imageResponse.json();
+            console.error('Image upload failed:', errorData);
+            toast({
+              title: 'Resim Yükleme Hatası',
+              description: 'Resimler yüklenemedi. Lütfen daha sonra düzenleyerek ekleyiniz.',
+              variant: "destructive"
+            });
+          } else {
+            console.log('✅ Images uploaded successfully');
+          }
         } catch (error) {
           console.error('Error uploading images:', error);
+          toast({
+            title: 'Resim Yükleme Hatası',
+            description: 'Resimler yüklenemedi. Lütfen daha sonra düzenleyerek ekleyiniz.',
+            variant: "destructive"
+          });
         }
       }
 

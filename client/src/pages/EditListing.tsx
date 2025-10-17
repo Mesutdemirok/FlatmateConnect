@@ -6,6 +6,7 @@ import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -118,13 +119,34 @@ export default function EditListing() {
           const formData = new FormData();
           newImages.forEach(image => formData.append('images', image));
           
-          await fetch(`/api/listings/${id}/images`, {
+          const imageResponse = await fetch(`/api/listings/${id}/images`, {
             method: 'POST',
             body: formData,
             credentials: 'include',
           });
+
+          if (!imageResponse.ok) {
+            const errorData = await imageResponse.json();
+            console.error('Image upload failed:', errorData);
+            toast({
+              title: 'Resim Yükleme Hatası',
+              description: 'Yeni resimler yüklenemedi.',
+              variant: "destructive"
+            });
+          } else {
+            console.log('✅ New images uploaded successfully');
+            toast({
+              title: 'Başarılı',
+              description: 'Resimler başarıyla yüklendi.'
+            });
+          }
         } catch (error) {
           console.error('Image upload error:', error);
+          toast({
+            title: 'Resim Yükleme Hatası',
+            description: 'Yeni resimler yüklenemedi.',
+            variant: "destructive"
+          });
         } finally {
           setIsUploading(false);
         }
@@ -297,7 +319,7 @@ export default function EditListing() {
                       {listing.images.map((image: any) => (
                         <div key={image.id} className="relative group">
                           <img
-                            src={image.imagePath}
+                            src={getAbsoluteImageUrl(image.imagePath)}
                             alt="Listing"
                             className="w-full h-32 object-cover rounded-lg"
                           />

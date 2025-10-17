@@ -29,7 +29,8 @@ import {
   Zap,
   Shield,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Upload
 } from "lucide-react";
 
 export default function ListingDetail() {
@@ -173,7 +174,8 @@ export default function ListingDetail() {
     );
   }
 
-  const currentImage = listing.images[currentImageIndex];
+  const hasImages = listing.images && listing.images.length > 0;
+  const currentImage = hasImages ? listing.images[currentImageIndex] : null;
   const imageUrl = currentImage 
     ? getAbsoluteImageUrl(currentImage.imagePath)
     : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600';
@@ -204,7 +206,16 @@ export default function ListingDetail() {
                   data-testid="listing-main-image"
                 />
                 
-                {listing.images.length > 1 && (
+                {!hasImages && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <Upload className="h-12 w-12 mx-auto mb-2 opacity-70" />
+                      <p className="text-sm font-medium">Henüz fotoğraf eklenmemiş</p>
+                    </div>
+                  </div>
+                )}
+                
+                {hasImages && listing.images.length > 1 && (
                   <>
                     <Button
                       variant="secondary"
@@ -233,7 +244,7 @@ export default function ListingDetail() {
               </div>
 
               {/* Image thumbnails */}
-              {listing.images.length > 1 && (
+              {hasImages && listing.images.length > 1 && (
                 <div className="flex gap-2 mt-4 overflow-x-auto">
                   {listing.images.map((image, index) => (
                     <button
