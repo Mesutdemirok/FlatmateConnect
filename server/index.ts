@@ -77,10 +77,15 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
       return res.status(404).send("Not found");
     }
 
-    // Fix: handle Array type properly
-    const fileData = Array.isArray(result.value)
-      ? Buffer.from(result.value)
-      : result.value;
+    // Fix: handle Array and Buffer types properly
+    let fileData: Buffer;
+    if (Buffer.isBuffer(result.value)) {
+      fileData = result.value;
+    } else if (Array.isArray(result.value)) {
+      fileData = Buffer.from(result.value as unknown as number[]);
+    } else {
+      fileData = Buffer.from(result.value);
+    }
 
     const ext = path.extname(filename).toLowerCase();
     const contentType = mimeMap[ext] || "application/octet-stream";
@@ -139,7 +144,10 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  if (app.get("env") === "development") {
+  // Use process.env.NODE_ENV directly for reliable environment detection
+  const isDevelopment = process.env.NODE_ENV?.trim().toLowerCase() !== "production";
+  
+  if (isDevelopment) {
     await setupVite(app, server);
   } else {
     serveStatic(app);

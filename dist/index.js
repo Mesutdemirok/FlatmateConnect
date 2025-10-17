@@ -1638,7 +1638,14 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
       log(`\u26A0\uFE0F Not found in Object Storage: ${key}`);
       return res.status(404).send("Not found");
     }
-    const fileData = Array.isArray(result.value) ? Buffer.from(result.value) : result.value;
+    let fileData;
+    if (Buffer.isBuffer(result.value)) {
+      fileData = result.value;
+    } else if (Array.isArray(result.value)) {
+      fileData = Buffer.from(result.value);
+    } else {
+      fileData = Buffer.from(result.value);
+    }
     const ext = path6.extname(filename).toLowerCase();
     const contentType = mimeMap[ext] || "application/octet-stream";
     res.setHeader("Content-Type", contentType);
@@ -1682,7 +1689,8 @@ app.use((req, res, next) => {
     res.status(status).json({ message });
     throw err;
   });
-  if (app.get("env") === "development") {
+  const isDevelopment = process.env.NODE_ENV?.trim().toLowerCase() !== "production";
+  if (isDevelopment) {
     await setupVite(app, server);
   } else {
     serveStatic(app);
