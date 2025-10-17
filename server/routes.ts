@@ -310,23 +310,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Dynamically import R2 utilities
       const { uploadToR2 } = await import('./r2-utils');
+      const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || process.env.VITE_R2_PUBLIC_URL;
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const imagePath = `/uploads/listings/${file.filename}`;
+        const r2Key = `uploads/listings/${file.filename}`;
         
         // Always upload to R2 for consistent image storage across environments
+        let fullImageUrl = `/${r2Key}`; // fallback to relative path
+        
         try {
-          await uploadToR2(file.path, imagePath.replace(/^\/+/, ''));
-          console.log(`✅ Uploaded to R2: ${imagePath}`);
+          await uploadToR2(file.path, r2Key);
+          // Store full R2 URL for consistency across all environments
+          if (R2_PUBLIC_URL) {
+            fullImageUrl = `${R2_PUBLIC_URL}/${r2Key}`;
+          }
+          console.log(`✅ Uploaded to R2: ${fullImageUrl}`);
         } catch (r2Error) {
-          console.error(`❌ R2 upload failed for ${imagePath}:`, r2Error);
+          console.error(`❌ R2 upload failed for ${r2Key}:`, r2Error);
           // Continue anyway - file is saved locally as fallback
         }
         
         const image = await storage.addListingImage({
           listingId: req.params.id,
-          imagePath,
+          imagePath: fullImageUrl,
           isPrimary: i === 0 // First image is primary
         });
         images.push(image);
@@ -696,22 +703,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Dynamically import R2 utilities
       const { uploadToR2 } = await import('./r2-utils');
+      const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || process.env.VITE_R2_PUBLIC_URL;
       
       const photoPromises = files.map(async (file, index) => {
-        const photoPath = `/uploads/seekers/${file.filename}`;
+        const r2Key = `uploads/seekers/${file.filename}`;
         
         // Always upload to R2 for consistent image storage across environments
+        let fullImageUrl = `/${r2Key}`; // fallback to relative path
+        
         try {
-          await uploadToR2(file.path, photoPath.replace(/^\/+/, ''));
-          console.log(`✅ Uploaded to R2: ${photoPath}`);
+          await uploadToR2(file.path, r2Key);
+          // Store full R2 URL for consistency across all environments
+          if (R2_PUBLIC_URL) {
+            fullImageUrl = `${R2_PUBLIC_URL}/${r2Key}`;
+          }
+          console.log(`✅ Uploaded to R2: ${fullImageUrl}`);
         } catch (r2Error) {
-          console.error(`❌ R2 upload failed for ${photoPath}:`, r2Error);
+          console.error(`❌ R2 upload failed for ${r2Key}:`, r2Error);
           // Continue anyway - file is saved locally as fallback
         }
         
         return storage.addSeekerPhoto({
           seekerId: req.params.id,
-          imagePath: photoPath,
+          imagePath: fullImageUrl,
           sortOrder: existingPhotos.length + index,
         });
       });
@@ -720,8 +734,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If this is the first photo and profilePhotoUrl is not set, update it
       if (files.length > 0 && !seeker.profilePhotoUrl) {
+        const firstPhotoUrl = R2_PUBLIC_URL 
+          ? `${R2_PUBLIC_URL}/uploads/seekers/${files[0].filename}`
+          : `/uploads/seekers/${files[0].filename}`;
         await storage.updateSeekerProfile(req.params.id, {
-          profilePhotoUrl: `/uploads/seekers/${files[0].filename}`
+          profilePhotoUrl: firstPhotoUrl
         });
       }
       

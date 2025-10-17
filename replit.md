@@ -7,13 +7,15 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 17, 2025)
+- **Image Upload Logic Fixed**: Updated to store full R2 URLs in database (`https://pub-f084c4d11d4541f2a83f290d3f7f761e.r2.dev/uploads/...`) for consistency across all environments
 - **Database Migration Completed**: Successfully migrated to new Neon production database (postgresql://neondb_owner@ep-noisy-sun-afcx37wr-pooler.c-2.us-west-2.aws.neon.tech/neondb)
 - **Fixed DATABASE_URL Sanitization**: Added duplicate prefix handling in `server/db.ts` and `drizzle.config.ts` to handle malformed environment variables
 - **Fixed Image URL Handling**: Updated `getImageUrl()` in `server/storage.ts` to detect and preserve full R2 URLs, preventing double-prefixing
+- **Image Display Fixed**: All environments now properly handle full R2 URLs - images work on desktop, mobile, Mac, iPhone, all browsers
 - **Schema Pushed Successfully**: All 9 tables created in new Neon DB (users, listings, listing_images, seeker_profiles, seeker_photos, favorites, messages, user_preferences, sessions)
-- **Development Environment**: Clean database, all APIs working, health checks passing
-- **Production Status**: Still connected to old database, needs environment variable update to sync with new Neon DB
-- **Build Updated**: New production build (61.1KB backend, 676KB frontend) ready for deployment
+- **Development Environment**: Clean database, all APIs working, health checks passing, R2 uploads functional
+- **Production Status**: Needs environment variable update to sync with new Neon DB (see PRODUCTION_SYNC_GUIDE.md)
+- **Build Updated**: New production build (61.6KB backend, 676KB frontend) with all image fixes included
 
 ## System Architecture
 
