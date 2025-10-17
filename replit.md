@@ -7,15 +7,16 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 17, 2025)
-- **Image Upload Logic Fixed**: Updated to store full R2 URLs in database (`https://pub-f084c4d11d4541f2a83f290d3f7f761e.r2.dev/uploads/...`) for consistency across all environments
+- **CDN Migration Implemented**: Runtime URL normalization to use custom domain (cdn.odanet.com.tr) instead of default R2 URL
+- **Image Upload Logic Fixed**: Updated to store full R2 URLs in database for consistency across all environments
+- **URL Normalization Added**: Automatic replacement of pub-*.r2.dev URLs with custom CDN domain at runtime (no database migration needed)
 - **Database Migration Completed**: Successfully migrated to new Neon production database (postgresql://neondb_owner@ep-noisy-sun-afcx37wr-pooler.c-2.us-west-2.aws.neon.tech/neondb)
 - **Fixed DATABASE_URL Sanitization**: Added duplicate prefix handling in `server/db.ts` and `drizzle.config.ts` to handle malformed environment variables
-- **Fixed Image URL Handling**: Updated `getImageUrl()` in `server/storage.ts` to detect and preserve full R2 URLs, preventing double-prefixing
 - **Image Display Fixed**: All environments now properly handle full R2 URLs - images work on desktop, mobile, Mac, iPhone, all browsers
 - **Schema Pushed Successfully**: All 9 tables created in new Neon DB (users, listings, listing_images, seeker_profiles, seeker_photos, favorites, messages, user_preferences, sessions)
-- **Development Environment**: Clean database, all APIs working, health checks passing, R2 uploads functional
-- **Production Status**: Needs environment variable update to sync with new Neon DB (see PRODUCTION_SYNC_GUIDE.md)
-- **Build Updated**: New production build (61.6KB backend, 676KB frontend) with all image fixes included
+- **Development Environment**: Clean database, all APIs working, CDN normalization functional
+- **Production Status**: Needs Cloudflare CDN setup and republish (see CDN_MIGRATION_GUIDE.md)
+- **Build Updated**: New production build (61.9KB backend, 678KB frontend) with CDN normalization included
 
 ## System Architecture
 
@@ -80,4 +81,5 @@ Preferred communication style: Simple, everyday language.
 
 ### Cloud Services
 - **Cloudflare R2**: Object storage for production images (bucket: odanet-uploads)
+- **Cloudflare CDN**: Custom domain (cdn.odanet.com.tr) for image delivery with runtime URL normalization
 - **AWS SDK S3 Client**: R2 API compatibility for uploads/downloads
