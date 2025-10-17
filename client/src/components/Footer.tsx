@@ -97,10 +97,16 @@ export default function Footer() {
               Sosyal
             </p>
             <div className="mt-3 flex items-center gap-3">
-              <Social href="https://instagram.com/odanet" label="Instagram">
+              <Social
+                href="https://www.instagram.com/odanet.com.tr/"
+                label="Instagram"
+              >
                 <Instagram className="h-5 w-5" />
               </Social>
-              <Social href="https://www.facebook.com/odanet.com.tr/" label="Facebook">
+              <Social
+                href="https://www.facebook.com/odanet.com.tr/"
+                label="Facebook"
+              >
                 <Facebook className="h-5 w-5" />
               </Social>
               <Social href={`${COMPANY.site}/iletisim`} label="İletişim">
