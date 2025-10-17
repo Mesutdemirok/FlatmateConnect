@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency, formatDate } from "@/lib/formatters";
+import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -172,9 +173,7 @@ export default function ListingDetail() {
 
   const currentImage = listing.images[currentImageIndex];
   const imageUrl = currentImage 
-    ? currentImage.imagePath.startsWith('/uploads') 
-      ? currentImage.imagePath 
-      : currentImage.imagePath
+    ? getAbsoluteImageUrl(currentImage.imagePath)
     : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600';
 
   return (
@@ -244,7 +243,7 @@ export default function ListingDetail() {
                       data-testid={`thumbnail-${index}`}
                     >
                       <img
-                        src={image.imagePath}
+                        src={getAbsoluteImageUrl(image.imagePath)}
                         alt={`${listing.title} ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
