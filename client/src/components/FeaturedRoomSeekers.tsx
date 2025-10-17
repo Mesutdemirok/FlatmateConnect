@@ -118,67 +118,69 @@ export default function FeaturedRoomSeekers() {
                 className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
                 data-testid={`seeker-photo-${seeker.id}`}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
               
-              {seeker.age && (
-                <Badge className="absolute top-3 right-3 bg-white/95 text-indigo-700 border-0">
-                  {seeker.age} yaş
-                </Badge>
+              {/* Price Badge - Prominent at top */}
+              {seeker.budgetMonthly && (
+                <div className="absolute top-3 left-3 right-3 flex justify-between items-center">
+                  <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 py-1.5 rounded-full shadow-lg font-bold text-sm">
+                    {formatBudget(seeker.budgetMonthly)}
+                  </div>
+                  {seeker.age && (
+                    <div className="bg-white/95 text-slate-700 px-2.5 py-1 rounded-full text-xs font-semibold">
+                      {seeker.age} yaş
+                    </div>
+                  )}
+                </div>
               )}
-            </div>
-
-            {/* Info Section */}
-            <CardContent className="p-4 space-y-3">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-1" data-testid={`seeker-name-${seeker.id}`}>
+              
+              {/* Name at bottom overlay */}
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <h3 className="text-lg font-bold text-white drop-shadow-lg mb-0.5" data-testid={`seeker-name-${seeker.id}`}>
                   {getDisplayName(seeker)}
                 </h3>
                 {seeker.gender && (
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-white/90 drop-shadow">
                     {seeker.gender === 'male' ? 'Erkek' : seeker.gender === 'female' ? 'Kadın' : seeker.gender}
                   </p>
                 )}
               </div>
+            </div>
 
-              <div className="space-y-2 text-sm text-slate-600">
-                {seeker.budgetMonthly && (
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-indigo-500" />
-                    <span>{formatBudget(seeker.budgetMonthly)}</span>
-                  </div>
-                )}
-                
+            {/* Info Section */}
+            <CardContent className="p-4 space-y-2.5">
+              <div className="space-y-1.5 text-sm text-slate-700">
                 {seeker.preferredLocation && (
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-indigo-500" />
-                    <span className="truncate">{seeker.preferredLocation}</span>
+                    <MapPin className="w-4 h-4 text-violet-500 flex-shrink-0" />
+                    <span className="truncate font-medium">{seeker.preferredLocation}</span>
                   </div>
                 )}
 
                 {seeker.occupation && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500">{seeker.occupation}</span>
+                  <div className="text-slate-600 text-xs">
+                    {seeker.occupation}
                   </div>
                 )}
 
                 {/* Preference Badges */}
                 {(seeker.cleanlinessLevel || seeker.smokingPreference || seeker.genderPreference) && (
-                  <div className="flex flex-wrap gap-1 mt-2">
+                  <div className="flex flex-wrap gap-1.5 pt-1">
                     {seeker.cleanlinessLevel && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs bg-indigo-100 text-indigo-700 border-0">
                         {seeker.cleanlinessLevel === 'very-clean' ? 'Çok Temiz' : 
                          seeker.cleanlinessLevel === 'clean' ? 'Temiz' : 
                          seeker.cleanlinessLevel === 'average' ? 'Orta' : 'Rahat'}
                       </Badge>
                     )}
                     {seeker.smokingPreference && seeker.smokingPreference !== 'no-preference' && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs bg-violet-100 text-violet-700 border-0">
                         {seeker.smokingPreference === 'non-smoker' ? 'İçmiyor' : 
                          seeker.smokingPreference === 'smoker' ? 'İçiyor' : 'Sosyal'}
                       </Badge>
                     )}
                     {seeker.genderPreference && seeker.genderPreference !== 'no-preference' && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs bg-pink-100 text-pink-700 border-0">
                         {seeker.genderPreference === 'male' ? 'Erkek Tercih' : 'Kadın Tercih'}
                       </Badge>
                     )}
@@ -188,7 +190,7 @@ export default function FeaturedRoomSeekers() {
 
               <Button
                 variant="outline"
-                className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                className="w-full mt-3 border-indigo-300 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 font-semibold"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/oda-arayan/${seeker.id}`);
