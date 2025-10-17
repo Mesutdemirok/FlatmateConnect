@@ -648,6 +648,9 @@ var DatabaseStorage = class {
     if (filters?.gender) {
       whereConditions.push(eq(seekerProfiles.gender, filters.gender));
     }
+    if (filters?.location) {
+      whereConditions.push(ilike(seekerProfiles.preferredLocation, `%${filters.location}%`));
+    }
     if (filters?.isFeatured !== void 0) {
       whereConditions.push(eq(seekerProfiles.isFeatured, filters.isFeatured));
     }
