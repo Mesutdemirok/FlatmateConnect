@@ -8,6 +8,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+import type { ListingWithRelations, FavoriteStatus } from "@/lib/listingApi";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -40,12 +41,12 @@ export default function ListingDetail() {
   const [, setLocation] = useLocation();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const { data: listing, isLoading, error } = useQuery({
+  const { data: listing, isLoading, error } = useQuery<ListingWithRelations>({
     queryKey: [`/api/listings/${id}`],
     enabled: !!id,
   });
 
-  const { data: favoriteStatus } = useQuery({
+  const { data: favoriteStatus } = useQuery<FavoriteStatus>({
     queryKey: [`/api/favorites/${id}/check`],
     enabled: !!id && isAuthenticated,
   });
@@ -99,17 +100,18 @@ export default function ListingDetail() {
       setLocation(`/giris?next=/oda-ilani/${id}`);
       return;
     }
+    if (!listing) return;
     setLocation(`/mesajlar?user=${listing.user.id}&listing=${listing.id}`);
   };
 
   const nextImage = () => {
-    if (listing?.images.length > 1) {
+    if (listing && listing.images.length > 1) {
       setCurrentImageIndex((prev) => (prev + 1) % listing.images.length);
     }
   };
 
   const previousImage = () => {
-    if (listing?.images.length > 1) {
+    if (listing && listing.images.length > 1) {
       setCurrentImageIndex((prev) => (prev - 1 + listing.images.length) % listing.images.length);
     }
   };

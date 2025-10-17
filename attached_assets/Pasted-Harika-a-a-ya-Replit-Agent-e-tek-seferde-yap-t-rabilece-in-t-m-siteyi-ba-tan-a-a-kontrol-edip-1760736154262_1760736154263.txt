@@ -1,0 +1,93 @@
+Harika — aşağıya Replit Agent’e tek seferde yapıştırabileceğin, tüm siteyi baştan aşağı kontrol edip kritik sorunları otomatik toparlamasını isteyen net ve kapsamlı bir komut bırakıyorum. Sadece kopyala-yapıştır. 👇
+
+⸻
+
+COMMAND MODE — Full Health Pass (Listings + Images + Search Box + Links)
+
+Amaç
+	•	Tüm ilan akışı (liste, detay, düzenleme) ve oda arayanlar sayfalarını uçtan uca doğrula ve kırık noktaları düzelt.
+	•	Hero altına (hemen “Güncel İlanlar”ın üstüne) gelen Search Box görünüm problemini (özellikle mobilde) düzelt; tasarım uyumlu, responsive ve mevcut backend filtreleriyle bağlantılı çalışacak.
+	•	Görseller: Production’da Cloudflare R2 URL’lerinin doğru kullanıldığını ve CORS/Cache/Content-Type başlıklarının doğru döndüğünü teyit et; /uploads’a düşen eski/relative yolları R2 mutlak URL’lerine dönüştür.
+	•	Bağlantılar: Navbar, footer ve sayfa içi linklerdeki kırık yolları bul-düzelt; yönlendirme (wouter) tutarlı olsun.
+	•	Hiçbir auth/DB/infra kurulumu bozulmasın; sadece UI/bağlantı/hatalı yollar onarılsın.
+
+Kısıtlar / Bozmadan Dikkat Edilecekler
+	•	DB ve API sözleşmesi değişmeyecek.
+	•	Env adları korunacak: VITE_R2_PUBLIC_URL, DATABASE_URL, R2_* (okuma/doğrulama serbest; prod UI’dan değiştirmeye çalışma).
+	•	Kod stilleri: Tailwind + shadcn, wouter, React Query devam.
+
+Yapılacaklar (adım adım)
+	1.	Bağımlı Dosyaları Keşfet
+	•	Ara: client/src/components/ListingCard.tsx, FeaturedListings.tsx, FeaturedRoomSeekers.tsx, ListingDetail.tsx, SeekerDetail*.tsx, imageUtils.ts, SearchBox.tsx (varsa), App.tsx/Home.tsx.
+	•	Sunucu: server/routes.ts, server/index.ts, server/r2-utils.ts (veya R2 kullanan util).
+	2.	Search Box – Hero Altı (Mobil Öncelikli)
+	•	Hero’un hemen altına, “Güncel İlanlar”ın üstüne <SearchBox /> yerleştir.
+	•	Var olan SearchBox’ı düzelt ya da client/src/components/SearchBox.tsx olarak ekle.
+	•	Alanlar:
+	•	Konum (location)
+	•	Oda Ara sekmesi: minPrice, maxPrice
+	•	Oda Arkadaşı Ara sekmesi: minBudget, maxBudget
+	•	Navigate:
+	•	Oda: /oda-ilanlari?location=&minPrice=&maxPrice=
+	•	Arayan: /oda-aramalari?location=&minBudget=&maxBudget=
+	•	Mobil görünüm: tek sütun, büyük dokunma alanları; md+’da 2-4 sütun grid. Hero ile görsel olarak kaynaşan card stili (rounded-2xl, soft shadow).
+	3.	Liste ve Detay Sayfalarında Parametreleri Oku
+	•	useLocation / URLSearchParams ile query paramlarını oku ve mevcut fetch’lere ekle (API uçları değişmeyecek).
+	•	Boş parametrelerde mevcut davranışı bozma (backend defaultları çalışsın).
+	4.	Görsel URL’leri — Mutlak R2
+	•	imageUtils.ts (yoksa ekle): getImageUrl(path)
+	•	Production’da: new URL(path, import.meta.env.VITE_R2_PUBLIC_URL).toString()
+	•	Dev’de: relative /uploads/... bırakılabilir.
+	•	ListingCard, SeekerCard, detay sayfaları gibi tüm görsel tüketen bileşenlerde:
+	•	Relative /uploads/... kullanımı varsa mutlak R2 ile değiştir.
+	•	Fallback img bozuluyorsa sadece boş/null durumda göster (R2 URL geliyorsa üzerine yazma).
+	5.	CORS/Headers Doğrulaması
+	•	Bir R2 görselini HEAD isteği ile kontrol et. Beklenen:
+	•	Content-Type: image/*
+	•	Access-Control-Allow-Origin: https://www.odanet.com.tr veya *
+	•	Cache: public, max-age=31536000, immutable
+	•	Eksikse uygulama içinde header eklemeye çalışma; sadece R2 URL oluşturma mantığını düzelt (CORS R2 tarafı).
+	6.	Link & Route Sağlık Taraması
+	•	Navbar/hero/footerdaki sayfa linklerini tıkla ve 404/boş sayfa var mı bak.
+	•	Kırık linkleri düzelt: to="/oda-ilanlari" / to="/oda-aramalari" gibi wouter yolları.
+	•	Mesaj sayfasında mobilde footer kapla sorunu varsa mesaj sayfasında footer’ı gizle (conditional render).
+	7.	UI-Polish (Kısa Dokunuşlar)
+	•	Card’larda başlık, fiyat, konum hizaları; okunabilirlik (font-size/contrast).
+	•	Hero-SearchBox spacing (negatif marjin vs. taşma varsa düzelt).
+	•	İkon renkleri (favori ikonuna turuncu-kırmızı arkaplan badge).
+	8.	Kısa Testler
+	•	/oda-ilanlari?location=…&minPrice=… → sonuç geliyor mu, img’ler görünüyor mu?
+	•	/oda-aramalari?location=…&minBudget=… → sonuç ve img’ler?
+	•	Bir ilan detayına gir: tüm görseller ve metin blokları düzgün mü?
+	•	Mobil genişlik 375px’de hero+search+kartlar taşma yapmıyor mu?
+	9.	Build & Publish
+	•	npm run build → başarılı mı?
+	•	Replit Publish → Republish (build: npm run build, run: npm run start).
+	•	Production doğrulama:
+	•	https://www.odanet.com.tr/oda-ilanlari?v=1
+	•	https://www.odanet.com.tr/oda-aramalari?v=1
+	•	HTML’de <img src="https://…r2.dev/…"> (veya cdn alt alan adın) görünüyor mu?
+
+Dosya Değişiklikleri (örnek)
+	•	client/src/components/SearchBox.tsx (yeni veya düzenleme)
+	•	client/src/components/ListingCard.tsx (img src → getImageUrl)
+	•	client/src/components/SeekerCard.tsx (varsa aynı dönüşüm)
+	•	client/src/pages/*List*.tsx & *Detail*.tsx (param okuma, img util)
+	•	client/src/lib/imageUtils.ts (R2 mutlak URL util)
+	•	(Gerekiyorsa) client/src/App.tsx / Home.tsx içine <SearchBox />
+
+Kabul Kriterleri
+	•	Hero altında mobilde bozulmadan görünen Search Box, doğru sayfalara doğru paramlarla yönlendiriyor.
+	•	Listings/Seekers sayfaları R2 mutlak URL’lerinden görsel yüklüyor; kırık görsel yok.
+	•	İlan detay sayfaları baştan aşağı okunaklı; başlıklar/öznitelikler mobilde düzenli.
+	•	Kırık link kalmadı; navbar/footer rotaları çalışıyor.
+	•	Build başarılı; publish sonrası prod URL’lerde görseller ve sayfalar hatasız.
+
+Çıktı/Not
+	•	Değişen dosyaları listele.
+	•	3 adet ekran görüntüsü ekle: (1) Hero+SearchBox (mobil), (2) Listings grid (mobil), (3) Bir detay sayfası (mobil).
+	•	Özet log: hangi kırık linkler düzeltildi, hangi bileşenler img util’e geçirildi.
+
+⸻
+
+Bunu aynen Replit Agent’e ver. İstersen, bitince “seeker düzenlemede görsel güncellenmiyor” özel problemini çözen ayrı bir prompt da hazırlayabilirim.
