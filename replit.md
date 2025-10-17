@@ -7,6 +7,28 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 17, 2025)
+
+### Latest UI/UX Improvements
+- **Authentication Page Enhanced**: 
+  - Unified login/register page with purple gradient tab switching (purple-600 to pink-600)
+  - Auto-redirects authenticated users to /profil
+  - Mobile-first responsive design with social login placeholders
+- **Header Updates**:
+  - Blood-orange gradient favorite icon badge (gradient from #FF3B30 to #FF7A00)
+  - Improved message icon styling
+  - Better mobile responsiveness
+- **Messages Page**: Removed footer for cleaner, focused messaging experience
+- **Seeker Profile Cards Redesigned**:
+  - Price badge prominently displayed on photo (emerald-to-teal gradient)
+  - Name and gender overlaid at bottom of photo with elegant drop shadow
+  - Compact info section with location, occupation, and preference badges
+  - Improved mobile-friendly layout
+- **Image Management Fixed**: 
+  - Seeker photo deletion now properly removes files from Cloudflare R2
+  - Handles both full R2 URLs and relative paths
+  - Local file fallback for development
+
+### Production Environment
 - **Environment Detection Fixed**: Changed from `app.get("env")` to `process.env.NODE_ENV` for reliable production detection
 - **Object Storage Configuration**: Disabled Replit object storage by default (using Cloudflare R2 instead)
   - Added ENABLE_REPLIT_OBJECT_STORAGE environment variable to optionally enable it
@@ -23,7 +45,7 @@ Preferred communication style: Simple, everyday language.
 - **Schema Pushed Successfully**: All 9 tables created in new Neon DB (users, listings, listing_images, seeker_profiles, seeker_photos, favorites, messages, user_preferences, sessions)
 - **Development Environment**: Clean database, all APIs working, CDN normalization functional, workflow running successfully
 - **Production Status**: Fixed and ready for deployment - frontend serves correctly, API endpoints working
-- **Build Updated**: New production build (62.8KB backend, 678KB frontend) with all fixes included
+- **Build Updated**: New production build (63.7KB backend, 684KB frontend gzip: 203.94KB) with all UI/UX improvements included
 
 ## System Architecture
 
