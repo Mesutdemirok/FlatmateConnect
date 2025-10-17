@@ -1,0 +1,99 @@
+Aşağıdaki metni Replit Agent’e tek seferde ver. Mevcut kurulumun/bağlantıların hiçbirini bozmadan; sadece görüntü (R2/CDN) ve “oda arayanlar” akışlarını düzeltmesini, ayrıca “ilan silme” özelliğini eklemesini ister.
+
+⸻
+
+Odanet – “Oda Arayanlar” ve Görsel Akışlarını Düzelt / Geliştir
+
+Amaçlar
+	1.	Oda Arayanlar (seeker) ilanı düzenleme ekranına “İlanı Sil” seçeneği ekle.
+	2.	Oda Arayanlar ilan detayı sayfasında görsel(ler) görünmüyor — görüntü gösterimini düzelt.
+	3.	Oda İlanı Ver akışında yanlış / sahte görsel görünüyor — yüklenen gerçek görseli kullanacak şekilde düzelt.
+	4.	Aynı görsel mantığını tüm benzer akışlara (oda arayan, oda veren, profil foto, varsa galeri) tutarlı olacak şekilde uygula.
+	5.	Mobil uyumu koru; hiçbir auth, DB veya mevcut yapılandırmayı değiştirme.
+
+Notlar:
+	•	Görsel depolama Cloudflare R2. Frontend, VITE_R2_PUBLIC_URL (veya mevcut CDN) ile mutlak URL kullanmalı.
+	•	Prod & Preview aynı yolu izlemeli; relative /uploads/... kalmasın.
+
+⸻
+
+Yapılacaklar
+
+A) Backend (Node/Express)
+	•	server/r2-utils.ts veya eşdeğeri:
+	•	getPublicUrl(key) fonksiyonu VITE_R2_PUBLIC_URL (tanımlıysa) > R2_PUBLIC_URL > doğrudan R2 public endpoint sıralamasıyla URL üretmeli. Sonda tek / normalize et.
+	•	uploadToR2(file) dönüşünde final publicUrl dön.
+	•	deleteFromR2(key) ekli/kullanılır durumda olsun (404’te hata fırlatma, 204 kabul).
+	•	Seeker ilan silme API’si:
+	•	DELETE /api/seeker-listings/:id
+	•	Sadece ilan sahibi silebilsin (session’daki user.id).
+	•	DB’den kaydı sil; varsa photo_key/photo_url üzerinden R2’den de sil (best-effort; R2 silinemezse DB silinsin).
+	•	JSON: { ok: true }
+	•	Görsel kaydetme:
+	•	Seeker ve oda ilanı için create/update rotalarında:
+	•	R2 yüklemesi başarılıysa DB’ye publicUrl yaz.
+	•	Başarısızsa mevcut resmi koru (boş URL yazma).
+	•	/api/listings ve /api/seeker-listings çıktılarında resim alanı daima mutlak URL olsun.
+
+B) Frontend (React + Vite)
+	•	Tek bir image util: src/lib/image.ts
+	•	getImageUrl(src):
+	•	http(s):// ile başlıyorsa aynen döndür.
+	•	Değilse import.meta.env.VITE_R2_PUBLIC_URL + "/" + src ile mutlaklaştır.
+	•	Boşsa güvenli bir placeholder döndür (SVG/PNG).
+	•	İlan kartları ve detay sayfaları:
+	•	Oda arayan & oda veren ListingCard, SeekerCard ve detail sayfalarında yalnızca getImageUrl kullan.
+	•	<img> için loading="lazy", decoding="async", alt dolu.
+	•	Oda Arayanlar – düzenle sayfası:
+	•	Sağ üstte/alt aksiyonlara “İlanı Sil” (kırmızı/ghost button).
+	•	Tıklayınca onay modalı: “Bu ilan kalıcı olarak silinecek. Emin misiniz?”
+	•	Onay → DELETE /api/seeker-listings/:id → başarıda success toast + /profil (veya ilgili liste) yönlendirme.
+	•	Buton loading durumlarını ve hata toast’larını göster.
+	•	Oda İlanı Ver formu:
+	•	Yükleme sırasında gerçek preview (File → ObjectURL). Submit’ten sonra backend’den dönen public URL’yi state’e yaz ve form kapanmadan kart/özet kısmında o URL’yi göster.
+	•	“Sahte görsel” ya da placeholder yalnızca resim yoksa gösterilsin.
+	•	Mobil görünüm:
+	•	Görsel oranı: aspect-[16/9] veya aspect-square (tasarıma göre).
+	•	Grid: grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4, kart iç boşlukları p-3/4.
+	•	Detay sayfasında başlıklar ve madde yapılarını mobilde netleştir (önceden kullandığımız stili geri getir).
+
+C) Benzer akışların taranması
+	•	Seeker: oluştur, düzenle, detay, liste
+	•	Listing (oda ilanı): oluştur, düzenle, detay, liste
+	•	Profil foto (varsa)
+Hepsinde aynı getImageUrl ve R2 public URL yaklaşımını kullan.
+
+⸻
+
+Değiştirme/Koruma Kuralları
+	•	Auth, DB şeması, route path’leri, ENV isimleri değişmesin.
+	•	Sadece image handling, delete endpoint, UI buton/flow eklensin.
+	•	CDN/R2 erişimi için mevcut env’leri kullan:
+	•	VITE_R2_PUBLIC_URL
+	•	R2_PUBLIC_URL (backend)
+	•	Kod stilleri ve mevcut tasarım dili aynen korunsun.
+
+⸻
+
+Kabul Kriterleri (Hepsi Geçmeli)
+	1.	Oda arayan ilanı düzenle ekranında “İlanı Sil” var; onayla siliniyor, sahiplik kontrol ediliyor, R2 objesi kaldırılıyor, yönlendirme & toast çalışıyor.
+	2.	Oda arayan detay görseli prod & preview’da görünüyor (CORS/SSL sorunu yok).
+	3.	Oda ilanı ver akışında yüklediğim görsel hem form içinde doğru preview, hem de kayıt sonrası listede/detayda gerçek URL ile görünüyor.
+	4.	Listeler ve kartlar tek image util ile mutlak URL kullanıyor; relative /uploads yok.
+	5.	Tüm akışlar mobilde kusursuz (grid, aspect, lazy-load).
+	6.	Her iki URL’de test:
+	•	Preview: *.replit.app
+	•	Prod: www.odanet.com.tr
+Görseller ve silme akışı her ikisinde aynı davranıyor.
+
+⸻
+
+Çıktılar
+	•	Değişen dosyaların listesi ve kısa açıklamaları.
+	•	Yeni/eklenen endpoint(ler) için kısa README notu.
+	•	Gerekliyse .env.example güncellemesi (sadece dokümantasyon; env değerlerini değiştirme).
+	•	Test için 1 adet örnek seeker ilanı ve 1 adet oda ilanı oluştur (dummy görsellerle).
+
+⸻
+
+Teşekkürler. Bu görevleri tamamlayıp yayınlamaya hazır hale getirmeni rica ediyorum.

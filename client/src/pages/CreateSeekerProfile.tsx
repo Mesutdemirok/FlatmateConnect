@@ -193,6 +193,39 @@ export default function CreateSeekerProfile() {
     }
   });
 
+  const deleteSeekerMutation = useMutation({
+    mutationFn: async () => {
+      if (!existingProfile?.id) {
+        throw new Error('Silinecek profil bulunamadı');
+      }
+      const response = await apiRequest('DELETE', `/api/seekers/${existingProfile.id}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/seekers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/seekers/user', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/seekers/public'] });
+      toast({
+        title: 'Başarılı',
+        description: 'İlanınız başarıyla silindi',
+      });
+      setLocation('/profil');
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Hata',
+        description: error.message || 'İlan silinemedi',
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteSeeker = () => {
+    if (window.confirm('Bu oda arama ilanını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+      deleteSeekerMutation.mutate();
+    }
+  };
+
   const onSubmit = async (data: CreateSeekerFormData) => {
     setIsSubmitting(true);
     try {
@@ -645,30 +678,55 @@ export default function CreateSeekerProfile() {
               </CardContent>
             </Card>
 
-            <div className="flex justify-end space-x-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setLocation('/profil')}
-                data-testid="button-cancel"
-              >
-                İptal
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || createSeekerMutation.isPending}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-                data-testid="button-submit"
-              >
-                {isSubmitting || createSeekerMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Profil Oluşturuluyor...
-                  </>
-                ) : (
-                  'Profil Oluştur'
-                )}
-              </Button>
+            <div className="space-y-4">
+              <div className="flex justify-end space-x-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setLocation('/profil')}
+                  data-testid="button-cancel"
+                >
+                  İptal
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || createSeekerMutation.isPending}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  data-testid="button-submit"
+                >
+                  {isSubmitting || createSeekerMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {isEditMode ? 'Güncelleniyor...' : 'Oluşturuluyor...'}
+                    </>
+                  ) : (
+                    isEditMode ? 'Profili Güncelle' : 'Profil Oluştur'
+                  )}
+                </Button>
+              </div>
+              
+              {/* Delete button - Only show in edit mode */}
+              {isEditMode && (
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleDeleteSeeker}
+                    disabled={deleteSeekerMutation.isPending}
+                    className="w-full"
+                    data-testid="button-delete-seeker"
+                  >
+                    {deleteSeekerMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Siliniyor...
+                      </>
+                    ) : (
+                      'İlanı Sil'
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           </form>
         </Form>

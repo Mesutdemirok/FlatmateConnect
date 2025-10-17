@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Calendar, DollarSign, User, Briefcase, Home, MessageCircle, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 
 export default function SeekerDetail() {
   const { id } = useParams<{ id: string }>();
@@ -42,12 +43,12 @@ export default function SeekerDetail() {
   const getPhotoUrl = () => {
     // Use profilePhotoUrl if available
     if (seeker?.profilePhotoUrl) {
-      return seeker.profilePhotoUrl;
+      return getAbsoluteImageUrl(seeker.profilePhotoUrl);
     }
     // Fallback to photos array
     const primaryPhoto = seeker?.photos?.find((p) => p.sortOrder === 0) || seeker?.photos?.[0];
-    if (primaryPhoto) {
-      return `/uploads/seekers/${primaryPhoto.imagePath}`;
+    if (primaryPhoto?.imagePath) {
+      return getAbsoluteImageUrl(primaryPhoto.imagePath);
     }
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(getDisplayName())}&background=8b5cf6&color=fff&size=800`;
   };

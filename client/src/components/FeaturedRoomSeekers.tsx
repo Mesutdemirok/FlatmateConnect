@@ -43,8 +43,8 @@ export default function FeaturedRoomSeekers() {
     }
     // Fallback to photos array
     const primaryPhoto = seeker.photos?.find((p) => p.sortOrder === 0) || seeker.photos?.[0];
-    if (primaryPhoto) {
-      return getAbsoluteImageUrl(`/uploads/seekers/${primaryPhoto.imagePath}`);
+    if (primaryPhoto?.imagePath) {
+      return getAbsoluteImageUrl(primaryPhoto.imagePath);
     }
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(getDisplayName(seeker))}&background=8b5cf6&color=fff&size=400`;
   };
