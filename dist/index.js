@@ -1619,8 +1619,19 @@ app.use(
     }
   })
 );
-var DISABLE_REPLIT_OBJECT_STORAGE = process.env.DISABLE_REPLIT_OBJECT_STORAGE === "true";
-var bucket = DISABLE_REPLIT_OBJECT_STORAGE ? null : new AppStorage();
+var OBJECT_STORAGE_ENABLED = process.env.ENABLE_REPLIT_OBJECT_STORAGE === "true";
+var bucket = null;
+if (OBJECT_STORAGE_ENABLED) {
+  try {
+    bucket = new AppStorage();
+    log("\u2705 Replit Object Storage initialized");
+  } catch (err) {
+    log(`\u26A0\uFE0F Object Storage initialization failed: ${err.message}`);
+    bucket = null;
+  }
+} else {
+  log("\u26A0\uFE0F Replit Object Storage disabled - using Cloudflare R2 and local storage");
+}
 app.get("/uploads/:folder/:filename", async (req, res) => {
   try {
     const { folder, filename } = req.params;
@@ -1634,7 +1645,7 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
       return fs5.createReadStream(localPath).pipe(res);
     }
-    if (!DISABLE_REPLIT_OBJECT_STORAGE && bucket) {
+    if (OBJECT_STORAGE_ENABLED && bucket) {
       const result = await bucket.downloadAsBytes(key);
       if (!result.ok || !result.value) {
         log(`\u26A0\uFE0F Not found in Object Storage: ${key}`);
