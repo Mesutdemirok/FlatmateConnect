@@ -1565,14 +1565,17 @@ async function setupVite(app2, server) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path5.resolve(import.meta.dirname, "public");
+  const distPath = path5.resolve(import.meta.dirname, "..", "dist", "public");
   if (!fs4.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
   app2.use(express2.static(distPath));
-  app2.use("*", (_req, res) => {
+  app2.use("*", (req, res, next) => {
+    if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+      return next();
+    }
     res.sendFile(path5.resolve(distPath, "index.html"));
   });
 }

@@ -7,6 +7,8 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 17, 2025)
+- **Production Deployment Fixed**: Corrected static file serving path (server/vite.ts) to properly serve frontend build from dist/public
+- **API Route Handling Fixed**: Updated wildcard route to skip /api and /uploads paths, preventing conflicts with API endpoints
 - **CDN Migration Implemented**: Runtime URL normalization to use custom domain (cdn.odanet.com.tr) instead of default R2 URL
 - **Image Upload Logic Fixed**: Updated to store full R2 URLs in database for consistency across all environments
 - **URL Normalization Added**: Automatic replacement of pub-*.r2.dev URLs with custom CDN domain at runtime (no database migration needed)
@@ -15,8 +17,8 @@ Preferred communication style: Simple, everyday language.
 - **Image Display Fixed**: All environments now properly handle full R2 URLs - images work on desktop, mobile, Mac, iPhone, all browsers
 - **Schema Pushed Successfully**: All 9 tables created in new Neon DB (users, listings, listing_images, seeker_profiles, seeker_photos, favorites, messages, user_preferences, sessions)
 - **Development Environment**: Clean database, all APIs working, CDN normalization functional
-- **Production Status**: Needs Cloudflare CDN setup and republish (see CDN_MIGRATION_GUIDE.md)
-- **Build Updated**: New production build (61.9KB backend, 678KB frontend) with CDN normalization included
+- **Production Status**: Fixed and ready for deployment - frontend serves correctly, API endpoints working
+- **Build Updated**: New production build (61.9KB backend, 678KB frontend) with all fixes included
 
 ## System Architecture
 
