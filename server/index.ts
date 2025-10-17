@@ -51,14 +51,15 @@ app.use(
   }),
 );
 
-// ✅ Fallback: Object Storage (priority 2)
-const bucket = new AppStorage();
+// ✅ Fallback: Object Storage (priority 2) - Only if not disabled
+const DISABLE_REPLIT_OBJECT_STORAGE = process.env.DISABLE_REPLIT_OBJECT_STORAGE === "true";
+const bucket = DISABLE_REPLIT_OBJECT_STORAGE ? null : new AppStorage();
 
 app.get("/uploads/:folder/:filename", async (req, res) => {
   try {
     const { folder, filename } = req.params;
     const key = `${folder}/${filename}`;
-    log(`🔎 Fetching from Object Storage: ${key}`);
+    log(`🔎 Fetching from storage: ${key}`);
 
     // First: check if file exists locally
     const localPath = path.join(LOCAL_UPLOAD_DIR, folder, filename);
@@ -70,31 +71,36 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
       return fs.createReadStream(localPath).pipe(res);
     }
 
-    // Otherwise: fetch from Object Storage
-    const result = await bucket.downloadAsBytes(key);
-    if (!result.ok || !result.value) {
-      log(`⚠️ Not found in Object Storage: ${key}`);
-      return res.status(404).send("Not found");
+    // Otherwise: fetch from Object Storage (if enabled)
+    if (!DISABLE_REPLIT_OBJECT_STORAGE && bucket) {
+      const result = await bucket.downloadAsBytes(key);
+      if (!result.ok || !result.value) {
+        log(`⚠️ Not found in Object Storage: ${key}`);
+        return res.status(404).send("Not found");
+      }
+
+      // Fix: handle Array and Buffer types properly
+      let fileData: Buffer;
+      if (Buffer.isBuffer(result.value)) {
+        fileData = result.value;
+      } else if (Array.isArray(result.value)) {
+        fileData = Buffer.from(result.value as unknown as number[]);
+      } else {
+        fileData = Buffer.from(result.value);
+      }
+
+      const ext = path.extname(filename).toLowerCase();
+      const contentType = mimeMap[ext] || "application/octet-stream";
+
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res.setHeader("Content-Length", fileData.length);
+
+      return res.end(fileData);
     }
 
-    // Fix: handle Array and Buffer types properly
-    let fileData: Buffer;
-    if (Buffer.isBuffer(result.value)) {
-      fileData = result.value;
-    } else if (Array.isArray(result.value)) {
-      fileData = Buffer.from(result.value as unknown as number[]);
-    } else {
-      fileData = Buffer.from(result.value);
-    }
-
-    const ext = path.extname(filename).toLowerCase();
-    const contentType = mimeMap[ext] || "application/octet-stream";
-
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    res.setHeader("Content-Length", fileData.length);
-
-    res.end(fileData);
+    log(`⚠️ Not found locally and object storage disabled: ${key}`);
+    return res.status(404).send("Not found");
   } catch (err: any) {
     log(`❌ Error serving upload: ${err.message}`);
     res
