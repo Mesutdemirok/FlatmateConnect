@@ -1,0 +1,57 @@
+Please rebuild the authentication page (currently /giris and /uye-ol) into a single unified, mobile-first responsive page.
+
+🎯 Goal:
+Combine both “Giriş Yap” (Login) and “Üye Ol” (Register) forms into one page with tab or toggle switching, while keeping all existing authentication and backend logic untouched.
+
+🧩 Design & Functionality Requirements:
+
+1. **Single Page Layout**
+   - Merge both forms into one page (e.g., `/auth` or `/giris`).
+   - At the top, add two tabs or toggle buttons:
+     - “Giriş Yap”
+     - “Üye Ol”
+   - The active tab should be visually highlighted with the Odanet brand color (purple gradient currently used in the header).
+
+2. **Form Behavior**
+   - Only one form should be visible at a time.
+   - Switching tabs should not reload the page — just toggle visibility (React state-based switch).
+   - Keep all validation and API calls as they are.
+   - Keep existing endpoints: `/api/auth/login` and `/api/auth/register`.
+
+3. **Mobile-First Design**
+   - Must look clean and readable on small screens (e.g., iPhone SE).
+   - Use full width for form fields.
+   - Buttons must have adequate padding and no overflow.
+   - Avoid horizontal scrolling — content should fit within screen width.
+
+4. **Social Login Section**
+   - Add a divider with text “veya” (or).
+   - Below it, add two placeholder buttons:
+     - “Google ile giriş yap”
+     - “Facebook ile giriş yap”
+   - Use brand-appropriate colors:
+     - Google → white background, gray border
+     - Facebook → blue background (#1877F2), white text
+   - These buttons are temporary (no functional logic).
+
+5. **Styling**
+   - Use the same typography, button, and input styles already defined in the app (Tailwind + shadcn/ui).
+   - Ensure color palette matches Odanet’s current purple theme.
+   - Background should remain light (like the current login page).
+   - Keep rounded form container with shadow and consistent spacing.
+
+6. **Performance**
+   - Optimize for mobile rendering.
+   - No heavy animations or external dependencies.
+   - Maintain accessibility (labels, focus states, tab navigation).
+
+7. **Backend & Logic**
+   - Do not change any backend routes or authentication logic.
+   - Do not touch session or JWT configuration.
+   - Only modify frontend components and routing.
+
+🎨 Inspiration:
+Think Airbnb or Roomster mobile login — single unified interface where users can toggle between login/register quickly.
+
+✅ Deliverable:
+A fully functional, mobile-optimized `/auth` (or `/giris`) page that allows toggling between “Giriş Yap” and “Üye Ol” in one screen, with social login placeholders at the bottom, using existing codebase and styling system.
