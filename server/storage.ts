@@ -45,11 +45,25 @@ const r2 = new S3Client({
 const R2_BUCKET = process.env.R2_BUCKET_NAME!;
 const LOCAL_UPLOADS = path.join(process.cwd(), "uploads");
 
+// Helper: Normalize R2 URLs to use custom CDN domain
+function normalizeR2Url(url: string): string {
+  const customDomain = process.env.R2_PUBLIC_URL || '';
+  
+  // If we have a custom domain configured, replace any pub-*.r2.dev URLs with it
+  if (customDomain && url.includes('.r2.dev')) {
+    // Match any pub-*.r2.dev domain pattern
+    const r2Pattern = /https?:\/\/pub-[a-zA-Z0-9]+\.r2\.dev/;
+    return url.replace(r2Pattern, customDomain);
+  }
+  
+  return url;
+}
+
 // Helper: get image URL for production or local
 function getImageUrl(relativePath: string): string {
-  // If already a full URL (http/https), return as-is
+  // If already a full URL (http/https), normalize and return
   if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
-    return relativePath;
+    return normalizeR2Url(relativePath);
   }
   
   const publicUrl = process.env.R2_PUBLIC_URL;
