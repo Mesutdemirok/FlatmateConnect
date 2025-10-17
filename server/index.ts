@@ -51,9 +51,22 @@ app.use(
   }),
 );
 
-// ✅ Fallback: Object Storage (priority 2) - Only if not disabled
-const DISABLE_REPLIT_OBJECT_STORAGE = process.env.DISABLE_REPLIT_OBJECT_STORAGE === "true";
-const bucket = DISABLE_REPLIT_OBJECT_STORAGE ? null : new AppStorage();
+// ✅ Fallback: Object Storage (priority 2) - Disabled by default (using Cloudflare R2)
+// Set ENABLE_REPLIT_OBJECT_STORAGE=true to enable Replit object storage
+const OBJECT_STORAGE_ENABLED = process.env.ENABLE_REPLIT_OBJECT_STORAGE === "true";
+
+let bucket: AppStorage | null = null;
+if (OBJECT_STORAGE_ENABLED) {
+  try {
+    bucket = new AppStorage();
+    log("✅ Replit Object Storage initialized");
+  } catch (err: any) {
+    log(`⚠️ Object Storage initialization failed: ${err.message}`);
+    bucket = null;
+  }
+} else {
+  log("⚠️ Replit Object Storage disabled - using Cloudflare R2 and local storage");
+}
 
 app.get("/uploads/:folder/:filename", async (req, res) => {
   try {
@@ -72,7 +85,7 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
     }
 
     // Otherwise: fetch from Object Storage (if enabled)
-    if (!DISABLE_REPLIT_OBJECT_STORAGE && bucket) {
+    if (OBJECT_STORAGE_ENABLED && bucket) {
       const result = await bucket.downloadAsBytes(key);
       if (!result.ok || !result.value) {
         log(`⚠️ Not found in Object Storage: ${key}`);
