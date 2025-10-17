@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { SeekerProfileWithRelations } from "@/lib/seekerApi";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ export default function CreateSeekerProfile() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch existing seeker profile for editing
-  const { data: existingProfile, isLoading: profileLoading } = useQuery({
+  const { data: existingProfile, isLoading: profileLoading } = useQuery<SeekerProfileWithRelations>({
     queryKey: ['/api/seekers/user', user?.id],
     enabled: isAuthenticated && !!user?.id,
   });
@@ -91,8 +92,8 @@ export default function CreateSeekerProfile() {
         cleanlinessLevel: existingProfile.cleanlinessLevel || '',
         socialLevel: existingProfile.socialLevel || '',
         workSchedule: existingProfile.workSchedule || '',
-        agePreferenceMin: existingProfile.agePreferenceMin,
-        agePreferenceMax: existingProfile.agePreferenceMax,
+        agePreferenceMin: existingProfile.agePreferenceMin ?? undefined,
+        agePreferenceMax: existingProfile.agePreferenceMax ?? undefined,
         genderPreference: existingProfile.genderPreference || '',
       });
     }
