@@ -47,6 +47,11 @@ const LOCAL_UPLOADS = path.join(process.cwd(), "uploads");
 
 // Helper: get image URL for production or local
 function getImageUrl(relativePath: string): string {
+  // If already a full URL (http/https), return as-is
+  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+    return relativePath;
+  }
+  
   const publicUrl = process.env.R2_PUBLIC_URL;
   const isProduction = process.env.NODE_ENV?.trim().toLowerCase() === "production";
   
