@@ -375,6 +375,9 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
 neonConfig.webSocketConstructor = ws;
 var connectionString = process.env.DATABASE_URL;
+if (connectionString?.startsWith("DATABASE_URL=")) {
+  connectionString = connectionString.replace(/^DATABASE_URL=/, "");
+}
 if (!connectionString || connectionString.includes("PGUSER") || connectionString.includes("PGHOST")) {
   const { PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE } = process.env;
   if (!PGUSER || !PGPASSWORD || !PGHOST || !PGPORT || !PGDATABASE) {

@@ -8,6 +8,11 @@ neonConfig.webSocketConstructor = ws;
 // Construct DATABASE_URL from individual PG* env vars if needed
 let connectionString = process.env.DATABASE_URL;
 
+// Sanitize DATABASE_URL - remove duplicate prefix if present
+if (connectionString?.startsWith('DATABASE_URL=')) {
+  connectionString = connectionString.replace(/^DATABASE_URL=/, '');
+}
+
 // Check if DATABASE_URL has placeholder text
 if (!connectionString || connectionString.includes('PGUSER') || connectionString.includes('PGHOST')) {
   const { PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE } = process.env;
