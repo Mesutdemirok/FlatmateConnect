@@ -1,0 +1,82 @@
+Perfect — let’s create a one-shot Replit Agent prompt that will fix this entire chain of issues (R2, database sync, Internal Server Error, image visibility, and old content).
+
+Please copy and paste the full text below into your Replit Agent chat ⬇️
+
+⸻
+
+🧠 PROMPT FOR REPLIT AGENT
+
+TASK: Full Repair and Sync of Production (www.odanet.com.tr)
+
+We are getting Internal Server Error and missing images on production (www.odanet.com.tr).
+Preview (.replit.dev) works correctly.
+
+I need you to fix everything end-to-end so the production deployment becomes clean, synced, and stable.
+
+⸻
+
+🎯 Main Goals
+	1.	Fix Internal Server Error
+	•	Inspect server/index.ts, routes.ts, and any upload/migration logic.
+	•	Identify and fix any unhandled exceptions or missing env vars causing 500 errors.
+	•	Verify /uploads/health.txt returns ok.
+	2.	Unify Database
+	•	Ensure production deployment uses the same database as preview.
+	•	Set DATABASE_URL = postgresql://neondb_owner:npg_TDnQNKk3Mjp4@ep-odd-scene-af56kk3x.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require.
+	•	Remove any old or duplicate Neon connection (like the “green-term” one).
+	•	Test listing retrieval via API.
+	3.	Fix Cloudflare R2 Configuration
+	•	Ensure these environment variables are identical between preview and production:
+
+R2_ACCESS_KEY_ID = 80c4487a1a838befad9af96d720ec41b
+R2_SECRET_ACCESS_KEY = a59f4f71379c7fd225f8a6725ac61ba3e3a71c714b757b49f722ad334640bf13
+R2_BUCKET_NAME = odanet-uploads
+R2_ACCOUNT_ID = 6f97940e30aab3a7db85052337e4536e
+R2_PUBLIC_URL = https://pub-f084c4d11d4541f2a83f290d3f7f761e.r2.dev
+R2_S3_ENDPOINT = https://6f97940e30aab3a7db85052337e4536e.r2.cloudflarestorage.com
+VITE_R2_PUBLIC_URL = https://pub-f084c4d11d4541f2a83f290d3f7f761e.r2.dev
+
+
+	•	Validate that the frontend build is reading VITE_R2_PUBLIC_URL during vite build.
+
+	4.	Clean and Reset Data
+	•	Remove all listings, seeker profiles, and images from both database and R2 bucket.
+	•	Keep only user accounts intact.
+	•	Upload one test listing with a safe image (e.g., from Unsplash/Pexels) to confirm system works.
+	5.	Republish Correctly
+	•	Ensure production .replit deployment uses:
+
+Build: npm run build
+Run: npm run start
+
+
+	•	Verify NODE_ENV=production.
+	•	Republish to www.odanet.com.tr.
+
+	6.	Verification Checklist
+	•	✅ https://www.odanet.com.tr/uploads/health.txt returns “ok”.
+	•	✅ https://www.odanet.com.tr/oda-ilanlari loads without Internal Server Error.
+	•	✅ One test image appears correctly from R2.
+	•	✅ Database content matches preview.
+
+⸻
+
+⚙️ Notes
+	•	Please check for any duplicate environment variables that might override R2 or DATABASE_URL.
+	•	If needed, rebuild the frontend so that image URLs point to VITE_R2_PUBLIC_URL.
+	•	If caching is an issue, purge Cloudflare cache after deployment.
+	•	Report each fix step-by-step with verification logs.
+
+⸻
+
+🧾 Expected Final State
+
+✅ www.odanet.com.tr live and identical to preview
+✅ All images load correctly from Cloudflare R2
+✅ No Internal Server Error
+✅ One verified test listing visible
+✅ Database fully synced
+
+⸻
+
+Would you like me to prepare a second optional follow-up prompt — just for verification and cleanup confirmation after the agent finishes this main fix?
