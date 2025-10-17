@@ -15,38 +15,38 @@ __export(r2_utils_exports, {
   getR2Url: () => getR2Url,
   uploadToR2: () => uploadToR2
 });
-import { S3Client as S3Client2, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import fs2 from "fs";
-import path2 from "path";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import fs from "fs";
+import path from "path";
 async function uploadToR2(localPath, r2Key) {
   const key = r2Key || localPath.replace(/^\/+/, "");
-  const fileContent = fs2.readFileSync(localPath);
-  const ext = path2.extname(localPath).toLowerCase();
+  const fileContent = fs.readFileSync(localPath);
+  const ext = path.extname(localPath).toLowerCase();
   const contentType = ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" : ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : ext === ".avif" ? "image/avif" : "application/octet-stream";
   const command = new PutObjectCommand({
-    Bucket: R2_BUCKET2,
+    Bucket: R2_BUCKET,
     Key: key,
     Body: fileContent,
     ContentType: contentType
   });
-  await r22.send(command);
+  await r2.send(command);
   return `${R2_PUBLIC_URL}/${key}`;
 }
 async function deleteFromR2(r2Key) {
   const command = new DeleteObjectCommand({
-    Bucket: R2_BUCKET2,
+    Bucket: R2_BUCKET,
     Key: r2Key.replace(/^\/+/, "")
   });
-  await r22.send(command);
+  await r2.send(command);
 }
 function getR2Url(r2Key) {
   return `${R2_PUBLIC_URL}/${r2Key.replace(/^\/+/, "")}`;
 }
-var r22, R2_BUCKET2, R2_PUBLIC_URL;
+var r2, R2_BUCKET, R2_PUBLIC_URL;
 var init_r2_utils = __esm({
   "server/r2-utils.ts"() {
     "use strict";
-    r22 = new S3Client2({
+    r2 = new S3Client({
       region: "auto",
       endpoint: process.env.R2_S3_ENDPOINT?.trim(),
       credentials: {
@@ -54,7 +54,7 @@ var init_r2_utils = __esm({
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY?.trim()
       }
     });
-    R2_BUCKET2 = process.env.R2_BUCKET_NAME?.trim();
+    R2_BUCKET = process.env.R2_BUCKET_NAME?.trim();
     R2_PUBLIC_URL = process.env.R2_PUBLIC_URL?.trim();
   }
 });
@@ -390,10 +390,10 @@ var db = drizzle({ client: pool, schema: schema_exports });
 
 // server/storage.ts
 import { eq, and, or, ilike, gte, lte, desc, asc } from "drizzle-orm";
-import fs from "fs";
-import path from "path";
-import { S3Client } from "@aws-sdk/client-s3";
-var r2 = new S3Client({
+import fs2 from "fs";
+import path2 from "path";
+import { S3Client as S3Client2 } from "@aws-sdk/client-s3";
+var r22 = new S3Client2({
   region: "auto",
   endpoint: process.env.R2_S3_ENDPOINT,
   credentials: {
@@ -401,8 +401,8 @@ var r2 = new S3Client({
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY
   }
 });
-var R2_BUCKET = process.env.R2_BUCKET_NAME;
-var LOCAL_UPLOADS = path.join(process.cwd(), "uploads");
+var R2_BUCKET2 = process.env.R2_BUCKET_NAME;
+var LOCAL_UPLOADS = path2.join(process.cwd(), "uploads");
 function normalizeR2Url(url) {
   const customDomain = process.env.R2_PUBLIC_URL || "";
   if (customDomain && url.includes(".r2.dev")) {
@@ -497,11 +497,11 @@ var DatabaseStorage = class {
   async deleteListing(id) {
     const images = await this.getListingImages(id);
     for (const image of images) {
-      const fullPath = path.join(
+      const fullPath = path2.join(
         process.cwd(),
         image.imagePath.replace(/^\//, "")
       );
-      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+      if (fs2.existsSync(fullPath)) fs2.unlinkSync(fullPath);
     }
     await db.delete(listings).where(eq(listings.id, id));
   }
@@ -529,11 +529,11 @@ var DatabaseStorage = class {
   async deleteListingImage(id) {
     const [image] = await db.select().from(listingImages).where(eq(listingImages.id, id));
     if (image) {
-      const fullPath = path.join(
+      const fullPath = path2.join(
         process.cwd(),
         image.imagePath.replace(/^\//, "")
       );
-      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+      if (fs2.existsSync(fullPath)) fs2.unlinkSync(fullPath);
     }
     await db.delete(listingImages).where(eq(listingImages.id, id));
   }
@@ -693,9 +693,9 @@ var DatabaseStorage = class {
     const profile = await this.getSeekerProfile(id);
     if (profile) {
       for (const photo of profile.photos) {
-        const photoPath = path.join(process.cwd(), "uploads", "seekers", photo.imagePath);
-        if (fs.existsSync(photoPath)) {
-          fs.unlinkSync(photoPath);
+        const photoPath = path2.join(process.cwd(), "uploads", "seekers", photo.imagePath);
+        if (fs2.existsSync(photoPath)) {
+          fs2.unlinkSync(photoPath);
         }
       }
     }
@@ -712,9 +712,26 @@ var DatabaseStorage = class {
   async deleteSeekerPhoto(id) {
     const [photo] = await db.select().from(seekerPhotos).where(eq(seekerPhotos.id, id));
     if (photo) {
-      const photoPath = path.join(process.cwd(), "uploads", "seekers", photo.imagePath);
-      if (fs.existsSync(photoPath)) {
-        fs.unlinkSync(photoPath);
+      try {
+        const { deleteFromR2: deleteFromR22 } = await Promise.resolve().then(() => (init_r2_utils(), r2_utils_exports));
+        let r2Key;
+        if (photo.imagePath.startsWith("http")) {
+          const url = new URL(photo.imagePath);
+          r2Key = url.pathname.substring(1);
+        } else {
+          r2Key = photo.imagePath.replace(/^\/+/, "");
+        }
+        if (r2Key) {
+          await deleteFromR22(r2Key);
+          console.log(`\u2705 Deleted from R2: ${r2Key}`);
+        }
+      } catch (r2Error) {
+        console.error(`\u274C R2 deletion failed for ${photo.imagePath}:`, r2Error);
+      }
+      const localPhotoPath = photo.imagePath.includes("uploads/seekers/") ? path2.join(process.cwd(), photo.imagePath.split("uploads/seekers/")[1] ? `uploads/seekers/${photo.imagePath.split("uploads/seekers/")[1]}` : photo.imagePath) : path2.join(process.cwd(), "uploads", "seekers", photo.imagePath);
+      if (fs2.existsSync(localPhotoPath)) {
+        fs2.unlinkSync(localPhotoPath);
+        console.log(`\u2705 Deleted local file: ${localPhotoPath}`);
       }
     }
     await db.delete(seekerPhotos).where(eq(seekerPhotos.id, id));
