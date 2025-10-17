@@ -629,9 +629,38 @@ export class DatabaseStorage implements IStorage {
       .where(eq(seekerPhotos.id, id));
 
     if (photo) {
-      const photoPath = path.join(process.cwd(), 'uploads', 'seekers', photo.imagePath);
-      if (fs.existsSync(photoPath)) {
-        fs.unlinkSync(photoPath);
+      // Delete from R2 if the imagePath is a full URL
+      try {
+        const { deleteFromR2 } = await import('./r2-utils');
+        
+        // Extract R2 key from URL (handle both full URLs and relative paths)
+        let r2Key: string;
+        if (photo.imagePath.startsWith('http')) {
+          // Full URL: extract the path after the domain
+          const url = new URL(photo.imagePath);
+          r2Key = url.pathname.substring(1); // Remove leading slash
+        } else {
+          // Relative path: use as-is after removing leading slash
+          r2Key = photo.imagePath.replace(/^\/+/, '');
+        }
+        
+        if (r2Key) {
+          await deleteFromR2(r2Key);
+          console.log(`✅ Deleted from R2: ${r2Key}`);
+        }
+      } catch (r2Error) {
+        console.error(`❌ R2 deletion failed for ${photo.imagePath}:`, r2Error);
+        // Continue anyway - delete from database even if R2 deletion fails
+      }
+      
+      // Delete from local storage (legacy/fallback)
+      const localPhotoPath = photo.imagePath.includes('uploads/seekers/')
+        ? path.join(process.cwd(), photo.imagePath.split('uploads/seekers/')[1] ? `uploads/seekers/${photo.imagePath.split('uploads/seekers/')[1]}` : photo.imagePath)
+        : path.join(process.cwd(), 'uploads', 'seekers', photo.imagePath);
+      
+      if (fs.existsSync(localPhotoPath)) {
+        fs.unlinkSync(localPhotoPath);
+        console.log(`✅ Deleted local file: ${localPhotoPath}`);
       }
     }
 
