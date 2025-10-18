@@ -217,7 +217,7 @@ export default function Profile() {
           <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-teal-500/10 blur-2xl" />
           <div className="relative p-6 sm:p-8">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl p-[2px] bg-gradient-to-br from-amber-600 to-teal-600 shadow-sm">
+              <div className="h-12 w-12 rounded-xl p-[2px] bg-gradient-to-br from-violet-500 via-fuchsia-500 to-indigo-500 shadow-sm">
                 <div className="h-full w-full rounded-[0.65rem] bg-background grid place-items-center">
                   <Settings className="h-6 w-6 text-amber-700" />
                 </div>
@@ -249,7 +249,7 @@ export default function Profile() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button
                 onClick={() => setLocation("/ilan-olustur")}
-                className="w-full h-auto py-6 bg-gradient-to-r from-amber-600 to-teal-600 text-white hover:opacity-95 transition-opacity"
+                className="w-full h-auto py-6 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 text-white hover:opacity-95 transition-opacity"
                 data-testid="button-create-listing"
               >
                 <div className="flex flex-col items-center gap-2">
@@ -752,7 +752,7 @@ export default function Profile() {
                         <Button
                           type="submit"
                           disabled={updatePreferencesMutation.isPending}
-                          className="bg-gradient-to-r from-amber-600 to-teal-600 text-white hover:opacity-95"
+                          className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 text-white hover:opacity-95"
                           data-testid="save-preferences-button"
                         >
                           {updatePreferencesMutation.isPending ? (
