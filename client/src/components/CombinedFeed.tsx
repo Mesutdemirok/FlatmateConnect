@@ -11,7 +11,8 @@ export default function CombinedFeed() {
       },
       {
         queryKey: ["/api/seekers/public"],
-        queryFn: async () => (await fetch("/api/seekers/public?isActive=true")).json(),
+        queryFn: async () =>
+          (await fetch("/api/seekers/public?isActive=true")).json(),
       },
     ],
   });
@@ -20,7 +21,7 @@ export default function CombinedFeed() {
   const listings = Array.isArray(listingsQ.data) ? listingsQ.data : [];
   const seekers = Array.isArray(seekersQ.data) ? seekersQ.data : [];
 
-  // Interleave to "mix" them
+  // Interleave (seeker, listing, seeker, listing…)
   const mixed: Array<{ kind: "listing" | "seeker"; data: any }> = [];
   const maxLen = Math.max(listings.length, seekers.length);
   for (let i = 0; i < maxLen; i++) {
@@ -33,7 +34,9 @@ export default function CombinedFeed() {
   }
 
   if (mixed.length === 0) {
-    return <div className="py-8 text-center text-slate-600">Henüz ilan yok</div>;
+    return (
+      <div className="py-8 text-center text-slate-600">Henüz ilan yok</div>
+    );
   }
 
   return (
@@ -43,10 +46,22 @@ export default function CombinedFeed() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {mixed.map((item, idx) =>
             item.kind === "listing" ? (
-              <ListingCard key={`l-${item.data.id}-${idx}`} listing={item.data} />
+              <ListingCard
+                key={`l-${item.data.id}-${idx}`}
+                listing={item.data}
+                /* taller image for room listings */
+                imageAspect="4/3"
+                /* show address chip inside the photo */
+                addressOverlay
+              />
             ) : (
-              <SeekerCard key={`s-${item.data.id}-${idx}`} seeker={item.data} />
-            )
+              <SeekerCard
+                key={`s-${item.data.id}-${idx}`}
+                seeker={item.data}
+                /* a little shorter than listings */
+                imageAspect="16/9"
+              />
+            ),
           )}
         </div>
       </div>
