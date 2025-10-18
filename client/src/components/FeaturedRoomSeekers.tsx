@@ -1,18 +1,19 @@
-import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin } from "lucide-react";
 import { useLocation } from "wouter";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 import type { SeekerProfileWithRelations } from "@/lib/seekerApi";
-
-type Props = { seeker: SeekerProfileWithRelations };
+import { fetchFeaturedSeekers } from "@/lib/seekerApi";
 
 function displayName(s: SeekerProfileWithRelations) {
-  if (s.fullName) {
+  if (s?.fullName) {
     const parts = s.fullName.trim().split(/\s+/);
     return parts.length > 1 ? `${parts[0]} ${parts[1][0]}.` : parts[0];
   }
-  if (s.user?.firstName) {
+  if (s?.user?.firstName) {
     const ln = s.user.lastName?.[0] ?? "";
     return `${s.user.firstName} ${ln ? ln + "." : ""}`.trim();
   }
@@ -31,17 +32,19 @@ function budgetTR(budget: string | number | null | undefined) {
 }
 
 function photoUrl(s: SeekerProfileWithRelations) {
-  if (s.profilePhotoUrl) return getAbsoluteImageUrl(s.profilePhotoUrl);
-  const p = s.photos?.find((x) => x.sortOrder === 0) ?? s.photos?.[0];
+  if (s?.profilePhotoUrl) return getAbsoluteImageUrl(s.profilePhotoUrl);
+  const p = s?.photos?.find((x) => x.sortOrder === 0) ?? s?.photos?.[0];
   if (p?.imagePath) return getAbsoluteImageUrl(p.imagePath);
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
     displayName(s),
   )}&background=8b5cf6&color=fff&size=400`;
 }
 
-export default function SeekerCard({ seeker }: Props) {
+function SeekerCard({ seeker }: { seeker: SeekerProfileWithRelations }) {
   const [, navigate] = useLocation();
   const name = displayName(seeker);
+
+  if (!seeker) return null;
 
   return (
     <article
@@ -145,5 +148,62 @@ export default function SeekerCard({ seeker }: Props) {
         </Button>
       </div>
     </article>
+  );
+}
+
+export default function FeaturedRoomSeekers() {
+  const { data: seekers, isLoading, error } = useQuery<SeekerProfileWithRelations[]>({
+    queryKey: ["featured-seekers"],
+    queryFn: () => fetchFeaturedSeekers(4),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <Skeleton className="h-20 w-20 rounded-full" />
+                <div className="flex-1">
+                  <Skeleton className="h-5 w-24 mb-2" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+              <Skeleton className="h-20 w-full mb-4" />
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">
+          Oda arayan profilleri yüklenirken bir hata oluştu.
+        </p>
+      </div>
+    );
+  }
+
+  if (!seekers || seekers.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">
+          Henüz oda arayan profili bulunmamaktadır.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {seekers.filter(s => s != null).map((seeker) => (
+        <SeekerCard key={seeker.id} seeker={seeker} />
+      ))}
+    </div>
   );
 }
