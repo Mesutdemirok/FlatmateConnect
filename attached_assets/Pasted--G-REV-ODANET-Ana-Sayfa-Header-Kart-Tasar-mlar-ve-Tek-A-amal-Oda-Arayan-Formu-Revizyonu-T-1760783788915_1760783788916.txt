@@ -1,0 +1,176 @@
+[GÖREV] ODANET – Ana Sayfa, Header, Kart Tasarımları ve Tek Aşamalı “Oda Arayan” Formu Revizyonu
+
+[TEKNİK BAĞLAM]
+- Stack: Next.js (App Router varsa app/, yoksa pages/), TypeScript, TailwindCSS, lucide-react.
+- Mevcut bileşenler: Header.tsx, Hero.tsx, FeaturedListings.tsx, FeaturedRoomSeekers.tsx, ListingCard.tsx, SeekerCard.tsx vb.
+- Kimlik: useAuth() benzeri isAuthenticated bilgisini sağlıyor.
+- Tasarım rengi: Turuncu #f97316 (Tailwind: orange-500).
+
+----------------------------------------------------------------
+1) ANA SAYFA: “Güncel İlanlar” (tümü karışık)
+----------------------------------------------------------------
+Amaç: Veritabanındaki **tüm oda ilanları** + **tüm oda arayan ilanları** tek bir bölümde **“Güncel İlanlar”** başlığıyla, karışık (shuffle) sırada listelensin. İki akış ayrılmasın.
+
+Uygulama:
+- /app/page.tsx (veya /pages/index.tsx) içinde veri çekimi: listings (oda), seekers (oda arayan). İki listeyi birleştir → rasgele sırala → maksimum 24 kart göster.
+- Bölüm başlığı: H2 “Güncel İlanlar”.
+- Grid: responsive (sm:2, md:3, lg:4).
+- Kart tipine göre uygun bileşen kullan:
+  - Oda ilanı → ListingCard
+  - Oda arayan → SeekerCard (aşağıdaki yeni tasarım)
+- Eğer API yoksa geçici mock ile yapılandır; canlı bağlanınca aynı arayüz çalışsın.
+
+Kabul Kriterleri:
+- Sayfayı her yenilediğimde sıralama karışık gelsin.
+- “Güncel İlanlar” tek grid içinde hem oda hem arayan kartlarını birlikte göstersin.
+
+----------------------------------------------------------------
+2) HERO BÖLÜMÜ: Yazı stili ve metin sadeleştirme
+----------------------------------------------------------------
+Amaç: Daha ince yazı karakteri ve temiz, kısa metin.
+
+Uygulama:
+- Başlık: font-light, leading-relaxed, max-w-prose; mobilde text-3xl, desktop’ta text-5xl.
+- Alt metin (subcopy): kısa, yalın 1–2 cümle.
+- Görsel/düğmeler korunabilir; spacing iyileştir (py-16 md:py-24).
+
+Örnek sınıflar:
+- Başlık: className="font-light tracking-tight text-5xl md:text-6xl"
+- Alt metin: className="mt-4 text-slate-600 text-base md:text-lg"
+
+Kabul Kriterleri:
+- Hero başlığı gözle görülür biçimde daha ince (font-light).
+- Metin daha kısa ve okunaklı.
+
+----------------------------------------------------------------
+3) HEADER (Kullanıcı giriş YAPMAMIŞSA özel durum)
+----------------------------------------------------------------
+Amaç: Giriş yapılmadığında hamburger menü turuncu görünsün, biraz daha büyük olsun, yanına “Giriş” yazısı eklensin. Menü açıldığında aynı turuncu tema sürsün.
+
+Uygulama:
+- isAuthenticated === false iken:
+  - Hamburger ikon rengi: #f97316
+  - Boyut: ~28px (ör. className="w-7 h-7")
+  - İkonun SAĞINA “Giriş” metni (buton veya link) ekle.
+- Menü (drawer/dropdown) açıldığında:
+  - Aktif vurgu rengi ve üst şerit/başlık arka planı turuncu (#f97316).
+  - “Giriş” yazısı ve arka planı bu tema ile uyumlu.
+
+Erişilebilirlik:
+- aria-label="Menüyü Aç" / "Giriş"
+
+Kabul Kriterleri:
+- Çıkış (unauth) durumunda hamburger turuncu ve büyük; yanında “Giriş” görünüyor.
+- Menü açılınca turuncu tema tutarlı.
+
+----------------------------------------------------------------
+4) “ODA ARAYAN KARTI” TASARIMI (SeekerCard) – YENİ
+----------------------------------------------------------------
+Yerleşim:
+- Solda profil foto: 100x100 px, yuvarlak (rounded-full), object-cover.
+- Sağda dikey bilgi yığını:
+  - İsim (kalın, text-slate-900 font-semibold)
+  - Bütçe → yeşil etiket (bg-green-600 text-white)
+  - Lokasyon → mor etiket (bg-violet-600 text-white)
+  - Meslek → siyah etiket (bg-gray-900 text-white)
+  - Yaş → pembe etiket (bg-pink-600 text-white)
+- Alt kısım: turuncu (#f97316) “İletişime Geçin” butonu (full width, md’de auto).
+
+Responsive:
+- Mobilde üstten alta (stack), foto yukarıda ortalı; md+’da foto sol, bilgiler sağda flex.
+
+Kabul Kriterleri:
+- Etiket renkleri doğru.
+- Foto 100x100 ve dairesel.
+- Mobil ve masaüstü düzeni temiz.
+
+----------------------------------------------------------------
+5) FORM POLİTİKASI: Tüm FORMLARDA “+ / –” KALDIR, DİREKT SAYISAL GİRİŞ
+----------------------------------------------------------------
+Amaç: Yaş, bütçe vb. tüm sayısal alanlarda **artı/eksi stepper** UI’sını kaldır; kullanıcı doğrudan rakam yazsın. Yalnızca sayısal girişe izin ver.
+
+Uygulama (genel):
+- Varsa özel Stepper bileşenleri → kaldır.
+- Yeni ortak <NumberInput/> oluştur:
+  - props: name, value, onChange, min, max, placeholder.
+  - inputmode="numeric", pattern="[0-9]*", input type="text" (veya type="number" + spinner gizleme).
+  - onChange’de sadece 0–9 karakterlerine izin ver; diğerlerini filtrele.
+  - Negatif sayıları engelle; opsiyonel min/max uygula.
+- Küresel spinner kapatma (globals.css):
+  - WebKit: input[type=number]::-webkit-outer-spin-button, ... { -webkit-appearance: none; margin: 0; }
+  - Firefox: input[type=number] { -moz-appearance: textfield; }
+
+Kabul Kriterleri:
+- Hiçbir sayısal alanda “+/-” stepper görünmüyor.
+- Klavyeden sadece rakam girişi mümkün (harf engellenir).
+
+----------------------------------------------------------------
+6) “ODA ARAYAN İLANI OLUŞTURMA” FORMU – TEK AŞAMALI
+----------------------------------------------------------------
+Amaç: “Profil Bilgileri” ve “Tercihleriniz” tek sayfada birleşsin. Yeni iki alan eklensin. Aynı form hem “oluşturma” hem “düzenleme” (edit) için kullanılsın.
+
+Alanlar (örnek gruplama):
+[A. Kişisel Bilgiler]
+- Ad Soyad (text)
+- Yaş (NumberInput)
+- Meslek (text)
+- Lokasyon (İl / İlçe) (select + text veya iki select)
+- Hakkımda / Kısa Tanım (textarea)
+- Profil Fotoğrafı (upload) + “Fotoğrafı Sil 🗑️” butonu
+  - Sil tıklanınca fotoğraf state’i null’a çekilsin; yenisini yükleyebilsin.
+
+[B. Yaşam Tarzı]
+- Sigara içiyor musunuz? (Evet / Hayır) [YENİ]
+- Evcil hayvanınız var mı? (Evet / Hayır) [YENİ]
+
+[C. Tercihler]
+- Bütçe (NumberInput, ₺ için açıklama)
+- Tercih edilen oda/ev tipi (select)
+- Giriş tarihi (date)
+- Kira süresi (select)
+- İletişim tercihi (e-posta/telefon)
+
+Davranış:
+- **Tek sayfa**; aşama/step yok.
+- Edit modunda tüm alanlar mevcut değerleriyle gelir ve düzenlenebilir.
+- “Kaydet” tek endpoint ile create veya update’i yönetir (id varsa update).
+- Zorunlu alanlar için net hata mesajları (altında text-red-600).
+- Alanlar arası dikey boşluk ve başlık etiketleri ile sade, hizalı görünüm.
+
+Kabul Kriterleri:
+- Form tek sayfa; iki aşama tamamen kaldırılmış.
+- “Sigara” ve “Evcil hayvan” alanları mevcut.
+- “Fotoğrafı Sil (🗑️)” çalışıyor.
+- Sayısal alanlar yalnızca rakam kabul ediyor.
+
+----------------------------------------------------------------
+7) KOD DÜZENİ ve YOLLAR
+----------------------------------------------------------------
+- components/forms/NumberInput.tsx → yeni ortak bileşen.
+- components/SeekerCard.tsx → yeni kart tasarımı.
+- components/Header.tsx → unauth durumundaki menü + “Giriş”.
+- components/Hero.tsx → font-light ve metin sadeleştirme.
+- (app|pages)/page.tsx → “Güncel İlanlar” birleşik grid (oda + arayan).
+- styles/globals.css → number spinner gizleme kuralları.
+
+----------------------------------------------------------------
+8) STİL REHBERİ (RENK/ETİKET)
+----------------------------------------------------------------
+- Turuncu ana aksan: #f97316
+- Etiketler:
+  - Bütçe: bg-green-600 text-white
+  - Lokasyon: bg-violet-600 text-white
+  - Meslek: bg-gray-900 text-white
+  - Yaş: bg-pink-600 text-white
+
+----------------------------------------------------------------
+9) ERİŞİLEBİLİRLİK & TEST
+----------------------------------------------------------------
+- İkon ve butonlara aria-label ekle (“Giriş”, “Menüyü Aç”, “Fotoğrafı Sil”).
+- Mobil test: 375px genişlikte grid/kart/form düzgün.
+- Masaüstü test: 1280px’de grid 4 sütun.
+
+[LÜTFEN]
+- Tüm maddeleri tek commit’te uygula.
+- Kod içinde Türkçe yorum satırları ile işaretle: // ODANET Revizyon – [Bölüm]
+- Bittiğinde, değişen dosyaların listesini ve kısa bir özetini yazdır.

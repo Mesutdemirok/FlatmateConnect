@@ -200,30 +200,40 @@ export default function Header() {
               </>
             )}
 
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`
-                md:hidden rounded-full p-2 transition-all duration-300
-                ${isMobileMenuOpen ? "bg-white text-indigo-700" : "bg-white/20 hover:bg-white/30 text-white"}
-              `}
-              onClick={toggleMobileMenu}
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-menu"
-              aria-label={
-                isMobileMenuOpen
-                  ? t("nav.close_menu", "Menüyü kapat")
-                  : t("nav.open_menu", "Menüyü aç")
-              }
-              data-testid="mobile-menu-toggle"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-8 w-8" />
-              ) : (
-                <Menu className="h-8 w-8" />
-              )}
-            </Button>
+            {/* ODANET Revizyon – Mobile Menu Button */}
+            {!isAuthenticated && (
+              <Link href="/giris" data-testid="mobile-login-link">
+                <a className="md:hidden flex items-center gap-2 text-white hover:opacity-90 transition-opacity">
+                  <Menu className="h-7 w-7" style={{ color: "#f97316" }} />
+                  <span className="text-sm font-medium" style={{ color: "#f97316" }}>Giriş</span>
+                </a>
+              </Link>
+            )}
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`
+                  md:hidden rounded-full p-2 transition-all duration-300
+                  ${isMobileMenuOpen ? "bg-white text-indigo-700" : "bg-white/20 hover:bg-white/30 text-white"}
+                `}
+                onClick={toggleMobileMenu}
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-menu"
+                aria-label={
+                  isMobileMenuOpen
+                    ? t("nav.close_menu", "Menüyü kapat")
+                    : t("nav.open_menu", "Menüyü aç")
+                }
+                data-testid="mobile-menu-toggle"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-8 w-8" />
+                ) : (
+                  <Menu className="h-8 w-8" />
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>
