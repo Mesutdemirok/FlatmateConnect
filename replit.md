@@ -74,6 +74,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 18, 2025)
 
+### Fixed Seeker Schema & Added Mixed Homepage Feed (October 18, 2025)
+- **Schema Migration**: Removed legacy `is_smoker` and `has_pets` boolean fields
+  - Now using normalized preference fields: `smoking_preference`, `pet_preference`, `cleanliness_level`
+  - Updated client form to use new fields with proper defaults (`no-preference`, `average`)
+  - Pushed schema changes to database successfully
+- **New Mixed Feed API**: Created `/api/feed` endpoint
+  - Returns merged array of recent listings and seeker profiles (up to 24 items)
+  - Sorted by creation date descending for fresh content
+  - Each item has type discriminator (`listing` or `seeker`)
+- **MixedFeed Component**: New homepage component at `client/src/components/MixedFeed.tsx`
+  - Displays listings and seekers together in unified grid
+  - SeekerMiniCard with budget badge, location, and "Oda Arayan" label
+  - Mobile-first responsive design (2 cols mobile, 3 tablet, 4 desktop)
+  - Proper loading states and error handling
+- **Homepage Simplified**: Replaced separate sections with single `<MixedFeed />` component
+  - Cleaner code, single source of truth from API
+  - Better performance with one API call instead of multiple
+- **Bug Fix**: Server routes now correctly maps listing `address` to `suburb` for frontend compatibility
+
 ### Enhanced Error Handling for Seeker Profile Creation (October 18, 2025)
 - **Client-Side Improvements**:
   - Added detailed console logging for form submission payload and API responses
