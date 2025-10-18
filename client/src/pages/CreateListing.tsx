@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
+import NumberInput from "@/components/forms/NumberInput";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -293,13 +294,11 @@ export default function CreateListing() {
                       <FormControl>
                         <div className="relative">
                           <span className="absolute left-3 top-2.5">₺</span>
-                          <Input 
-                            type="number"
-                            min="0"
+                          <NumberInput 
                             placeholder="5000" 
                             className="pl-8"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                            value={field.value?.toString() || ''}
+                            onChange={(val) => field.onChange(parseFloat(val) || 0)}
                             data-testid="input-rent"
                           />
                         </div>
@@ -442,12 +441,10 @@ export default function CreateListing() {
                     <FormItem>
                       <FormLabel>7. Evde toplam kaç oda var? *</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="1"
+                        <NumberInput
                           placeholder="örn., 3"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                          value={field.value?.toString() || ''}
+                          onChange={(val) => field.onChange(parseInt(val) || 0)}
                           data-testid="input-total-rooms"
                         />
                       </FormControl>
@@ -558,12 +555,10 @@ export default function CreateListing() {
                     <FormItem>
                       <FormLabel>11. Evde toplam kaç kişi yaşamaktadır? *</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1"
+                        <NumberInput 
                           placeholder="2" 
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                          value={field.value?.toString() || ''}
+                          onChange={(val) => field.onChange(parseInt(val) || 0)}
                           data-testid="input-occupants"
                         />
                       </FormControl>

@@ -232,6 +232,11 @@ var seekerProfiles = pgTable("seeker_profiles", {
   // Bio/description
   preferredLocation: text("preferred_location"),
   // Single location preference
+  // ODANET Revizyon – Yaşam Tarzı (kişinin kendi durumu)
+  isSmoker: boolean("is_smoker"),
+  // Sigara içiyor musunuz?
+  hasPets: boolean("has_pets"),
+  // Evcil hayvanınız var mı?
   // Lifestyle Preferences (merged from userPreferences)
   smokingPreference: varchar("smoking_preference"),
   petPreference: varchar("pet_preference"),

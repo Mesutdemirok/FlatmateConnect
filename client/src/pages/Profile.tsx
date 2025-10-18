@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import { insertUserPreferencesSchema } from "@shared/schema";
+import NumberInput from "@/components/forms/NumberInput";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -705,16 +706,12 @@ export default function Profile() {
                                 {t("create_listing.age_range")} (Min)
                               </FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
+                                <NumberInput
                                   placeholder="18"
-                                  {...field}
-                                  value={field.value || ""}
-                                  onChange={(e) =>
+                                  value={field.value?.toString() || ""}
+                                  onChange={(val) =>
                                     field.onChange(
-                                      e.target.value
-                                        ? Number(e.target.value)
-                                        : undefined,
+                                      val ? parseInt(val) : undefined
                                     )
                                   }
                                   data-testid="input-age-min"
@@ -734,16 +731,12 @@ export default function Profile() {
                                 {t("create_listing.age_range")} (Max)
                               </FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
+                                <NumberInput
                                   placeholder="50"
-                                  {...field}
-                                  value={field.value || ""}
-                                  onChange={(e) =>
+                                  value={field.value?.toString() || ""}
+                                  onChange={(val) =>
                                     field.onChange(
-                                      e.target.value
-                                        ? Number(e.target.value)
-                                        : undefined,
+                                      val ? parseInt(val) : undefined
                                     )
                                   }
                                   data-testid="input-age-max"

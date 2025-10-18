@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+import NumberInput from "@/components/forms/NumberInput";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -280,7 +281,7 @@ export default function EditListing() {
                     <FormItem>
                       <FormLabel>Aylık Kira (₺)</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <NumberInput {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

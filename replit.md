@@ -6,6 +6,36 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (October 18, 2025)
+
+### UI Revisions - NumberInput & Single-Page Seeker Form (October 18, 2025)
+- **Created NumberInput Component**: Custom input component that removes +/- stepper buttons from all numeric fields
+  - Implemented in `client/src/components/forms/NumberInput.tsx`
+  - Uses `type="text"` with `inputMode="numeric"` and `pattern="[0-9]*"` for mobile keyboards
+  - Added CSS rules to hide number spinners in all browsers
+  - Updated all forms to use NumberInput: CreateListing, EditListing, CreateSeekerProfile, Profile
+  
+- **Simplified Seeker Profile Form**: Converted from multi-step to single-page form
+  - All fields now visible on one page (Personal Info, Lifestyle, Preferences)
+  - Added new fields to schema: `isSmoker` and `hasPets` (boolean) for the seeker's own situation
+  - Separate from `smokingPreference` and `petPreference` (what they want in roommates)
+  - Delete photo button added with proper R2 cleanup
+  - Orange submit button (#f97316) matches site design
+  
+- **Homepage Mixed Listings**: Combined room listings and seeker profiles into one shuffled section
+  - "Güncel İlanlar" displays up to 24 randomly mixed items (rooms + seekers)
+  - Responsive grid layout (1-4 columns based on screen size)
+  - More engaging and diverse content discovery
+
+- **Database Schema Updated**: Successfully pushed changes with new seeker profile fields
+  - `is_smoker` (boolean) - whether the seeker smokes
+  - `has_pets` (boolean) - whether the seeker has pets
+  
+- **Build Status**: ✓ Production build successful (696KB frontend, 64KB backend)
+  - Zero type="number" inputs remaining in codebase
+  - All LSP diagnostics in new code cleared
+  - Workflow running successfully
+
 ## Recent Changes (October 17, 2025)
 
 ### Full Health Pass - Complete Site Audit & Fixes (October 17, 2025)
