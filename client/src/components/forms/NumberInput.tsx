@@ -37,8 +37,8 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
         value={value}
         onChange={handleChange}
         className={className}
+        data-testid="number-input"
         {...props}
-        data-testid={props['data-testid'] || 'number-input'}
       />
     );
   }

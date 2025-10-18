@@ -103,9 +103,9 @@ export default function Home() {
                 {shuffledItems.map((item, index) => (
                   <div key={`${item.type}-${item.data.id}-${index}`}>
                     {item.type === 'listing' ? (
-                      <ListingCard listing={item.data as ListingWithRelations} />
+                      <ListingCard listing={item.data} />
                     ) : (
-                      <SeekerCard seeker={item.data as SeekerProfileWithRelations} />
+                      <SeekerCard seeker={item.data} />
                     )}
                   </div>
                 ))}

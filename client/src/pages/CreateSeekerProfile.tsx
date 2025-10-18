@@ -1,3 +1,4 @@
+// ODANET Revizyon – Tek aşamalı oda arayan formu
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,32 +10,30 @@ import { apiRequest } from "@/lib/queryClient";
 import { SeekerProfileWithRelations } from "@/lib/seekerApi";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import NumberInput from "@/components/forms/NumberInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User, Upload } from "lucide-react";
+import { Loader2, User, Upload, Trash2 } from "lucide-react";
 import { z } from "zod";
 
 const createSeekerSchema = z.object({
   fullName: z.string().min(3, 'Lütfen adınızı ve soyadınızı giriniz'),
-  age: z.coerce.number().int().positive('Yaş 0\'dan büyük olmalıdır').max(120, 'Lütfen geçerli bir yaş giriniz'),
+  age: z.string().min(1, 'Lütfen yaşınızı giriniz'),
   gender: z.string().min(1, 'Lütfen cinsiyetinizi seçiniz'),
-  occupation: z.string().min(1, 'Lütfen durumunuzu seçiniz'),
-  budgetMonthly: z.coerce.number().positive('Bütçe 0\'dan büyük olmalıdır'),
-  about: z.string().min(10, 'Lütfen kendiniz hakkında bilgi veriniz (en az 10 karakter)'),
+  occupation: z.string().min(1, 'Lütfen mesleğinizi giriniz'),
   preferredLocation: z.string().min(3, 'Lütfen tercih ettiğiniz lokasyonu giriniz'),
-  // Preference fields
+  about: z.string().min(10, 'Lütfen kendiniz hakkında bilgi veriniz (en az 10 karakter)'),
+  // ODANET Revizyon – Yaşam Tarzı
+  isSmoker: z.string().optional(),
+  hasPets: z.string().optional(),
+  // Tercihler
+  budgetMonthly: z.string().min(1, 'Lütfen bütçenizi giriniz'),
   smokingPreference: z.string().optional(),
   petPreference: z.string().optional(),
-  cleanlinessLevel: z.string().optional(),
-  socialLevel: z.string().optional(),
-  workSchedule: z.string().optional(),
-  agePreferenceMin: z.coerce.number().optional(),
-  agePreferenceMax: z.coerce.number().optional(),
-  genderPreference: z.string().optional(),
 });
 
 type CreateSeekerFormData = z.infer<typeof createSeekerSchema>;
@@ -45,6 +44,8 @@ export default function CreateSeekerProfile() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+  const [photoToDelete, setPhotoToDelete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch existing seeker profile for editing
@@ -59,20 +60,16 @@ export default function CreateSeekerProfile() {
     resolver: zodResolver(createSeekerSchema),
     defaultValues: {
       fullName: '',
-      age: 0,
+      age: '',
       gender: '',
       occupation: '',
-      budgetMonthly: 0,
-      about: '',
       preferredLocation: '',
+      about: '',
+      isSmoker: '',
+      hasPets: '',
+      budgetMonthly: '',
       smokingPreference: '',
       petPreference: '',
-      cleanlinessLevel: '',
-      socialLevel: '',
-      workSchedule: '',
-      agePreferenceMin: undefined,
-      agePreferenceMax: undefined,
-      genderPreference: '',
     },
   });
 
@@ -81,21 +78,18 @@ export default function CreateSeekerProfile() {
     if (existingProfile) {
       form.reset({
         fullName: existingProfile.fullName || '',
-        age: existingProfile.age || 0,
+        age: existingProfile.age?.toString() || '',
         gender: existingProfile.gender || '',
         occupation: existingProfile.occupation || '',
-        budgetMonthly: existingProfile.budgetMonthly ? parseFloat(existingProfile.budgetMonthly) : 0,
-        about: existingProfile.about || '',
         preferredLocation: existingProfile.preferredLocation || '',
+        about: existingProfile.about || '',
+        isSmoker: existingProfile.isSmoker === true ? 'true' : existingProfile.isSmoker === false ? 'false' : '',
+        hasPets: existingProfile.hasPets === true ? 'true' : existingProfile.hasPets === false ? 'false' : '',
+        budgetMonthly: existingProfile.budgetMonthly || '',
         smokingPreference: existingProfile.smokingPreference || '',
         petPreference: existingProfile.petPreference || '',
-        cleanlinessLevel: existingProfile.cleanlinessLevel || '',
-        socialLevel: existingProfile.socialLevel || '',
-        workSchedule: existingProfile.workSchedule || '',
-        agePreferenceMin: existingProfile.agePreferenceMin ?? undefined,
-        agePreferenceMax: existingProfile.agePreferenceMax ?? undefined,
-        genderPreference: existingProfile.genderPreference || '',
       });
+      setExistingPhotoUrl(existingProfile.profilePhotoUrl || null);
     }
   }, [existingProfile, form]);
 
@@ -119,58 +113,58 @@ export default function CreateSeekerProfile() {
       const payload = {
         userId: user?.id,
         fullName: data.fullName,
-        age: data.age,
+        age: parseInt(data.age),
         gender: data.gender,
         occupation: data.occupation,
-        budgetMonthly: data.budgetMonthly.toString(),
+        budgetMonthly: data.budgetMonthly,
         about: data.about,
         preferredLocation: data.preferredLocation,
-        // Include all preference fields
+        isSmoker: data.isSmoker === 'true' ? true : data.isSmoker === 'false' ? false : null,
+        hasPets: data.hasPets === 'true' ? true : data.hasPets === 'false' ? false : null,
         smokingPreference: data.smokingPreference || null,
         petPreference: data.petPreference || null,
-        cleanlinessLevel: data.cleanlinessLevel || null,
-        socialLevel: data.socialLevel || null,
-        workSchedule: data.workSchedule || null,
-        agePreferenceMin: data.agePreferenceMin || null,
-        agePreferenceMax: data.agePreferenceMax || null,
-        genderPreference: data.genderPreference || null,
       };
 
-      // Use PUT for editing, POST for creating
-      const method = isEditMode ? 'PUT' : 'POST';
-      const endpoint = isEditMode ? `/api/seekers/${existingProfile.id}` : '/api/seekers';
-      const response = await apiRequest(method, endpoint, payload);
-      return response.json();
+      const response = await apiRequest(
+        isEditMode ? 'PUT' : 'POST',
+        isEditMode ? `/api/seekers/${existingProfile.id}` : '/api/seekers',
+        payload
+      );
+
+      const result = await response.json();
+      return result;
     },
-    onSuccess: async (seeker) => {
-      // Upload profile photo if provided
-      if (profilePhoto) {
+    onSuccess: async (result) => {
+      // Upload photo if provided
+      if (profilePhoto && result.id) {
         try {
-          // If editing and there's an existing photo, delete old photos first
-          if (isEditMode && existingProfile?.photos && existingProfile.photos.length > 0) {
-            for (const photo of existingProfile.photos) {
-              try {
-                await fetch(`/api/seekers/${seeker.id}/photos/${photo.id}`, {
-                  method: 'DELETE',
-                  credentials: 'include',
-                });
-              } catch (deleteError) {
-                console.error('Error deleting old photo:', deleteError);
-              }
-            }
-          }
-          
-          // Upload new photo
           const formData = new FormData();
-          formData.append('photos', profilePhoto);
+          formData.append('photo', profilePhoto);
           
-          await fetch(`/api/seekers/${seeker.id}/photos`, {
+          const photoResponse = await fetch(`/api/seekers/${result.id}/photo`, {
             method: 'POST',
             body: formData,
             credentials: 'include',
           });
+
+          if (!photoResponse.ok) {
+            toast({
+              title: 'Uyarı',
+              description: 'Profil fotoğrafı yüklenemedi.',
+              variant: "destructive"
+            });
+          }
         } catch (error) {
-          console.error('Error uploading photo:', error);
+          console.error('Photo upload error:', error);
+        }
+      }
+
+      // Delete photo if marked for deletion
+      if (photoToDelete && existingProfile?.profilePhotoUrl) {
+        try {
+          await apiRequest('DELETE', `/api/seekers/${existingProfile.id}/photo`);
+        } catch (error) {
+          console.error('Photo deletion error:', error);
         }
       }
 
@@ -227,6 +221,16 @@ export default function CreateSeekerProfile() {
     }
   };
 
+  const handleDeletePhoto = () => {
+    setPhotoToDelete(true);
+    setExistingPhotoUrl(null);
+    setProfilePhoto(null);
+    toast({
+      title: 'Fotoğraf işaretlendi',
+      description: 'Fotoğraf kaydettiğinizde silinecek',
+    });
+  };
+
   const onSubmit = async (data: CreateSeekerFormData) => {
     setIsSubmitting(true);
     try {
@@ -244,6 +248,7 @@ export default function CreateSeekerProfile() {
       
       if (isValidType && isValidSize) {
         setProfilePhoto(file);
+        setPhotoToDelete(false);
       } else {
         toast({
           title: 'Uyarı',
@@ -277,75 +282,89 @@ export default function CreateSeekerProfile() {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {/* A. Kişisel Bilgiler */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Profil Bilgileri
+                  Kişisel Bilgiler
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* 1. Profil fotoğrafınızı yükleyiniz */}
+                {/* Profil Fotoğrafı */}
                 <FormItem>
-                  <FormLabel>1. Profil fotoğrafınızı yükleyiniz</FormLabel>
+                  <FormLabel>Profil Fotoğrafı</FormLabel>
                   <FormControl>
-                    <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                      <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                      <Input
-                        type="file"
-                        accept="image/png,image/jpeg,image/jpg,image/webp"
-                        onChange={handlePhotoChange}
-                        className="cursor-pointer"
-                        data-testid="input-photo"
-                      />
-                      <p className="text-sm text-muted-foreground mt-2">
-                        PNG, JPG, WebP (Max 5MB)
-                      </p>
-                      {profilePhoto && (
-                        <p className="text-sm text-green-600 mt-2">
-                          {profilePhoto.name} seçildi
+                    <div className="space-y-4">
+                      <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                        <Input
+                          type="file"
+                          accept="image/png,image/jpeg,image/jpg,image/webp"
+                          onChange={handlePhotoChange}
+                          className="cursor-pointer"
+                          data-testid="input-photo"
+                        />
+                        <p className="text-sm text-muted-foreground mt-2">
+                          PNG, JPG, WebP (Max 5MB)
                         </p>
+                        {profilePhoto && (
+                          <p className="text-sm text-green-600 mt-2">
+                            {profilePhoto.name} seçildi
+                          </p>
+                        )}
+                        {existingPhotoUrl && !photoToDelete && (
+                          <p className="text-sm text-blue-600 mt-2">
+                            Mevcut fotoğraf var
+                          </p>
+                        )}
+                      </div>
+                      {(existingPhotoUrl || profilePhoto) && !photoToDelete && (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleDeletePhoto}
+                          className="w-full flex items-center gap-2"
+                          data-testid="delete-photo-button"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Fotoğrafı Sil 🗑️
+                        </Button>
                       )}
                     </div>
                   </FormControl>
                 </FormItem>
 
-                {/* 2. Adınız Soyadınız nedir? */}
+                {/* Ad Soyad */}
                 <FormField
                   control={form.control}
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>2. Adınız Soyadınız nedir? *</FormLabel>
+                      <FormLabel>Ad Soyad *</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="örn., Ahmet Yılmaz" 
-                          {...field} 
-                          data-testid="input-fullname"
-                        />
+                        <Input placeholder="örn., Ahmet Yılmaz" {...field} data-testid="input-fullName" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* 3. Yaşınız kaç? */}
+                {/* Yaş */}
                 <FormField
                   control={form.control}
                   name="age"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>3. Yaşınız kaç? *</FormLabel>
+                      <FormLabel>Yaş *</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number"
-                          min="18"
-                          max="120"
-                          placeholder="25"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
-                          data-testid="input-age"
+                        <NumberInput 
+                          placeholder="örn., 25" 
+                          value={field.value}
+                          onChange={field.onChange}
+                          data-testid="input-age" 
                         />
                       </FormControl>
                       <FormMessage />
@@ -353,24 +372,24 @@ export default function CreateSeekerProfile() {
                   )}
                 />
 
-                {/* 4. Cinsiyetiniz nedir? */}
+                {/* Cinsiyet */}
                 <FormField
                   control={form.control}
                   name="gender"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>4. Cinsiyetiniz nedir? *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Cinsiyet *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-gender">
                             <SelectValue placeholder="Seçiniz" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="kadin">Kadın</SelectItem>
-                          <SelectItem value="erkek">Erkek</SelectItem>
-                          <SelectItem value="diger">Diğer</SelectItem>
-                          <SelectItem value="belirtmek-istemiyorum">Belirtmek İstemiyorum</SelectItem>
+                          <SelectItem value="Kadın">Kadın</SelectItem>
+                          <SelectItem value="Erkek">Erkek</SelectItem>
+                          <SelectItem value="Diğer">Diğer</SelectItem>
+                          <SelectItem value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -378,24 +397,80 @@ export default function CreateSeekerProfile() {
                   )}
                 />
 
-                {/* 5. Durumunuz nedir? */}
+                {/* Meslek */}
                 <FormField
                   control={form.control}
                   name="occupation"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>5. Durumunuz nedir? *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Meslek *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="örn., Öğrenci, Çalışan" {...field} data-testid="input-occupation" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Lokasyon */}
+                <FormField
+                  control={form.control}
+                  name="preferredLocation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tercih Ettiğiniz Lokasyon *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="örn., Kadıköy, İstanbul" {...field} data-testid="input-preferredLocation" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Hakkımda */}
+                <FormField
+                  control={form.control}
+                  name="about"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kısa Tanım *</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Kendinizden bahsedin..."
+                          className="min-h-[120px]"
+                          {...field}
+                          data-testid="input-about"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* B. Yaşam Tarzı */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Yaşam Tarzı</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Sigara içiyor musunuz? */}
+                <FormField
+                  control={form.control}
+                  name="isSmoker"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sigara içiyor musunuz?</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger data-testid="select-status">
+                          <SelectTrigger data-testid="select-isSmoker">
                             <SelectValue placeholder="Seçiniz" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="ogrenci">Öğrenci</SelectItem>
-                          <SelectItem value="calisan">Çalışan</SelectItem>
-                          <SelectItem value="serbest">Serbest</SelectItem>
-                          <SelectItem value="diger">Diğer</SelectItem>
+                          <SelectItem value="true">Evet</SelectItem>
+                          <SelectItem value="false">Hayır</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -403,45 +478,50 @@ export default function CreateSeekerProfile() {
                   )}
                 />
 
-                {/* 6. Aylık kira için bütçeniz ne kadar? */}
+                {/* Evcil hayvanınız var mı? */}
+                <FormField
+                  control={form.control}
+                  name="hasPets"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Evcil hayvanınız var mı?</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-hasPets">
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="true">Evet</SelectItem>
+                          <SelectItem value="false">Hayır</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* C. Tercihler */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Tercihleriniz</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Bütçe */}
                 <FormField
                   control={form.control}
                   name="budgetMonthly"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>6. Aylık kira için bütçeniz ne kadar? *</FormLabel>
+                      <FormLabel>Aylık Bütçeniz (₺) *</FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <span className="absolute left-3 top-2.5">₺</span>
-                          <Input 
-                            type="number"
-                            min="0"
-                            placeholder="5000" 
-                            className="pl-8"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
-                            data-testid="input-budget"
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* 7. Kendinizden kısaca bahseder misiniz? */}
-                <FormField
-                  control={form.control}
-                  name="about"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>7. Kendinizden kısaca bahseder misiniz? *</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Kendinizden ve odadan beklentilerinizden bahsedin..." 
-                          className="min-h-[120px]"
-                          {...field} 
-                          data-testid="textarea-about"
+                        <NumberInput 
+                          placeholder="örn., 5000" 
+                          value={field.value}
+                          onChange={field.onChange}
+                          data-testid="input-budgetMonthly" 
                         />
                       </FormControl>
                       <FormMessage />
@@ -449,20 +529,49 @@ export default function CreateSeekerProfile() {
                   )}
                 />
 
-                {/* 8. Hangi lokasyonda oda/ev arıyorsunuz? */}
+                {/* Sigara tercihi (oda arkadaşı için) */}
                 <FormField
                   control={form.control}
-                  name="preferredLocation"
+                  name="smokingPreference"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>8. Hangi lokasyonda oda/ev arıyorsunuz? *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="örn., Kadıköy, İstanbul" 
-                          {...field} 
-                          data-testid="input-location"
-                        />
-                      </FormControl>
+                      <FormLabel>Oda Arkadaşınızda Sigara Tercihi</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-smokingPreference">
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="İçebilir">İçebilir</SelectItem>
+                          <SelectItem value="İçemez">İçemez</SelectItem>
+                          <SelectItem value="Farketmez">Farketmez</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Evcil hayvan tercihi (oda arkadaşı için) */}
+                <FormField
+                  control={form.control}
+                  name="petPreference"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Oda Arkadaşınızda Evcil Hayvan Tercihi</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-petPreference">
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Olabilir">Olabilir</SelectItem>
+                          <SelectItem value="Olmamalı">Olmamalı</SelectItem>
+                          <SelectItem value="Farketmez">Farketmez</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -470,263 +579,42 @@ export default function CreateSeekerProfile() {
               </CardContent>
             </Card>
 
-            {/* Preferences Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Tercihleriniz
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Sigara Tercihi */}
-                  <FormField
-                    control={form.control}
-                    name="smokingPreference"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sigara</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-smoking">
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="non-smoker">İçmiyor</SelectItem>
-                            <SelectItem value="smoker">İçiyor</SelectItem>
-                            <SelectItem value="social-smoker">Sosyal İçici</SelectItem>
-                            <SelectItem value="no-preference">Farketmez</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {/* Butonlar */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1"
+                style={{ backgroundColor: "#f97316" }}
+                data-testid="button-submit"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Kaydediliyor...
+                  </>
+                ) : (
+                  'Kaydet'
+                )}
+              </Button>
 
-                  {/* Evcil Hayvan Tercihi */}
-                  <FormField
-                    control={form.control}
-                    name="petPreference"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Evcil Hayvan</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-pet">
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="no-pets">Hayır</SelectItem>
-                            <SelectItem value="cat-friendly">Kedi Seviyorum</SelectItem>
-                            <SelectItem value="dog-friendly">Köpek Seviyorum</SelectItem>
-                            <SelectItem value="all-pets">Hepsini Seviyorum</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Temizlik Seviyesi */}
-                  <FormField
-                    control={form.control}
-                    name="cleanlinessLevel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Temizlik Seviyesi</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-cleanliness">
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="very-clean">Çok Temiz</SelectItem>
-                            <SelectItem value="clean">Temiz</SelectItem>
-                            <SelectItem value="average">Orta</SelectItem>
-                            <SelectItem value="relaxed">Rahat</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Sosyallik Seviyesi */}
-                  <FormField
-                    control={form.control}
-                    name="socialLevel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sosyallik</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-social">
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="very-social">Çok Sosyal</SelectItem>
-                            <SelectItem value="social">Sosyal</SelectItem>
-                            <SelectItem value="balanced">Dengeli</SelectItem>
-                            <SelectItem value="quiet">Sakin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Çalışma Saatleri */}
-                  <FormField
-                    control={form.control}
-                    name="workSchedule"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Çalışma Saatleri</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-work">
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="9-to-5">9-5 Mesai</SelectItem>
-                            <SelectItem value="shift-work">Vardiyalı</SelectItem>
-                            <SelectItem value="student">Öğrenci</SelectItem>
-                            <SelectItem value="work-from-home">Evden Çalışma</SelectItem>
-                            <SelectItem value="unemployed">İşsiz</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Cinsiyet Tercihi */}
-                  <FormField
-                    control={form.control}
-                    name="genderPreference"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ev Arkadaşı Cinsiyet Tercihi</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-gender-pref">
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="male">Erkek</SelectItem>
-                            <SelectItem value="female">Kadın</SelectItem>
-                            <SelectItem value="no-preference">Farketmez</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Yaş Aralığı Min */}
-                  <FormField
-                    control={form.control}
-                    name="agePreferenceMin"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Yaş Aralığı (Min)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number"
-                            placeholder="18"
-                            {...field}
-                            value={field.value || ''}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            data-testid="input-age-pref-min"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Yaş Aralığı Max */}
-                  <FormField
-                    control={form.control}
-                    name="agePreferenceMax"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Yaş Aralığı (Max)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number"
-                            placeholder="50"
-                            {...field}
-                            value={field.value || ''}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            data-testid="input-age-pref-max"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="space-y-4">
-              <div className="flex justify-end space-x-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setLocation('/profil')}
-                  data-testid="button-cancel"
+              {isEditMode && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDeleteSeeker}
+                  disabled={deleteSeekerMutation.isPending}
+                  data-testid="button-delete-seeker"
                 >
-                  İptal
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting || createSeekerMutation.isPending}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  data-testid="button-submit"
-                >
-                  {isSubmitting || createSeekerMutation.isPending ? (
+                  {deleteSeekerMutation.isPending ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {isEditMode ? 'Güncelleniyor...' : 'Oluşturuluyor...'}
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Siliniyor...
                     </>
                   ) : (
-                    isEditMode ? 'Profili Güncelle' : 'Profil Oluştur'
+                    'İlanı Sil'
                   )}
                 </Button>
-              </div>
-              
-              {/* Delete button - Only show in edit mode */}
-              {isEditMode && (
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={handleDeleteSeeker}
-                    disabled={deleteSeekerMutation.isPending}
-                    className="w-full"
-                    data-testid="button-delete-seeker"
-                  >
-                    {deleteSeekerMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Siliniyor...
-                      </>
-                    ) : (
-                      'İlanı Sil'
-                    )}
-                  </Button>
-                </div>
               )}
             </div>
           </form>
