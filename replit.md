@@ -70,4 +70,20 @@ Preferred communication style: Simple, everyday language.
 ### Cloud Services
 - **Cloudflare R2**: Object storage for production images (bucket: `odanet-uploads`).
 - **Cloudflare CDN**: Custom domain (`cdn.odanet.com.tr`) for optimized image delivery with runtime URL normalization.
-- **AWS SDK S3 Client**: Used for R2 API compatibility for image uploads/downloads.
+- **AWS SDK S3 Client**: Used for R2 API compatibility for image uploads/downloads.- **AWS SDK S3 Client**: Used for R2 API compatibility for image uploads/downloads.
+
+## Recent Changes (October 18, 2025)
+
+### Consistent Menu & Mixed Homepage Cards (October 18, 2025)
+- **Homepage Mixed Cards**: Room listings and seeker profiles now display together on homepage
+  - Created sample seeker profiles (Ahmet Yılmaz, Ayşe Demir) for demonstration
+  - Home page shuffles and mixes both listing types in randomized order
+  - Maximum 24 cards displayed from combined pool
+- **Consistent Header Menu**: All navigation options now visible for both logged-in and logged-out users
+  - **Favorites Icon**: Always visible (orange gradient), redirects to login if not authenticated
+  - **Messages Icon**: Always visible (violet background), redirects to login if not authenticated
+  - **Desktop**: Shows Login/Signup buttons for guests, Profile/Logout for authenticated users
+  - **Mobile Menu**: Works for all users with appropriate auth-specific options
+    - All users see: Favoriler, Mesajlar, Oda İlanı Ver, Oda Arama İlanı Ver
+    - Logged out: Shows "Giriş Yap" and "Üye Ol" at bottom
+    - Logged in: Shows "Profil" and "Çıkış Yap" at bottom
