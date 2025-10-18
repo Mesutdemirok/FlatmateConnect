@@ -8,7 +8,6 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const GA = process.env.NEXT_PUBLIC_GA_ID;
 
-  // Fire GA4 page_view on every route change (SPA)
   useEffect(() => {
     const handleRoute = (url: string) => {
       if (typeof window !== "undefined" && (window as any).gtag && GA) {
