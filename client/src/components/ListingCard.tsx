@@ -1,5 +1,6 @@
+// ODANET Revizyon – Tam T\u0131klanabilir Kart + Adres Snippet + Mobil Görsel Optimize
 import { Button } from "@/components/ui/button";
-import { Heart, ShieldCheck } from "lucide-react";
+import { Heart, ShieldCheck, MapPin } from "lucide-react";
 import { Link } from "wouter";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,11 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatCurrency } from "@/lib/formatters";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+import { getAddressSnippet } from "@/lib/utils/getAddressSnippet";
 
 interface ListingCardProps {
   listing?: {
     id?: string;
     title?: string | null;
+    address?: string | null;
     suburb?: string | null;
     rentAmount?: string | number | null;
     availableFrom?: string | null;
@@ -48,7 +51,9 @@ export default function ListingCard({
       ? rawTitle.split(/\s+/).slice(0, 4).join(" ") +
         (rawTitle.split(/\s+/).length > 4 ? "…" : "")
       : "İlan";
-  const suburb = (listing?.suburb ?? "").toString();
+  
+  const fullAddress = (listing?.address ?? listing?.suburb ?? "").toString();
+  const addressSnippet = getAddressSnippet(fullAddress, 3);
 
   const amountNumber = useMemo(() => {
     if (typeof listing?.rentAmount === "string") {
@@ -137,9 +142,9 @@ export default function ListingCard({
 
   return (
     <Link href={id ? `/oda-ilani/${id}` : "#"}>
-      <a
+      <div
         className="
-          group block relative overflow-hidden rounded-2xl
+          group block relative overflow-hidden rounded-2xl cursor-pointer
           bg-gradient-to-b from-[#f9faff] via-[#f3f6ff] to-[#edf0ff]
           ring-1 ring-black/5 shadow-sm hover:shadow-lg transition-all duration-300
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600
@@ -150,8 +155,8 @@ export default function ListingCard({
       >
         {/* Media */}
         <div className="relative mx-2 mt-2 mb-1 overflow-hidden rounded-lg ring-1 ring-black/5 sm:mx-3 sm:mt-3 sm:mb-2">
-          {/* Stable aspect ratios for mobile */}
-          <div className="relative w-full aspect-[4/3] sm:aspect-[16/10]">
+          {/* ODANET Revizyon: Mobilde aspect-[16/9], masaüstü aspect-[4/3] */}
+          <div className="relative w-full aspect-[16/9] md:aspect-[4/3]">
             <img
               src={imgSrc}
               alt={title4}
@@ -185,13 +190,21 @@ export default function ListingCard({
               </span>
             </div>
 
+            {/* ODANET Revizyon: Adres Snippet (3 kelime) */}
+            {addressSnippet && (
+              <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] bg-slate-50/90 text-slate-700 ring-1 ring-slate-200/50 backdrop-blur">
+                <MapPin className="h-3 w-3" aria-hidden="true" />
+                <span className="line-clamp-1">{addressSnippet}</span>
+              </div>
+            )}
+
             {/* Favorite (dark orange) */}
             <Button
               variant="secondary"
               size="icon"
               aria-label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"}
               className="
-                absolute left-2 top-2 h-9 w-9 sm:h-10 sm:w-10 rounded-full
+                absolute right-2 bottom-2 h-9 w-9 sm:h-10 sm:w-10 rounded-full
                 bg-orange-600 text-white shadow-sm ring-1 ring-white/40
                 hover:bg-orange-700 active:scale-95 transition
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70
@@ -210,18 +223,11 @@ export default function ListingCard({
 
             {/* Verified */}
             {isVerified && (
-              <div className="absolute bottom-2 left-2 rounded-full bg-emerald-600/95 p-1.5 text-white shadow-sm ring-1 ring-white/40 sm:bottom-3 sm:left-3">
+              <div className="absolute top-2 left-2 rounded-full bg-emerald-600/95 p-1.5 text-white shadow-sm ring-1 ring-white/40 sm:top-3 sm:left-3">
                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                 <span className="sr-only">
                   {t("profile.verified", "Doğrulanmış")}
                 </span>
-              </div>
-            )}
-
-            {/* Distance (optional) */}
-            {showDistance && distance && (
-              <div className="absolute bottom-2 right-2 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm sm:bottom-3 sm:right-3">
-                {distance}
               </div>
             )}
           </div>
@@ -234,13 +240,12 @@ export default function ListingCard({
           </h3>
           <p
             className="mt-0.5 sm:mt-1 text-[13px] sm:text-sm text-slate-600 truncate"
-            title={`${suburb}${showDistance && distance ? ` • ${distance}` : ""}`}
+            title={fullAddress}
           >
-            {suburb}
-            {showDistance && distance ? ` • ${distance}` : ""}
+            {fullAddress || "Konum belirtilmemiş"}
           </p>
         </div>
-      </a>
+      </div>
     </Link>
   );
 }
