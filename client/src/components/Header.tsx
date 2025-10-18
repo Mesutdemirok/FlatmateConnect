@@ -1,8 +1,9 @@
+// ODANET Revizyon — Header: Turuncu Hamburger + Mesajlar + İyileştirilmiş Mobil Menü
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageSquare, Menu, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export default function Header() {
@@ -42,6 +43,8 @@ export default function Header() {
   const createSeekerHref = isAuthenticated
     ? "/oda-arama-ilani-olustur"
     : "/giris?next=/oda-arama-ilani-olustur";
+  
+  const messagesHref = isAuthenticated ? "/mesajlar" : "/giris?next=/mesajlar";
 
   return (
     <header
@@ -67,11 +70,9 @@ export default function Header() {
           <div className="flex items-center gap-6">
             <div className="flex-shrink-0">
               <Link href="/" data-testid="logo-link">
-                <a className="block select-none">
-                  <span className="text-3xl sm:text-4xl font-extrabold tracking-tight hover:opacity-90 transition-opacity">
-                    Odanet
-                  </span>
-                </a>
+                <span className="block select-none text-3xl sm:text-4xl font-extrabold tracking-tight hover:opacity-90 transition-opacity cursor-pointer">
+                  Odanet
+                </span>
               </Link>
             </div>
 
@@ -81,29 +82,29 @@ export default function Header() {
               aria-label="Birincil"
             >
               <Link href={createListingHref}>
-                <a
+                <span
                   className={`
-                    transition-colors hover:text-white
+                    cursor-pointer transition-colors hover:text-white
                     ${isActive("/ilan-olustur") ? "text-white" : "text-white/90"}
                     ${isActive("/ilan-olustur") ? "underline underline-offset-4 decoration-white/50" : ""}
                   `}
                   data-testid="nav-create-listing"
                 >
                   Oda İlanı Ver
-                </a>
+                </span>
               </Link>
 
               <Link href={createSeekerHref}>
-                <a
+                <span
                   className={`
-                    transition-colors hover:text-white
+                    cursor-pointer transition-colors hover:text-white
                     ${isActive("/oda-arama-ilani-olustur") ? "text-white" : "text-white/90"}
                     ${isActive("/oda-arama-ilani-olustur") ? "underline underline-offset-4 decoration-white/50" : ""}
                   `}
                   data-testid="nav-create-seeker"
                 >
                   Oda Arama İlanı Ver
-                </a>
+                </span>
               </Link>
             </nav>
           </div>
@@ -112,58 +113,54 @@ export default function Header() {
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
               <>
-                {/* Favorites: dark orange / red pill */}
+                {/* Favorites: Blood Orange Gradient */}
                 <Link href="/favoriler" data-testid="favorites-link">
-                  <a aria-label={t("nav.favorites", "Favoriler")}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="
-                        rounded-full h-10 w-10 sm:h-10 sm:w-10
-                        bg-gradient-to-br from-[#FF3B30] to-[#FF7A00]
-                        hover:from-[#FF2820] hover:to-[#FF6A00]
-                        text-white shadow-md ring-1 ring-white/30
-                      "
-                    >
-                      <Heart
-                        className="h-5 w-5"
-                        strokeWidth={2.5}
-                        fill="currentColor"
-                      />
-                      <span className="sr-only">
-                        {t("nav.favorites", "Favoriler")}
-                      </span>
-                    </Button>
-                  </a>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("nav.favorites", "Favoriler")}
+                    className="
+                      rounded-full h-10 w-10 sm:h-10 sm:w-10
+                      bg-gradient-to-br from-[#FF3B30] to-[#FF7A00]
+                      hover:from-[#FF2820] hover:to-[#FF6A00]
+                      text-white shadow-md ring-1 ring-white/30
+                    "
+                  >
+                    <Heart
+                      className="h-5 w-5"
+                      strokeWidth={2.5}
+                      fill="currentColor"
+                    />
+                    <span className="sr-only">
+                      {t("nav.favorites", "Favoriler")}
+                    </span>
+                  </Button>
                 </Link>
 
-                {/* Messages */}
+                {/* Messages: Violet Background */}
                 <Link href="/mesajlar" data-testid="messages-link">
-                  <a aria-label={t("nav.messages", "Mesajlar")}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full h-10 w-10 bg-white/15 text-white hover:bg-white/25"
-                    >
-                      <MessageSquare className="h-5 w-5" strokeWidth={2.5} />
-                      <span className="sr-only">
-                        {t("nav.messages", "Mesajlar")}
-                      </span>
-                    </Button>
-                  </a>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("nav.messages", "Mesajlar")}
+                    className="rounded-full h-10 w-10 bg-violet-100 text-violet-600 hover:bg-violet-200 shadow-md"
+                  >
+                    <MessageSquare className="h-5 w-5" strokeWidth={2.5} />
+                    <span className="sr-only">
+                      {t("nav.messages", "Mesajlar")}
+                    </span>
+                  </Button>
                 </Link>
 
                 {/* Profile + Logout (desktop) */}
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/profil" data-testid="profile-link">
-                    <a>
-                      <Button
-                        variant="outline"
-                        className="bg-white text-indigo-700 border-white hover:bg-indigo-50 font-medium"
-                      >
-                        {t("nav.profile", "Profil")}
-                      </Button>
-                    </a>
+                    <Button
+                      variant="outline"
+                      className="bg-white text-indigo-700 border-white hover:bg-indigo-50 font-medium"
+                    >
+                      {t("nav.profile", "Profil")}
+                    </Button>
                   </Link>
 
                   <Button
@@ -175,118 +172,123 @@ export default function Header() {
                     {t("nav.logout", "Çıkış Yap")}
                   </Button>
                 </div>
+
+                {/* Mobile Menu Toggle - Authenticated */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`
+                    md:hidden rounded-full p-2 transition-all duration-300
+                    ${isMobileMenuOpen ? "bg-white text-indigo-700" : "bg-white/20 hover:bg-white/30 text-white"}
+                  `}
+                  onClick={toggleMobileMenu}
+                  aria-expanded={isMobileMenuOpen}
+                  aria-controls="mobile-menu"
+                  aria-label={
+                    isMobileMenuOpen
+                      ? t("nav.close_menu", "Menüyü kapat")
+                      : t("nav.open_menu", "Menüyü aç")
+                  }
+                  data-testid="mobile-menu-toggle"
+                >
+                  {isMobileMenuOpen ? (
+                    <X className="h-8 w-8" />
+                  ) : (
+                    <Menu className="h-8 w-8" />
+                  )}
+                </Button>
               </>
             ) : (
               <>
+                {/* Desktop: Login + Sign Up */}
                 <div className="hidden sm:flex items-center gap-2">
                   <Link href="/giris" data-testid="login-link">
-                    <a>
-                      <Button
-                        variant="outline"
-                        className="bg-white text-indigo-700 border-white hover:bg-indigo-50 font-medium"
-                      >
-                        {t("nav.login", "Giriş Yap")}
-                      </Button>
-                    </a>
+                    <Button
+                      variant="outline"
+                      className="bg-white text-indigo-700 border-white hover:bg-indigo-50 font-medium"
+                    >
+                      {t("nav.login", "Giriş Yap")}
+                    </Button>
                   </Link>
                   <Link href="/uye-ol" data-testid="signup-link">
-                    <a>
-                      <Button className="bg-white text-indigo-700 hover:bg-indigo-100 font-semibold">
-                        {t("nav.sign_up", "Üye Ol")}
-                      </Button>
-                    </a>
+                    <Button className="bg-white text-indigo-700 hover:bg-indigo-100 font-semibold">
+                      {t("nav.sign_up", "Üye Ol")}
+                    </Button>
                   </Link>
                 </div>
-              </>
-            )}
 
-            {/* ODANET Revizyon – Mobile Menu Button */}
-            {!isAuthenticated && (
-              <Link href="/giris" data-testid="mobile-login-link">
-                <a className="md:hidden flex items-center gap-2 text-white hover:opacity-90 transition-opacity">
-                  <Menu className="h-7 w-7" style={{ color: "#f97316" }} />
-                  <span className="text-sm font-medium" style={{ color: "#f97316" }}>Giriş</span>
-                </a>
-              </Link>
-            )}
-            {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`
-                  md:hidden rounded-full p-2 transition-all duration-300
-                  ${isMobileMenuOpen ? "bg-white text-indigo-700" : "bg-white/20 hover:bg-white/30 text-white"}
-                `}
-                onClick={toggleMobileMenu}
-                aria-expanded={isMobileMenuOpen}
-                aria-controls="mobile-menu"
-                aria-label={
-                  isMobileMenuOpen
-                    ? t("nav.close_menu", "Menüyü kapat")
-                    : t("nav.open_menu", "Menüyü aç")
-                }
-                data-testid="mobile-menu-toggle"
-              >
-                {isMobileMenuOpen ? (
-                  <X className="h-8 w-8" />
-                ) : (
-                  <Menu className="h-8 w-8" />
-                )}
-              </Button>
+                {/* Mobile: Turuncu Hamburger + "Giriş" Yazısı */}
+                <Link href="/giris" data-testid="mobile-login-link">
+                  <div className="md:hidden flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity">
+                    <Menu className="h-7 w-7" style={{ color: "#f97316" }} aria-hidden="true" />
+                    <span className="text-sm font-medium" style={{ color: "#f97316" }}>
+                      Giriş
+                    </span>
+                  </div>
+                </Link>
+              </>
             )}
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
+      {/* Mobile Menu - Mor Gradyan Temalı */}
+      {isMobileMenuOpen && isAuthenticated && (
         <div
           id="mobile-menu"
-          className="md:hidden border-t border-white/20 bg-gradient-to-b from-orange-100 to-amber-50 text-gray-800"
+          className="md:hidden border-t border-white/20 bg-gradient-to-b from-violet-50 via-fuchsia-50 to-indigo-50 text-gray-800"
           data-testid="mobile-menu"
         >
-          <div className="px-4 py-4 space-y-4">
+          <div className="px-4 py-4 space-y-2">
+            {/* Favoriler - İkonlu */}
+            <Link href="/favoriler">
+              <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-orange-100/50 transition-colors cursor-pointer">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-orange-50 text-[#f97316]">
+                  <Heart className="h-5 w-5" fill="currentColor" />
+                </div>
+                <span className="font-medium">{t("nav.favorites", "Favoriler")}</span>
+              </div>
+            </Link>
+
+            {/* Mesajlar - İkonlu */}
+            <Link href="/mesajlar">
+              <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-violet-100/50 transition-colors cursor-pointer">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-violet-50 text-violet-600">
+                  <MessageSquare className="h-5 w-5" />
+                </div>
+                <span className="font-medium">{t("nav.messages", "Mesajlar")}</span>
+              </div>
+            </Link>
+
+            {/* Oda İlanı Ver */}
             <Link href={createListingHref}>
-              <a className="block rounded-md px-2 py-2 hover:bg-orange-200/50 transition-colors">
+              <div className="block rounded-lg px-3 py-2.5 hover:bg-indigo-100/50 transition-colors cursor-pointer font-medium">
                 Oda İlanı Ver
-              </a>
+              </div>
             </Link>
 
+            {/* Oda Arama İlanı Ver */}
             <Link href={createSeekerHref}>
-              <a className="block rounded-md px-2 py-2 hover:bg-orange-200/50 transition-colors">
+              <div className="block rounded-lg px-3 py-2.5 hover:bg-fuchsia-100/50 transition-colors cursor-pointer font-medium">
                 Oda Arama İlanı Ver
-              </a>
+              </div>
             </Link>
 
-            {isAuthenticated ? (
-              <>
-                <Link href="/profil">
-                  <a className="block rounded-md px-2 py-2 hover:bg-orange-200/50 transition-colors">
-                    {t("nav.profile", "Profil")}
-                  </a>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full rounded-md px-2 py-2 text-left hover:bg-orange-200/50 transition-colors"
-                  data-testid="mobile-logout-button"
-                >
-                  {t("nav.logout", "Çıkış Yap")}
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/giris">
-                  <a className="block rounded-md px-2 py-2 hover:bg-orange-200/50 transition-colors">
-                    {t("nav.login", "Giriş Yap")}
-                  </a>
-                </Link>
-                <Link href="/uye-ol">
-                  <a className="block rounded-md px-2 py-2 hover:bg-orange-200/50 transition-colors">
-                    {t("nav.sign_up", "Üye Ol")}
-                  </a>
-                </Link>
-              </>
-            )}
+            {/* Profil */}
+            <Link href="/profil">
+              <div className="block rounded-lg px-3 py-2.5 hover:bg-violet-100/50 transition-colors cursor-pointer font-medium">
+                {t("nav.profile", "Profil")}
+              </div>
+            </Link>
+
+            {/* Çıkış Yap */}
+            <button
+              onClick={handleLogout}
+              className="block w-full rounded-lg px-3 py-2.5 text-left hover:bg-red-100/50 transition-colors font-medium text-red-600"
+              data-testid="mobile-logout-button"
+            >
+              {t("nav.logout", "Çıkış Yap")}
+            </button>
           </div>
         </div>
       )}

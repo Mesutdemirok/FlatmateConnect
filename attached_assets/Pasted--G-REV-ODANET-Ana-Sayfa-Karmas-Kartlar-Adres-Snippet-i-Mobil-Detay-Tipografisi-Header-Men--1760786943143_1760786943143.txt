@@ -1,0 +1,165 @@
+[GÖREV] ODANET — Ana Sayfa Karması, Kartlar, Adres Snippet’i, Mobil Detay Tipografisi, Header/ Menü Düzenleri
+
+[TEKNİK]
+- Stack: Next.js (App Router tercih), TypeScript, TailwindCSS, lucide-react.
+- Kimlik: useAuth() → { isAuthenticated, user }.
+- Renkler: Birincil turuncu #f97316; sekonder mor gradyan mevcut.
+
+────────────────────────────────────────────────────
+1) ANA SAYFA “Güncel İlanlar” — ODA + ODA ARAYAN KARIŞIK
+────────────────────────────────────────────────────
+Amaç: Oda ilanları (listings) ile oda arayan ilanları (seekers) **tek grid** altında “Güncel İlanlar” başlığıyla birlikte gösterilsin.
+
+Uygulama:
+- (app|pages)/page.tsx içinde iki kaynağı çek:
+  - listings: status ∈ ["published","active"] AND is_visible = true
+  - seekers: status ∈ ["published","active"] AND is_visible = true
+- Not: Kullanıcı “oda arayan” ilanı açtıysa ama görünmüyorsa; taslakta kalmış olabilir. Aşağıdaki 8. maddeyi uygula.
+- Normalize et: her öğeye { type: "listing"|"seeker", createdAt, ... } alanları ekle.
+- Sıralama: createdAt DESC; ardından hafif karıştırma (seed = günün tarihi) uygula ki her yenilemede aşırı zıplama olmasın.
+- Grid: responsive (sm:2, md:3, lg:4). Maks 24 kart.
+- Kart seçimi:
+  - type === "listing" → <ListingCard … />
+  - type === "seeker"  → <SeekerCard … />
+
+Kabul:
+- Tek başlık altında iki tür kart karışık görünür.
+- Her kart **tıklanabilir** (Link) ve ilgili detaya götürür.
+
+────────────────────────────────────────────────────
+2) KARTLAR — TIKLANABİLİR/AKTİF + ADRES SNIPPET’İ + GÖRSEL YÜKSEKLİĞİ
+────────────────────────────────────────────────────
+Amaç: “Elan/İlan” kartları aktif değil → tamamı clickable olsun. Adresin **ilk 3 kelimesi** rozet olarak gösterilsin. Mobilde görsel yüksekliği biraz küçültülsün.
+
+Uygulama:
+- ListingCard.tsx:
+  - Kartın tamamını <Link href={`/listings/${id}`}> ile sar.
+  - Üst görsel:
+    - class="w-full rounded-xl object-cover aspect-[16/9] md:aspect-[4/3]"  // mobilde daha alçak
+    - Lazy loading + bg-slate-100 skeleton.
+  - Adres snippet:
+    - utils/getAddressSnippet(str, words=3) → str’i boşluklardan böl, ilk 3 kelimeyi birleştir.
+    - Sağ üst fiyat çipinin yakınında küçük rozet:
+      class="rounded-full px-2 py-0.5 text-[11px] bg-slate-50 text-slate-700 ring-1 ring-slate-200"
+  - Hover (md+): ring-1 ring-slate-200 shadow-sm.
+- SeekerCard.tsx:
+  - Tam kart <Link href={`/seekers/${id}`}> ile tıklanabilir.
+  - Varsa konum alanı için aynı getAddressSnippet() kullan ve küçük rozet olarak göster.
+
+Kabul:
+- Kartların tamamı link; cursor-pointer.
+- Adres üç kelimelik kısa rozetle görünür.
+- Mobilde görsel belirgin şekilde daha kısa (aspect-[16/9]).
+
+────────────────────────────────────────────────────
+3) DETAY SAYFASI — “Bilgiler” BLOĞU PROFESYONEL TİPOGRAFİ
+────────────────────────────────────────────────────
+Amaç: Label → Value hiyerarşisi net; formlardaki sözlükle aynı terimler.
+
+Uygulama (ListingDetail):
+- Başlık bloğu aynı kalsın; konum satırında kısa adres (getAddressSnippet()) göster.
+- “Oda Bilgileri”ni tanım listesine çevir:
+  - Ortak bileşen: components/ui/DefinitionList.tsx
+    - dt: class="text-slate-500 uppercase tracking-wide text-[11px] font-medium"
+    - dd: class="text-slate-900 font-semibold"
+  - Sıra/alanlar:
+    - Toplam Oda Sayısı → sayısal
+    - Evde Yaşayan Kişi → sayısal
+    - Cinsiyet Tercihi → “Kadın / Erkek / Farketmez”
+    - Sigara → “İçilebilir / İçilemez”
+    - Evcil Hayvan → “Var / Yok” (varsa)
+    - Banyo → “Ortak / Özel”
+    - Eşya Durumu → “Eşyalı / Eşyasız”
+- Boş değerleri gizle (hideIfNull).
+- Üst görsel galerisi mobilde:
+  - class="w-full rounded-2xl object-cover aspect-[16/10] md:aspect-[16/9]"
+- Özellik/olanak çipleri ikonlu ve satırlara sarar (lucide ikonları).
+
+Kabul:
+- “Label (gri küçük) → Değer (koyu kalın)” net görülsün.
+- Boş alan görünmesin; adres kısaltılmış halde görünsün.
+- Üst görselin yüksekliği önceye göre kısalmış.
+
+────────────────────────────────────────────────────
+4) HEADER (Giriş + Hamburger) ve MENÜ RENKLERİ
+────────────────────────────────────────────────────
+Amaç: Mobil header’da hamburger turuncu ve yanında “Giriş” yazsın. Menü açıldığında teması aynı turuncu ile tutarlı olsun. İkon arka planları ikon rengiyle eşleşsin.
+
+Uygulama:
+- isAuthenticated === false:
+  - Hamburger ikon: class="w-7 h-7 text-[#f97316]"
+  - Yanına “Giriş” linki: class="text-[#f97316] font-medium"
+- Menü açıldığında:
+  - Üst bar/başlık ve aktif maddeler turuncu temalı.
+  - Favoriler (kalp) ve Mesajlar ikonlarının arka plan “chip” rengi, ikon rengiyle aynı ailede (örn. bg-orange-50 text-[#f97316], bg-violet-50 text-violet-600).
+- Menü maddelerine **Mesajlar** ekle:
+  - Her iki durumda da listede görünsün.
+  - isAuthenticated === false ise tıklandığında login modal/route’a yönlendir (redirectTo=/messages).
+
+Kabul:
+- Giriş yazısı hamburger yanında turuncu.
+- Menü açılınca turuncu tema devam ediyor.
+- “Mesajlar” menüde var; çıkış durumunda login’e götürüyor.
+
+────────────────────────────────────────────────────
+5) PROFİL / HIZLI İŞLEMLER RENK GÜNCELLEME
+────────────────────────────────────────────────────
+Amaç: “Hızlı İşlemler” kartındaki yeşil-turuncu gradyanı **mor tonla** değiştir.
+
+Uygulama:
+- class="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 text-white"
+- Köşeler: rounded-2xl; iç boşluk: p-4 md:p-5.
+
+Kabul:
+- Kart mor gradyan; metin kontrastı yeterli.
+
+────────────────────────────────────────────────────
+6) MESAJLAR İKONU/ROZETLER — ARKA PLAN EŞLEŞMESİ
+────────────────────────────────────────────────────
+- Kalp/mesaj “floating action” ikonlarının arka planı (daire) ikon rengiyle uyumlu:
+  - Ör: class="bg-orange-100 text-[#f97316]" veya "bg-violet-100 text-violet-600".
+- Hover’daki gölgeler: shadow-md; focus-visible:ring-2 ring-offset-2.
+
+────────────────────────────────────────────────────
+7) ORTAK YARDIMCI — getAddressSnippet()
+────────────────────────────────────────────────────
+- utils/getAddressSnippet.ts:
+  export function getAddressSnippet(addr: string, words = 3) {
+    if (!addr) return "";
+    return addr.trim().split(/\s+/).slice(0, words).join(" ");
+  }
+- ListingCard, SeekerCard, ListingDetail konum satırlarında kullan.
+
+────────────────────────────────────────────────────
+8) “ODA ARAYAN” İLANI NEDEN GÖRÜNMÜYOR? (YAYIN DURUMU KONTROLÜ)
+────────────────────────────────────────────────────
+Amaç: Kullanıcının oluşturduğu oda arayan ilanı yayında değilse tespit et ve düzelt.
+
+Uygulama:
+- Sunucu/DB tarafında kontrol: SELECT * FROM seekers WHERE userId = {currentUser} ORDER BY updatedAt DESC LIMIT 1
+- Eğer record.status ∈ ["draft","pending","inactive"] veya is_visible=false ise:
+  - Admin/log kaydı: “Seeker draft detected”.
+  - Eğer gerekli alanlar doluysa, status="published", is_visible=true yap ve updatedAt’i güncelle.
+  - Eksik alan varsa UI’da uyarı banner: “Oda arayan ilanınız taslakta. Tamamlayıp yayına alın.” → CTA: “Düzenle”.
+- Ana sayfa sorgularında sadece published/visible kayıtları al.
+
+Kabul:
+- Taslaksa kullanıcı bilgilendiriliyor; tamamlanırsa ana sayfada görünür.
+
+────────────────────────────────────────────────────
+9) QA / ERİŞİLEBİLİRLİK
+────────────────────────────────────────────────────
+- Tüm interaktif öğelerde aria-label (örn. “Giriş”, “Mesajlar”, “Favorilere Ekle”).
+- 360–430px genişlikte görsel taşması yok; sticky barlarla çakışma yok.
+- Lighthouse Mobil Erişilebilirlik ≥ 90.
+
+────────────────────────────────────────────────────
+10) TESLİMAT
+────────────────────────────────────────────────────
+- Değişen dosyaların listesi + kısa özet.
+- “Seeker draft fix” için atılan migration/seed veya script varsa belirt.
+- Ana sayfa ekran görüntüsü: karma grid (listing + seeker) + adres rozetleri + tıklanabilir kartlar.
+
+[NOTLAR]
+- Kod içinde Türkçe yorum: // ODANET Revizyon — [Bölüm].
+- Mevcut fiyat çipi korunabilir; ancak kart görsel yüksekliği azaltıldıktan sonra konumlandırmayı kontrol et.
