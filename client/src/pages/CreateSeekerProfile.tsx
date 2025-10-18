@@ -119,10 +119,9 @@ export default function CreateSeekerProfile() {
         budgetMonthly: data.budgetMonthly,
         about: data.about,
         preferredLocation: data.preferredLocation,
-        isSmoker: data.isSmoker === 'true' ? true : data.isSmoker === 'false' ? false : null,
-        hasPets: data.hasPets === 'true' ? true : data.hasPets === 'false' ? false : null,
-        smokingPreference: data.smokingPreference || null,
-        petPreference: data.petPreference || null,
+        smokingPreference: data.smokingPreference || 'no-preference',
+        petPreference: data.petPreference || 'no-preference',
+        cleanlinessLevel: 'average', // Default value
       };
 
       console.log('Submitting seeker profile:', payload);

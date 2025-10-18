@@ -1,0 +1,155 @@
+Title: Fix “is_smoker” DB error, align seeker schema, and add mixed homepage feed
+
+Do this:
+	1.	Fix seeker profile create error (DB + server alignment)
+	•	Locate our DB schema for seeker_profiles (Drizzle). Find any usage of legacy fields like is_smoker, has_pets, etc., and replace them with the new normalized fields we already use in the UI:
+	•	smoking_preference TEXT, allowed values: non-smoker | smoker | social-smoker | no-preference (default no-preference)
+	•	pet_preference TEXT, allowed values: no-pets | cat-friendly | dog-friendly | all-pets | no-preference (default no-preference)
+	•	cleanliness_level TEXT, allowed values: very-clean | clean | average | relaxed (default average)
+	•	Create a new Drizzle SQL migration file (e.g. migrations/20251018_seeker_profile_prefs.sql) with:
+
+ALTER TABLE seeker_profiles
+  ADD COLUMN IF NOT EXISTS smoking_preference TEXT
+    CHECK (smoking_preference IN ('non-smoker','smoker','social-smoker','no-preference'))
+    DEFAULT 'no-preference',
+  ADD COLUMN IF NOT EXISTS pet_preference TEXT
+    CHECK (pet_preference IN ('no-pets','cat-friendly','dog-friendly','all-pets','no-preference'))
+    DEFAULT 'no-preference',
+  ADD COLUMN IF NOT EXISTS cleanliness_level TEXT
+    CHECK (cleanliness_level IN ('very-clean','clean','average','relaxed'))
+    DEFAULT 'average';
+
+Do not re-add is_smoker. We’re standardizing on the new fields.
+
+	•	Update the Drizzle TypeScript schema (likely server/db/schema.ts) to include these columns:
+
+// in seeker_profiles table definition
+smokingPreference: text('smoking_preference'),
+petPreference: text('pet_preference'),
+cleanlinessLevel: text('cleanliness_level'),
+
+
+	•	Update the insert/update code path for creating/updating a seeker profile (look in server/routes/seekers.ts or similar). Stop writing/reading isSmoker/is_smoker. Instead, map to:
+
+smokingPreference: payload.smokingPreference ?? 'no-preference',
+petPreference: payload.petPreference ?? 'no-preference',
+cleanlinessLevel: payload.cleanlinessLevel ?? 'average',
+
+
+	•	Update the Zod schema used on the server (e.g., insertSeekerProfileSchema) to accept the three fields above (and remove legacy fields).
+	•	Run DB migration and ensure the create endpoint works in dev: npm run db:push then npm run dev. Test creating a room-seeker profile from /oda-arama-ilani-olustur — it should succeed without the is_smoker error.
+
+	2.	Add a mixed homepage feed (listings + room-seekers together)
+	•	Backend: create a new route GET /api/feed that returns a merged array of the most recent items from:
+	•	listings (room listings)
+	•	seeker_profiles (room seekers)
+Return a normalized shape with a type discriminator:
+
+type FeedItem =
+  | {
+      type: 'listing';
+      id: string;
+      createdAt: string;
+      title: string;
+      suburb: string | null;
+      rentAmount: number | null;
+      images: { imagePath: string; isPrimary?: boolean }[];
+    }
+  | {
+      type: 'seeker';
+      id: string;
+      createdAt: string;
+      displayName: string;
+      budgetMonthly: number | null;
+      preferredLocation: string | null;
+      photoUrl: string | null;
+      // add any small fields you want to show on the card
+    };
+
+Implementation detail:
+	•	Fetch last N listings and N seekers (e.g., 12 each), map each to FeedItem, merge them into one array and sort desc by createdAt. Return the first 12–16.
+	•	For images, continue to use our getAbsoluteImageUrl() helper in the FE.
+
+	•	Frontend: add a component components/MixedFeed.tsx:
+
+import { useQuery } from "@tanstack/react-query";
+import ListingCard from "@/components/ListingCard";
+import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+
+type FeedItem =
+  | { type: 'listing'; id: string; title: string; suburb: string | null; rentAmount: number | null; images: { imagePath: string; isPrimary?: boolean }[] }
+  | { type: 'seeker'; id: string; displayName: string; budgetMonthly: number | null; preferredLocation: string | null; photoUrl: string | null };
+
+function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) {
+  const photo = item.photoUrl ? getAbsoluteImageUrl(item.photoUrl) : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.displayName)}&background=8b5cf6&color=fff&size=400`;
+  return (
+    <a href={`/oda-arayan/${item.id}`} className="group block overflow-hidden rounded-2xl bg-white ring-1 ring-black/5 shadow-sm hover:shadow-lg transition">
+      <div className="relative h-44 sm:h-52 overflow-hidden">
+        <img src={photo} alt={item.displayName} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+        {item.budgetMonthly != null && (
+          <div className="absolute top-2 left-2 rounded-full bg-emerald-600/95 text-white text-xs sm:text-sm font-semibold px-2.5 py-1 shadow">
+            ₺{item.budgetMonthly.toLocaleString("tr-TR")}/ay
+          </div>
+        )}
+      </div>
+      <div className="p-3 sm:p-4">
+        <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 line-clamp-1">{item.displayName}</h3>
+        <p className="mt-0.5 text-sm text-slate-600 line-clamp-1">{item.preferredLocation ?? "Lokasyon bilgisi yok"}</p>
+      </div>
+    </a>
+  );
+}
+
+export default function MixedFeed() {
+  const { data, isLoading, error } = useQuery<FeedItem[]>({
+    queryKey: ['/api/feed'],
+  });
+
+  if (isLoading) {
+    return <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">{[...Array(8)].map((_,i)=><div key={i} className="h-64 bg-white/70 rounded-2xl ring-1 ring-black/5 animate-pulse" />)}</div>;
+  }
+  if (error || !data?.length) return null;
+
+  return (
+    <section className="py-10 sm:py-12">
+      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-6 sm:mb-8">
+          Güncel İlanlar ve Oda Arayanlar
+        </h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {data.map((item) =>
+            item.type === 'listing' ? (
+              <ListingCard key={`feed-listing-${item.id}`} listing={{
+                id: item.id,
+                title: item.title,
+                suburb: item.suburb ?? undefined,
+                rentAmount: item.rentAmount ?? undefined,
+                images: item.images
+              }} />
+            ) : (
+              <SeekerMiniCard key={`feed-seeker-${item.id}`} item={item} />
+            )
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+	•	Replace the two separate sections on the homepage with the mixed feed:
+	•	In pages/Home.tsx, remove the separate <FeaturedListings /> and <FeaturedRoomSeekers /> blocks and add <MixedFeed /> after <SearchBox />.
+	•	Keep all imports/paths consistent.
+
+	3.	QA checklist
+	•	Creating a room-seeker profile from /oda-arama-ilani-olustur succeeds (no is_smoker error).
+	•	/api/feed returns a mixed, date-sorted array with type for each item.
+	•	Homepage shows a single, mixed grid of items (listings and seekers), mobile-first, using the existing card styles.
+	•	Images resolve through getAbsoluteImageUrl and load on mobile & desktop.
+	4.	Run & verify (dev)
+	•	npm install (if needed)
+	•	npm run db:push
+	•	npm run dev
+	•	Test create flow and homepage feed in the Replit preview URL.
+	•	When it’s all good, republish the autoscale deployment.

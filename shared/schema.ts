@@ -134,14 +134,10 @@ export const seekerProfiles = pgTable("seeker_profiles", {
   about: text("about"), // Bio/description
   preferredLocation: text("preferred_location"), // Single location preference
   
-  // ODANET Revizyon – Yaşam Tarzı (kişinin kendi durumu)
-  isSmoker: boolean("is_smoker"), // Sigara içiyor musunuz?
-  hasPets: boolean("has_pets"), // Evcil hayvanınız var mı?
-  
-  // Lifestyle Preferences (merged from userPreferences)
-  smokingPreference: varchar("smoking_preference"),
-  petPreference: varchar("pet_preference"),
-  cleanlinessLevel: varchar("cleanliness_level"),
+  // Lifestyle Preferences (normalized)
+  smokingPreference: varchar("smoking_preference"), // non-smoker | smoker | social-smoker | no-preference
+  petPreference: varchar("pet_preference"), // no-pets | cat-friendly | dog-friendly | all-pets | no-preference
+  cleanlinessLevel: varchar("cleanliness_level"), // very-clean | clean | average | relaxed
   socialLevel: varchar("social_level"),
   workSchedule: varchar("work_schedule"),
   agePreferenceMin: integer("age_preference_min"),
