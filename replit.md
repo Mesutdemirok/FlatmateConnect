@@ -140,3 +140,22 @@ Preferred communication style: Simple, everyday language.
 - **CDN Integration**: Image URLs normalized to use Cloudflare CDN domain for optimal delivery
   - Production: Uses R2_PUBLIC_URL (cdn.odanet.com.tr)
   - Development: Falls back to local paths
+
+### UI Consistency & Mobile Optimization (October 18, 2025)
+- **Unified Card Heights**: All cards (listings and seekers) now use fixed `h-[430px]` for visual consistency
+- **Mobile-First Grid**: Changed from 2-column mobile to 1-column mobile layout
+  - Mobile: `grid-cols-1` (1 card per row)
+  - Tablet: `md:grid-cols-2` (2 cards per row)
+  - Desktop: `lg:grid-cols-3` (3 cards per row)
+- **Simplified ListingCard**: 
+  - Removed duplicate address display and location pills inside images
+  - Clean single address line below card content
+  - Fixed height maintains consistent grid alignment
+- **Redesigned SeekerCard**: 
+  - Matches listing card height exactly (430px)
+  - Budget badge (emerald green) in top-left, "Oda Arayan" label (violet) in top-right
+  - Simplified info display with name, location, and age
+- **New CombinedFeed Component**: Replaced MixedFeed
+  - Fetches both listings and seekers in parallel with `useQueries`
+  - Interleaves results (seeker, listing, seeker, listing...) for variety
+  - Single unified grid instead of separate sections

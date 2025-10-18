@@ -1,0 +1,288 @@
+
+
+Got it — let’s (1) make mobile show one card per row, (2) remove the duplicate address + any extra “inside-image” location pills, (3) give identical heights for both room-listing and room-seeker cards, and (4) mix seekers + listings together on the home page so all appear in one feed.
+
+Below are drop-in components. They won’t break any data connections — only presentation.
+
+⸻
+
+1) Replace your existing ListingCard.tsx with this (clean + single address + fixed height)
+
+// src/components/ListingCard.tsx
+import { Button } from "@/components/ui/button";
+import { Heart, ShieldCheck } from "lucide-react";
+import { Link } from "wouter";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
+import { formatCurrency } from "@/lib/formatters";
+import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+
+interface ListingCardProps {
+  listing?: {
+    id?: string;
+    title?: string | null;
+    suburb?: string | null;
+    rentAmount?: string | number | null;
+    images?: Array<{ imagePath?: string; isPrimary?: boolean }>;
+    user?: { verificationStatus?: string | null };
+  };
+  isFavorited?: boolean;
+}
+
+const FALLBACK_IMG =
+  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=60";
+
+export default function ListingCard({ listing, isFavorited = false }: ListingCardProps) {
+  const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const id = listing?.id ?? "";
+  const title = (listing?.title ?? "İlan").toString();
+  const suburb = (listing?.suburb ?? "").toString();
+
+  const amount = useMemo(() => {
+    const v = listing?.rentAmount;
+    if (typeof v === "string") return Number(v.replace(/[^\d.,-]/g, "").replace(",", "."));
+    return Number(v ?? 0);
+  }, [listing?.rentAmount]);
+
+  const imgs = Array.isArray(listing?.images) && listing?.images.length
+    ? listing!.images
+    : [{ imagePath: FALLBACK_IMG, isPrimary: true }];
+
+  const primary = imgs.find(i => i?.isPrimary) ?? imgs[0];
+  const imageUrl = getAbsoluteImageUrl(primary?.imagePath || FALLBACK_IMG);
+  const isVerified = listing?.user?.verificationStatus === "verified";
+
+  const [favorite, setFavorite] = useState(isFavorited);
+
+  const toggleFavorite = useMutation({
+    mutationFn: async () => {
+      if (!id) return;
+      if (favorite) await apiRequest("DELETE", `/api/favorites/${id}`);
+      else await apiRequest("POST", "/api/favorites", { listingId: id });
+    },
+    onSuccess: () => {
+      setFavorite(f => !f);
+      queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
+      toast({ title: favorite ? t("success.removed_from_favorites") : t("success.added_to_favorites") });
+    },
+    onError: (err) => {
+      if (isUnauthorizedError(err)) {
+        toast({ title: t("errors.unauthorized"), description: "Lütfen giriş yapın.", variant: "destructive" });
+        setTimeout(() => (window.location.href = "/giris"), 400);
+        return;
+      }
+      toast({ title: "Hata", description: "Favoriler güncellenemedi.", variant: "destructive" });
+    }
+  });
+
+  return (
+    <Link href={id ? `/oda-ilani/${id}` : "#"}>
+      <article
+        className="h-[430px] w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition
+                   flex flex-col"
+      >
+        {/* image (fixed height for consistent cards) */}
+        <div className="relative h-56 w-full overflow-hidden">
+          <img
+            src={imageUrl}
+            alt={title}
+            className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+          />
+
+          {/* price pill */}
+          <div className="absolute right-2 top-2 rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-indigo-700 shadow">
+            {formatCurrency(Number.isFinite(amount) ? amount : 0)} <span className="text-xs text-indigo-600">/ay</span>
+          </div>
+
+          {/* favorite (dark orange) */}
+          <Button
+            variant="secondary"
+            size="icon"
+            aria-label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"}
+            className="absolute left-2 top-2 h-10 w-10 rounded-full bg-orange-600 text-white hover:bg-orange-700 shadow ring-1 ring-white/50"
+            onClick={(e) => {
+              e.preventDefault();
+              if (!isAuthenticated) return (window.location.href = "/giris");
+              toggleFavorite.mutate();
+            }}
+          >
+            <Heart className="h-5 w-5" strokeWidth={2} fill={favorite ? "currentColor" : "none"} />
+          </Button>
+
+          {/* verified badge */}
+          {isVerified && (
+            <div className="absolute bottom-2 left-2 rounded-full bg-emerald-600/95 p-1.5 text-white shadow ring-1 ring-white/50">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+          )}
+        </div>
+
+        {/* content (single, clean address; no extra “chip” inside image) */}
+        <div className="flex-1 p-4">
+          <h3 className="line-clamp-2 text-[17px] font-semibold text-slate-900">{title}</h3>
+          {suburb && <p className="mt-1 line-clamp-1 text-sm text-slate-600">{suburb}</p>}
+        </div>
+      </article>
+    </Link>
+  );
+}
+
+
+⸻
+
+2) Add a matching SeekerCard.tsx (same height, no extra fluff)
+
+// src/components/SeekerCard.tsx
+import { Link } from "wouter";
+import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+
+type Seeker = {
+  id: string;
+  fullName?: string | null;
+  user?: { firstName?: string | null; lastName?: string | null } | null;
+  profilePhotoUrl?: string | null;
+  photos?: Array<{ imagePath?: string; sortOrder?: number }>;
+  preferredLocation?: string | null;
+  budgetMonthly?: string | null;
+  age?: number | null;
+};
+
+function nameOf(s: Seeker) {
+  if (s.fullName) {
+    const parts = s.fullName.split(" ");
+    return parts.length > 1 ? `${parts[0]} ${parts[1][0]}.` : parts[0];
+  }
+  if (s.user?.firstName) return `${s.user.firstName} ${s.user?.lastName?.[0] || ""}.`.trim();
+  return "Oda arayan";
+}
+
+function photoOf(s: Seeker) {
+  if (s.profilePhotoUrl) return getAbsoluteImageUrl(s.profilePhotoUrl);
+  const p = s.photos?.find(x => x.sortOrder === 0) || s.photos?.[0];
+  if (p?.imagePath) return getAbsoluteImageUrl(p.imagePath);
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(nameOf(s))}&background=8b5cf6&color=fff&size=512`;
+}
+
+export default function SeekerCard({ seeker }: { seeker: Seeker }) {
+  return (
+    <Link href={`/oda-arayan/${seeker.id}`}>
+      <article className="h-[430px] w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col">
+        <div className="relative h-56 w-full overflow-hidden">
+          <img src={photoOf(seeker)} alt={nameOf(seeker)} className="h-full w-full object-cover" />
+          {/* budget tag */}
+          {seeker.budgetMonthly && (
+            <div className="absolute left-2 top-2 rounded-full bg-emerald-600/95 px-3 py-1 text-sm font-bold text-white shadow">
+              ₺{Number(seeker.budgetMonthly).toLocaleString("tr-TR")}/ay
+            </div>
+          )}
+          {/* “Oda Arayan” tag */}
+          <div className="absolute right-2 top-2 rounded-full bg-violet-600/95 px-3 py-1 text-xs font-semibold text-white shadow">
+            Oda Arayan
+          </div>
+        </div>
+
+        <div className="flex-1 p-4">
+          <h3 className="line-clamp-1 text-[17px] font-semibold text-slate-900">{nameOf(seeker)}</h3>
+          {seeker.preferredLocation && (
+            <p className="mt-1 line-clamp-1 text-sm text-slate-600">{seeker.preferredLocation}</p>
+          )}
+          {seeker.age ? <p className="mt-1 text-sm text-slate-600">{seeker.age} yaş</p> : null}
+        </div>
+      </article>
+    </Link>
+  );
+}
+
+
+⸻
+
+3) New “mixed feed” for the home page (1 per row on mobile)
+
+// src/components/CombinedFeed.tsx
+import { useQueries } from "@tanstack/react-query";
+import ListingCard from "@/components/ListingCard";
+import SeekerCard from "@/components/SeekerCard";
+
+export default function CombinedFeed() {
+  const results = useQueries({
+    queries: [
+      {
+        queryKey: ["/api/listings"],
+        queryFn: async () => (await fetch("/api/listings")).json(),
+      },
+      {
+        queryKey: ["/api/seekers/public"],
+        queryFn: async () => (await fetch("/api/seekers/public?isActive=true")).json(),
+      },
+    ],
+  });
+
+  const [listingsQ, seekersQ] = results;
+  const listings = Array.isArray(listingsQ.data) ? listingsQ.data : [];
+  const seekers = Array.isArray(seekersQ.data) ? seekersQ.data : [];
+
+  // Interleave to “mix” them
+  const mixed: Array<{ kind: "listing" | "seeker"; data: any }> = [];
+  const maxLen = Math.max(listings.length, seekers.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (i < seekers.length) mixed.push({ kind: "seeker", data: seekers[i] });
+    if (i < listings.length) mixed.push({ kind: "listing", data: listings[i] });
+  }
+
+  if (listingsQ.isLoading || seekersQ.isLoading) {
+    return <div className="py-8 text-center text-slate-600">Yükleniyor…</div>;
+  }
+
+  return (
+    <section className="py-10 sm:py-12">
+      <div className="mx-auto max-w-[1100px] px-3">
+        {/* 1 per row on mobile; 2 on md; 3 on lg */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {mixed.map((item, idx) =>
+            item.kind === "listing" ? (
+              <ListingCard key={`l-${item.data.id}-${idx}`} listing={item.data} />
+            ) : (
+              <SeekerCard key={`s-${item.data.id}-${idx}`} seeker={item.data} />
+            )
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+⸻
+
+4) Update your home page to use the mixed feed (and 1-per-row mobile)
+
+// src/pages/Home.tsx
+import Header from "@/components/Header";
+import Hero from "@/components/Hero";
+import SearchBox from "@/components/SearchBox";
+import CombinedFeed from "@/components/CombinedFeed";
+import Footer from "@/components/Footer";
+
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-violet-50 to-fuchsia-50 flex flex-col" data-testid="home-page">
+      <Header />
+      <main className="flex-grow">
+        <Hero />
+        <SearchBox />
+        <CombinedFeed />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+

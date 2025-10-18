@@ -1,8 +1,7 @@
-// ODANET Revizyon – Tam T\u0131klanabilir Kart + Adres Snippet + Mobil Görsel Optimize
 import { Button } from "@/components/ui/button";
-import { Heart, ShieldCheck, MapPin } from "lucide-react";
+import { Heart, ShieldCheck } from "lucide-react";
 import { Link } from "wouter";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -11,241 +10,115 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatCurrency } from "@/lib/formatters";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
-import { getAddressSnippet } from "@/lib/utils/getAddressSnippet";
 
 interface ListingCardProps {
   listing?: {
     id?: string;
     title?: string | null;
-    address?: string | null;
     suburb?: string | null;
     rentAmount?: string | number | null;
-    availableFrom?: string | null;
     images?: Array<{ imagePath?: string; isPrimary?: boolean }>;
-    user?: { firstName?: string | null; verificationStatus?: string | null };
+    user?: { verificationStatus?: string | null };
   };
   isFavorited?: boolean;
-  showDistance?: boolean;
-  distance?: string;
 }
 
 const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=60";
 
-export default function ListingCard({
-  listing,
-  isFavorited = false,
-  showDistance = false,
-  distance,
-}: ListingCardProps) {
+export default function ListingCard({ listing, isFavorited = false }: ListingCardProps) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // ---- safe derived fields
   const id = listing?.id ?? "";
-  const rawTitle = (listing?.title ?? "").toString().trim();
-  const title4 =
-    rawTitle.length > 0
-      ? rawTitle.split(/\s+/).slice(0, 4).join(" ") +
-        (rawTitle.split(/\s+/).length > 4 ? "…" : "")
-      : "İlan";
-  
-  const fullAddress = (listing?.address ?? listing?.suburb ?? "").toString();
-  const addressSnippet = getAddressSnippet(fullAddress, 3);
+  const title = (listing?.title ?? "İlan").toString();
+  const suburb = (listing?.suburb ?? "").toString();
 
-  const amountNumber = useMemo(() => {
-    if (typeof listing?.rentAmount === "string") {
-      return Number(
-        listing.rentAmount.replace(/[^\d.,-]/g, "").replace(",", "."),
-      );
-    }
-    return Number(listing?.rentAmount ?? 0);
+  const amount = useMemo(() => {
+    const v = listing?.rentAmount;
+    if (typeof v === "string") return Number(v.replace(/[^\d.,-]/g, "").replace(",", "."));
+    return Number(v ?? 0);
   }, [listing?.rentAmount]);
 
-  const rentLabel = formatCurrency(
-    Number.isFinite(amountNumber) ? amountNumber : 0,
-  );
+  const imgs = Array.isArray(listing?.images) && listing?.images.length
+    ? listing!.images
+    : [{ imagePath: FALLBACK_IMG, isPrimary: true }];
 
-  // ---- choose image + normalize URL
-  const primaryImage = useMemo(() => {
-    if (Array.isArray(listing?.images) && listing.images.length) {
-      return listing.images.find((i) => i?.isPrimary) ?? listing.images[0];
-    }
-    return { imagePath: FALLBACK_IMG, isPrimary: true };
-  }, [listing?.images]);
-
-  const normalizedUrl = useMemo(
-    () => getAbsoluteImageUrl(primaryImage?.imagePath || FALLBACK_IMG),
-    [primaryImage?.imagePath],
-  );
-
-  // local image state for fallback & blur-up
-  const [imgSrc, setImgSrc] = useState<string>(normalizedUrl);
-  const [imgLoaded, setImgLoaded] = useState<boolean>(false);
-
-  useEffect(() => {
-    setImgSrc(normalizedUrl);
-    setImgLoaded(false);
-  }, [normalizedUrl, id]);
-
+  const primary = imgs.find(i => i?.isPrimary) ?? imgs[0];
+  const imageUrl = getAbsoluteImageUrl(primary?.imagePath || FALLBACK_IMG);
   const isVerified = listing?.user?.verificationStatus === "verified";
+
   const [favorite, setFavorite] = useState(isFavorited);
 
-  const toggleFavoriteMutation = useMutation({
+  const toggleFavorite = useMutation({
     mutationFn: async () => {
       if (!id) return;
-      if (favorite) {
-        await apiRequest("DELETE", `/api/favorites/${id}`);
-      } else {
-        await apiRequest("POST", "/api/favorites", { listingId: id });
-      }
+      if (favorite) await apiRequest("DELETE", `/api/favorites/${id}`);
+      else await apiRequest("POST", "/api/favorites", { listingId: id });
     },
     onSuccess: () => {
-      setFavorite((f) => !f);
+      setFavorite(f => !f);
       queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
-      toast({
-        title: favorite
-          ? t("success.removed_from_favorites")
-          : t("success.added_to_favorites"),
-      });
+      toast({ title: favorite ? t("success.removed_from_favorites") : t("success.added_to_favorites") });
     },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: t("errors.unauthorized"),
-          description: "Oturumunuz sonlandı. Lütfen tekrar giriş yapın.",
-          variant: "destructive",
-        });
-        setTimeout(() => (window.location.href = "/giris"), 500);
+    onError: (err) => {
+      if (isUnauthorizedError(err)) {
+        toast({ title: t("errors.unauthorized"), description: "Lütfen giriş yapın.", variant: "destructive" });
+        setTimeout(() => (window.location.href = "/giris"), 400);
         return;
       }
-      toast({
-        title: "Hata",
-        description: "Favoriler güncellenemedi.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleToggleFavorite = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isAuthenticated) {
-      window.location.href = "/giris";
-      return;
+      toast({ title: "Hata", description: "Favoriler güncellenemedi.", variant: "destructive" });
     }
-    if (!id) return;
-    toggleFavoriteMutation.mutate();
-  };
+  });
 
   return (
     <Link href={id ? `/oda-ilani/${id}` : "#"}>
-      <div
-        className="
-          group block relative overflow-hidden rounded-2xl cursor-pointer
-          bg-gradient-to-b from-[#f9faff] via-[#f3f6ff] to-[#edf0ff]
-          ring-1 ring-black/5 shadow-sm hover:shadow-lg transition-all duration-300
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600
-        "
+      <article
+        className="h-[430px] w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition
+                   flex flex-col"
         data-testid={`listing-card-${id || "noid"}`}
-        role="article"
-        aria-label={rawTitle || "İlan"}
       >
-        {/* Media */}
-        <div className="relative mx-2 mt-2 mb-1 overflow-hidden rounded-lg ring-1 ring-black/5 sm:mx-3 sm:mt-3 sm:mb-2">
-          {/* ODANET Revizyon: Mobilde aspect-[16/9], masaüstü aspect-[4/3] */}
-          <div className="relative w-full aspect-[16/9] md:aspect-[4/3]">
-            <img
-              src={imgSrc}
-              alt={title4}
-              loading="lazy"
-              decoding="async"
-              sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw"
-              onLoad={() => setImgLoaded(true)}
-              onError={() => {
-                if (imgSrc !== FALLBACK_IMG) setImgSrc(FALLBACK_IMG);
-              }}
-              className={`
-                absolute inset-0 h-full w-full object-cover
-                transition-transform motion-safe:group-hover:scale-[1.03] duration-500
-                ${imgLoaded ? "opacity-100" : "opacity-0"}
-              `}
-              aria-busy={!imgLoaded}
-              data-testid={`listing-image-${id || "noid"}`}
-            />
-            {!imgLoaded && (
-              <div
-                className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-200/70 via-slate-100/70 to-slate-200/70"
-                aria-hidden="true"
-              />
-            )}
+        <div className="relative h-56 w-full overflow-hidden">
+          <img
+            src={imageUrl}
+            alt={title}
+            className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+            data-testid={`listing-image-${id || "noid"}`}
+          />
 
-            {/* Price */}
-            <div className="absolute right-2 top-2 sm:right-3 sm:top-3 rounded-full bg-white/95 px-2.5 py-1 sm:px-3 text-[12px] sm:text-sm font-semibold text-indigo-700 shadow-sm backdrop-blur">
-              {rentLabel}
-              <span className="ml-1 text-[11px] sm:text-xs font-medium text-indigo-600">
-                /ay
-              </span>
-            </div>
-
-            {/* ODANET Revizyon: Adres Snippet (3 kelime) */}
-            {addressSnippet && (
-              <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] bg-slate-50/90 text-slate-700 ring-1 ring-slate-200/50 backdrop-blur">
-                <MapPin className="h-3 w-3" aria-hidden="true" />
-                <span className="line-clamp-1">{addressSnippet}</span>
-              </div>
-            )}
-
-            {/* Favorite (dark orange) */}
-            <Button
-              variant="secondary"
-              size="icon"
-              aria-label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"}
-              className="
-                absolute right-2 bottom-2 h-9 w-9 sm:h-10 sm:w-10 rounded-full
-                bg-orange-600 text-white shadow-sm ring-1 ring-white/40
-                hover:bg-orange-700 active:scale-95 transition
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70
-              "
-              onClick={handleToggleFavorite}
-              disabled={toggleFavoriteMutation.isPending || !id}
-              aria-pressed={favorite}
-              data-testid={`favorite-button-${id || "noid"}`}
-            >
-              <Heart
-                className="h-5 w-5"
-                strokeWidth={2}
-                fill={favorite ? "currentColor" : "none"}
-              />
-            </Button>
-
-            {/* Verified */}
-            {isVerified && (
-              <div className="absolute top-2 left-2 rounded-full bg-emerald-600/95 p-1.5 text-white shadow-sm ring-1 ring-white/40 sm:top-3 sm:left-3">
-                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                <span className="sr-only">
-                  {t("profile.verified", "Doğrulanmış")}
-                </span>
-              </div>
-            )}
+          <div className="absolute right-2 top-2 rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-indigo-700 shadow">
+            {formatCurrency(Number.isFinite(amount) ? amount : 0)} <span className="text-xs text-indigo-600">/ay</span>
           </div>
+
+          <Button
+            variant="secondary"
+            size="icon"
+            aria-label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"}
+            className="absolute left-2 top-2 h-10 w-10 rounded-full bg-orange-600 text-white hover:bg-orange-700 shadow ring-1 ring-white/50"
+            onClick={(e) => {
+              e.preventDefault();
+              if (!isAuthenticated) return (window.location.href = "/giris");
+              toggleFavorite.mutate();
+            }}
+            data-testid={`favorite-button-${id || "noid"}`}
+          >
+            <Heart className="h-5 w-5" strokeWidth={2} fill={favorite ? "currentColor" : "none"} />
+          </Button>
+
+          {isVerified && (
+            <div className="absolute bottom-2 left-2 rounded-full bg-emerald-600/95 p-1.5 text-white shadow ring-1 ring-white/50">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+          )}
         </div>
 
-        {/* Content */}
-        <div className="px-3 pb-3 sm:px-4 sm:pb-4">
-          <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2">
-            {title4}
-          </h3>
-          <p
-            className="mt-0.5 sm:mt-1 text-[13px] sm:text-sm text-slate-600 truncate"
-            title={fullAddress}
-          >
-            {fullAddress || "Konum belirtilmemiş"}
-          </p>
+        <div className="flex-1 p-4">
+          <h3 className="line-clamp-2 text-[17px] font-semibold text-slate-900">{title}</h3>
+          {suburb && <p className="mt-1 line-clamp-1 text-sm text-slate-600">{suburb}</p>}
         </div>
-      </div>
+      </article>
     </Link>
   );
 }
