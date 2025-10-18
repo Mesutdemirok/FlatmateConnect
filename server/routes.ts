@@ -749,7 +749,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Seeker photo routes
+  // Single profile photo upload endpoint (for form submissions)
+  app.post('/api/seekers/:id/photo', jwtAuth, seekerUpload.single('photo'), async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      
+      if (!seeker || seeker.userId !== userId) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: 'Profil bulunamadı veya yetkiniz yok' });
+      }
+
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: 'Fotoğraf seçilmedi' });
+      }
+      
+      // Dynamically import R2 utilities
+      const { uploadToR2 } = await import('./r2-utils');
+      
+      const r2Key = `uploads/seekers/${file.filename}`;
+      let photoUrl = `/${r2Key}`; // fallback to relative path
+      
+      try {
+        await uploadToR2(file.path, r2Key);
+        photoUrl = r2Key; // Store just the key, not the full URL
+        console.log(`✅ Uploaded profile photo to R2: ${r2Key}`);
+      } catch (r2Error) {
+        console.error(`❌ R2 upload failed for ${r2Key}:`, r2Error);
+        // Continue anyway - file is saved locally as fallback
+      }
+      
+      // Update profile photo URL
+      await storage.updateSeekerProfile(req.params.id, {
+        profilePhotoUrl: photoUrl
+      });
+      
+      // Also add to seeker_photos table with sortOrder 0
+      await storage.addSeekerPhoto({
+        seekerId: req.params.id,
+        imagePath: photoUrl,
+        sortOrder: 0,
+      });
+      
+      const updatedSeeker = await storage.getSeekerProfile(req.params.id);
+      res.status(200).json(updatedSeeker);
+    } catch (error: any) {
+      console.error("Error uploading profile photo:", error);
+      const lang = detectLanguage(req);
+      res.status(400).json({ message: 'Fotoğraf yüklenemedi', error: error.message });
+    }
+  });
+
+  // Delete profile photo endpoint
+  app.delete('/api/seekers/:id/photo', jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      
+      if (!seeker || seeker.userId !== userId) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: 'Profil bulunamadı veya yetkiniz yok' });
+      }
+      
+      // Update profile photo URL to null
+      await storage.updateSeekerProfile(req.params.id, {
+        profilePhotoUrl: null
+      });
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting profile photo:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
+  // Seeker photo routes (multiple photos)
   app.post('/api/seekers/:id/photos', jwtAuth, seekerUpload.array('photos', 5), async (req, res) => {
     try {
       const userId = req.userId!;

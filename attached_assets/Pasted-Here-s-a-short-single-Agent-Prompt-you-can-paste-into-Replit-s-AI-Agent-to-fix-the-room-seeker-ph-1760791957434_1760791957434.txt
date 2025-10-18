@@ -1,0 +1,73 @@
+Here’s a short, single “Agent Prompt” you can paste into Replit’s AI Agent to fix the room-seeker photo not uploading (showing initials like “ZZ”). It keeps your current storage/CDN setup and the existing UI logic (getAbsoluteImageUrl, fallback avatar) exactly as is.
+
+⸻
+
+Agent Prompt — Fix Seeker Photo Upload + Wire Through UI
+
+Goal: When a user creates/edits an “Oda Arayan” (seeker) profile, the selected image must be uploaded to our object storage and immediately shown across:
+	•	Seeker list cards
+	•	Seeker detail page
+	•	Mixed home feed cards
+
+We already render photos via getAbsoluteImageUrl(profilePhotoUrl || photos[0].imagePath). Implement the upload so that one of those fields is reliably set after save.
+
+1) Client: Create/Update Seeker form
+
+File(s): src/pages/CreateSeekerProfile.tsx (or current seeker form component)
+	•	Ensure there is an <input type="file" accept="image/*" name="photo"> control.
+	•	On submit, send multipart/form-data:
+	•	Build const fd = new FormData();
+	•	Append all seeker JSON fields (fullName, budgetMonthly, preferredLocation, …)
+	•	If a file was chosen: fd.append("photo", file)
+	•	POST to /api/seekers (create) or /api/seekers/:id (update) with the FormData. Do not JSON.stringify; do not set Content-Type manually (let the browser set the boundary).
+	•	After success:
+	•	Use the response to update the UI (React Query invalidate /api/seekers* keys).
+	•	Navigate to the seeker detail page so the new photo is visible.
+
+2) Server: Accept and store image
+
+File(s): server/routes/seekers.ts (or your seekers controller/router), plus a tiny storage helper (if not present) like server/lib/objectStorage.ts.
+	•	Add multer (memory storage) to parse photo from multipart:
+
+import multer from "multer";
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+
+	•	In POST /api/seekers and PUT /api/seekers/:id:
+	•	Wrap the handler with upload.single('photo').
+	•	If req.file exists:
+	•	Use @replit/object-storage client (already in deps) and our existing bucket config to upload to a key like: seekers/${userId}/${Date.now()}-${originalname}.
+	•	Get the key/path (not full CDN URL). We keep URL building client-side via getAbsoluteImageUrl.
+	•	Save this path to the DB:
+	•	Set seeker_profiles.profile_photo_url = key
+	•	Also (optional but preferred) upsert into seeker_photos with { seekerId, imagePath: key, sortOrder: 0 }, and set all other photos’ sortOrder to start from 1.
+	•	Make sure the seeker GET endpoints return profilePhotoUrl and photos[] so the UI finds the image immediately.
+
+3) Database consistency
+	•	Confirm the schema has either:
+	•	seeker_profiles.profile_photo_url TEXT NULL, and/or
+	•	a seeker_photos table with seeker_id, image_path, sort_order.
+	•	If profile_photo_url is missing, add a Drizzle migration to create it (nullable).
+	•	No breaking changes to existing columns. Don’t rename fields used by the app.
+
+4) Edge cases
+	•	If a new photo is uploaded during edit:
+	•	Update profile_photo_url and set the new photo to sortOrder = 0.
+	•	(Optional) delete the old object from storage.
+	•	Validate files (image/* only) and cap size at 5MB; return a friendly 400 if invalid.
+
+5) Verify
+	•	Create a new seeker with a photo → the photo must appear in:
+	•	/oda-arayan/{id} (detail)
+	•	seeker cards (list pages)
+	•	home mixed feed cards
+	•	Existing seekers without photos should continue to show the initials placeholder.
+	•	Keep URL normalization via getAbsoluteImageUrl (do not store the CDN prefix in DB).
+
+Notes
+	•	Do not change any CDN/domain logic; keep using our cdn.odanet.com.tr normalization helper.
+	•	Keep all existing routes, auth checks, and response shapes intact; only add the multipart handling + storage write + DB assignment.
+
+⸻
+
+That’s it. Paste this into the Replit Agent and let it apply the changes. After it finishes, test by creating a seeker with a real photo—the image should now upload and display instead of the “ZZ” placeholder.
