@@ -156,13 +156,7 @@ export default function ListingDetail() {
     : "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=60";
 
   const title = listing.title || "İlan";
-  const availability = (() => {
-    if (!listing.availableFrom) return t("listings.available_now");
-    const d = new Date(listing.availableFrom);
-    return d > new Date()
-      ? formatDate(listing.availableFrom)
-      : t("listings.available_now");
-  })();
+  const availability = t("listings.available_now");
 
   // Rozet metinleri (TitleBlock için)
   const badges: string[] = [];
