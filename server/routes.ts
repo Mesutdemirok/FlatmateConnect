@@ -622,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: listing.id,
           createdAt: listing.createdAt,
           title: listing.title,
-          suburb: listing.suburb,
+          suburb: listing.address, // Use address as suburb for compatibility
           rentAmount: listing.rentAmount,
           images: listing.images || []
         })),
