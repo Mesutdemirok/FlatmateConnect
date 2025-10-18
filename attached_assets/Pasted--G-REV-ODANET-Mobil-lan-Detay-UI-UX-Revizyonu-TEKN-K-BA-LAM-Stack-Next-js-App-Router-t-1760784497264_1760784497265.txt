@@ -1,0 +1,143 @@
+[GÖREV] ODANET — Mobil İlan Detayı (UI/UX Revizyonu)
+
+[TEKNİK BAĞLAM]
+- Stack: Next.js (App Router tercih), TypeScript, TailwindCSS, lucide-react.
+- Sayfa: ListingDetailPage (ör. app/listings/[id]/page.tsx + ilgili bileşenler).
+- Marka rengi: Turuncu #f97316 (Tailwind: orange-500). Vurgu/sekonder: mor gradyan mevcut, korunacak.
+
+[AMAÇ]
+Mevcut mobil görünümde “Bilgiler” ve “Özellikler” dağınık ve tipografik hiyerarşi zayıf. İlan detayını; net başlıklar, okunaklı tipografi, tanım listeleri (label → value), rozetler ve ikonlu özellik gruplarıyla **düzenli, minimal ve profesyonel** hale getir.
+
+────────────────────────────────────────────────────────
+1) BİLEŞEN MİMARİSİ
+────────────────────────────────────────────────────────
+Yeni/yenilenecek bileşenler:
+- components/listing/TitleBlock.tsx
+- components/listing/KeyFacts.tsx        // “Oda Bilgileri” için tanım listesi (dl/dt/dd)
+- components/listing/FeatureChips.tsx     // “Özellikler ve Olanaklar” için ikonlu rozetler
+- components/listing/OwnerCard.tsx
+- components/listing/StickyCTA.tsx        // Alt sabit çubuk (iletişim butonu)
+- components/ui/DefinitionList.tsx        // (ortak) dl/dt/dd şablonu
+
+Dosya sonlarında Türkçe yorum bırak: // ODANET Mobil Detay Revizyonu – [blok adı]
+
+────────────────────────────────────────────────────────
+2) TİPOGRAFİ & ARALIK (MOBİL ÖLÇEK)
+────────────────────────────────────────────────────────
+- Başlık: class="font-semibold tracking-tight text-2xl"
+- Alt başlık (section title): class="text-slate-900 font-semibold text-lg"
+- Label (dt): class="text-slate-500 uppercase tracking-wide text-[11px] font-medium"
+- Değer (dd): class="text-slate-900 font-medium"
+- Paragraf/yardımcı metin: class="text-slate-600 text-sm leading-relaxed"
+- Kart iç boşlukları: p-4 (md:p-5), bölüm araları: space-y-4/6
+- Kart köşe/zemin: rounded-2xl shadow-sm bg-white ring-1 ring-slate-100
+
+────────────────────────────────────────────────────────
+3) BAŞLIK BLOĞU (TitleBlock)
+────────────────────────────────────────────────────────
+- Yapı:
+  - Üstte ilan başlığı (ör: “Deniz Manzaralı Oda – Konak, İzmir”)
+  - Alt satır: konum ikonu + adres kısa metin
+  - Hemen altında kategori rozetleri: “apartman”, “eşyalı”, “banyo: ortak” vb.
+- Rozet stil:
+  - class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-violet-50 text-violet-700 ring-1 ring-violet-100"
+  - “banyo: ortak/özel” gibi nitelikleri küçük harf ve kısa tut.
+- Kabul Kriteri:
+  - Başlık net; rozetler tek satırda kayarsa sarar; spacing tutarlı.
+
+────────────────────────────────────────────────────────
+4) KİLİT BİLGİLER (KeyFacts) — “Oda Bilgileri”
+────────────────────────────────────────────────────────
+- “Tanım listesi” (dl/dt/dd) düzenine geç.
+- Sıra ve etiketleri, formlardaki terminolojiyle **birebir** hizala:
+  1. Toplam Oda Sayısı → sayısal
+  2. Evde Yaşayan Kişi → sayısal
+  3. Cinsiyet Tercihi → “Kadın / Erkek / Farketmez”
+  4. Sigara → “İçilebilir / İçilemez”
+  5. Evcil Hayvan → “Var / Yok”  (alan varsa)
+  6. Banyo → “Ortak / Özel”
+  7. Eşya Durumu → “Eşyalı / Eşyasız”
+- Yerleşim:
+  - Mobilde tek kolon, her satır: dt üstte küçük gri, dd altta koyu.
+  - md≥ için iki kolon grid (grid-cols-2 gap-x-6) kullanılabilir; ama mobil öncelik.
+- Örnek markup:
+  <DefinitionList
+    items={[
+      { label: "Toplam Oda Sayısı", value: data.room_count },
+      { label: "Evde Yaşayan Kişi", value: data.occupants },
+      { label: "Cinsiyet Tercihi", value: data.gender_pref },   // “Kadın” gibi
+      { label: "Sigara", value: data.smoking_allowed ? "İçilebilir" : "İçilemez" },
+      { label: "Evcil Hayvan", value: data.pets ? "Var" : "Yok", hideIfNull: true },
+      { label: "Banyo", value: data.bathroom_type === "shared" ? "Ortak" : "Özel" },
+      { label: "Eşya Durumu", value: data.furnished ? "Eşyalı" : "Eşyasız" },
+    ]}
+  />
+- Mikro kurallar:
+  - Boş/null değerleri gizle (hideIfNull).
+  - “Evet/Hayır” yerine anlamlı kısa cevap kullan (örn. İçilebilir/İçilemez).
+
+────────────────────────────────────────────────────────
+5) ÖZELLİKLER & OLANAKLAR (FeatureChips)
+────────────────────────────────────────────────────────
+- Varlıklar ikonlu rozet olarak gruplanır (3–4 sütun akışkan grid).
+- Rozet stil: class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs bg-slate-50 text-slate-700 ring-1 ring-slate-200"
+- Örnek eşleştirme (lucide-react):
+  - WiFi → <Wifi/> “İnternet Dahil”
+  - Faturalar → <Bolt/> “Faturalar Dahil”
+  - Isıtma → <Thermometer/> “Merkezi Isıtma”
+  - Eşya → <Armchair/> “Mobilyalı”
+  - Asansör → <ArrowUpDown/>
+  - Otopark → <ParkingCircle/> (yoksa <Car/>)
+- Gereksiz tekrar ve “diğer” gibi boşluk dolduran değerleri gösterme.
+- Çok fazla özellik varsa “+N özellik daha” linki ile açılır liste yap (disclosure).
+
+────────────────────────────────────────────────────────
+6) SAHİP/KİRALAYAN KARTI (OwnerCard)
+────────────────────────────────────────────────────────
+- Kart başlığı: “Mülk Sahibi” (veya “İlan Sahibi”)
+- Avatar + isim (küçük harfleri **baş harf büyük** formatla)
+- Güvenlik uyarısı kısa tutulur; detay için “Güvenlik Önerileri” linki.
+- class="rounded-2xl bg-white ring-1 ring-slate-100 p-4 space-y-3"
+
+────────────────────────────────────────────────────────
+7) ALT SABİT CTA (StickyCTA)
+────────────────────────────────────────────────────────
+- Mobilde ekranın altında sabit bar:
+  - Sol: aylık fiyat “₺20.000/ay”
+  - Sağ: birincil buton “Sahibiyle İletişime Geç” (bg-[#f97316] hover:brightness-95)
+- class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70"
+- Sayfa içindeki aynı buton tekrarı kaldırılabilir; tutarlılık.
+
+────────────────────────────────────────────────────────
+8) ERİŞİLEBİLİRLİK & DURUMLAR
+────────────────────────────────────────────────────────
+- İkonlara aria-hidden, butonlara anlamlı aria-label ver.
+- Boş veri: kart/kısım tamamen gizle (örn. evcil hayvan alanı yoksa görünmesin).
+- Çok uzun metin: line-clamp-2 uygula; tam metin için “Devamını Gör” (dialog/sheet).
+- Para formatı: Türkçe yerelleştirme (Intl.NumberFormat('tr-TR')).
+
+────────────────────────────────────────────────────────
+9) STİL TOKEN’LARI (Tailwind)
+────────────────────────────────────────────────────────
+- Başlıklar: text-slate-900
+- Gövde: text-slate-600
+- Çerçeve: ring-slate-100/200
+- Rozet (birincil): bg-violet-50 text-violet-700 ring-violet-100
+- Birincil CTA: bg-[#f97316] text-white focus-visible:outline-[#f97316]
+
+────────────────────────────────────────────────────────
+10) KABUL KRİTERLERİ (E2E)
+────────────────────────────────────────────────────────
+- “Oda Bilgileri” bölümü tanım listesi ile, **form etiketleriyle aynı sözlükte**.
+- “Cinsiyet Tercihi: Kadın” gibi **label → value** ayrımı görsel olarak bariz.
+- Özellikler rozetleri ikonlu, tek satırda sarma davranışı düzgün; gereksiz metin yok.
+- Sticky CTA mobilde her ekranda erişilebilir; içerikle çakışmaz (bottom padding).
+- Tipografi ve aralıklar tutarlı; kartlar gölgeli-beyaz, okunaklı ve sade.
+- Hiçbir NULL/boş alan “—” vb. ile görünmez; düzgünce gizlenir.
+- 320–430 px genişlikte görsel kayma, kırpılma veya başlık taşması yok.
+
+────────────────────────────────────────────────────────
+11) TESLİMAT
+────────────────────────────────────────────────────────
+- Değişen dosyaların listesi + 1 paragraf özet.
+- Gerekirse küçük görsel/gif ile önce/sonra karşılaştırma dump et (opsiyonel).
