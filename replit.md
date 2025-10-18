@@ -8,6 +8,37 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 18, 2025)
 
+### Mobile-First Listing Detail Redesign (October 18, 2025)
+- **Created 6 New Reusable Components**:
+  - `DefinitionList.tsx` - Base component for structured dl/dt/dd layouts with 1 or 2 columns
+  - `TitleBlock.tsx` - Header with title, address (MapPin icon), and category badges
+  - `KeyFacts.tsx` - "Oda Bilgileri" section using DefinitionList, 2-column grid on desktop
+  - `FeatureChips.tsx` - Icon-based feature chips (Wifi, Klima, TV, etc.) with smart amenity mapping
+  - `OwnerCard.tsx` - Owner profile card with avatar, name, and safety reminder box
+  - `StickyCTA.tsx` - Fixed bottom bar (mobile only) with price + contact button
+  
+- **Completely Redesigned ListingDetail.tsx**:
+  - Mobile-first architecture with responsive breakpoints (lg: for desktop sidebar)
+  - Clean gradient background (indigo-50/30 → white → violet-50/30)
+  - Rounded-2xl cards with subtle ring borders (ring-1 ring-slate-100)
+  - Typography hierarchy: 2xl title, lg section headings, consistent slate color palette
+  - Image gallery with overlay favorite button, improved navigation buttons (white/90 backdrop-blur)
+  - Sticky CTA appears only on mobile, shows price + contact button at bottom
+  - Desktop sidebar shows traditional price card with edit/contact/favorite buttons
+  - Orange brand color (#f97316) for all primary CTAs
+  - Proper spacing with pb-24 for mobile sticky bar clearance
+  
+- **Key Design Choices**:
+  - Definition list (dl/dt/dd) for "Oda Bilgileri" with uppercase 11px labels
+  - Icon-based feature chips with gray backgrounds (bg-slate-50)
+  - Violet category badges (bg-violet-50 text-violet-700)
+  - Safety reminder in amber colors (bg-amber-50 border-amber-100)
+  - Mobile price card appears above KeyFacts (lg:hidden)
+  - OwnerCard duplicated for mobile/desktop placement
+  
+- **Production Build**: ✓ Successful (704KB frontend gzip: 208KB, 64KB backend)
+- **LSP Status**: All errors cleared in new components and ListingDetail.tsx
+
 ### UI Revisions - NumberInput & Single-Page Seeker Form (October 18, 2025)
 - **Created NumberInput Component**: Custom input component that removes +/- stepper buttons from all numeric fields
   - Implemented in `client/src/components/forms/NumberInput.tsx`
