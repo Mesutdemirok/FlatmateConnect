@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { ogHandler } from "./og";
+import uploadsRouter from "./routes/uploads";
 import path from "path";
 import fs from "fs";
 import { Client as AppStorage } from "@replit/object-storage";
@@ -13,6 +14,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+// Upload routes (before other routes to handle multipart/form-data)
+app.use(uploadsRouter);
 
 // 🔧 Local upload path
 const LOCAL_UPLOAD_DIR = path.join(process.cwd(), "uploads");

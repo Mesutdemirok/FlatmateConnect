@@ -1,0 +1,139 @@
+Absolutely—here’s a tight, copy-paste Replit Agent prompt to fix the mobile photo upload for Oda Arayan (seeker) profiles, including iPhone/HEIC support, compression, and reliable display. It keeps your current APIs and storage, only hardening upload + preview.
+
+⸻
+
+Replit Agent Prompt — Fix mobile image upload for “Oda Arayan” (HEIC + compression)
+
+Goal
+Make seeker photo upload work on all phones (iOS/Android). Accept HEIC/HEIF, auto-convert to JPEG, compress, rotate per EXIF, store via our existing CDN path, and show the image everywhere (list cards + detail). Keep existing routes and DB; just add the upload handler + client fixes.
+
+⸻
+
+1) Backend: robust image upload (HEIC → JPEG, compression, EXIF rotate)
+
+Add dependencies
+
+npm i sharp busboy @types/busboy
+
+Create server/routes/uploads.seeker.ts with a POST endpoint:
+	•	Parse multipart via busboy
+	•	Allow mimes: image/jpeg,image/png,image/webp,image/heic,image/heif
+	•	Convert all to JPEG with sharp().rotate().jpeg({ quality: 82 })
+	•	Resize to max width 1600px (keep aspect)
+	•	Save to our existing object storage/CDN (use current helper you already use for listing images)
+	•	Return { imagePath, url }
+
+Skeleton:
+
+// server/routes/uploads.seeker.ts
+import { Router } from "express";
+import Busboy from "busboy";
+import sharp from "sharp";
+import { putObjectReturnKey } from "../lib/objectStore"; // use your existing R2 helper
+import { ensureCdnUrl } from "../lib/cdn"; // use your getAbsoluteImageUrl helper server-side if present
+
+const router = Router();
+
+router.post("/api/uploads/seeker-photo", (req, res) => {
+  const bb = Busboy({ headers: req.headers });
+  let hasFile = false;
+
+  bb.on("file", (_, file, info) => {
+    hasFile = true;
+    const { mimeType, filename } = info;
+
+    const allowed = ["image/jpeg","image/png","image/webp","image/heic","image/heif"];
+    if (!allowed.includes(mimeType)) return res.status(400).json({ message: "Unsupported file type" });
+
+    const chunks: Buffer[] = [];
+    file.on("data", (d) => chunks.push(d));
+    file.on("end", async () => {
+      try {
+        const input = Buffer.concat(chunks);
+        const processed = await sharp(input).rotate().resize({ width: 1600, withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
+
+        const key = `seekers/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        await putObjectReturnKey(key, processed, { contentType: "image/jpeg", cacheControl: "public, max-age=31536000, immutable" });
+
+        return res.json({ imagePath: `/${key}`, url: ensureCdnUrl(`/${key}`) });
+      } catch (e) {
+        console.error(e); return res.status(500).json({ message: "Upload failed" });
+      }
+    });
+  });
+
+  bb.on("finish", () => { if (!hasFile) res.status(400).json({ message: "No file" }); });
+  req.pipe(bb);
+});
+
+export default router;
+
+Wire the route
+
+// server/index.ts
+import uploadsSeeker from "./routes/uploads.seeker";
+app.use(uploadsSeeker);
+
+
+⸻
+
+2) DB link for profile photo (no schema change unless missing)
+	•	In the seeker create/update controller, when client sends profilePhotoUrl (or first photo), store it to seeker_profiles.profilePhotoUrl.
+	•	If column is missing, add nullable text column profilePhotoUrl and run migration.
+
+⸻
+
+3) Frontend: mobile-friendly upload with HEIC, progress & preview
+
+Update src/components/ui/ImageUpload.tsx (or the component used on “Oda Arayan İlanı Oluştur”):
+	•	<input type="file" accept="image/*" capture="environment" />
+	•	On change: read the file and POST to /api/uploads/seeker-photo as multipart/form-data
+	•	Show preview from returned url
+	•	On success: set form field profilePhotoUrl (and include it in submit payload)
+
+Skeleton:
+
+// ImageUpload.tsx (seeker)
+const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+
+  const fd = new FormData();
+  fd.append("file", f);
+  const res = await fetch("/api/uploads/seeker-photo", { method: "POST", body: fd });
+  if (!res.ok) { /* toast error */ return; }
+  const data = await res.json();
+  setPreview(data.url);
+  onChange?.(data.url); // parent stores profilePhotoUrl
+};
+
+Ensure the create/edit seeker pages include profilePhotoUrl in the payload so it persists.
+
+⸻
+
+4) Cards & Detail: always show uploaded photo
+	•	SeekerCard / SeekerDetail: first try seeker.profilePhotoUrl; else first of photos; else avatar URL. Use your getAbsoluteImageUrl to normalize the CDN link.
+	•	Bust cache on update by appending ?v=<updatedAt> if needed.
+
+⸻
+
+5) QA checklist (mobile)
+	•	iPhone (HEIC) pick → uploads, converts to JPG, shows in card & detail
+	•	Android (JPEG/PNG/WebP) → ok
+	•	4–6 MB images compress down; no 413/415
+	•	HTTPS mixed content none
+	•	CORS ok for CDN URLs
+
+⸻
+
+If anything blocks (e.g., Sharp not present), fall back to saving original and do sharp resize only to JPEG (no HEIC upload kept). Keep API shape the same.
+
+Deliverables
+	•	New route uploads.seeker.ts wired
+	•	Frontend upload component updated for seekers
+	•	Seeker create/update passes profilePhotoUrl
+	•	Cards/Detail show the uploaded image reliably
+
+⸻
+
+Give me a thumbs-up when it’s applied; I’ll help you quickly sanity-test on iPhone and Android.

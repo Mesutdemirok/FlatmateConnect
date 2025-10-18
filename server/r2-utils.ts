@@ -71,3 +71,30 @@ export async function deleteFromR2(r2Key: string): Promise<void> {
 export function getR2Url(r2Key: string): string {
   return `${R2_PUBLIC_URL}/${r2Key.replace(/^\/+/, "")}`;
 }
+
+/**
+ * Upload a Buffer directly to Cloudflare R2
+ * @param r2Key - Key in R2 bucket (e.g., "seekers/photo-123.jpg")
+ * @param buffer - File buffer
+ * @param options - Optional metadata (contentType, cacheControl)
+ * @returns Key in R2 bucket
+ */
+export async function uploadBufferToR2(
+  r2Key: string,
+  buffer: Buffer,
+  options?: { contentType?: string; cacheControl?: string }
+): Promise<string> {
+  const key = r2Key.replace(/^\/+/, "");
+  
+  const command = new PutObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: key,
+    Body: buffer,
+    ContentType: options?.contentType || 'application/octet-stream',
+    CacheControl: options?.cacheControl || 'public, max-age=31536000, immutable',
+  });
+  
+  await r2.send(command);
+  
+  return key;
+}
