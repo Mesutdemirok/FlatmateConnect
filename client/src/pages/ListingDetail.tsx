@@ -1,3 +1,4 @@
+// ODANET Mobil Detay Revizyonu – Ana İlan Detay Sayfası
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
@@ -11,26 +12,19 @@ import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 import type { ListingWithRelations, FavoriteStatus } from "@/lib/listingApi";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import TitleBlock from "@/components/listing/TitleBlock";
+import KeyFacts from "@/components/listing/KeyFacts";
+import FeatureChips from "@/components/listing/FeatureChips";
+import OwnerCard from "@/components/listing/OwnerCard";
+import StickyCTA from "@/components/listing/StickyCTA";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Heart,
-  MessageSquare,
-  MapPin,
-  Calendar,
-  DollarSign,
-  Home,
-  Wifi,
-  Car,
-  Zap,
-  Shield,
   ChevronLeft,
   ChevronRight,
   Upload,
+  Calendar,
 } from "lucide-react";
 
 export default function ListingDetail() {
@@ -124,53 +118,30 @@ export default function ListingDetail() {
         <Header />
         <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Skeleton className="h-8 w-32 mb-6" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <Skeleton className="w-full h-96 rounded-lg mb-6" />
-              <Skeleton className="h-6 w-3/4 mb-4" />
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-            <div>
-              <Card>
-                <CardContent className="p-6">
-                  <Skeleton className="h-8 w-24 mb-4" />
-                  <Skeleton className="h-10 w-full mb-3" />
-                  <Skeleton className="h-10 w-full" />
-                </CardContent>
-              </Card>
-            </div>
+          <div className="space-y-6">
+            <Skeleton className="h-96 w-full rounded-2xl" />
+            <Skeleton className="h-32 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
 
-  // Error / not found
+  // Error handling
   if (error || !listing) {
     return (
-      <div
-        className="min-h-screen bg-background"
-        data-testid="listing-detail-error"
-      >
+      <div className="min-h-screen bg-background">
         <Header />
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <h1 className="text-2xl font-bold text-foreground mb-2">
-                {t("listings.not_found_title")}
-              </h1>
-              <p className="text-muted-foreground mb-4">
-                {t("listings.not_found_message")}
-              </p>
-              <Link href="/oda-ilanlari">
-                <Button>Diğer İlanları İncele</Button>
-              </Link>
-            </CardContent>
-          </Card>
+        <main className="max-w-4xl mx-auto px-4 py-8 text-center">
+          <h1 className="text-2xl font-bold mb-4">İlan Bulunamadı</h1>
+          <p className="text-slate-600 mb-6">
+            Aradığınız ilan mevcut değil veya kaldırılmış olabilir.
+          </p>
+          <Link href="/oda-ilanlari">
+            <Button>Aramalara Dön</Button>
+          </Link>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -193,29 +164,44 @@ export default function ListingDetail() {
       : t("listings.available_now");
   })();
 
+  // Rozet metinleri (TitleBlock için)
+  const badges: string[] = [];
+  if (listing.propertyType) badges.push(listing.propertyType);
+  if (listing.furnishingStatus) badges.push(listing.furnishingStatus);
+  if (listing.bathroomType) badges.push(`banyo: ${listing.bathroomType}`);
+
+  // Fiyat formatı (StickyCTA için)
+  const formattedPrice = formatCurrency(Number(listing.rentAmount));
+
+  // Kullanıcı bilgileri (OwnerCard için)
+  const ownerName = `${listing.user.firstName || ""} ${listing.user.lastName || ""}`.trim() || "Anonim Kullanıcı";
+  const ownerPhoto = listing.user.profileImageUrl
+    ? getAbsoluteImageUrl(listing.user.profileImageUrl)
+    : undefined;
+
   // UI
   return (
     <div
-      className="min-h-screen bg-background"
+      className="min-h-screen bg-gradient-to-b from-indigo-50/30 via-white to-violet-50/30 pb-24"
       data-testid="listing-detail-page"
     >
       <Header />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Back button */}
         <Link href="/oda-ilanlari">
-          <Button variant="ghost" className="mb-6" data-testid="back-button">
+          <Button variant="ghost" className="mb-4" data-testid="back-button">
             <ChevronLeft className="h-4 w-4 mr-2" />
             Aramaya Geri Dön
           </Button>
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main content */}
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main content - Mobil odaklı */}
+          <div className="lg:col-span-2 space-y-6">
             {/* Image gallery */}
-            <div className="relative mb-6">
-              <div className="relative h-96 rounded-lg overflow-hidden bg-muted">
+            <div className="relative">
+              <div className="relative h-80 sm:h-96 rounded-2xl overflow-hidden bg-slate-100 ring-1 ring-slate-200">
                 <img
                   src={mainImageUrl}
                   alt={title}
@@ -239,7 +225,7 @@ export default function ListingDetail() {
                     <Button
                       variant="secondary"
                       size="icon"
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-card/80 backdrop-blur-sm"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm shadow-lg"
                       onClick={() =>
                         setCurrentImageIndex(
                           (i) =>
@@ -253,7 +239,7 @@ export default function ListingDetail() {
                     <Button
                       variant="secondary"
                       size="icon"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-card/80 backdrop-blur-sm"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm shadow-lg"
                       onClick={() =>
                         setCurrentImageIndex((i) => (i + 1) % safeImages.length)
                       }
@@ -262,24 +248,42 @@ export default function ListingDetail() {
                       <ChevronRight className="h-4 w-4" />
                     </Button>
 
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
                       {currentImageIndex + 1} / {safeImages.length}
                     </div>
                   </>
                 )}
+
+                {/* Favorite button - overlaid */}
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm shadow-lg"
+                  onClick={handleFavoriteToggle}
+                  disabled={toggleFavoriteMutation.isPending}
+                  data-testid="favorite-button-overlay"
+                >
+                  <Heart
+                    className={`h-4 w-4 ${
+                      favoriteStatus?.isFavorite
+                        ? "fill-red-500 text-red-500"
+                        : "text-slate-600"
+                    }`}
+                  />
+                </Button>
               </div>
 
               {/* Thumbnails */}
               {hasImages && safeImages.length > 1 && (
-                <div className="flex gap-2 mt-4 overflow-x-auto">
+                <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
                   {safeImages.map((img, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentImageIndex(idx)}
-                      className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 ${
+                      className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden ring-2 transition ${
                         idx === currentImageIndex
-                          ? "border-primary"
-                          : "border-transparent"
+                          ? "ring-violet-500"
+                          : "ring-slate-200"
                       }`}
                       data-testid={`thumbnail-${idx}`}
                     >
@@ -294,252 +298,140 @@ export default function ListingDetail() {
               )}
             </div>
 
-            {/* Details */}
-            <div className="space-y-6">
-              <div>
-                <h1
-                  className="text-3xl font-bold text-foreground mb-2"
-                  data-testid="listing-title"
-                >
-                  {title}
-                </h1>
+            {/* TitleBlock */}
+            <TitleBlock
+              title={title}
+              address={listing.address}
+              badges={badges}
+            />
 
-                <div className="flex flex-wrap items-center gap-2 text-muted-foreground mb-3">
-                  <MapPin className="h-4 w-4" />
-                  <span data-testid="listing-address">{listing.address}</span>
+            {/* Müsaitlik & Fiyat - Mobil */}
+            <div className="lg:hidden rounded-2xl shadow-sm bg-white ring-1 ring-slate-100 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Aylık Kira</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{formattedPrice}/ay</p>
                 </div>
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {listing.propertyType && (
-                    <Badge
-                      variant="secondary"
-                      data-testid="property-type-badge"
-                    >
-                      <Home className="h-3 w-3 mr-1" />
-                      {listing.propertyType}
-                    </Badge>
-                  )}
-                  {listing.furnishingStatus && (
-                    <Badge variant="outline" data-testid="furnishing-badge">
-                      {listing.furnishingStatus}
-                    </Badge>
-                  )}
-                  {listing.bathroomType && (
-                    <Badge variant="outline" data-testid="bathroom-badge">
-                      Banyo: {listing.bathroomType}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Property Details */}
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Oda Bilgileri</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  {listing.totalRooms && (
-                    <div
-                      className="flex items-center"
-                      data-testid="total-rooms"
-                    >
-                      <Home className="h-4 w-4 mr-2 text-secondary" />
-                      <span>Toplam Oda Sayısı: {listing.totalRooms}</span>
-                    </div>
-                  )}
-                  {listing.totalOccupants && (
-                    <div
-                      className="flex items-center"
-                      data-testid="total-occupants"
-                    >
-                      <span>Evde Yaşayan: {listing.totalOccupants} kişi</span>
-                    </div>
-                  )}
-                  {listing.roommatePreference && (
-                    <div
-                      className="flex items-center"
-                      data-testid="roommate-preference"
-                    >
-                      <span>Tercih: {listing.roommatePreference}</span>
-                    </div>
-                  )}
-                  {listing.smokingPolicy && (
-                    <div
-                      className="flex items-center"
-                      data-testid="smoking-policy"
-                    >
-                      <span>Sigara: {listing.smokingPolicy}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Features & Amenities */}
-              <div>
-                <h2 className="text-xl font-semibold mb-4">
-                  Özellikler ve Olanaklar
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {listing.internetIncluded && (
-                    <div
-                      className="flex items-center"
-                      data-testid="internet-feature"
-                    >
-                      <Wifi className="h-4 w-4 mr-2 text-secondary" />
-                      <span>İnternet Dahil</span>
-                    </div>
-                  )}
-                  {listing.billsIncluded ? (
-                    <div
-                      className="flex items-center"
-                      data-testid="bills-included-feature"
-                    >
-                      <Zap className="h-4 w-4 mr-2 text-secondary" />
-                      <span>Faturalar Dahil</span>
-                    </div>
-                  ) : listing.excludedBills &&
-                    listing.excludedBills.length > 0 ? (
-                    <div
-                      className="flex items-center"
-                      data-testid="bills-excluded-feature"
-                    >
-                      <Zap className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>
-                        Dahil Değil: {listing.excludedBills.join(", ")}
-                      </span>
-                    </div>
-                  ) : null}
-                  {listing.amenities &&
-                    listing.amenities.map((amenity, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center"
-                        data-testid={`amenity-${index}`}
-                      >
-                        <span>{amenity}</span>
-                      </div>
-                    ))}
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <Calendar className="h-4 w-4" />
+                  <span>{availability}</span>
                 </div>
               </div>
             </div>
+
+            {/* KeyFacts (Oda Bilgileri) */}
+            <KeyFacts
+              totalRooms={listing.totalRooms || undefined}
+              totalOccupants={listing.totalOccupants || undefined}
+              roommatePreference={listing.roommatePreference || undefined}
+              smokingPolicy={listing.smokingPolicy || undefined}
+              bathroomType={listing.bathroomType || undefined}
+              furnishingStatus={listing.furnishingStatus || undefined}
+            />
+
+            {/* FeatureChips (Özellikler ve Olanaklar) */}
+            <FeatureChips
+              internetIncluded={listing.internetIncluded || false}
+              billsIncluded={listing.billsIncluded || false}
+              amenities={listing.amenities || []}
+            />
+
+            {/* OwnerCard - Mobil */}
+            <div className="lg:hidden">
+              <OwnerCard
+                ownerName={ownerName}
+                ownerPhoto={ownerPhoto}
+                ownerInitials={
+                  (listing.user.firstName?.[0] || "U") +
+                  (listing.user.lastName?.[0] || "")
+                }
+              />
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Price & Actions */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center mb-6">
-                  <div
-                    className="text-3xl font-bold text-foreground"
-                    data-testid="listing-price"
-                  >
-                    {formatCurrency(Number(listing.rentAmount))}
-                    <span className="text-lg font-normal text-muted-foreground">
-                      /ay
-                    </span>
-                  </div>
-                  <div className="mt-1 text-sm text-muted-foreground flex items-center justify-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>{availability}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {user?.id === listing.userId ? (
-                    <Button
-                      onClick={() => setLocation(`/ilan-duzenle/${id}`)}
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                      data-testid="edit-listing-button"
-                    >
-                      Düzenle
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleContactOwner}
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                      data-testid="contact-owner-button"
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      {t("listings.contact_owner")}
-                    </Button>
-                  )}
-
-                  <Button
-                    variant="outline"
-                    onClick={handleFavoriteToggle}
-                    disabled={toggleFavoriteMutation.isPending}
-                    className="w-full"
-                    data-testid="favorite-button"
-                  >
-                    <Heart
-                      className={`h-4 w-4 mr-2 ${
-                        favoriteStatus?.isFavorite
-                          ? "fill-destructive text-destructive"
-                          : ""
-                      }`}
-                    />
-                    {favoriteStatus?.isFavorite
-                      ? t("listings.remove_from_favorites")
-                      : t("listings.add_to_favorites")}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Owner */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-secondary" />
-                  Mülk Sahibi
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <Avatar data-testid="owner-avatar">
-                    <AvatarImage
-                      src={listing.user.profileImageUrl || undefined}
-                    />
-                    <AvatarFallback>
-                      {(listing.user.firstName?.[0] || "U") +
-                        (listing.user.lastName?.[0] || "")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium" data-testid="owner-name">
-                      {listing.user.firstName} {listing.user.lastName}
-                    </p>
-                    {listing.user.verificationStatus === "verified" && (
-                      <div className="flex items-center gap-1 text-sm text-secondary">
-                        <Shield className="h-3 w-3" />
-                        <span>Doğrulanmış</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Safety */}
-            <Card className="border-secondary/20 bg-secondary/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield className="h-4 w-4 text-secondary" />
-                  <span className="font-medium text-secondary">
-                    {t("listings.safety_first")}
+          {/* Sidebar - Desktop Only */}
+          <div className="hidden lg:block space-y-6">
+            {/* Fiyat & Müsaitlik */}
+            <div className="rounded-2xl shadow-sm bg-white ring-1 ring-slate-100 p-5">
+              <div className="text-center mb-6">
+                <div
+                  className="text-3xl font-bold text-slate-900"
+                  data-testid="listing-price"
+                >
+                  {formattedPrice}
+                  <span className="text-lg font-normal text-slate-600">
+                    /ay
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {t("listings.safety_message")}
-                </p>
-              </CardContent>
-            </Card>
+                <div className="mt-2 text-sm text-slate-600 flex items-center justify-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>{availability}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {user?.id === listing.userId ? (
+                  <Button
+                    onClick={() => setLocation(`/ilan-duzenle/${id}`)}
+                    className="w-full"
+                    style={{ backgroundColor: "#f97316" }}
+                    data-testid="edit-listing-button"
+                  >
+                    Düzenle
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleContactOwner}
+                    className="w-full text-white"
+                    style={{ backgroundColor: "#f97316" }}
+                    data-testid="contact-owner-button"
+                  >
+                    {t("listings.contact_owner")}
+                  </Button>
+                )}
+
+                <Button
+                  variant="outline"
+                  onClick={handleFavoriteToggle}
+                  disabled={toggleFavoriteMutation.isPending}
+                  className="w-full"
+                  data-testid="favorite-button-sidebar"
+                >
+                  <Heart
+                    className={`h-4 w-4 mr-2 ${
+                      favoriteStatus?.isFavorite
+                        ? "fill-red-500 text-red-500"
+                        : ""
+                    }`}
+                  />
+                  {favoriteStatus?.isFavorite
+                    ? t("listings.remove_from_favorites")
+                    : t("listings.add_to_favorites")}
+                </Button>
+              </div>
+            </div>
+
+            {/* OwnerCard - Desktop */}
+            <OwnerCard
+              ownerName={ownerName}
+              ownerPhoto={ownerPhoto}
+              ownerInitials={
+                (listing.user.firstName?.[0] || "U") +
+                (listing.user.lastName?.[0] || "")
+              }
+            />
           </div>
         </div>
       </main>
+
+      {/* StickyCTA - Mobil */}
+      <div className="lg:hidden">
+        <StickyCTA
+          price={formattedPrice}
+          onContact={handleContactOwner}
+          disabled={user?.id === listing.userId}
+        />
+      </div>
 
       <Footer />
     </div>
