@@ -158,6 +158,25 @@ Preferred communication style: Simple, everyday language.
   - Cloudflare CDN URL normalization automatic
   - No frontend code changes needed for display
 
+### Enhanced Card Aspect Ratios & Address Overlay (October 18, 2025)
+- **Dynamic Aspect Ratios**: Added `imageAspect` prop to both ListingCard and SeekerCard
+  - Supports "16/9", "4/3", and "16/10" aspect ratios
+  - ListingCard in CombinedFeed uses 4/3 (taller images)
+  - SeekerCard in CombinedFeed uses 16/9 (shorter, wider images)
+  - Default is "16/10" for backward compatibility
+- **Address Overlay Feature**: New `addressOverlay` prop for ListingCard
+  - When enabled, shows address as badge on photo (bottom-left) with map pin icon
+  - Hides address text below title to avoid duplication
+  - Violet map pin icon with white/95 background and shadow
+  - Maximum 14 characters with truncation
+- **Unified Card Heights**: Changed from min-h-[110px] to min-h-[96px]
+  - More compact and consistent across both card types
+  - Maintains flex justify-center for visual balance
+- **CombinedFeed Integration**: 
+  - Listing cards: imageAspect="4/3" + addressOverlay enabled
+  - Seeker cards: imageAspect="16/9"
+  - Creates visual distinction between room listings and seekers
+
 ### UI Consistency & Mobile Optimization (October 18, 2025)
 - **Mobile-First Grid**: Changed from 2-column mobile to 1-column mobile layout
   - Mobile: `grid-cols-1` (1 card per row for better focus)
