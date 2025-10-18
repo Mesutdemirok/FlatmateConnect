@@ -44,6 +44,9 @@ export default function CreateSeekerProfile() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [uploadedPhotoPath, setUploadedPhotoPath] = useState<string | null>(null);
+  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -118,6 +121,8 @@ export default function CreateSeekerProfile() {
         smokingPreference: data.smokingPreference || 'no-preference',
         petPreference: data.petPreference || 'no-preference',
         cleanlinessLevel: 'average', // Default value
+        // Include uploaded photo path if available
+        profilePhotoUrl: uploadedPhotoPath || existingPhotoUrl,
       };
 
       console.log('Submitting seeker profile:', payload);
@@ -140,29 +145,8 @@ export default function CreateSeekerProfile() {
       }
     },
     onSuccess: async (result) => {
-      // Upload photo if provided
-      if (profilePhoto && result.id) {
-        try {
-          const formData = new FormData();
-          formData.append('photo', profilePhoto);
-          
-          const photoResponse = await fetch(`/api/seekers/${result.id}/photo`, {
-            method: 'POST',
-            body: formData,
-            credentials: 'include',
-          });
-
-          if (!photoResponse.ok) {
-            toast({
-              title: 'Uyarı',
-              description: 'Profil fotoğrafı yüklenemedi.',
-              variant: "destructive"
-            });
-          }
-        } catch (error) {
-          console.error('Photo upload error:', error);
-        }
-      }
+      // Photo is already uploaded via handlePhotoChange
+      // No need to upload again
 
       // Delete photo if marked for deletion
       if (photoToDelete && existingProfile?.profilePhotoUrl) {
@@ -231,6 +215,8 @@ export default function CreateSeekerProfile() {
     setPhotoToDelete(true);
     setExistingPhotoUrl(null);
     setProfilePhoto(null);
+    setUploadedPhotoPath(null);
+    setUploadedPhotoUrl(null);
     toast({
       title: 'Fotoğraf işaretlendi',
       description: 'Fotoğraf kaydettiğinizde silinecek',
@@ -246,22 +232,61 @@ export default function CreateSeekerProfile() {
     }
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const isValidType = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type);
-      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
-      
-      if (isValidType && isValidSize) {
-        setProfilePhoto(file);
-        setPhotoToDelete(false);
-      } else {
-        toast({
-          title: 'Uyarı',
-          description: 'Sadece PNG, JPG, WebP formatları ve 5MB altı kabul edilir.',
-          variant: "destructive"
-        });
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    
+    const file = e.target.files[0];
+    
+    // Validate file size (10MB for raw files, will be compressed)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'Hata',
+        description: 'Dosya boyutu çok büyük (Max 10MB)',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Set file for preview
+    setProfilePhoto(file);
+    setPhotoToDelete(false);
+    setIsUploadingPhoto(true);
+
+    try {
+      // Upload to backend immediately
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/uploads/seeker-photo', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
       }
+
+      const data = await response.json();
+      
+      // Store the image path and URL
+      setUploadedPhotoPath(data.imagePath);
+      setUploadedPhotoUrl(data.url);
+      
+      toast({
+        title: 'Başarılı',
+        description: 'Fotoğraf yüklendi ve optimize edildi',
+      });
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      toast({
+        title: 'Hata',
+        description: 'Fotoğraf yüklenirken bir hata oluştu',
+        variant: "destructive",
+      });
+      setProfilePhoto(null);
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
@@ -304,29 +329,52 @@ export default function CreateSeekerProfile() {
                   <FormControl>
                     <div className="space-y-4">
                       <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <Input
-                          type="file"
-                          accept="image/png,image/jpeg,image/jpg,image/webp"
-                          onChange={handlePhotoChange}
-                          className="cursor-pointer"
-                          data-testid="input-photo"
-                        />
-                        <p className="text-sm text-muted-foreground mt-2">
-                          PNG, JPG, WebP (Max 5MB)
-                        </p>
-                        {profilePhoto && (
-                          <p className="text-sm text-green-600 mt-2">
-                            {profilePhoto.name} seçildi
-                          </p>
+                        {isUploadingPhoto ? (
+                          <>
+                            <Loader2 className="h-8 w-8 mx-auto mb-2 text-violet-600 animate-spin" />
+                            <p className="text-sm text-violet-600 font-medium">
+                              Fotoğraf yükleniyor ve optimize ediliyor...
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              onChange={handlePhotoChange}
+                              className="cursor-pointer"
+                              data-testid="input-photo"
+                              disabled={isUploadingPhoto}
+                            />
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Tüm formatlar desteklenir (HEIC, PNG, JPG, WebP - Max 10MB)
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Otomatik optimizasyon ve döndürme
+                            </p>
+                          </>
                         )}
-                        {existingPhotoUrl && !photoToDelete && (
+                        {uploadedPhotoUrl && (
+                          <div className="mt-4">
+                            <img 
+                              src={uploadedPhotoUrl} 
+                              alt="Önizleme" 
+                              className="w-32 h-32 object-cover rounded-full mx-auto border-2 border-green-500"
+                            />
+                            <p className="text-sm text-green-600 mt-2 font-medium">
+                              ✓ Fotoğraf yüklendi
+                            </p>
+                          </div>
+                        )}
+                        {!uploadedPhotoUrl && existingPhotoUrl && !photoToDelete && (
                           <p className="text-sm text-blue-600 mt-2">
                             Mevcut fotoğraf var
                           </p>
                         )}
                       </div>
-                      {(existingPhotoUrl || profilePhoto) && !photoToDelete && (
+                      {(existingPhotoUrl || uploadedPhotoUrl) && !photoToDelete && (
                         <Button
                           type="button"
                           variant="destructive"
@@ -336,7 +384,7 @@ export default function CreateSeekerProfile() {
                           data-testid="delete-photo-button"
                         >
                           <Trash2 className="h-4 w-4" />
-                          Fotoğrafı Sil 🗑️
+                          Fotoğrafı Sil
                         </Button>
                       )}
                     </div>
