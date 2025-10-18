@@ -78,20 +78,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Open Graph / Social Share Preview handlers (must be before API routes)
-  // These intercept bot requests and return HTML with OG meta tags
-  app.get('/oda-ilani/:id', (req, res, next) => ogHandler(req, res, next));
-  app.get('/oda-arayan/:id', (req, res, next) => ogHandler(req, res, next));
-  app.get('/', (req, res, next) => {
-    // Only handle bots or manual OG checks for homepage
-    const ua = String(req.headers["user-agent"] || "");
-    const isBot = /(facebookexternalhit|whatsapp|twitterbot|slackbot|linkedinbot|telegram|discord|pinterest)/i.test(ua) || req.query._og === "1";
-    if (isBot) {
-      return ogHandler(req, res, next);
-    }
-    next();
-  });
-
   // Auth routes
   app.post('/api/auth/register', async (req, res) => {
     try {

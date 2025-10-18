@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { ogHandler } from "./og";
 import path from "path";
 import fs from "fs";
 import { Client as AppStorage } from "@replit/object-storage";
@@ -161,6 +162,20 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
     res.status(status).json({ message });
     throw err;
+  });
+
+  // Open Graph / Social Share Preview handlers (must be before Vite/static middleware)
+  // These intercept bot requests and return HTML with OG meta tags
+  app.get('/oda-ilani/:id', (req, res, next) => ogHandler(req, res, next));
+  app.get('/oda-arayan/:id', (req, res, next) => ogHandler(req, res, next));
+  app.get('/', (req, res, next) => {
+    // Only handle bots or manual OG checks for homepage
+    const ua = String(req.headers["user-agent"] || "");
+    const isBot = /(facebookexternalhit|whatsapp|twitterbot|slackbot|linkedinbot|telegram|discord|pinterest)/i.test(ua) || req.query._og === "1";
+    if (isBot) {
+      return ogHandler(req, res, next);
+    }
+    next();
   });
 
   // Use process.env.NODE_ENV directly for reliable environment detection
