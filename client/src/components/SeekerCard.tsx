@@ -32,14 +32,14 @@ export default function SeekerCard({ seeker }: { seeker: Seeker }) {
   return (
     <Link href={`/oda-arayan/${seeker.id}`}>
       <article 
-        className="h-[430px] w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
+        className="w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
         data-testid={`card-seeker-${seeker.id}`}
       >
-        <div className="relative h-56 w-full overflow-hidden">
+        <div className="relative w-full aspect-[4/5] sm:aspect-[4/3] overflow-hidden">
           <img 
             src={photoOf(seeker)} 
             alt={nameOf(seeker)} 
-            className="h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover"
             data-testid={`seeker-image-${seeker.id}`}
           />
           {seeker.budgetMonthly && (
@@ -52,14 +52,14 @@ export default function SeekerCard({ seeker }: { seeker: Seeker }) {
           </div>
         </div>
 
-        <div className="flex-1 p-4">
-          <h3 className="line-clamp-1 text-[17px] font-semibold text-slate-900" data-testid={`text-name-${seeker.id}`}>
+        <div className="p-4 min-h-[110px] flex flex-col justify-center">
+          <h3 className="text-base sm:text-lg font-semibold line-clamp-1" data-testid={`text-name-${seeker.id}`}>
             {nameOf(seeker)}
           </h3>
           {seeker.preferredLocation && (
-            <p className="mt-1 line-clamp-1 text-sm text-slate-600">{seeker.preferredLocation}</p>
+            <p className="text-sm text-slate-600 truncate">{seeker.preferredLocation}</p>
           )}
-          {seeker.age ? <p className="mt-1 text-sm text-slate-600">{seeker.age} yaş</p> : null}
+          {seeker.age ? <p className="text-sm text-slate-600">{seeker.age} yaş</p> : null}
         </div>
       </article>
     </Link>

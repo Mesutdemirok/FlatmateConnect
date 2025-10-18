@@ -76,15 +76,14 @@ export default function ListingCard({ listing, isFavorited = false }: ListingCar
   return (
     <Link href={id ? `/oda-ilani/${id}` : "#"}>
       <article
-        className="h-[430px] w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition
-                   flex flex-col"
+        className="w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
         data-testid={`listing-card-${id || "noid"}`}
       >
-        <div className="relative h-56 w-full overflow-hidden">
+        <div className="relative w-full aspect-[5/4] sm:aspect-[4/3] lg:aspect-[16/10] overflow-hidden">
           <img
             src={imageUrl}
             alt={title}
-            className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
             data-testid={`listing-image-${id || "noid"}`}
           />
 
@@ -114,9 +113,9 @@ export default function ListingCard({ listing, isFavorited = false }: ListingCar
           )}
         </div>
 
-        <div className="flex-1 p-4">
-          <h3 className="line-clamp-2 text-[17px] font-semibold text-slate-900">{title}</h3>
-          {suburb && <p className="mt-1 line-clamp-1 text-sm text-slate-600">{suburb}</p>}
+        <div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[110px] flex flex-col justify-center">
+          <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2">{title}</h3>
+          {suburb && <p className="mt-0.5 text-[13px] sm:text-sm text-slate-600 truncate">{suburb}</p>}
         </div>
       </article>
     </Link>

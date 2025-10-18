@@ -1,0 +1,130 @@
+Harika—bunu Replit Agent’e tek seferde yaptırmak için hazır, net bir tek prompt bıraktım. Aşağıdaki metni kopyalayıp Replit’te “AI → Ask” alanına yapıştırın.
+
+⸻
+
+✅ Replit Agent Prompt — Mobilde tek sütun + kart boyları eşit + boşlukları azalt + adres tekrarı kaldır
+
+Amaç:
+	•	Ana sayfada (Home) hem Oda İlanı hem Oda Arayan kartları mobilde tek sütun (yan yana değil) görünsün.
+	•	Tüm kartlar aynı yükseklikte olsun; gereksiz boşluklar kalksın.
+	•	Oda ilanı kartlarında adresin çift görünmesi sorununu kaldır (görsel üzerindeki adres rozetini kaldır, sadece başlığın altında 1 satır kalsın).
+	•	Oda arayan fotoğrafları biraz daha uzun olsun ki kartta boş beyaz alan kalmasın.
+	•	Bağlantıları, API uçlarını ve veri akışını değiştirme! Sadece UI/stil ve küçük markup düzeni.
+
+⸻
+
+1) Home akışı: mobilde tek sütun
+
+Dosya: src/pages/Home.tsx
+	•	FeaturedListings ve FeaturedRoomSeekers bloklarının etrafındaki kapsayıcı grid’leri mobilde grid-cols-1, sm: ile 2+, md: ile 3/4 kolon olacak şekilde ayarla.
+	•	(Zaten tek sütun ise dokunma; ama kesinleştir.)
+
+⸻
+
+2) Oda İlanı kartı (ListingCard)
+
+Dosya: src/components/ui/ListingCard.tsx (veya gerçek yolu)
+Yapılacaklar:
+	1.	Görsel oranı: Mobilde daha uzun olacak şekilde:
+	•	Görsel sarmalayıcıya şu sınıfları ver:
+	•	className="relative w-full aspect-[5/4] sm:aspect-[4/3] lg:aspect-[16/10]"
+Bu, mobilde resmi biraz dikey uzatır ve alttaki boşluğu azaltır.
+	2.	Adres tekrarı:
+	•	Görsel üstünde bir adres rozeti/chip (örn. MapPin … cadde …) varsa tamamen kaldır.
+	•	Metin kısmında tek satır adres kalsın:
+
+<p className="mt-0.5 text-[13px] sm:text-sm text-slate-600 truncate">
+  {suburb}
+</p>
+
+
+	3.	Kart yüksekliği eşitleme:
+	•	Kart içeriği (başlık + adres) için sabit bir minimum yükseklik ver:
+className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[110px] flex flex-col justify-center"
+	•	Başlıkta iki satırı geçmesin:
+className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2"
+	4.	Gereksiz padding/boşluk:
+	•	Kart dış kenar/paddingleri aşırıysa 1 adım küçült (örn. mb-2 → mb-1, px-4 → px-3).
+
+Not: Bizde görsel üstünde fiyat rozeti kalsın; adres rozeti kalksın.
+
+⸻
+
+3) Oda Arayan kartı (Seeker card)
+
+Dosyalar:
+	•	src/components/FeaturedRoomSeekers.tsx (liste)
+	•	Kart bileşeni ayrıysa: src/components/ui/SeekerCard.tsx
+
+Yapılacaklar:
+	1.	Görsel alanını uzat (boşluğu kapatmak için):
+	•	Görsel sarmalayıcı:
+className="relative w-full aspect-[4/5] sm:aspect-[4/3] overflow-hidden rounded-2xl"
+	2.	Kart yüksekliği eşitleme:
+	•	İçerik kapsayıcısına:
+className="p-4 min-h-[110px] flex flex-col justify-center"
+	3.	Badge ve metin satırlarını tek satıra sığdır, truncate/line-clamp-1 kullan.
+	4.	Ekstra açıklama bloklarını kaldır/azalt: sadece İsim, Konum (tek satır), varsa yaş/bütçe rozetleri.
+
+⸻
+
+4) Listelerin sıralanışı ve görünüm
+	•	Mobil (≤640px): Tek sütun, kartlar tam genişlik.
+	•	Tablet: 2 sütun.
+	•	Desktop: 3–4 sütun.
+	•	Tüm kart türleri aynı görsel oran mantığı + aynı içerik min-height ile gözle aynı yükseklik algısı versin.
+
+⸻
+
+5) Koddan örnek (sadece rehber – birebir yapıştırmak zorunda değilsin)
+
+ListingCard görsel sarmalayıcı:
+
+<div className="relative mx-2 mt-2 mb-1 overflow-hidden rounded-lg ring-1 ring-black/5 sm:mx-3 sm:mt-3 sm:mb-2">
+  <div className="relative w-full aspect-[5/4] sm:aspect-[4/3] lg:aspect-[16/10]">
+    <img ... className="absolute inset-0 h-full w-full object-cover" />
+    {/* FİYAT ROZETİ KALSIN */}
+    {/* ADRES ROZETİ VARSA KALDIR */}
+  </div>
+</div>
+
+ListingCard içerik:
+
+<div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[110px] flex flex-col justify-center">
+  <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2">
+    {title4}
+  </h3>
+  <p className="mt-0.5 text-[13px] sm:text-sm text-slate-600 truncate">{suburb}</p>
+</div>
+
+SeekerCard görsel sarmalayıcı:
+
+<div className="relative w-full aspect-[4/5] sm:aspect-[4/3] overflow-hidden rounded-2xl">
+  <img ... className="absolute inset-0 h-full w-full object-cover" />
+</div>
+
+SeekerCard içerik:
+
+<div className="p-4 min-h-[110px] flex flex-col justify-center">
+  <h3 className="text-base sm:text-lg font-semibold line-clamp-1">{displayName}</h3>
+  <p className="text-sm text-slate-600 truncate">{preferredLocation}</p>
+  {/* İsteğe bağlı küçük rozetler */}
+</div>
+
+
+⸻
+
+6) Kabul Kriterleri
+	•	iPhone 13/14 simülasyonunda ana sayfada tüm kartlar tek sütun ve eşit yükseklikli görünür.
+	•	Oda ilanı kartında adres sadece 1 yerde (görsel üstü yok, başlık altında tek satır).
+	•	Oda arayan kartında alt kısımda büyük boş beyaz alan kalmaz; görsel daha uzun, içerik kompakt.
+	•	Desktop’ta 3–4 sütun, tablet’te 2 sütun; kart yükseklikleri tutarlı.
+	•	Derleme hatası yok; veri akışları/endpoint’ler değişmeden çalışır.
+
+⸻
+
+7) Son dokunuşlar
+	•	Global CSS yoksa sadece Tailwind sınıfları ile yap.
+	•	Varsa bile, bileşen içi sınıflarla çözelim (daha güvenli).
+
+Bu değişiklikleri uygula, gerekli dosyaları güncelle ve çalıştığını önizlemede göster. Ardından commit et.
