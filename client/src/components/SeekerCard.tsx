@@ -1,6 +1,8 @@
 import { Link } from "wouter";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 
+type AspectOpt = "16/9" | "4/3" | "16/10";
+
 type Seeker = {
   id: string;
   fullName?: string | null;
@@ -11,6 +13,11 @@ type Seeker = {
   budgetMonthly?: string | null;
   age?: number | null;
 };
+
+const aspectClass = (a?: AspectOpt) =>
+  a === "4/3" ? "aspect-[4/3]" :
+  a === "16/9" ? "aspect-[16/9]" :
+  "aspect-[16/10]";
 
 function nameOf(s: Seeker) {
   if (s.fullName) {
@@ -28,14 +35,19 @@ function photoOf(s: Seeker) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(nameOf(s))}&background=8b5cf6&color=fff&size=512`;
 }
 
-export default function SeekerCard({ seeker }: { seeker: Seeker }) {
+interface SeekerCardProps {
+  seeker: Seeker;
+  imageAspect?: AspectOpt;
+}
+
+export default function SeekerCard({ seeker, imageAspect = "16/10" }: SeekerCardProps) {
   return (
     <Link href={`/oda-arayan/${seeker.id}`}>
       <article 
         className="w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
         data-testid={`card-seeker-${seeker.id}`}
       >
-        <div className="relative w-full aspect-[4/5] sm:aspect-[4/3] overflow-hidden">
+        <div className={`relative w-full ${aspectClass(imageAspect)} overflow-hidden`}>
           <img 
             src={photoOf(seeker)} 
             alt={nameOf(seeker)} 
@@ -52,7 +64,7 @@ export default function SeekerCard({ seeker }: { seeker: Seeker }) {
           </div>
         </div>
 
-        <div className="p-4 min-h-[110px] flex flex-col justify-center">
+        <div className="p-4 min-h-[96px] flex flex-col justify-center">
           <h3 className="text-base sm:text-lg font-semibold line-clamp-1" data-testid={`text-name-${seeker.id}`}>
             {nameOf(seeker)}
           </h3>
