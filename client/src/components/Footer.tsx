@@ -1,6 +1,7 @@
 import React from "react";
 import { COMPANY } from "@/lib/company";
 import { Facebook, Instagram, MessageCircle, Mail } from "lucide-react";
+import { Link, useLocation } from "wouter";
 
 type SocialProps = {
   href: string;
@@ -13,7 +14,7 @@ const Social = ({ href, label, children }: SocialProps) => (
     href={href}
     aria-label={label}
     target="_blank"
-    rel="noopener noreferrer"
+    rel="noopener noreferrer me"
     className="
       inline-flex h-10 w-10 items-center justify-center rounded-full
       bg-orange-600 text-white ring-1 ring-white/10
@@ -25,12 +26,37 @@ const Social = ({ href, label, children }: SocialProps) => (
   </a>
 );
 
+// Simple helper for internal (SPA) links
+const InternalLink = ({
+  to,
+  children,
+}: {
+  to: string;
+  children: React.ReactNode;
+}) => (
+  <Link href={to}>
+    <a className="hover:opacity-90 focus:outline-none focus:underline">
+      {children}
+    </a>
+  </Link>
+);
+
 export default function Footer() {
+  const [pathname] = useLocation();
+
+  // Hide footer on messaging routes to save vertical space on mobile
+  const HIDE_ON = ["/mesaj", "/mesajlar", "/messages", "/chat"];
+  if (HIDE_ON.some((p) => pathname.startsWith(p))) return null;
+
   return (
-    <footer className="mt-16 bg-gradient-to-r from-indigo-700 via-violet-700 to-fuchsia-700 text-white">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        {/* Brand + Address */}
+    <footer
+      role="contentinfo"
+      className="mt-12 sm:mt-16 bg-gradient-to-r from-indigo-700 via-violet-700 to-fuchsia-700 text-white"
+    >
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10 lg:px-8">
+        {/* Brand + Links + Social */}
         <div className="grid gap-8 md:grid-cols-3">
+          {/* Brand & Address */}
           <div>
             <h3 className="text-2xl font-extrabold tracking-tight">
               {COMPANY.brand}
@@ -39,7 +65,6 @@ export default function Footer() {
               {COMPANY.brand}, {COMPANY.legalName} şirketine aittir.
             </p>
 
-            {/* Structured address for SEO */}
             <address
               className="not-italic mt-4 text-white/90 leading-relaxed"
               itemScope
@@ -62,36 +87,33 @@ export default function Footer() {
             </address>
           </div>
 
-          {/* Quick links */}
-          <nav className="space-y-3">
+          {/* Quick links (SPA internal links) */}
+          <nav aria-label="Alt menü bağlantıları" className="space-y-3">
             <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
               Bağlantılar
             </p>
-            <ul className="space-y-2 text-white/90">
+            <ul
+              className="
+                space-y-2 text-white/90
+                sm:grid sm:grid-cols-2 sm:gap-y-2 sm:gap-x-6 sm:space-y-0
+              "
+            >
               <li>
-                <a className="hover:opacity-90" href="/ilan-olustur">
-                  Oda İlanı Ver
-                </a>
+                <InternalLink to="/ilan-olustur">Oda İlanı Ver</InternalLink>
               </li>
               <li>
-                <a className="hover:opacity-90" href="/oda-arama-ilani-olustur">
+                <InternalLink to="/oda-arama-ilani-olustur">
                   Oda Arama İlanı Ver
-                </a>
+                </InternalLink>
               </li>
               <li>
-                <a className="hover:opacity-90" href="/oda-ilanlari">
-                  Oda İlanları
-                </a>
+                <InternalLink to="/oda-ilanlari">Oda İlanları</InternalLink>
               </li>
               <li>
-                <a className="hover:opacity-90" href="/oda-aramalari">
-                  Oda Arayanlar
-                </a>
+                <InternalLink to="/oda-aramalari">Oda Arayanlar</InternalLink>
               </li>
-              <li>
-                <a className="hover:opacity-90" href="/profil">
-                  Profilim
-                </a>
+              <li className="sm:col-span-2">
+                <InternalLink to="/profil">Profilim</InternalLink>
               </li>
             </ul>
           </nav>
@@ -121,7 +143,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-white/15 pt-6 text-center text-sm text-white/80">
+        <div className="mt-8 border-t border-white/15 pt-5 text-center text-sm text-white/80">
           © {new Date().getFullYear()} {COMPANY.brand}. Tüm hakları saklıdır.
         </div>
       </div>
