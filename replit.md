@@ -142,20 +142,30 @@ Preferred communication style: Simple, everyday language.
   - Development: Falls back to local paths
 
 ### UI Consistency & Mobile Optimization (October 18, 2025)
-- **Unified Card Heights**: All cards (listings and seekers) now use fixed `h-[430px]` for visual consistency
 - **Mobile-First Grid**: Changed from 2-column mobile to 1-column mobile layout
-  - Mobile: `grid-cols-1` (1 card per row)
+  - Mobile: `grid-cols-1` (1 card per row for better focus)
   - Tablet: `md:grid-cols-2` (2 cards per row)
   - Desktop: `lg:grid-cols-3` (3 cards per row)
+- **Responsive Aspect Ratios**: Optimized image ratios for different screen sizes
+  - ListingCard images: `aspect-[5/4]` mobile (more vertical), `sm:aspect-[4/3]` tablet, `lg:aspect-[16/10]` desktop
+  - SeekerCard images: `aspect-[4/5]` mobile (taller portraits), `sm:aspect-[4/3]` tablet
+  - Images use `absolute inset-0` for proper aspect ratio fill
+- **Equal Content Heights**: All cards have `min-h-[110px]` content areas with `flex justify-center`
+  - Ensures visual consistency even with varying text lengths
+  - No more mismatched card heights or excessive white space
 - **Simplified ListingCard**: 
-  - Removed duplicate address display and location pills inside images
-  - Clean single address line below card content
-  - Fixed height maintains consistent grid alignment
+  - Removed duplicate address displays and location pills from images
+  - Clean single address line below title with proper truncation
+  - Reduced padding: `px-3 pb-3 sm:px-4 sm:pb-4` for tighter spacing
+  - Title: `line-clamp-2` with responsive sizing `text-[15.5px] sm:text-[17px]`
+  - Address: `truncate` with responsive sizing `text-[13px] sm:text-sm`
 - **Redesigned SeekerCard**: 
-  - Matches listing card height exactly (430px)
+  - Taller portrait photos on mobile eliminate white space
   - Budget badge (emerald green) in top-left, "Oda Arayan" label (violet) in top-right
-  - Simplified info display with name, location, and age
+  - Content area: `p-4 min-h-[110px]` for consistency
+  - Simplified info: name (line-clamp-1), location (truncate), age
 - **New CombinedFeed Component**: Replaced MixedFeed
   - Fetches both listings and seekers in parallel with `useQueries`
   - Interleaves results (seeker, listing, seeker, listing...) for variety
   - Single unified grid instead of separate sections
+  - Shows "Henüz ilan yok" when empty
