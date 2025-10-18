@@ -1,0 +1,128 @@
+Kısacası: Hayır—bir “prompt” değildi; doğrudan kod değişiklikleriydi. Aşağıya, Replit Agent’a tek seferde verebileceğiniz kısa ve net Agent Promptu hazırladım. Kopyala-yapıştır edip çalıştırabilirsiniz.
+
+⸻
+
+Replit Agent Prompt (TR)
+
+Amaç:
+Ana sayfadaki birleşik akışta (CombinedFeed) kartların mobilde tek sütun görünmesi korunacak.
+	•	Oda ilanı kartlarında resim biraz daha yüksek olsun ve adres fotoğrafın üzerinde rozet olarak görünsün.
+	•	Oda arayan kartlarında resim yüksekliği biraz daha kısa olsun.
+	•	Kart gövdeleri için küçük bir min-height ekleyerek tüm kartların yüksekliği tutarlı olsun.
+	•	API/bağlantılar değişmeyecek; sadece görsel/proplar.
+
+⸻
+
+Yapılacaklar
+	1.	src/components/ListingCard.tsx dosyasını güncelle:
+
+	•	Props’a şunları ekle:
+
+type AspectOpt = "16/9" | "4/3" | "16/10";
+interface ListingCardProps {
+  // mevcut propslar…
+  imageAspect?: AspectOpt;       // varsayılan: "16/10"
+  addressOverlay?: boolean;      // true ise adres/suburb fotoğraf üstünde rozet olarak
+}
+
+
+	•	Yardımcı fonksiyon ekle ve medya sarmalayıcıda kullan:
+
+const aspectClass = (a?: AspectOpt) =>
+  a === "4/3" ? "aspect-[4/3]" :
+  a === "16/9" ? "aspect-[16/9]" :
+  "aspect-[16/10]";
+
+{/* Media wrapper */} 
+<div className="relative mx-2 mt-2 mb-1 overflow-hidden rounded-lg ring-1 ring-black/5 sm:mx-3 sm:mt-3 sm:mb-2 -ml-0.5">
+  <div className={`relative w-full ${aspectClass(imageAspect)}`}>
+    <img … className="absolute inset-0 w-full h-full object-cover" />
+    {/* fiyat / favori / verified mevcut kalsın */}
+
+    {/* Adres rozeti */}
+    {addressOverlay && (listing?.address || listing?.suburb) && (
+      <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-slate-700 shadow-sm ring-1 ring-black/5">
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-violet-600" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4.5 8-12a8 8 0 1 0-16 0c0 7.5 8 12 8 12Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span className="max-w-[14ch] truncate">{listing?.address || listing?.suburb}</span>
+      </div>
+    )}
+  </div>
+</div>
+
+
+	•	Kartın metin bloğuna hafif sabitleyici ekle:
+
+<div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[96px]"> … </div>
+
+
+	•	Eğer altta adres satırı zaten gösteriliyorsa ve addressOverlay true ise, alttaki adresi göstermeyin (opsiyonel küçük koşul).
+
+	2.	src/components/SeekerCard.tsx dosyasını güncelle:
+
+	•	Props’a ve yardımcıya aynı aspect desteğini ekle:
+
+type AspectOpt = "16/9" | "4/3" | "16/10";
+const aspectClass = (a?: AspectOpt) =>
+  a === "4/3" ? "aspect-[4/3]" :
+  a === "16/9" ? "aspect-[16/9]" :
+  "aspect-[16/10]";
+
+interface SeekerCardProps {
+  seeker: any;
+  imageAspect?: AspectOpt; // varsayılan "16/10"
+}
+
+
+	•	Fotoğraf sarmalayıcıda kullan ve kart gövdesine min-height ekle:
+
+<div className={`relative w-full ${aspectClass(imageAspect)}`}>
+  <img … className="absolute inset-0 h-full w-full object-cover" />
+  {/* mevcut bütçe/rozetler kalsın */}
+</div>
+
+<div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[96px]"> … </div>
+
+
+
+	3.	src/components/CombinedFeed.tsx dosyasını güncelle (render çağrıları):
+
+{mixed.map((item, idx) =>
+  item.kind === "listing" ? (
+    <ListingCard
+      key={`l-${item.data.id}-${idx}`}
+      listing={item.data}
+      imageAspect="4/3"       // oda ilanı resmi biraz daha yüksek
+      addressOverlay          // adresi foto üstünde göster
+    />
+  ) : (
+    <SeekerCard
+      key={`s-${item.data.id}-${idx}`}
+      seeker={item.data}
+      imageAspect="16/9"      // oda arayan resmi biraz daha kısa
+    />
+  )
+)}
+
+	4.	Değiştirme/Koruma:
+
+	•	API uçları, sorgu anahtarları, auth ve veri modellerine dokunmayın.
+	•	Sadece görsel/proplar.
+
+⸻
+
+Kabul Kriterleri
+	•	Mobilde (≤640px) liste tek sütun: her kart aynı görsel oranı kuralına uyuyor, kart yükseklikleri tutarlı.
+	•	Oda ilanı kartlarında foto biraz daha uzun ve sol-alt köşede adres rozeti görünüyor.
+	•	Oda arayan kartlarında foto biraz daha kısa; alt metin alanı boşluk yapmıyor.
+	•	Hiçbir TypeScript hatası yok; mevcut favori/fiyat/rozet işlevleri çalışmaya devam ediyor.
+
+⸻
+
+Çalıştırma / Test
+	•	Replit’te Run/Preview ile dev sunucuyu başlatın (veya npm run dev).
+	•	https://<replit-preview>/ ana sayfada: kartlar tek sütun; adres rozeti görünüyor; görseller istenen oranlarda.
+	•	Tarayıcı önbelleğini bir kez temizleyip tazeleyin.
+
+⸻
+
+Bu metni Replit Agent’a ver; gerisini o uygulasın.

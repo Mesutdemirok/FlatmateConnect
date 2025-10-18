@@ -11,22 +11,37 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatCurrency } from "@/lib/formatters";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 
+type AspectOpt = "16/9" | "4/3" | "16/10";
+
 interface ListingCardProps {
   listing?: {
     id?: string;
     title?: string | null;
     suburb?: string | null;
+    address?: string | null;
     rentAmount?: string | number | null;
     images?: Array<{ imagePath?: string; isPrimary?: boolean }>;
     user?: { verificationStatus?: string | null };
   };
   isFavorited?: boolean;
+  imageAspect?: AspectOpt;
+  addressOverlay?: boolean;
 }
+
+const aspectClass = (a?: AspectOpt) =>
+  a === "4/3" ? "aspect-[4/3]" :
+  a === "16/9" ? "aspect-[16/9]" :
+  "aspect-[16/10]";
 
 const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=60";
 
-export default function ListingCard({ listing, isFavorited = false }: ListingCardProps) {
+export default function ListingCard({ 
+  listing, 
+  isFavorited = false, 
+  imageAspect = "16/10", 
+  addressOverlay = false 
+}: ListingCardProps) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -35,6 +50,7 @@ export default function ListingCard({ listing, isFavorited = false }: ListingCar
   const id = listing?.id ?? "";
   const title = (listing?.title ?? "İlan").toString();
   const suburb = (listing?.suburb ?? "").toString();
+  const address = (listing?.address ?? "").toString();
 
   const amount = useMemo(() => {
     const v = listing?.rentAmount;
@@ -79,7 +95,7 @@ export default function ListingCard({ listing, isFavorited = false }: ListingCar
         className="w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
         data-testid={`listing-card-${id || "noid"}`}
       >
-        <div className="relative w-full aspect-[5/4] sm:aspect-[4/3] lg:aspect-[16/10] overflow-hidden">
+        <div className={`relative w-full ${aspectClass(imageAspect)} overflow-hidden`}>
           <img
             src={imageUrl}
             alt={title}
@@ -106,16 +122,26 @@ export default function ListingCard({ listing, isFavorited = false }: ListingCar
             <Heart className="h-5 w-5" strokeWidth={2} fill={favorite ? "currentColor" : "none"} />
           </Button>
 
-          {isVerified && (
+          {isVerified && !addressOverlay && (
             <div className="absolute bottom-2 left-2 rounded-full bg-emerald-600/95 p-1.5 text-white shadow ring-1 ring-white/50">
               <ShieldCheck className="h-4 w-4" />
             </div>
           )}
+
+          {addressOverlay && (address || suburb) && (
+            <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-slate-700 shadow-sm ring-1 ring-black/5">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-violet-600" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 22s8-4.5 8-12a8 8 0 1 0-16 0c0 7.5 8 12 8 12Z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <span className="max-w-[14ch] truncate">{address || suburb}</span>
+            </div>
+          )}
         </div>
 
-        <div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[110px] flex flex-col justify-center">
+        <div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[96px] flex flex-col justify-center">
           <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2">{title}</h3>
-          {suburb && <p className="mt-0.5 text-[13px] sm:text-sm text-slate-600 truncate">{suburb}</p>}
+          {!addressOverlay && suburb && <p className="mt-0.5 text-[13px] sm:text-sm text-slate-600 truncate">{suburb}</p>}
         </div>
       </article>
     </Link>
