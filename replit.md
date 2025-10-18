@@ -74,6 +74,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 18, 2025)
 
+### Enhanced Error Handling for Seeker Profile Creation (October 18, 2025)
+- **Client-Side Improvements**:
+  - Added detailed console logging for form submission payload and API responses
+  - Enhanced error display to show actual error messages instead of generic messages
+  - Added try-catch block in mutation function to properly catch and propagate errors
+  - Error toast now displays the actual error message from the server
+- **Server-Side Improvements**:
+  - Added comprehensive logging for POST /api/seekers endpoint
+  - Logs request body, userId from JWT, and parsed seeker data
+  - Enhanced Zod validation error logging with detailed error array
+  - Server now returns validation error details in response for better debugging
+- **Purpose**: These changes help diagnose issues with seeker profile creation by providing clear, actionable error messages in both browser console and server logs
+
 ### Consistent Menu & Mixed Homepage Cards (October 18, 2025)
 - **Homepage Mixed Cards**: Room listings and seeker profiles now display together on homepage
   - Created sample seeker profiles (Ahmet Yılmaz, Ayşe Demir) for demonstration
