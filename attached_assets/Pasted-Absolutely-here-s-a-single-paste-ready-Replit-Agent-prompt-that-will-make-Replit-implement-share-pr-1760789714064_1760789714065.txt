@@ -1,0 +1,154 @@
+Absolutely—here’s a single, paste-ready Replit Agent prompt that will make Replit implement share previews (Open Graph/Twitter cards) for your site, including dynamic previews for listing and room-seeker detail pages. It follows your current Vite + Express setup and won’t touch your data or API connections.
+
+⸻
+
+🔧 Replit Agent Prompt — Add Social Share Previews (OG/Twitter) for Odanet
+
+Goal:
+Make https://www.odanet.com.tr show a nice preview (title, description, image, icon) on WhatsApp, Facebook, Twitter, Slack, etc. Also generate correct previews for detail pages /oda-ilani/:id and /oda-arayan/:id. Do this without breaking the SPA and without changing any API logic.
+
+1) Add brand icons & a share image (public assets)
+
+Create these files under public/ (keep names exactly):
+	•	public/favicon.ico
+	•	public/apple-touch-icon.png (180×180)
+	•	public/android-chrome-192x192.png (192×192)
+	•	public/android-chrome-512x512.png (512×512)
+	•	public/site.webmanifest
+	•	public/og/og-home.jpg (1200×630 JPG, <2MB; use the Odanet logo over a soft gradient)
+
+If any are missing, generate simple placeholders so the build doesn’t fail.
+
+2) Add default meta tags for the homepage
+
+Edit the Vite HTML entry (usually index.html at repo root or client/index.html). Inside <head>, add:
+
+<link rel="canonical" href="https://www.odanet.com.tr/" />
+<link rel="icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta name="theme-color" content="#5B21B6" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Odanet" />
+<meta property="og:url" content="https://www.odanet.com.tr/" />
+<meta property="og:title" content="Odanet – Güvenli, kolay ve şeffaf oda & ev arkadaşı bul" />
+<meta property="og:description" content="Doğrulanmış profiller ve gerçek ilanlarla sana en uygun oda ya da ev arkadaşını hemen bul." />
+<meta property="og:image" content="https://www.odanet.com.tr/og/og-home.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Odanet – Güvenli, kolay ve şeffaf oda & ev arkadaşı bul" />
+<meta name="twitter:description" content="Doğrulanmış profiller ve gerçek ilanlarla sana en uygun oda ya da ev arkadaşını hemen bul." />
+<meta name="twitter:image" content="https://www.odanet.com.tr/og/og-home.jpg" />
+
+3) Add a lightweight OG handler for bots (SSR only for crawlers)
+
+Create server/og.ts (TypeScript, ESM). It should detect share crawlers (WhatsApp/Facebook/Twitter/Slack, etc.) and send minimal HTML with correct meta tags. For normal users, let the SPA handle routing.
+
+Requirements:
+	•	Use BOT_RE = /(facebookexternalhit|whatsapp|twitterbot|slackbot|linkedinbot|telegram|discord)/i
+	•	Base URL: https://www.odanet.com.tr
+	•	Routes to handle (before static middleware):
+	•	/oda-ilani/:id → fetch listing (title, suburb/address, first image if any)
+	•	/oda-arayan/:id → fetch seeker (display name, preferredLocation, profile photo)
+	•	/ (optional) → default OG (same as homepage tags)
+	•	Use your existing helpers (e.g., getAbsoluteImageUrl) and DB accessors (import from current server modules).
+	•	If an image is missing, fallback to /og/og-home.jpg.
+	•	For human browsers (non-bots), redirect to the original SPA URL.
+
+Example skeleton (fill imports to match project paths):
+
+import type { Request, Response } from "express";
+import { getListingById } from "./db/listings";       // adjust to your project
+import { getSeekerById } from "./db/seekers";         // adjust to your project
+import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+
+const BOT_RE = /(facebookexternalhit|whatsapp|twitterbot|slackbot|linkedinbot|telegram|discord)/i;
+const BASE = "https://www.odanet.com.tr";
+
+function ogHtml({ title, description, url, image }: { title: string; description: string; url: string; image: string; }) {
+  return `<!doctype html><html lang="tr"><head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" href="/favicon.ico" /><link rel="canonical" href="${url}" />
+<meta property="og:type" content="article" /><meta property="og:site_name" content="Odanet" />
+<meta property="og:url" content="${url}" /><meta property="og:title" content="${title}" />
+<meta property="og:description" content="${description}" /><meta property="og:image" content="${image}" />
+<meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="${title}" />
+<meta name="twitter:description" content="${description}" /><meta name="twitter:image" content="${image}" />
+</head><body><script>location.replace("${url}");</script></body></html>`;
+}
+
+export async function ogHandler(req: Request, res: Response) {
+  const ua = String(req.headers["user-agent"] || "");
+  const isBot = BOT_RE.test(ua) || req.query._og === "1"; // allow manual check with ?_og=1
+  if (!isBot) return res.redirect(req.originalUrl);
+
+  // Listing detail
+  if (req.path.startsWith("/oda-ilani/")) {
+    const id = req.params.id;
+    const listing = await getListingById(id);
+    if (!listing) return res.status(404).send("Not found");
+    const title = listing.title || "Oda ilanı";
+    const desc = [listing.suburb, listing.address].filter(Boolean).join(" • ") || "Odanet";
+    const firstImg = listing.images?.[0]?.imagePath;
+    const image = firstImg ? getAbsoluteImageUrl(firstImg) : `${BASE}/og/og-home.jpg`;
+    return res.send(ogHtml({ title, description: desc, url: `${BASE}/oda-ilani/${id}`, image }));
+  }
+
+  // Seeker detail
+  if (req.path.startsWith("/oda-arayan/")) {
+    const id = req.params.id;
+    const seeker = await getSeekerById(id);
+    if (!seeker) return res.status(404).send("Not found");
+    const displayName = seeker.fullName || seeker.user?.firstName || "Odanet";
+    const desc = seeker.preferredLocation ? `Tercih edilen bölge: ${seeker.preferredLocation}` : "Oda arayan profil";
+    const photo = seeker.profilePhotoUrl || seeker.photos?.[0]?.imagePath;
+    const image = photo ? getAbsoluteImageUrl(photo) : `${BASE}/og/og-home.jpg`;
+    return res.send(ogHtml({ title: `${displayName} – Oda arıyor`, description: desc, url: `${BASE}/oda-arayan/${id}`, image }));
+  }
+
+  // Fallback → homepage OG
+  return res.send(ogHtml({
+    title: "Odanet – Güvenli, kolay ve şeffaf oda & ev arkadaşı bul",
+    description: "Doğrulanmış profiller ve gerçek ilanlarla sana en uygun oda ya da ev arkadaşını hemen bul.",
+    url: `${BASE}/`,
+    image: `${BASE}/og/og-home.jpg`,
+  }));
+}
+
+4) Wire the handler in the server
+
+Edit server/index.ts so these routes are registered before your static/Vite handler:
+
+import { ogHandler } from "./og";
+
+// Bots get OG HTML, humans get SPA
+app.get("/oda-ilani/:id", ogHandler);
+app.get("/oda-arayan/:id", ogHandler);
+// Optional: homepage
+app.get("/", ogHandler);
+
+Ensure the order doesn’t break your existing API routes.
+
+5) Build & test (dev + prod)
+	•	Local/preview: run npm run dev and test:
+	•	https://www.odanet.com.tr/?_og=1 (should return HTML with OG tags)
+	•	https://www.odanet.com.tr/oda-ilani/<someId>?_og=1
+	•	https://www.odanet.com.tr/oda-arayan/<someId>?_og=1
+	•	After deploy, purge CDN cache (Cloudflare) for /og/og-home.jpg and homepage.
+	•	Validate with share tools:
+	•	Facebook/WhatsApp: Sharing Debugger (force “Scrape Again”)
+	•	Twitter Card Validator
+
+Acceptance criteria:
+	•	Sharing the root and any detail page shows title + description + image + Odanet site name.
+	•	Normal users still see the SPA; routing/links unchanged.
+	•	No TypeScript or ESLint errors; build command remains the same.
+	•	No sensitive data exposed in meta tags.
+
+⸻
+
+If anything in the codebase uses different paths (e.g., client/index.html vs index.html, or DB accessor names), please adapt accordingly without changing public URLs or existing API contracts. Keep changes minimal and focused on OG/Twitter meta support.
