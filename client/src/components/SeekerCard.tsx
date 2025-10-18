@@ -94,9 +94,9 @@ export default function SeekerCard({ seeker }: { seeker: SeekerProfileWithRelati
             </h3>
 
             {/* Bütçe - yeşil etiket */}
-            {seeker.budget && (
+            {seeker.budgetMonthly && (
               <div className="inline-block rounded-full px-2.5 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-                {budgetTR(seeker.budget)}
+                {budgetTR(seeker.budgetMonthly)}
               </div>
             )}
 

@@ -26,7 +26,7 @@ const Social = ({ href, label, children }: SocialProps) => (
   </a>
 );
 
-// Simple helper for internal (SPA) links
+// Simple helper for internal (SPA) links  
 const InternalLink = ({
   to,
   children,
@@ -35,9 +35,9 @@ const InternalLink = ({
   children: React.ReactNode;
 }) => (
   <Link href={to}>
-    <a className="hover:opacity-90 focus:outline-none focus:underline">
+    <span className="hover:opacity-90 focus:outline-none focus:underline cursor-pointer">
       {children}
-    </a>
+    </span>
   </Link>
 );
 
