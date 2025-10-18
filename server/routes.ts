@@ -598,6 +598,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mixed feed endpoint - listings + seekers together
+  app.get('/api/feed', async (req, res) => {
+    try {
+      const limit = req.query.limit ? Number(req.query.limit) : 24;
+      
+      // Fetch recent listings (published and active)
+      const listings = await storage.getListings({ isPublished: true });
+      const recentListings = listings
+        .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+        .slice(0, 12);
+      
+      // Fetch recent seekers (published and active)
+      const seekers = await storage.getSeekerProfiles({ isPublished: true, isActive: true });
+      const recentSeekers = seekers
+        .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+        .slice(0, 12);
+      
+      // Map to normalized feed items
+      const feedItems = [
+        ...recentListings.map(listing => ({
+          type: 'listing' as const,
+          id: listing.id,
+          createdAt: listing.createdAt,
+          title: listing.title,
+          suburb: listing.suburb,
+          rentAmount: listing.rentAmount,
+          images: listing.images || []
+        })),
+        ...recentSeekers.map(seeker => ({
+          type: 'seeker' as const,
+          id: seeker.id,
+          createdAt: seeker.createdAt,
+          displayName: seeker.fullName || 'İsimsiz',
+          budgetMonthly: seeker.budgetMonthly ? parseInt(seeker.budgetMonthly) : null,
+          preferredLocation: seeker.preferredLocation,
+          photoUrl: seeker.profilePhotoUrl
+        }))
+      ];
+      
+      // Sort by createdAt desc and limit
+      const sortedFeed = feedItems
+        .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+        .slice(0, limit);
+      
+      res.json(sortedFeed);
+    } catch (error) {
+      console.error("Error fetching feed:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
   app.get('/api/seekers/:id', async (req, res) => {
     try {
       const seeker = await storage.getSeekerProfile(req.params.id);
