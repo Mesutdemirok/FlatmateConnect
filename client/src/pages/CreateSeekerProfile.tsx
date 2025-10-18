@@ -125,14 +125,24 @@ export default function CreateSeekerProfile() {
         petPreference: data.petPreference || null,
       };
 
-      const response = await apiRequest(
-        isEditMode ? 'PUT' : 'POST',
-        isEditMode ? `/api/seekers/${existingProfile.id}` : '/api/seekers',
-        payload
-      );
+      console.log('Submitting seeker profile:', payload);
 
-      const result = await response.json();
-      return result;
+      try {
+        const response = await apiRequest(
+          isEditMode ? 'PUT' : 'POST',
+          isEditMode ? `/api/seekers/${existingProfile.id}` : '/api/seekers',
+          payload
+        );
+
+        const result = await response.json();
+        console.log('Seeker profile response:', result);
+        return result;
+      } catch (error: any) {
+        console.error('API Request failed:', error);
+        // Extract error message from the response
+        const errorMessage = error.message || error.toString();
+        throw new Error(errorMessage);
+      }
     },
     onSuccess: async (result) => {
       // Upload photo if provided
@@ -179,10 +189,11 @@ export default function CreateSeekerProfile() {
       
       setLocation('/profil');
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Seeker profile creation error:', error);
       toast({
         title: 'Hata',
-        description: 'Bir hata oluştu, lütfen tekrar deneyiniz.',
+        description: error.message || error.toString() || 'Bir hata oluştu, lütfen tekrar deneyiniz.',
         variant: "destructive"
       });
     }
