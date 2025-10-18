@@ -141,6 +141,23 @@ Preferred communication style: Simple, everyday language.
   - Production: Uses R2_PUBLIC_URL (cdn.odanet.com.tr)
   - Development: Falls back to local paths
 
+### Seeker Photo Upload Implementation (October 18, 2025)
+- **New Endpoints**: Created `/api/seekers/:id/photo` (singular) for profile photo management
+  - POST endpoint accepts single 'photo' file upload via multipart/form-data
+  - Uploads to Cloudflare R2 storage using existing R2 utilities
+  - Updates `profilePhotoUrl` field in database immediately
+  - Also adds photo to `seeker_photos` table with sortOrder 0
+  - DELETE endpoint removes profile photo (sets profilePhotoUrl to null)
+- **Form Integration**: CreateSeekerProfile form already configured correctly
+  - Uses FormData to send photo with 'photo' field name
+  - Uploads photo after profile creation/update
+  - Displays selected file name and existing photo status
+  - Supports photo deletion with confirmation
+- **Display Logic**: SeekerCard and SeekerDetail use existing getAbsoluteImageUrl helper
+  - Priority: profilePhotoUrl → photos[0] → initials avatar fallback
+  - Cloudflare CDN URL normalization automatic
+  - No frontend code changes needed for display
+
 ### UI Consistency & Mobile Optimization (October 18, 2025)
 - **Mobile-First Grid**: Changed from 2-column mobile to 1-column mobile layout
   - Mobile: `grid-cols-1` (1 card per row for better focus)
