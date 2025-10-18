@@ -119,3 +119,24 @@ Preferred communication style: Simple, everyday language.
     - All users see: Favoriler, Mesajlar, Oda İlanı Ver, Oda Arama İlanı Ver
     - Logged out: Shows "Giriş Yap" and "Üye Ol" at bottom
     - Logged in: Shows "Profil" and "Çıkış Yap" at bottom
+
+### Social Share Previews Implementation (October 18, 2025)
+- **Open Graph Handler**: Created `server/og.ts` with bot detection and dynamic meta tag generation
+  - Detects social media bots (WhatsApp, Facebook, Twitter, LinkedIn, Telegram, Discord, Pinterest)
+  - Returns server-side rendered HTML with OG tags for bots, regular SPA for users
+  - Manual testing available via `?_og=1` query parameter
+- **Route Integration**: OG handlers registered in `server/index.ts` before Vite/static middleware
+  - Homepage: Branded OG tags with fallback image
+  - Listing detail (`/oda-ilani/:id`): Dynamic title, location, and primary image
+  - Seeker detail (`/oda-arayan/:id`): User name, location preference, and profile photo
+- **Public Assets**: Created `client/public/` folder structure for static assets
+  - Favicon and app icons at root level
+  - OG share images in `/og/` subfolder (og-home.jpg as fallback)
+  - Vite automatically copies public folder contents to build output
+- **Meta Tags**: Comprehensive OG and Twitter card implementation
+  - Title, description, canonical URL, site name
+  - Image with dimensions (1200x630 for optimal display)
+  - Auto-redirects bots to actual page after crawling
+- **CDN Integration**: Image URLs normalized to use Cloudflare CDN domain for optimal delivery
+  - Production: Uses R2_PUBLIC_URL (cdn.odanet.com.tr)
+  - Development: Falls back to local paths
