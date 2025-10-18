@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { jwtAuth, generateToken, hashPassword, comparePassword } from "./auth";
 import { insertListingSchema, insertUserPreferencesSchema, insertMessageSchema, insertFavoriteSchema, insertUserSchema, insertSeekerProfileSchema, type User } from "@shared/schema";
 import { getErrorMessage, detectLanguage } from "./i18n";
+import { ogHandler } from "./og";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -75,6 +76,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       env: process.env.NODE_ENV || 'development',
       timestamp: new Date().toISOString()
     });
+  });
+
+  // Open Graph / Social Share Preview handlers (must be before API routes)
+  // These intercept bot requests and return HTML with OG meta tags
+  app.get('/oda-ilani/:id', (req, res, next) => ogHandler(req, res, next));
+  app.get('/oda-arayan/:id', (req, res, next) => ogHandler(req, res, next));
+  app.get('/', (req, res, next) => {
+    // Only handle bots or manual OG checks for homepage
+    const ua = String(req.headers["user-agent"] || "");
+    const isBot = /(facebookexternalhit|whatsapp|twitterbot|slackbot|linkedinbot|telegram|discord|pinterest)/i.test(ua) || req.query._og === "1";
+    if (isBot) {
+      return ogHandler(req, res, next);
+    }
+    next();
   });
 
   // Auth routes
