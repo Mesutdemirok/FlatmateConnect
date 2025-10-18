@@ -630,19 +630,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/seekers', jwtAuth, async (req, res) => {
     try {
       const userId = req.userId!;
+      console.log('[POST /api/seekers] Request body:', JSON.stringify(req.body, null, 2));
+      console.log('[POST /api/seekers] userId from JWT:', userId);
+      
       const seekerData = insertSeekerProfileSchema.parse({
         ...req.body,
         userId,
         isPublished: true // Auto-publish new seeker profiles
       });
       
+      console.log('[POST /api/seekers] Parsed seeker data:', JSON.stringify(seekerData, null, 2));
+      
       const seeker = await storage.createSeekerProfile(seekerData);
+      console.log('[POST /api/seekers] Seeker profile created successfully:', seeker.id);
       res.status(201).json(seeker);
     } catch (error: any) {
-      console.error("Error creating seeker profile:", error);
+      console.error("[POST /api/seekers] Error creating seeker profile:", error);
+      if (error.name === 'ZodError') {
+        console.error("[POST /api/seekers] Zod validation errors:", JSON.stringify(error.errors, null, 2));
+      }
       const lang = detectLanguage(req);
       if (error.name === 'ZodError') {
-        res.status(400).json({ message: getErrorMessage('bad_request', lang), error: error.message });
+        res.status(400).json({ message: getErrorMessage('bad_request', lang), error: error.message, details: error.errors });
       } else {
         res.status(400).json({ message: 'Profil oluşturulamadı', error: error.message });
       }
