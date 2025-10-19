@@ -78,6 +78,31 @@ Preferred communication style: Simple, everyday language.
   - Custom event tracking for user actions (signup, login, search, etc.)
   - Real-time analytics monitoring
 
+### SEO & Meta Tags
+- **React Helmet**: Dynamic meta tag management
+- **SEOHead Component**: Reusable SEO component with Open Graph and Twitter cards
+  - Default Odanet title and description
+  - Dynamic meta tags for listing and seeker detail pages
+  - Proper canonical URLs and social media preview images
+
+## Recent Changes
+
+### SEO Integration Across All Main Pages (October 19, 2025)
+- **SEOHead Component**: Clean, reusable component with TypeScript props
+  - Default title: "Odanet – Güvenli, kolay ve şeffaf oda & ev arkadaşı bul"
+  - Default description for home page
+  - Supports custom title, description, URL, and image per page
+- **Dynamic SEO on Detail Pages**:
+  - `ListingDetail`: Uses listing title, location, price, and description for SEO
+  - `SeekerDetail`: Uses seeker name, age, occupation, location, and budget for SEO
+  - Both use first image as Open Graph preview
+- **Static SEO on List Pages**:
+  - `Search`: "Oda İlanları - Kiralık Oda Bul | Odanet"
+  - `SeekerList`: "Oda Arayanlar - Ev Arkadaşı Bul | Odanet"
+  - `Profile`: "Profilim - Hesap Ayarları | Odanet"
+  - `Home`: Default Odanet branding
+- **Social Media Ready**: All pages have proper Open Graph and Twitter Card meta tags for rich previews when shared
+
 ## Recent Changes
 
 ### Google Analytics 4 Event Tracking Integration (October 19, 2025)
