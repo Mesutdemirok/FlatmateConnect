@@ -1,0 +1,75 @@
+Excellent 👌 — below is the complete and clean developer prompt you can copy-paste directly into Replit’s AI Agent (or any code assistant).
+It will automatically integrate all 5 event trackers into your current Google Analytics setup inside _app.tsx, creating one reusable helper file.
+
+⸻
+
+🧠 Developer Prompt – Add Analytics Event Tracking
+
+Please update the Odanet project to finalize Google Analytics 4 event tracking.
+
+Current GA Measurement ID: G-ME5ES9KLDE  
+Framework: Next.js  
+App entry: /client/src/pages/_app.tsx  
+Environment variable: NEXT_PUBLIC_GA_ID
+
+✅ Tasks:
+1. Keep the working GA setup inside `_app.tsx` (which already loads gtag.js and tracks pageviews).  
+2. Add a new helper file at `/client/src/lib/analyticsEvents.ts` that exports simple reusable functions for each major user action.
+
+✅ In `/client/src/lib/analyticsEvents.ts`, create:
+
+```ts
+import { gtag } from "@/pages/_app";
+
+// User registration (Üye Ol)
+export const trackSignup = (method: string = "email") => {
+  gtag.event("sign_up", { method });
+};
+
+// User login (Giriş Yap)
+export const trackLogin = (method: string = "email") => {
+  gtag.event("login", { method });
+};
+
+// Create new room listing (Oda İlanı Ver)
+export const trackCreateListing = () => {
+  gtag.event("click_ilan_ekle", {
+    event_category: "Listing",
+    event_label: "Oda İlanı Ver",
+  });
+};
+
+// Send message (Mesaj Gönder)
+export const trackMessageSend = () => {
+  gtag.event("message_send", {
+    event_category: "Messaging",
+    event_label: "User sent message",
+  });
+};
+
+// Search action (Oda Arama)
+export const trackSearch = (searchValue: string) => {
+  gtag.event("search", {
+    search_term: searchValue,
+    event_category: "Search",
+  });
+};
+
+✅ Make sure _app.tsx keeps this structure:
+	•	Loads gtag/js with strategy "afterInteractive"
+	•	Initializes gtag('config', '${GA_ID}', { send_page_view: false })
+	•	Tracks pageview() on route change
+	•	Exports the gtag object globally (so helper can import it)
+
+✅ Confirm that:
+	•	trackSignup(), trackLogin(), etc. are callable from any component.
+	•	Events appear under “Realtime → Events” in GA dashboard when triggered.
+	•	No duplicate gtag('config') calls are added.
+
+Once completed, test the integration with Tag Assistant → ensure all events are firing correctly.
+
+After this is done, we’ll proceed to the SEO/meta setup job.
+
+---
+
+Once this finishes successfully, tell me **“done”**, and we’ll immediately move on to the SEO optimization (meta tags, OpenGraph, canonical, sitemap, robots.txt, and Google indexing checklist).

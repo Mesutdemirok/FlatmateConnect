@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { trackPageView } from "@/lib/analytics";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
@@ -44,6 +45,12 @@ function ProtectedRoute({ component: Component, ...rest }: { component: () => JS
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [location] = useLocation();
+
+  // Track pageviews on route change (Google Analytics)
+  useEffect(() => {
+    trackPageView(location);
+  }, [location]);
 
   return (
     <Switch>
