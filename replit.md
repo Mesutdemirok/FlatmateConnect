@@ -71,3 +71,47 @@ Preferred communication style: Simple, everyday language.
 - **Cloudflare R2**: Object storage for images (bucket: `odanet-uploads`).
 - **Cloudflare CDN**: Custom domain (`cdn.odanet.com.tr`) for image delivery.
 - **AWS SDK S3 Client**: R2 API compatibility.
+
+### Analytics
+- **Google Analytics 4**: Event tracking (ID: G-ME5ES9KLDE)
+  - Automatic pageview tracking via Wouter routing
+  - Custom event tracking for user actions (signup, login, search, etc.)
+  - Real-time analytics monitoring
+
+## Recent Changes
+
+### Google Analytics 4 Event Tracking Integration (October 19, 2025)
+- **Analytics Helper**: Created `/client/src/lib/analytics.ts` with reusable event tracking functions
+  - `trackSignup(method)` - User registration events
+  - `trackLogin(method)` - User login events
+  - `trackCreateListing()` - New listing creation
+  - `trackMessageSend()` - Message sending
+  - `trackSearch(query)` - Search actions
+  - `trackEvent(name, params)` - Generic custom events
+- **Automatic Pageview Tracking**: Integrated with Wouter router in `App.tsx`
+  - Tracks all route changes automatically
+  - No manual pageview calls needed
+- **GA Configuration**: Measurement ID G-ME5ES9KLDE
+  - Loaded in `index.html` with `send_page_view: false`
+  - Manual SPA pageview tracking via React
+  - Ready for real-time event monitoring
+- **Cleanup**: Removed Next.js leftover files (_app.tsx, ga.tsx, gtag.tsx)
+  - Consolidated to single analytics module
+  - Vite/React architecture compliant
+
+### Mobile Photo Upload Optimization (October 18, 2025)
+- **Sharp & Busboy Integration**: Installed image processing libraries for robust mobile uploads
+  - Sharp: HEIC/HEIF → JPEG conversion, auto-rotation (EXIF), compression (82% quality)
+  - Busboy: Multipart/form-data parsing for file uploads
+  - Automatic resize to max 1600px width (maintains aspect ratio)
+- **New Upload Endpoint**: `/api/uploads/seeker-photo`
+  - Accepts all image formats: JPEG, PNG, WebP, HEIC, HEIF
+  - Immediate processing and optimization on upload
+  - Returns both imagePath (for DB) and CDN URL (for preview)
+  - Maximum file size: 10MB (raw files, compressed to ~200-500KB)
+- **Frontend Upload UX**: Completely redesigned CreateSeekerProfile photo upload
+  - `accept="image/*"` + `capture="environment"` for mobile camera access
+  - Instant upload on file selection (no waiting for form submit)
+  - Real-time progress indicator (loading spinner)
+  - Preview with rounded image after successful upload
+  - Clear success/error messages in Turkish
