@@ -1,3 +1,4 @@
+import React from "react";
 import { Helmet } from "react-helmet";
 
 interface SEOHeadProps {
@@ -46,6 +47,39 @@ export default function SEOHead({
       <link rel="icon" href="/favicon.ico" />
       <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       <meta name="theme-color" content="#5B21B6" />
+
+      {/* Schema.org Structured Data */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Odanet",
+          url: "https://www.odanet.com.tr",
+          logo: "https://www.odanet.com.tr/og/og-home.jpg",
+          description:
+            "Odanet – Güvenli, kolay ve şeffaf oda & ev arkadaşı bulma platformu.",
+          address: {
+            "@type": "PostalAddress",
+            streetAddress:
+              "Zümrütevler Mah. Ural Sk. Nas Plaza No: 24 İç Kapı No: 6",
+            addressLocality: "Maltepe",
+            addressRegion: "İstanbul",
+            postalCode: "34844",
+            addressCountry: "TR",
+          },
+          contactPoint: {
+            "@type": "ContactPoint",
+            telephone: "+90-534-824-5155",
+            contactType: "customer support",
+            availableLanguage: "Turkish",
+          },
+          sameAs: [
+            "https://www.instagram.com/odanet",
+            "https://www.facebook.com/odanet",
+            "https://www.linkedin.com/company/odanet",
+          ],
+        })}
+      </script>
     </Helmet>
   );
 }
