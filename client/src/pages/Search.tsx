@@ -9,6 +9,7 @@ import ListingCard from "@/components/ListingCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Search as SearchIcon } from "lucide-react";
+import SEOHead from "@/components/SEOHead";
 
 export default function Search() {
   const { t } = useTranslation();
@@ -63,6 +64,11 @@ export default function Search() {
 
   return (
     <div className="min-h-screen bg-background" data-testid="search-page">
+      <SEOHead
+        title="Oda İlanları - Kiralık Oda Bul | Odanet"
+        description="Türkiye'nin her yerinden doğrulanmış kiralık oda ilanlarını incele. Uygun fiyatlı, güvenli ve kaliteli oda seçenekleri için hemen ara."
+        url="https://www.odanet.com.tr/oda-ilanlari"
+      />
       <Header />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

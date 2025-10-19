@@ -4,6 +4,7 @@ import { useParams, useLocation } from "wouter";
 import { fetchSeeker, SeekerProfileWithRelations } from "@/lib/seekerApi";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -179,11 +180,25 @@ export default function SeekerDetail() {
     );
   }
 
+  // SEO data
+  const seoTitle = `${displayName} - Oda Arıyor | Odanet`;
+  const seoDescription = seeker.about 
+    ? seeker.about.slice(0, 155) + (seeker.about.length > 155 ? '...' : '')
+    : `${displayName}, ${seeker.age || ''} yaş, ${seeker.occupation || 'profesyonel'}. ${seeker.preferredLocation || 'Türkiye'} bölgesinde oda arıyor. ${formatBudgetTR(seeker.budgetMonthly)} bütçe.`;
+  const seoImage = activeImageUrl;
+  const seoUrl = `https://www.odanet.com.tr/oda-arayan/${id}`;
+
   return (
     <div
       className="min-h-screen bg-background"
       data-testid="seeker-detail-page"
     >
+      <SEOHead 
+        title={seoTitle}
+        description={seoDescription}
+        image={seoImage}
+        url={seoUrl}
+      />
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

@@ -12,6 +12,7 @@ import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 import type { ListingWithRelations, FavoriteStatus } from "@/lib/listingApi";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import TitleBlock from "@/components/listing/TitleBlock";
 import KeyFacts from "@/components/listing/KeyFacts";
 import FeatureChips from "@/components/listing/FeatureChips";
@@ -173,12 +174,26 @@ export default function ListingDetail() {
     ? getAbsoluteImageUrl(listing.user.profileImageUrl)
     : undefined;
 
+  // SEO data
+  const seoTitle = `${listing.title} - ${listing.neighborhood || listing.address || 'Kiralık Oda'} | Odanet`;
+  const seoDescription = listing.description 
+    ? listing.description.slice(0, 155) + (listing.description.length > 155 ? '...' : '')
+    : `${formatCurrency(Number(listing.rentAmount))} kiralık oda. ${listing.roomType || ''} ${listing.propertyType || ''}. Hemen incele!`;
+  const seoImage = mainImageUrl;
+  const seoUrl = `https://www.odanet.com.tr/oda-ilani/${id}`;
+
   // UI
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-indigo-50/30 via-white to-violet-50/30 pb-24"
       data-testid="listing-detail-page"
     >
+      <SEOHead 
+        title={seoTitle}
+        description={seoDescription}
+        image={seoImage}
+        url={seoUrl}
+      />
       <Header />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

@@ -14,6 +14,7 @@ import { AlertCircle, Search as SearchIcon, MapPin } from "lucide-react";
 
 import { SeekerProfileWithRelations } from "@/lib/seekerApi";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+import SEOHead from "@/components/SEOHead";
 
 type Filters = {
   location: string;
@@ -102,6 +103,11 @@ export default function SeekerList() {
 
   return (
     <div className="min-h-screen bg-background" data-testid="seeker-list-page">
+      <SEOHead
+        title="Oda Arayanlar - Ev Arkadaşı Bul | Odanet"
+        description="Güvenilir ve doğrulanmış profillere sahip oda arayanlar ile tanış. Sana uygun ev arkadaşını bulmak için hemen incele."
+        url="https://www.odanet.com.tr/oda-aramalari"
+      />
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

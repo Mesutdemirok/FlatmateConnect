@@ -12,6 +12,7 @@ import { insertUserPreferencesSchema } from "@shared/schema";
 import NumberInput from "@/components/forms/NumberInput";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -208,6 +209,11 @@ export default function Profile() {
       className="min-h-screen bg-gradient-to-b from-background to-muted/30"
       data-testid="profile-page"
     >
+      <SEOHead
+        title="Profilim - Hesap Ayarları | Odanet"
+        description="Odanet hesabınızı yönetin, tercihlerinizi güncelleyin ve ilanlarınızı kontrol edin."
+        url="https://www.odanet.com.tr/profil"
+      />
       <Header />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
