@@ -17,9 +17,10 @@ const Social = ({ href, label, children }: SocialProps) => (
     rel="noopener noreferrer me"
     className="
       inline-flex h-10 w-10 items-center justify-center rounded-full
-      bg-orange-600 text-white ring-1 ring-white/10
-      transition hover:bg-orange-700 hover:ring-white/20
-      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500
+      bg-orange-500 text-white ring-2 ring-white/40 shadow-md shadow-orange-900/30
+      transition transform hover:-translate-y-0.5 hover:scale-105
+      hover:bg-orange-400 hover:ring-turquoise-400
+      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-turquoise-400
     "
   >
     {children}
@@ -40,7 +41,7 @@ const InternalLink = ({
   </Link>
 );
 
-export default function Footer() {
+function Footer() {
   const [pathname] = useLocation();
   const HIDE_ON = ["/mesaj", "/mesajlar", "/messages", "/chat"];
   if (HIDE_ON.some((p) => pathname.startsWith(p))) return null;
@@ -116,7 +117,7 @@ export default function Footer() {
 
           {/* Social */}
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
+            <p className="text-sm font-semibold uppercase tracking-wide text-white/90">
               Sosyal
             </p>
             <div className="mt-3 flex items-center gap-3">
@@ -186,10 +187,12 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-white/15 pt-5 text-center text-sm text-white/80">
+        <div className="mt-8 border-t border-white/20 pt-5 text-center text-sm text-white/90">
           © {new Date().getFullYear()} {COMPANY.brand}. Tüm hakları saklıdır.
         </div>
       </div>
     </footer>
   );
 }
+
+export default Footer;
