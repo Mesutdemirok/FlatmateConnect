@@ -1,15 +1,16 @@
 import React from "react";
 import { COMPANY } from "@/lib/company";
 import { MessageCircle, Mail } from "lucide-react";
+import { FaInstagram, FaFacebook, FaTiktok, FaPinterest, FaYoutube } from "react-icons/fa";
 import { Link, useLocation } from "wouter";
 
 type SocialProps = {
   href: string;
   label: string;
-  src: string;
+  children: React.ReactNode;
 };
 
-const Social = ({ href, label, src }: SocialProps) => (
+const Social = ({ href, label, children }: SocialProps) => (
   <a
     href={href}
     aria-label={label}
@@ -17,22 +18,18 @@ const Social = ({ href, label, src }: SocialProps) => (
     rel="noopener noreferrer me"
     className="
       inline-flex h-10 w-10 items-center justify-center rounded-full
-      bg-orange-500 text-white ring-2 ring-white/40 shadow-md shadow-orange-900/30
-      transition transform hover:-translate-y-0.5 hover:scale-105
-      hover:bg-orange-400 hover:ring-turquoise-400
-      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-turquoise-400
+      bg-orange-600 text-white ring-1 ring-white/10
+      transition-all duration-200 transform
+      hover:bg-orange-700 hover:ring-white/20 hover:scale-105 hover:shadow-lg
+      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500
     "
+    data-testid={`social-${label.toLowerCase()}`}
   >
-    <img
-      src={src}
-      alt={label}
-      className="h-5 w-5 object-contain text-white filter invert brightness-0"
-      loading="lazy"
-      decoding="async"
-    />
+    {children}
   </a>
 );
 
+// Simple helper for internal (SPA) links  
 const InternalLink = ({
   to,
   children,
@@ -49,6 +46,8 @@ const InternalLink = ({
 
 export default function Footer() {
   const [pathname] = useLocation();
+
+  // Hide footer on messaging routes to save vertical space on mobile
   const HIDE_ON = ["/mesaj", "/mesajlar", "/messages", "/chat"];
   if (HIDE_ON.some((p) => pathname.startsWith(p))) return null;
 
@@ -58,8 +57,9 @@ export default function Footer() {
       className="mt-12 sm:mt-16 bg-gradient-to-r from-indigo-700 via-violet-700 to-fuchsia-700 text-white"
     >
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10 lg:px-8">
+        {/* Brand + Links + Social */}
         <div className="grid gap-8 md:grid-cols-3">
-          {/* Brand Info */}
+          {/* Brand & Address */}
           <div>
             <h3 className="text-2xl font-extrabold tracking-tight">
               {COMPANY.brand}
@@ -90,7 +90,7 @@ export default function Footer() {
             </address>
           </div>
 
-          {/* Navigation */}
+          {/* Quick links (SPA internal links) */}
           <nav aria-label="Alt menü bağlantıları" className="space-y-3">
             <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
               Bağlantılar
@@ -121,45 +121,50 @@ export default function Footer() {
             </ul>
           </nav>
 
-          {/* Social Icons */}
+          {/* Social Media Icons */}
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-white/90">
-              Sosyal
+            <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
+              Sosyal Medya
             </p>
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-3 flex items-center gap-3 flex-wrap">
               <Social
                 href="https://www.instagram.com/odanet.com.tr/"
                 label="Instagram"
-                src="/icons/instagram.svg"
-              />
+              >
+                <FaInstagram className="h-5 w-5" />
+              </Social>
               <Social
                 href="https://www.facebook.com/odanet.com.tr/"
                 label="Facebook"
-                src="/icons/facebook.svg"
-              />
+              >
+                <FaFacebook className="h-5 w-5" />
+              </Social>
               <Social
                 href="https://www.tiktok.com/@odanet.com.tr"
                 label="TikTok"
-                src="/icons/tiktok.svg"
-              />
+              >
+                <FaTiktok className="h-5 w-5" />
+              </Social>
               <Social
                 href="https://www.pinterest.com/odanet_/"
                 label="Pinterest"
-                src="/icons/pinterest.svg"
-              />
+              >
+                <FaPinterest className="h-5 w-5" />
+              </Social>
               <Social
                 href="https://www.youtube.com/@odanet_com_tr"
                 label="YouTube"
-                src="/icons/youtube.svg"
-              />
-              <Social href={`${COMPANY.site}/iletisim`} label="İletişim" src="">
+              >
+                <FaYoutube className="h-5 w-5" />
+              </Social>
+              <Social href={`${COMPANY.site}/iletisim`} label="İletişim">
                 <MessageCircle className="h-5 w-5" />
               </Social>
             </div>
           </div>
         </div>
 
-        <div className="mt-8 border-t border-white/20 pt-5 text-center text-sm text-white/90">
+        <div className="mt-8 border-t border-white/15 pt-5 text-center text-sm text-white/80">
           © {new Date().getFullYear()} {COMPANY.brand}. Tüm hakları saklıdır.
         </div>
       </div>

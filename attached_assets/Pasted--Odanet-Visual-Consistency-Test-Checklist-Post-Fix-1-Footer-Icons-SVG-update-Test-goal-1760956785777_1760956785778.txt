@@ -1,0 +1,98 @@
+
+
+✅ Odanet Visual Consistency Test Checklist (Post-Fix)
+
+🔹 1️⃣ Footer Icons (SVG update)
+
+Test goal: confirm new icons (Instagram, Facebook, TikTok, Pinterest, YouTube) render cleanly.
+
+Steps:
+	•	Open your website → scroll to footer.
+	•	Hover over each icon:
+	•	The orange background should glow slightly and scale up (hover:scale-105).
+	•	The icon itself should stay white, not gray or black.
+	•	The circle should show a faint white ring glow.
+	•	Click each icon:
+	•	Should open the correct social page in a new tab.
+	•	Check URLs are correct:
+
+instagram.com/odanet.com.tr
+facebook.com/odanet.com.tr
+tiktok.com/@odanet.com.tr
+pinterest.com/odanet_/
+youtube.com/@odanet_com_tr
+
+
+
+🟢 If any icon doesn’t appear:
+→ Verify the file path under /public/icons/ matches exactly (e.g., facebook.svg, not .jpeg).
+→ If dark, open the file and replace any fill="#000" with fill="currentColor".
+
+⸻
+
+🔹 2️⃣ Room & Seeker Cards Height (Desktop)
+
+Test goal: ensure cards align cleanly on desktop grid.
+
+Steps:
+	•	Resize browser to ≥1024px width (desktop).
+	•	Observe the card grid (both Oda İlanları and Oda Arayanlar pages).
+	•	Each card:
+	•	Same height (top and bottom edges aligned).
+	•	Images cropped evenly (no stretched faces or gray gaps).
+	•	Buttons and text inside cards aligned consistently.
+
+🟢 Expected visual cue: each row of cards forms a clean horizontal line — no “bumpy” layout.
+
+⸻
+
+🔹 3️⃣ Mobile Responsiveness (No Regression)
+
+Test goal: confirm agent fix didn’t affect mobile behavior.
+
+Steps:
+	•	Open your website on Safari mobile or Chrome mobile simulator.
+	•	Cards should shrink naturally (no cutoff).
+	•	Image proportions preserved (object-cover).
+	•	Footer icons centered and not stacked oddly.
+
+🟢 Expected result: layout remains identical to your previous mobile look.
+
+⸻
+
+🔹 4️⃣ Hover / Focus Behavior
+
+Test goal: confirm transitions look professional and not jittery.
+
+Steps:
+	•	Hover over any card → should show subtle lift (shadow-lg or translate).
+	•	Hover over any footer icon → slight orange glow and scale.
+	•	Click tab key through icons → visible focus outline (accessibility test).
+
+🟢 Expected: consistent hover response across all interactive elements.
+
+⸻
+
+🔹 5️⃣ Cross-Browser Check
+
+Test goal: confirm Safari and Chrome render gradients and shadows identically.
+
+Steps:
+	•	Open both browsers side-by-side.
+	•	Compare:
+	•	Footer background gradient (from-indigo-700 → to-fuchsia-700) should match tone and brightness.
+	•	Orange hover glow should appear equally strong.
+	•	Texts remain crisp, no blurry scaling.
+
+🟢 Optional: use Chrome DevTools → “Rendering → Emulate Vision Deficiencies” to confirm contrast passes accessibility (minimum AA level).
+
+⸻
+
+🎯 Final Verification
+
+Once these checks pass, your frontend is visually production-ready:
+	•	Consistent card grid height
+	•	Unified image proportions
+	•	Correct SVG rendering
+	•	Polished footer visual hierarchy
+

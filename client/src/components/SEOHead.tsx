@@ -74,8 +74,11 @@ export default function SEOHead({
             availableLanguage: "Turkish",
           },
           sameAs: [
-            "https://www.instagram.com/odanet.com.tr",
-            "https://www.facebook.com/odanet.com.tr",
+            "https://www.instagram.com/odanet.com.tr/",
+            "https://www.facebook.com/odanet.com.tr/",
+            "https://www.tiktok.com/@odanet.com.tr",
+            "https://www.pinterest.com/odanet_/",
+            "https://www.youtube.com/@odanet_com_tr",
             "https://www.linkedin.com/company/odanet",
           ],
         })}
