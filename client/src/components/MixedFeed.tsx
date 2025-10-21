@@ -6,7 +6,8 @@ import { MapPin, Wallet } from "lucide-react";
 type FeedItem =
   | { 
       type: 'listing'; 
-      id: string; 
+      id: string;
+      slug?: string | null;
       title: string; 
       suburb: string | null; 
       rentAmount: string | null; 
@@ -14,7 +15,8 @@ type FeedItem =
     }
   | { 
       type: 'seeker'; 
-      id: string; 
+      id: string;
+      slug?: string | null;
       displayName: string; 
       budgetMonthly: number | null; 
       preferredLocation: string | null; 
@@ -28,7 +30,7 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
   
   return (
     <a 
-      href={`/oda-arayan/${item.id}`} 
+      href={`/oda-arayan/${item.slug || item.id}`} 
       className="group block overflow-hidden rounded-2xl bg-white ring-1 ring-black/5 shadow-sm hover:shadow-lg transition-all duration-300"
       data-testid={`card-seeker-${item.id}`}
     >
@@ -100,6 +102,7 @@ export default function MixedFeed() {
                 key={`feed-listing-${item.id}`} 
                 listing={{
                   id: item.id,
+                  slug: item.slug,
                   title: item.title,
                   suburb: item.suburb ?? undefined,
                   rentAmount: item.rentAmount ?? undefined,

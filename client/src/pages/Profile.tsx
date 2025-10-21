@@ -832,7 +832,7 @@ export default function Profile() {
                           key={listing.id}
                           className="border rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer bg-background/50 backdrop-blur-sm"
                           onClick={() =>
-                            setLocation(`/oda-ilani/${listing.id}`)
+                            setLocation(`/oda-ilani/${listing.slug || listing.id}`)
                           }
                         >
                           <div className="relative">
@@ -1033,7 +1033,7 @@ export default function Profile() {
                         key={favorite.id}
                         className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
                         onClick={() =>
-                          setLocation(`/oda-ilani/${favorite.listing.id}`)
+                          setLocation(`/oda-ilani/${favorite.listing.slug || favorite.listing.id}`)
                         }
                       >
                         <div className="relative">

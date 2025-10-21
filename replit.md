@@ -106,10 +106,20 @@ Preferred communication style: Simple, everyday language.
 - **Frontend Routing**: Updated all routes to use :slug parameter instead of :id
   - `/oda-ilani/:slug` for listings
   - `/oda-arayan/:slug` for seekers
-- **Card Components**: All cards (ListingCard, SeekerCard, FeaturedListings) use slug-based URLs with ID fallback
-- **Type Safety**: Full TypeScript support throughout
-- **Backwards Compatibility**: ID-based API endpoints remain functional for existing data
-- **URL Format**: Enables SEO-friendly URLs for both listings and seekers
+- **Component Updates**: All components now use slug-based URLs with ID fallback for backwards compatibility
+  - `ListingCard.tsx`: Uses slug in links with ID fallback
+  - `SeekerCard.tsx`: Uses slug in links with ID fallback
+  - `FeaturedListings.tsx`: Uses slug with ID fallback
+  - `MixedFeed.tsx`: Updated types and links to support slugs
+  - `Profile.tsx`: My listings and favorites use slug-based navigation
+  - `ListingDetail.tsx`: Fetches listing by slug from API
+  - `SeekerDetail.tsx`: Fetches seeker profile by slug from API
+- **Type Safety**: Full TypeScript support throughout, updated FeedItem type to include slug field
+- **Backwards Compatibility**: ID-based fallback in all components ensures existing bookmarks/links continue working
+- **URL Format**: All listing and seeker URLs now use SEO-friendly slugs by default
+- **App Icons Updated**: Replaced all favicons and app icons with new red house logo
+  - Updated favicon.ico, apple-touch-icon.png, android-chrome icons
+  - Consistent branding across all platforms (iOS, Android, browsers)
 
 ### Footer Social Media Icons Update (October 20, 2025)
 - **Complete Social Media Integration**: Added all 6 social platforms to footer
