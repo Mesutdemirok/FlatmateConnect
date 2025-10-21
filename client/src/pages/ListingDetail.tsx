@@ -30,7 +30,7 @@ import {
 
 export default function ListingDetail() {
   const { t } = useTranslation();
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -43,27 +43,28 @@ export default function ListingDetail() {
     isLoading,
     error,
   } = useQuery<ListingWithRelations>({
-    queryKey: [`/api/listings/${id}`],
-    enabled: !!id,
+    queryKey: [`/api/listings/slug/${slug}`],
+    enabled: !!slug,
   });
 
   // Favorite state
   const { data: favoriteStatus } = useQuery<FavoriteStatus>({
-    queryKey: [`/api/favorites/${id}/check`],
-    enabled: !!id && isAuthenticated,
+    queryKey: [`/api/favorites/${listing?.id}/check`],
+    enabled: !!listing?.id && isAuthenticated,
   });
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: async () => {
+      if (!listing?.id) return;
       if (favoriteStatus?.isFavorite) {
-        await apiRequest("DELETE", `/api/favorites/${id}`);
+        await apiRequest("DELETE", `/api/favorites/${listing.id}`);
       } else {
-        await apiRequest("POST", "/api/favorites", { listingId: id });
+        await apiRequest("POST", "/api/favorites", { listingId: listing.id });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [`/api/favorites/${id}/check`],
+        queryKey: [`/api/favorites/${listing?.id}/check`],
       });
       queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
       toast({
@@ -82,7 +83,7 @@ export default function ListingDetail() {
           description: t("errors.unauthorized_description"),
           variant: "destructive",
         });
-        setTimeout(() => setLocation(`/giris?next=/oda-ilani/${id}`), 500);
+        setTimeout(() => setLocation(`/giris?next=/oda-ilani/${slug}`), 500);
         return;
       }
       toast({
@@ -95,7 +96,7 @@ export default function ListingDetail() {
 
   const handleFavoriteToggle = () => {
     if (!isAuthenticated) {
-      setLocation(`/giris?next=/oda-ilani/${id}`);
+      setLocation(`/giris?next=/oda-ilani/${slug}`);
       return;
     }
     toggleFavoriteMutation.mutate();
@@ -103,7 +104,7 @@ export default function ListingDetail() {
 
   const handleContactOwner = () => {
     if (!isAuthenticated || !listing) {
-      setLocation(`/giris?next=/oda-ilani/${id}`);
+      setLocation(`/giris?next=/oda-ilani/${slug}`);
       return;
     }
     setLocation(`/mesajlar?user=${listing.user.id}&listing=${listing.id}`);

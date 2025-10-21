@@ -35,7 +35,7 @@ function formatBudgetTR(budget: string | number | null | undefined) {
 }
 
 export default function SeekerDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const [, navigate] = useLocation();
   const { isAuthenticated, user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -46,9 +46,8 @@ export default function SeekerDetail() {
     isLoading,
     error,
   } = useQuery<SeekerProfileWithRelations>({
-    queryKey: ["/api/seekers", id],
-    queryFn: () => fetchSeeker(id!),
-    enabled: !!id,
+    queryKey: [`/api/seekers/slug/${slug}`],
+    enabled: !!slug,
   });
 
   // Görünen ad

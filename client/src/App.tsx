@@ -81,8 +81,8 @@ function Router() {
       {/* Public routes - Turkish URLs */}
       <Route path="/oda-ilanlari" component={Search} />
       <Route path="/oda-aramalari" component={SeekerList} />
-      <Route path="/oda-ilani/:id" component={ListingDetail} />
-      <Route path="/oda-arayan/:id" component={SeekerDetail} />
+      <Route path="/oda-ilani/:slug" component={ListingDetail} />
+      <Route path="/oda-arayan/:slug" component={SeekerDetail} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

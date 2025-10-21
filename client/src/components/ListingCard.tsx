@@ -16,6 +16,7 @@ type AspectOpt = "16/9" | "4/3" | "16/10";
 interface ListingCardProps {
   listing?: {
     id?: string;
+    slug?: string | null;
     title?: string | null;
     suburb?: string | null;
     address?: string | null;
@@ -89,8 +90,12 @@ export default function ListingCard({
     }
   });
 
+  const listingUrl = listing?.slug
+    ? `/oda-ilani/${listing.slug}`
+    : id ? `/oda-ilani/${id}` : "#";
+
   return (
-    <Link href={id ? `/oda-ilani/${id}` : "#"}>
+    <Link href={listingUrl}>
       <article
         className="w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
         data-testid={`listing-card-${id || "noid"}`}

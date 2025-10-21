@@ -5,6 +5,7 @@ type AspectOpt = "16/9" | "4/3" | "16/10";
 
 type Seeker = {
   id: string;
+  slug?: string | null;
   fullName?: string | null;
   user?: { firstName?: string | null; lastName?: string | null } | null;
   profilePhotoUrl?: string | null;
@@ -41,8 +42,12 @@ interface SeekerCardProps {
 }
 
 export default function SeekerCard({ seeker, imageAspect = "16/10" }: SeekerCardProps) {
+  const seekerUrl = seeker.slug
+    ? `/oda-arayan/${seeker.slug}`
+    : `/oda-arayan/${seeker.id}`;
+  
   return (
-    <Link href={`/oda-arayan/${seeker.id}`}>
+    <Link href={seekerUrl}>
       <article 
         className="w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
         data-testid={`card-seeker-${seeker.id}`}
