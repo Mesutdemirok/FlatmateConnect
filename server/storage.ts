@@ -104,7 +104,10 @@ export interface IStorage {
   getListing(
     id: string,
   ): Promise<(Listing & { images: ListingImage[]; user: User }) | undefined>;
-  createListing(listing: InsertListing): Promise<Listing>;
+  getListingBySlug(
+    slug: string,
+  ): Promise<(Listing & { images: ListingImage[]; user: User }) | undefined>;
+  createListing(listing: InsertListing & { slug?: string }): Promise<Listing>;
   updateListing(id: string, listing: Partial<InsertListing>): Promise<Listing>;
   deleteListing(id: string): Promise<void>;
   getUserListings(
@@ -263,7 +266,20 @@ export class DatabaseStorage implements IStorage {
     return { ...listing, images, user: user! };
   }
 
-  async createListing(listing: InsertListing) {
+  async getListingBySlug(slug: string) {
+    const [listing] = await db
+      .select()
+      .from(listings)
+      .where(eq(listings.slug, slug));
+    if (!listing) return undefined;
+    const [images, user] = await Promise.all([
+      this.getListingImages(listing.id),
+      this.getUser(listing.userId),
+    ]);
+    return { ...listing, images, user: user! };
+  }
+
+  async createListing(listing: InsertListing & { slug?: string }) {
     const [newListing] = await db.insert(listings).values(listing).returning();
     return newListing;
   }

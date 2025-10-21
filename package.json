@@ -53,6 +53,7 @@
     "@types/memoizee": "^0.4.12",
     "@types/multer": "^2.0.0",
     "@types/react-helmet": "^6.1.11",
+    "@types/shortid": "^2.2.0",
     "bcrypt": "^6.0.0",
     "busboy": "^1.6.0",
     "class-variance-authority": "^0.7.1",
