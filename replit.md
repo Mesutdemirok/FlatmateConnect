@@ -87,6 +87,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### SEO-Friendly Slugs for Listings (October 21, 2025)
+- **Slug Generation**: Automatic generation of unique, SEO-friendly slugs for all new listings
+  - Format: `{title}-{address}-{uniqueID}` (e.g., `nisantasi-ferah-daire-istanbul-abc123`)
+  - Turkish locale support via slugify library
+  - Unique ID suffix using shortid (lowercase) to prevent collisions
+- **Database Schema**: Added `slug` field to listings table with unique constraint
+- **New Endpoint**: `GET /api/listings/slug/:slug` for slug-based lookup
+- **Storage Layer**: Added `getListingBySlug` method to IStorage interface
+- **Type Safety**: Full TypeScript support with @types/shortid
+- **URL Format**: Enables SEO-friendly URLs like `/oda-ilani/nisantasi-ferah-daire-istanbul-abc123`
+
 ### Footer Social Media Icons Update (October 20, 2025)
 - **Complete Social Media Integration**: Added all 6 social platforms to footer
   - Instagram, Facebook, TikTok, Pinterest, YouTube, İletişim (Contact)
