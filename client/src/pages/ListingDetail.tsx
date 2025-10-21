@@ -177,9 +177,7 @@ export default function ListingDetail() {
 
   // SEO data
   const seoTitle = `${listing.title} - ${listing.address || 'Kiralık Oda'} | Odanet`;
-  const seoDescription = listing.description 
-    ? listing.description.slice(0, 155) + (listing.description.length > 155 ? '...' : '')
-    : `${formatCurrency(Number(listing.rentAmount))} kiralık oda. ${listing.propertyType || ''}. Hemen incele!`;
+  const seoDescription = `${formatCurrency(Number(listing.rentAmount))} kiralık oda. ${listing.propertyType || ''} ${listing.furnishingStatus || ''}. ${listing.address || ''}. Hemen incele!`;
   const seoImage = mainImageUrl;
   const seoUrl = `https://www.odanet.com.tr/oda-ilani/${listing.slug || listing.id}`;
 
