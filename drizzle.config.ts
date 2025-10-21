@@ -1,20 +1,37 @@
-import { defineConfig } from "drizzle-kit";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import ws from "ws";
+import * as schema from "@shared/schema";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
+// ✅ Required for WebSocket connections with Neon serverless
+neonConfig.webSocketConstructor = ws;
+
+// ✅ Always use DATABASE_URL directly
+const connectionString = process.env.DATABASE_URL?.trim();
+
+if (!connectionString) {
+  throw new Error(
+    "❌ Missing DATABASE_URL. Please set it in Replit Environment → Secrets.",
+  );
 }
 
-// Sanitize DATABASE_URL - remove duplicate prefix if present
-let connectionString = process.env.DATABASE_URL;
-if (connectionString?.startsWith('DATABASE_URL=')) {
-  connectionString = connectionString.replace(/^DATABASE_URL=/, '');
-}
-
-export default defineConfig({
-  out: "./migrations",
-  schema: "./shared/schema.ts",
-  dialect: "postgresql",
-  dbCredentials: {
-    url: connectionString,
-  },
+// ✅ Ensure Neon connection uses SSL (important for production)
+const pool = new Pool({
+  connectionString: connectionString.includes("?sslmode=")
+    ? connectionString
+    : `${connectionString}${connectionString.includes("?") ? "&" : "?"}sslmode=require`,
 });
+
+// ✅ Initialize Drizzle ORM with schema
+export const db = drizzle({ client: pool, schema });
+
+// ✅ (Optional) Log connection confirmation
+pool
+  .connect()
+  .then(() => console.log("✅ Connected successfully to Neon database"))
+  .catch((err) => {
+    console.error("❌ Database connection failed:", err.message);
+    process.exit(1);
+  });
+
+export { pool };
