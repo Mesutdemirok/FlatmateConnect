@@ -1,0 +1,130 @@
+Perfect — here’s a single unified prompt you can safely copy-paste into your Replit Agent (or Agile developer portal).
+
+It tells them exactly what to do — restore your old production listings, fix the room + room-seeker URLs to use SEO slugs, and make sure all of it shows correctly on www.odanet.com.tr, not just Preview.
+
+⸻
+
+✅ Final Replit / Agile Prompt
+
+Goal:
+Fully restore all production listings (rooms + room seekers) on the live site www.odanet.com.tr, enable SEO-friendly slugs for both, and make sure old ID URLs keep working (301 redirects).
+
+All fixes must be applied on the production database and reflected on the live domain — not just Replit Preview.
+
+⸻
+
+🧩 Tasks to Perform (step-by-step)
+
+1. Restore old production data
+	•	The old room listings and room-seeker profiles that appeared before the last slug update are missing from the live site.
+	•	Retrieve all those records from the production database backup or any persisted Replit storage.
+	•	Restore them into the active listings and seekers tables, preserving their original IDs, images, and relationships.
+
+✅ After restoration, visiting /api/listings and /api/seekers on www.odanet.com.tr must return the full arrays of records (as before).
+
+⸻
+
+2. Implement proper SEO-friendly slugs
+
+Use the following shared utility:
+
+import slugify from "slugify";
+import { customAlphabet } from "nanoid";
+
+const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 6);
+
+export function makeSlug(parts: (string | undefined | null)[]) {
+  const base = parts
+    .filter(Boolean)
+    .map((p) => String(p).trim())
+    .join(" ");
+  const core = slugify(base, { lower: true, strict: true, locale: "tr" }).replace(/-+/g, "-");
+  return `${core}-${nanoid()}`;
+}
+
+	•	Each room listing gets:
+slug = makeSlug([title, district, city])
+	•	Each room seeker gets:
+slug = makeSlug([firstName, district, city])
+
+Update DB schema if needed to include a non-nullable slug column for both entities.
+
+Run a backfill script to auto-generate slugs for existing rows.
+
+⸻
+
+3. Add new slug endpoints (keep old IDs working)
+
+Backend routes to add or confirm:
+
+// Slug endpoints
+GET /api/listings/slug/:slug
+GET /api/seekers/slug/:slug
+
+// Legacy ID redirects
+GET /oda-ilani/:id        → 301 → /oda-ilani/:slug
+GET /oda-arayan/:id       → 301 → /oda-arayan/:slug
+
+Ensure all old links redirect properly.
+
+⸻
+
+4. Update frontend navigation + routing
+	•	Update all cards and detail pages to use the new slug URLs:
+	•	Rooms → /oda-ilani/${listing.slug}
+	•	Seekers → /oda-arayan/${seeker.slug}
+	•	Add new routes:
+
+/oda-ilani/:slug
+/oda-arayan/:slug
+
+
+	•	Keep a fallback so if a user visits the old ID route, it fetches by ID once and navigates to the slug route.
+
+✅ Homepage must again show full list of room listings.
+✅ Room seeker cards must link correctly.
+✅ Both detail pages must load using slug.
+
+⸻
+
+5. Verify live production (not Preview)
+	•	The changes must deploy to www.odanet.com.tr, not remain in Preview.
+	•	Confirm the deployment target uses the same code branch and build command as Preview (npm run build).
+	•	Re-publish deployment so live and Preview are identical.
+	•	Clear cache and confirm data appears.
+
+⸻
+
+6. Quality checks before finishing
+
+✅ Homepage lists all old rooms again.
+✅ Room seeker profiles appear again.
+✅ Visiting /oda-ilani/:id redirects to /oda-ilani/:slug.
+✅ Visiting /oda-arayan/:id redirects to /oda-arayan/:slug.
+✅ www.odanet.com.tr and Replit Preview show identical data.
+✅ /api/listings and /api/seekers both return populated arrays.
+✅ SEO meta and OG tags remain unchanged.
+
+⸻
+
+7. Deliverables
+
+When complete, provide a short note with:
+	•	List of changed files (server + client)
+	•	Confirmation that data has been restored to production
+	•	Example working slug URLs for both a listing and a seeker
+
+⸻
+
+⚠️ Important
+
+If they claim the job is done but you still don’t see listings on the live domain, ask them to prove:
+	•	curl https://www.odanet.com.tr/api/listings → returns JSON with records
+	•	At least one slug URL like
+https://www.odanet.com.tr/oda-ilani/nisantasi-ferah-daire-istanbul-abc123
+loads correctly.
+
+⸻
+
+When you paste this prompt, Agile or your Replit Agent will have exact, verifiable instructions — no ambiguity, no partial fixes.
+Would you like me to also prepare the follow-up verification script (a small Node script to check listings, seekers, and redirects automatically)?
