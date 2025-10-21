@@ -9,6 +9,8 @@ import { ogHandler } from "./og";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import slugify from 'slugify';
+import shortid from 'shortid';
 
 // Configure multer for file uploads
 const uploadDir = 'uploads/listings';
@@ -204,6 +206,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/listings/slug/:slug', async (req, res) => {
+    try {
+      const listing = await storage.getListingBySlug(req.params.slug);
+      if (!listing) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: getErrorMessage('listing_not_found', lang) });
+      }
+      res.json(listing);
+    } catch (error) {
+      console.error("Error fetching listing by slug:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
   app.get('/api/listings/:id', async (req, res) => {
     try {
       const listing = await storage.getListing(req.params.id);
@@ -227,7 +244,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       });
       
-      const listing = await storage.createListing(listingData);
+      // Generate SEO-friendly slug
+      const { title, address } = listingData;
+      const baseSlug = slugify(`${title} ${address || ''}`, {
+        lower: true,
+        strict: true,
+        locale: 'tr',
+        remove: /[*+~.()'"!:@]/g
+      });
+      const slug = `${baseSlug}-${shortid.generate().toLowerCase()}`;
+      
+      const listing = await storage.createListing({
+        ...listingData,
+        slug
+      });
       res.status(201).json(listing);
     } catch (error: any) {
       console.error("Error creating listing:", error);
