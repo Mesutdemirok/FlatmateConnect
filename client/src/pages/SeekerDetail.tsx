@@ -185,7 +185,7 @@ export default function SeekerDetail() {
     ? seeker.about.slice(0, 155) + (seeker.about.length > 155 ? '...' : '')
     : `${displayName}, ${seeker.age || ''} yaş, ${seeker.occupation || 'profesyonel'}. ${seeker.preferredLocation || 'Türkiye'} bölgesinde oda arıyor. ${formatBudgetTR(seeker.budgetMonthly)} bütçe.`;
   const seoImage = activeImageUrl;
-  const seoUrl = `https://www.odanet.com.tr/oda-arayan/${id}`;
+  const seoUrl = `https://www.odanet.com.tr/oda-arayan/${seeker.slug || seeker.id}`;
 
   return (
     <div

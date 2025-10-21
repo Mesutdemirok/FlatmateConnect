@@ -176,12 +176,12 @@ export default function ListingDetail() {
     : undefined;
 
   // SEO data
-  const seoTitle = `${listing.title} - ${listing.neighborhood || listing.address || 'Kiralık Oda'} | Odanet`;
+  const seoTitle = `${listing.title} - ${listing.address || 'Kiralık Oda'} | Odanet`;
   const seoDescription = listing.description 
     ? listing.description.slice(0, 155) + (listing.description.length > 155 ? '...' : '')
-    : `${formatCurrency(Number(listing.rentAmount))} kiralık oda. ${listing.roomType || ''} ${listing.propertyType || ''}. Hemen incele!`;
+    : `${formatCurrency(Number(listing.rentAmount))} kiralık oda. ${listing.propertyType || ''}. Hemen incele!`;
   const seoImage = mainImageUrl;
-  const seoUrl = `https://www.odanet.com.tr/oda-ilani/${id}`;
+  const seoUrl = `https://www.odanet.com.tr/oda-ilani/${listing.slug || listing.id}`;
 
   // UI
   return (
@@ -382,7 +382,7 @@ export default function ListingDetail() {
               <div className="space-y-3">
                 {user?.id === listing.userId ? (
                   <Button
-                    onClick={() => setLocation(`/ilan-duzenle/${id}`)}
+                    onClick={() => setLocation(`/ilan-duzenle/${listing.id}`)}
                     className="w-full"
                     style={{ backgroundColor: "#f97316" }}
                     data-testid="edit-listing-button"
