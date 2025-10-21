@@ -9,8 +9,7 @@ import { ogHandler } from "./og";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import slugify from 'slugify';
-import shortid from 'shortid';
+import { makeSlug } from "@shared/slug";
 
 // Configure multer for file uploads
 const uploadDir = 'uploads/listings';
@@ -244,15 +243,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       });
       
-      // Generate SEO-friendly slug
+      // Generate SEO-friendly slug using shared utility
       const { title, address } = listingData;
-      const baseSlug = slugify(`${title} ${address || ''}`, {
-        lower: true,
-        strict: true,
-        locale: 'tr',
-        remove: /[*+~.()'"!:@]/g
-      });
-      const slug = `${baseSlug}-${shortid.generate().toLowerCase()}`;
+      const slug = makeSlug([title, address]);
       
       const listing = await storage.createListing({
         ...listingData,
@@ -681,6 +674,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/seekers/slug/:slug', async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfileBySlug(req.params.slug);
+      if (!seeker) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: 'Oda arayan profil bulunamadı' });
+      }
+      res.json(seeker);
+    } catch (error) {
+      console.error("Error fetching seeker by slug:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage('database_error', lang) });
+    }
+  });
+
   app.get('/api/seekers/:id', async (req, res) => {
     try {
       const seeker = await storage.getSeekerProfile(req.params.id);
@@ -724,7 +732,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[POST /api/seekers] Parsed seeker data:', JSON.stringify(seekerData, null, 2));
       
-      const seeker = await storage.createSeekerProfile(seekerData);
+      // Generate SEO-friendly slug using shared utility
+      const { fullName, preferredLocation } = seekerData;
+      const slug = makeSlug([fullName, preferredLocation]);
+      
+      const seeker = await storage.createSeekerProfile({
+        ...seekerData,
+        slug
+      });
       console.log('[POST /api/seekers] Seeker profile created successfully:', seeker.id);
       res.status(201).json(seeker);
     } catch (error: any) {

@@ -1,0 +1,182 @@
+
+⸻
+
+📌 Replit Agent Prompt (copy everything below)
+
+URGENT FIX – Restore listings, add slugs (rooms + seekers), and sync live deploy
+
+We have three issues to resolve now:
+	1.	Room listings disappeared from the homepage after earlier changes.
+	2.	URLs are not SEO-friendly for both rooms and seekers (e.g., /oda-ilani/002bd24b... and /oda-arayan/bc297816...).
+	3.	Live domain https://www.odanet.com.tr is not in sync with the Replit Preview build.
+
+Please implement the following tasks end-to-end:
+
+⸻
+
+1) Restore listings on homepage
+	•	Verify /api/listings returns an array of room listings without auth and without relying on slug.
+	•	Verify the frontend components (especially client/src/components/FeaturedListings.tsx and any feeds like MixedFeed.tsx) map over the array and render cards.
+	•	If the API changed, revert or adapt the query so:
+
+useQuery({
+  queryKey: ['/api/listings'],
+  queryFn: async () => (await fetch('/api/listings')).json(),
+})
+
+
+	•	Ensure each listing returns at least: id, title, city, district, rentAmount, images, and (after this task) slug.
+
+Acceptance: listings show again on the homepage.
+
+⸻
+
+2) Slug system for Rooms AND Seekers
+
+2.1 Add a shared slug util
+
+Create shared/slug.ts:
+
+import slugify from 'slugify';
+import { customAlphabet } from 'nanoid';
+
+const nano = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 6);
+
+export function makeSlug(parts: Array<string | undefined | null>) {
+  const base = parts
+    .filter(Boolean)
+    .map((p) =>
+      slugify(String(p), {
+        lower: true,
+        strict: true, // remove punctuation
+        locale: 'tr',
+        trim: true,
+      })
+    )
+    .filter(Boolean)
+    .join('-')
+    .replace(/-+/g, '-'); // collapse dashes
+
+  return `${base}-${nano()}`; // ensures uniqueness
+}
+
+Install deps if missing:
+
+npm i slugify nanoid
+
+2.2 Rooms (ilanlar)
+	•	On create (and when missing on existing doc), set listing.slug = makeSlug([listing.title, listing.district, listing.city]).
+	•	Add endpoint:
+
+GET /api/listings/slug/:slug  -> returns single listing by slug
+
+
+	•	Keep legacy route working:
+
+GET /api/listings/:id -> still returns listing by id
+
+
+	•	In the server, add a 301 redirect endpoint for old URLs:
+
+GET /oda-ilani/:id
+  -> lookup by id, if found: 301 redirect to /oda-ilani/:slug
+  -> if not found: 404
+
+
+	•	In the frontend, update navigation:
+	•	FeaturedListings.tsx: onClick → navigate(\/oda-ilani/${listing.slug}`)`
+	•	Any card/components that link to a room listing should use slug.
+	•	Update room detail route (Wouter):
+	•	Add route for /oda-ilani/:slug that fetches via /api/listings/slug/:slug.
+	•	Optionally keep a fallback route /oda-ilani/:id that fetches by id and pushes to the slug URL once loaded.
+
+Slug example (rooms):
+/oda-ilani/nisantasi-ferah-daire-istanbul-k3f9a2
+
+2.3 Seekers (oda arayanlar)
+	•	Add a slug field to seekers on create:
+seeker.slug = makeSlug([seeker.firstName, seeker.district, seeker.city])
+	•	Add endpoint:
+
+GET /api/seekers/slug/:slug  -> returns single seeker by slug
+
+
+	•	Keep legacy route working:
+
+GET /api/seekers/:id -> still returns seeker by id
+
+
+	•	Add 301 redirect for old path:
+
+GET /oda-arayan/:id
+  -> lookup by id, redirect 301 to /oda-arayan/:slug
+
+
+	•	In the frontend (e.g., SeekerCard.tsx), navigate to /oda-arayan/${seeker.slug} and update the detail page to fetch via the slug endpoint.
+
+Slug example (seekers):
+/oda-arayan/zeynep-nessantasi-istanbul-a1b2c3
+
+Note: use Turkish locale in slugify. Replace accidental “ı/İ/ş/ğ/ö/ü/ç” properly via slugify with locale: 'tr'.
+
+⸻
+
+3) Keep everything backwards-compatible
+	•	DO NOT break existing ID URLs.
+	•	Ensure any /oda-ilani/:id or /oda-arayan/:id still works by redirecting to the new slug route.
+	•	Existing saved links won’t break.
+
+⸻
+
+4) Frontend routing updates (Wouter)
+	•	Add routes:
+	•	/oda-ilani/:slug
+	•	/oda-arayan/:slug
+	•	If there are old ID routes still present, make them redirect to the slug route after fetching.
+	•	Update any internal links (cards, lists) to build URLs with slug.
+
+Files likely to touch:
+	•	client/src/components/FeaturedListings.tsx
+	•	client/src/components/ListingCard.tsx (if exists)
+	•	client/src/components/SeekerCard.tsx
+	•	client/src/pages/* or wherever Wouter routes are declared (often App.tsx/main.tsx)
+
+⸻
+
+5) Deployment sync (Preview == Production)
+	•	Confirm Vite base is correct (vite.config.ts should use base: '/').
+	•	Ensure .replit and the Run command build and serve the same app to production.
+	•	Rebuild and redeploy production:
+
+npm run build
+
+
+	•	Verify https://www.odanet.com.tr serves the same HTML as Preview (check <head> metas and the new slug routes).
+	•	If the live domain is pointing to an old deployment, re-link it to the current Replit deploy target.
+
+⸻
+
+6) Quick verifications
+	•	Homepage shows room listings again.
+	•	A room card opens at /oda-ilani/<slug>.
+	•	A seeker card opens at /oda-arayan/<slug>.
+	•	Visiting old ID URLs issues a 301 to the new slug URL.
+	•	Live site https://www.odanet.com.tr matches Preview.
+	•	GA/OG/meta remain intact.
+
+⸻
+
+7) (Optional, if quick) Sitemaps
+	•	If time permits: update client/public/sitemap.xml generator to include both room and seeker slug URLs (not IDs).
+
+⸻
+
+Goal:
+✅ Listings restored on homepage
+✅ Slugs for rooms + seekers
+✅ Backwards-compatible redirects
+✅ Live domain in sync with latest build
+
+Please proceed and confirm when done with a short summary of changed files + tests performed.
+
+⸻

@@ -122,6 +122,7 @@ export const favorites = pgTable("favorites", {
 export const seekerProfiles = pgTable("seeker_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  slug: varchar("slug").unique(),
   
   // Personal Information
   profilePhotoUrl: varchar("profile_photo_url"), // Profile photo
@@ -271,6 +272,7 @@ export const insertListingImageSchema = createInsertSchema(listingImages).omit({
 
 export const insertSeekerProfileSchema = createInsertSchema(seekerProfiles).omit({
   id: true,
+  slug: true,
   createdAt: true,
   updatedAt: true,
 }).extend({

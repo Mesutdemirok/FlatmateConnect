@@ -163,10 +163,15 @@ export interface IStorage {
   ): Promise<
     (SeekerProfile & { photos: SeekerPhoto[]; user: User }) | undefined
   >;
+  getSeekerProfileBySlug(
+    slug: string,
+  ): Promise<
+    (SeekerProfile & { photos: SeekerPhoto[]; user: User }) | undefined
+  >;
   getUserSeekerProfile(
     userId: string,
   ): Promise<(SeekerProfile & { photos: SeekerPhoto[] }) | undefined>;
-  createSeekerProfile(profile: InsertSeekerProfile): Promise<SeekerProfile>;
+  createSeekerProfile(profile: InsertSeekerProfile & { slug?: string }): Promise<SeekerProfile>;
   updateSeekerProfile(
     id: string,
     profile: Partial<InsertSeekerProfile>,
@@ -582,6 +587,22 @@ export class DatabaseStorage implements IStorage {
     return { ...profile, photos, user: user! };
   }
 
+  async getSeekerProfileBySlug(slug: string): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User }) | undefined> {
+    const [profile] = await db
+      .select()
+      .from(seekerProfiles)
+      .where(eq(seekerProfiles.slug, slug));
+
+    if (!profile) return undefined;
+
+    const [photos, user] = await Promise.all([
+      this.getSeekerPhotos(profile.id),
+      this.getUser(profile.userId)
+    ]);
+
+    return { ...profile, photos, user: user! };
+  }
+
   async getUserSeekerProfile(userId: string): Promise<(SeekerProfile & { photos: SeekerPhoto[] }) | undefined> {
     const [profile] = await db
       .select()
@@ -594,7 +615,7 @@ export class DatabaseStorage implements IStorage {
     return { ...profile, photos };
   }
 
-  async createSeekerProfile(profileData: InsertSeekerProfile): Promise<SeekerProfile> {
+  async createSeekerProfile(profileData: InsertSeekerProfile & { slug?: string }): Promise<SeekerProfile> {
     const [profile] = await db
       .insert(seekerProfiles)
       .values(profileData)
