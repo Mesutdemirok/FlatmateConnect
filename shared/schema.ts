@@ -49,6 +49,7 @@ export const users = pgTable("users", {
 export const listings = pgTable("listings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  slug: varchar("slug").unique(),
   
   // Basic Information
   address: text("address").notNull(),
@@ -240,6 +241,7 @@ export const seekerPhotosRelations = relations(seekerPhotos, ({ one }) => ({
 // Schemas
 export const insertListingSchema = createInsertSchema(listings).omit({
   id: true,
+  slug: true,
   createdAt: true,
   updatedAt: true,
 }).extend({
