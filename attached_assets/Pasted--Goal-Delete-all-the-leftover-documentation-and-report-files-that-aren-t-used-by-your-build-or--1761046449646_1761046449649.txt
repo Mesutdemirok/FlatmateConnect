@@ -1,0 +1,74 @@
+
+
+🎯 Goal
+
+Delete all the leftover documentation and report files that aren’t used by your build or app logic — the ones like:
+
+CDN_MIGRATION_GUIDE.md
+CDN_VERIFICATION_REPORT.md
+DEPLOYMENT_FIX_SUMMARY.md
+HEALTH_CHECK_REPORT.md
+IMAGES_FIXED_SUMMARY.md
+PRODUCTION_DEPLOYMENT_FINAL.md
+PRODUCTION_DEPLOYMENT_CHECKLIST.md
+PRODUCTION_SYNC_GUIDE.md
+URGENT_SSL_FIX.md
+VISUAL_CONSISTENCY_VERIFICATION.md
+
+These are just logs or temporary reports from Replit’s AI agent.
+They don’t affect SEO, frontend, backend, or deployment.
+
+⸻
+
+✅ What to tell the agent
+
+You can copy & paste this prompt directly into the Replit agent chat:
+
+⸻
+
+🧠 Prompt to Replit Agent:
+
+Task:
+Clean up and reorganize the project structure.
+
+1. Delete all unnecessary markdown files in the project root (like reports, guides, and summaries).
+Remove every file that ends with .md except README.md if it exists.
+
+2. Keep only:
+	•	client/ (frontend)
+	•	server/ (backend)
+	•	shared/
+	•	scripts/
+	•	uploads/
+	•	configuration files (vite.config.ts, tailwind.config.ts, tsconfig.json, replit.md, .gitignore, etc.)
+
+3. After cleanup:
+	•	Ensure folder hierarchy stays correct.
+	•	Do not touch anything under client/src or server/.
+	•	Confirm the cleanup in a summary report after deletion.
+
+⸻
+
+Once you run that, the agent will clean everything and confirm.
+That step will remove all unnecessary documentation clutter.
+
+⸻
+
+🚀 PHASE 2 — Fix SEO Slug Logic (for better results)
+
+After cleanup, we’ll finalize the slug SEO system:
+
+🔧 Tasks we’ll apply:
+	1.	Backend:
+	•	Add slug creation (using slugify + shortid)
+	•	Add /api/listings/slug/:slug endpoint
+	•	Add redirect for old /api/listings/:id routes
+	2.	Frontend:
+	•	Confirm FeaturedListings.tsx uses listing.slug
+	•	Create client/src/pages/oda-ilani/[slug].tsx
+(so it dynamically loads listings by slug)
+	•	Add SEO <Helmet> tags per page
+	3.	Verification:
+	•	Test new URLs in browser (example: /oda-ilani/nisantasi-merkezde-ferah-daıre-istanbul-abc123)
+	•	Re-run sitemap generator so these new URLs appear.
+

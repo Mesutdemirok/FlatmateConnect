@@ -8,6 +8,7 @@ import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 export default function FeaturedListings() {
   const { t } = useTranslation();
   const [, navigate] = useLocation();
+
   const {
     data: listings,
     isLoading,
@@ -72,15 +73,21 @@ export default function FeaturedListings() {
           "
           data-testid="featured-listings-section"
         >
-          {featuredListings.map((listing) => {
-            // Compact title to max 4 words
+          {featuredListings.map((listing: any) => {
+            // Compact title for display
             const words = (listing.title || "Oda İlanı").trim().split(/\s+/);
-            const compactTitle = words.slice(0, 4).join(" ") + (words.length > 4 ? "…" : "");
-            
+            const compactTitle =
+              words.slice(0, 4).join(" ") + (words.length > 4 ? "…" : "");
+
+            // ✅ Prefer SEO slug if available
+            const listingUrl = listing.slug
+              ? `/oda-ilani/${listing.slug}`
+              : `/oda-ilani/${listing.id}`;
+
             return (
               <article
                 key={listing.id}
-                onClick={() => navigate(`/oda-ilani/${listing.id}`)}
+                onClick={() => navigate(listingUrl)}
                 className="
                   bg-white rounded-2xl shadow-md border border-slate-200
                   overflow-hidden transition-transform duration-300
@@ -91,20 +98,20 @@ export default function FeaturedListings() {
                 <div className="relative w-full h-[200px] overflow-hidden">
                   <img
                     src={getAbsoluteImageUrl(
-                      listing.images?.find((img: any) => img.isPrimary)?.imagePath ||
-                      listing.images?.[0]?.imagePath
+                      listing.images?.find((img: any) => img.isPrimary)
+                        ?.imagePath || listing.images?.[0]?.imagePath,
                     )}
                     alt={compactTitle}
                     className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     data-testid={`listing-image-${listing.id}`}
                   />
-                  {/* Price pill - single badge */}
+                  {/* Price pill */}
                   <div className="absolute bottom-3 left-3 bg-indigo-600 text-white px-3 py-1.5 rounded-full font-semibold text-sm shadow-lg">
                     {formatMonthlyPrice(listing.rentAmount, "month")}
                   </div>
                 </div>
 
-                {/* Compact text section - tighter spacing */}
+                {/* Text section */}
                 <div className="p-3">
                   <h3 className="text-base font-semibold text-slate-900 mb-1">
                     {compactTitle}
