@@ -1,0 +1,1 @@
+id,email,password,password_reset_token,password_reset_expires,first_name,last_name,profile_image_url,phone,date_of_birth,gender,occupation,bio,verification_status,created_at,updated_at,email_verification_token,email_verification_expires,is_email_verified
