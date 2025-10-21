@@ -13,6 +13,7 @@ var r2_utils_exports = {};
 __export(r2_utils_exports, {
   deleteFromR2: () => deleteFromR2,
   getR2Url: () => getR2Url,
+  uploadBufferToR2: () => uploadBufferToR2,
   uploadToR2: () => uploadToR2
 });
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
@@ -41,6 +42,18 @@ async function deleteFromR2(r2Key) {
 }
 function getR2Url(r2Key) {
   return `${R2_PUBLIC_URL}/${r2Key.replace(/^\/+/, "")}`;
+}
+async function uploadBufferToR2(r2Key, buffer, options) {
+  const key = r2Key.replace(/^\/+/, "");
+  const command = new PutObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: key,
+    Body: buffer,
+    ContentType: options?.contentType || "application/octet-stream",
+    CacheControl: options?.cacheControl || "public, max-age=31536000, immutable"
+  });
+  await r2.send(command);
+  return key;
 }
 var r2, R2_BUCKET, R2_PUBLIC_URL;
 var init_r2_utils = __esm({
@@ -232,15 +245,13 @@ var seekerProfiles = pgTable("seeker_profiles", {
   // Bio/description
   preferredLocation: text("preferred_location"),
   // Single location preference
-  // ODANET Revizyon – Yaşam Tarzı (kişinin kendi durumu)
-  isSmoker: boolean("is_smoker"),
-  // Sigara içiyor musunuz?
-  hasPets: boolean("has_pets"),
-  // Evcil hayvanınız var mı?
-  // Lifestyle Preferences (merged from userPreferences)
+  // Lifestyle Preferences (normalized)
   smokingPreference: varchar("smoking_preference"),
+  // non-smoker | smoker | social-smoker | no-preference
   petPreference: varchar("pet_preference"),
+  // no-pets | cat-friendly | dog-friendly | all-pets | no-preference
   cleanlinessLevel: varchar("cleanliness_level"),
+  // very-clean | clean | average | relaxed
   socialLevel: varchar("social_level"),
   workSchedule: varchar("work_schedule"),
   agePreferenceMin: integer("age_preference_min"),
@@ -1347,6 +1358,42 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: getErrorMessage("database_error", lang) });
     }
   });
+  app2.get("/api/feed", async (req, res) => {
+    try {
+      const limit = req.query.limit ? Number(req.query.limit) : 24;
+      const listings2 = await storage.getListings({ isPublished: true });
+      const recentListings = listings2.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 12);
+      const seekers = await storage.getSeekerProfiles({ isPublished: true, isActive: true });
+      const recentSeekers = seekers.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 12);
+      const feedItems = [
+        ...recentListings.map((listing) => ({
+          type: "listing",
+          id: listing.id,
+          createdAt: listing.createdAt,
+          title: listing.title,
+          suburb: listing.address,
+          // Use address as suburb for compatibility
+          rentAmount: listing.rentAmount,
+          images: listing.images || []
+        })),
+        ...recentSeekers.map((seeker) => ({
+          type: "seeker",
+          id: seeker.id,
+          createdAt: seeker.createdAt,
+          displayName: seeker.fullName || "\u0130simsiz",
+          budgetMonthly: seeker.budgetMonthly ? parseInt(seeker.budgetMonthly) : null,
+          preferredLocation: seeker.preferredLocation,
+          photoUrl: seeker.profilePhotoUrl
+        }))
+      ];
+      const sortedFeed = feedItems.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, limit);
+      res.json(sortedFeed);
+    } catch (error) {
+      console.error("Error fetching feed:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage("database_error", lang) });
+    }
+  });
   app2.get("/api/seekers/:id", async (req, res) => {
     try {
       const seeker = await storage.getSeekerProfile(req.params.id);
@@ -1377,19 +1424,26 @@ async function registerRoutes(app2) {
   app2.post("/api/seekers", jwtAuth, async (req, res) => {
     try {
       const userId = req.userId;
+      console.log("[POST /api/seekers] Request body:", JSON.stringify(req.body, null, 2));
+      console.log("[POST /api/seekers] userId from JWT:", userId);
       const seekerData = insertSeekerProfileSchema.parse({
         ...req.body,
         userId,
         isPublished: true
         // Auto-publish new seeker profiles
       });
+      console.log("[POST /api/seekers] Parsed seeker data:", JSON.stringify(seekerData, null, 2));
       const seeker = await storage.createSeekerProfile(seekerData);
+      console.log("[POST /api/seekers] Seeker profile created successfully:", seeker.id);
       res.status(201).json(seeker);
     } catch (error) {
-      console.error("Error creating seeker profile:", error);
+      console.error("[POST /api/seekers] Error creating seeker profile:", error);
+      if (error.name === "ZodError") {
+        console.error("[POST /api/seekers] Zod validation errors:", JSON.stringify(error.errors, null, 2));
+      }
       const lang = detectLanguage(req);
       if (error.name === "ZodError") {
-        res.status(400).json({ message: getErrorMessage("bad_request", lang), error: error.message });
+        res.status(400).json({ message: getErrorMessage("bad_request", lang), error: error.message, details: error.errors });
       } else {
         res.status(400).json({ message: "Profil olu\u015Fturulamad\u0131", error: error.message });
       }
@@ -1423,6 +1477,62 @@ async function registerRoutes(app2) {
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting seeker profile:", error);
+      const lang = detectLanguage(req);
+      res.status(500).json({ message: getErrorMessage("database_error", lang) });
+    }
+  });
+  app2.post("/api/seekers/:id/photo", jwtAuth, seekerUpload.single("photo"), async (req, res) => {
+    try {
+      const userId = req.userId;
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      if (!seeker || seeker.userId !== userId) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: "Profil bulunamad\u0131 veya yetkiniz yok" });
+      }
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: "Foto\u011Fraf se\xE7ilmedi" });
+      }
+      const { uploadToR2: uploadToR22 } = await Promise.resolve().then(() => (init_r2_utils(), r2_utils_exports));
+      const r2Key = `uploads/seekers/${file.filename}`;
+      let photoUrl = `/${r2Key}`;
+      try {
+        await uploadToR22(file.path, r2Key);
+        photoUrl = r2Key;
+        console.log(`\u2705 Uploaded profile photo to R2: ${r2Key}`);
+      } catch (r2Error) {
+        console.error(`\u274C R2 upload failed for ${r2Key}:`, r2Error);
+      }
+      await storage.updateSeekerProfile(req.params.id, {
+        profilePhotoUrl: photoUrl
+      });
+      await storage.addSeekerPhoto({
+        seekerId: req.params.id,
+        imagePath: photoUrl,
+        sortOrder: 0
+      });
+      const updatedSeeker = await storage.getSeekerProfile(req.params.id);
+      res.status(200).json(updatedSeeker);
+    } catch (error) {
+      console.error("Error uploading profile photo:", error);
+      const lang = detectLanguage(req);
+      res.status(400).json({ message: "Foto\u011Fraf y\xFCklenemedi", error: error.message });
+    }
+  });
+  app2.delete("/api/seekers/:id/photo", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId;
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      if (!seeker || seeker.userId !== userId) {
+        const lang = detectLanguage(req);
+        return res.status(404).json({ message: "Profil bulunamad\u0131 veya yetkiniz yok" });
+      }
+      await storage.updateSeekerProfile(req.params.id, {
+        profilePhotoUrl: null
+      });
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting profile photo:", error);
       const lang = detectLanguage(req);
       res.status(500).json({ message: getErrorMessage("database_error", lang) });
     }
@@ -1605,6 +1715,193 @@ function serveStatic(app2) {
   });
 }
 
+// server/og.ts
+var BOT_RE = /(facebookexternalhit|whatsapp|twitterbot|slackbot|linkedinbot|telegram|discord|pinterest)/i;
+var BASE = "https://www.odanet.com.tr";
+function getAbsoluteImageUrl(path7) {
+  const FALLBACK = `${BASE}/og/og-home.jpg`;
+  if (!path7) return FALLBACK;
+  if (path7.startsWith("http://") || path7.startsWith("https://")) {
+    const customDomain = process.env.R2_PUBLIC_URL || "";
+    if (customDomain && path7.includes(".r2.dev")) {
+      const r2Pattern = /https?:\/\/pub-[a-zA-Z0-9]+\.r2\.dev/;
+      return path7.replace(r2Pattern, customDomain);
+    }
+    return path7;
+  }
+  const publicUrl = process.env.R2_PUBLIC_URL;
+  const isProduction = process.env.NODE_ENV?.trim().toLowerCase() === "production";
+  if (isProduction && publicUrl) {
+    return `${publicUrl}/${path7.replace(/^\/+/, "")}`;
+  }
+  return `${BASE}${path7.startsWith("/") ? path7 : `/${path7}`}`;
+}
+function ogHtml({
+  title,
+  description,
+  url,
+  image
+}) {
+  return `<!doctype html><html lang="tr"><head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" href="/favicon.ico" /><link rel="canonical" href="${url}" />
+<title>${title}</title>
+<meta name="description" content="${description}" />
+<meta property="og:type" content="article" /><meta property="og:site_name" content="Odanet" />
+<meta property="og:url" content="${url}" /><meta property="og:title" content="${title}" />
+<meta property="og:description" content="${description}" /><meta property="og:image" content="${image}" />
+<meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="${title}" />
+<meta name="twitter:description" content="${description}" /><meta name="twitter:image" content="${image}" />
+</head><body><script>location.replace("${url}");</script></body></html>`;
+}
+async function ogHandler(req, res, next) {
+  const ua = String(req.headers["user-agent"] || "");
+  const isBot = BOT_RE.test(ua) || req.query._og === "1";
+  if (!isBot) {
+    return next();
+  }
+  try {
+    if (req.path.startsWith("/oda-ilani/")) {
+      const id = req.params.id || req.path.split("/oda-ilani/")[1]?.split("?")[0];
+      if (!id) return next();
+      const listing = await storage.getListing(id);
+      if (!listing) {
+        return res.status(404).send("Listing not found");
+      }
+      const title = listing.title || "Oda ilan\u0131";
+      const locationParts = [listing.address].filter(Boolean);
+      const desc2 = locationParts.join(" \u2022 ") || "Odanet \xFCzerinde yay\u0131nlanan oda ilan\u0131";
+      const firstImg = listing.images?.find((img) => img.isPrimary)?.imagePath || listing.images?.[0]?.imagePath;
+      const image = firstImg ? getAbsoluteImageUrl(firstImg) : `${BASE}/og/og-home.jpg`;
+      return res.send(ogHtml({
+        title: `${title} \u2013 Odanet`,
+        description: desc2,
+        url: `${BASE}/oda-ilani/${id}`,
+        image
+      }));
+    }
+    if (req.path.startsWith("/oda-arayan/")) {
+      const id = req.params.id || req.path.split("/oda-arayan/")[1]?.split("?")[0];
+      if (!id) return next();
+      const seeker = await storage.getSeekerProfile(id);
+      if (!seeker) {
+        return res.status(404).send("Seeker profile not found");
+      }
+      const displayName = seeker.fullName || seeker.user?.firstName || "Kullan\u0131c\u0131";
+      const desc2 = seeker.preferredLocation ? `Tercih edilen b\xF6lge: ${seeker.preferredLocation}` : "Odanet \xFCzerinde oda arayan kullan\u0131c\u0131 profili";
+      const photo = seeker.profilePhotoUrl || seeker.photos?.[0]?.imagePath;
+      const image = photo ? getAbsoluteImageUrl(photo) : `${BASE}/og/og-home.jpg`;
+      return res.send(ogHtml({
+        title: `${displayName} \u2013 Oda ar\u0131yor`,
+        description: desc2,
+        url: `${BASE}/oda-arayan/${id}`,
+        image
+      }));
+    }
+    if (req.path === "/" || req.path === "") {
+      return res.send(ogHtml({
+        title: "Odanet \u2013 G\xFCvenli, kolay ve \u015Feffaf oda & ev arkada\u015F\u0131 bul",
+        description: "Do\u011Frulanm\u0131\u015F profiller ve ger\xE7ek ilanlarla sana en uygun oda ya da ev arkada\u015F\u0131n\u0131 hemen bul.",
+        url: `${BASE}/`,
+        image: `${BASE}/og/og-home.jpg`
+      }));
+    }
+    return next();
+  } catch (error) {
+    console.error("OG handler error:", error);
+    return next();
+  }
+}
+
+// server/routes/uploads.ts
+init_r2_utils();
+import { Router } from "express";
+import Busboy from "busboy";
+import sharp from "sharp";
+var router = Router();
+router.post("/api/uploads/seeker-photo", (req, res) => {
+  const bb = Busboy({ headers: req.headers });
+  let hasFile = false;
+  bb.on("file", (fieldname, file, info) => {
+    hasFile = true;
+    const { mimeType, filename } = info;
+    const allowed = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "image/heic",
+      "image/heif"
+    ];
+    if (!allowed.includes(mimeType.toLowerCase())) {
+      file.resume();
+      return res.status(400).json({
+        message: "Desteklenmeyen dosya format\u0131. JPEG, PNG, WebP veya HEIC kullan\u0131n."
+      });
+    }
+    const chunks = [];
+    file.on("data", (chunk) => {
+      chunks.push(chunk);
+    });
+    file.on("end", async () => {
+      try {
+        const inputBuffer = Buffer.concat(chunks);
+        const processedBuffer = await sharp(inputBuffer).rotate().resize({
+          width: 1600,
+          withoutEnlargement: true,
+          // Don't upscale smaller images
+          fit: "inside"
+        }).jpeg({
+          quality: 82,
+          progressive: true
+        }).toBuffer();
+        const timestamp2 = Date.now();
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        const r2Key = `seekers/${timestamp2}-${randomSuffix}.jpg`;
+        await uploadBufferToR2(r2Key, processedBuffer, {
+          contentType: "image/jpeg",
+          cacheControl: "public, max-age=31536000, immutable"
+        });
+        const cdnUrl = getR2Url(r2Key);
+        return res.json({
+          success: true,
+          imagePath: r2Key,
+          // Store this in DB
+          url: cdnUrl
+          // Use this for immediate preview
+        });
+      } catch (error) {
+        console.error("Image processing error:", error);
+        return res.status(500).json({
+          message: "Foto\u011Fraf i\u015Flenirken hata olu\u015Ftu. L\xFCtfen tekrar deneyin."
+        });
+      }
+    });
+    file.on("error", (error) => {
+      console.error("File stream error:", error);
+      res.status(500).json({
+        message: "Dosya y\xFCklenirken hata olu\u015Ftu."
+      });
+    });
+  });
+  bb.on("finish", () => {
+    if (!hasFile) {
+      res.status(400).json({
+        message: "Foto\u011Fraf se\xE7ilmedi."
+      });
+    }
+  });
+  bb.on("error", (error) => {
+    console.error("Busboy error:", error);
+    res.status(500).json({
+      message: "Dosya y\xFCklemesi ba\u015Far\u0131s\u0131z oldu."
+    });
+  });
+  req.pipe(bb);
+});
+var uploads_default = router;
+
 // server/index.ts
 import path6 from "path";
 import fs5 from "fs";
@@ -1613,6 +1910,7 @@ var app = express3();
 app.use(express3.json());
 app.use(express3.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(uploads_default);
 var LOCAL_UPLOAD_DIR = path6.join(process.cwd(), "uploads");
 fs5.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
 var mimeMap = {
@@ -1729,6 +2027,16 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
     res.status(status).json({ message });
     throw err;
+  });
+  app.get("/oda-ilani/:id", (req, res, next) => ogHandler(req, res, next));
+  app.get("/oda-arayan/:id", (req, res, next) => ogHandler(req, res, next));
+  app.get("/", (req, res, next) => {
+    const ua = String(req.headers["user-agent"] || "");
+    const isBot = /(facebookexternalhit|whatsapp|twitterbot|slackbot|linkedinbot|telegram|discord|pinterest)/i.test(ua) || req.query._og === "1";
+    if (isBot) {
+      return ogHandler(req, res, next);
+    }
+    next();
   });
   const isDevelopment = process.env.NODE_ENV?.trim().toLowerCase() !== "production";
   if (isDevelopment) {
