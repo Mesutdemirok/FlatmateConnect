@@ -20,5 +20,17 @@ if (!connectionString) {
 export const pool = new Pool({ connectionString });
 export const db = drizzle({ client: pool, schema });
 
-// Optional (debugging)
-// console.log("✅ Connected to database:", connectionString.split("@")[1]);
+// 🔍 Detect which database is connected
+const dbHost = connectionString.split("@")[1]?.split("/")[0] || "unknown";
+const isProductionDB = dbHost.includes("ep-green-term-af4ptxe0");
+const isDevelopmentDB = dbHost.includes("ep-odd-scene-af56kk3x");
+
+if (isProductionDB) {
+  console.log("✅ Connected to Production Neon DB");
+  console.log(`📍 Database: ${dbHost}`);
+} else if (isDevelopmentDB) {
+  console.log("✅ Connected to Development Neon DB");
+  console.log(`📍 Database: ${dbHost}`);
+} else {
+  console.log("✅ Connected to database:", dbHost);
+}
