@@ -89,6 +89,31 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Room Seeker Card Redesign for Visual Consistency (October 22, 2025)
+- **Complete Card Redesign**: Unified visual language across listing and seeker cards
+  - Desktop layout: 96×96 circular avatar on left, details grid on right (grid-cols-[96px_1fr])
+  - Mobile layout: Stacked (photo on top, content below)
+  - Matches ListingCard style: bg-white, ring-1 ring-slate-200, shadow-sm, rounded-2xl
+  - Equal card heights using h-full and items-stretch grid configuration
+- **Content Order & Pills**: Structured metadata display
+  - Name (text-lg md:text-xl font-semibold) → Budget (green pill bg-emerald-100) → Location (purple pill bg-violet-100) → Occupation (dark pill bg-slate-900) → Age (fuchsia pill bg-fuchsia-100) → CTA button
+  - Location fallback: "Lokasyon bilgisi yok" when missing
+  - Budget formatting: ₺ + thousand separators + "/ay"
+  - Occupation mapping: Öğrenci/Çalışan/Serbest → lowercase Turkish labels
+  - Name format: "First L." (first name + last initial with period)
+- **Orange CTA Button**: Consistent call-to-action across all cards
+  - Color: #EA580C (Odanet brand orange)
+  - Full width (w-full), positioned at bottom (mt-auto)
+  - Height: h-11 md:h-12 for touch-friendly mobile interaction
+  - Accessible implementation using Button asChild with Link
+  - Icon: MessageCircle from lucide-react
+- **Component Updates**: Unified implementation across all pages
+  - `SeekerCard.tsx`: Reusable component with proper TypeScript types
+  - `MixedFeed.tsx`: SeekerMiniCard updated to match SeekerCard design
+  - `SeekerList.tsx`: Replaced inline cards with SeekerCard component
+  - Grid configuration: items-stretch for equal heights
+- **Backend Enhancement**: Feed API updated to include slug, age, and occupation fields
+
 ### Production Database Connection & Slug Migration (October 22, 2025)
 - **Production Neon Database Connected**: App now uses Production Neon database (ep-green-term-af4ptxe0)
   - Console displays "✅ Connected to Production Neon DB" on startup
