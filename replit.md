@@ -89,6 +89,24 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Production Database Connection & Slug Migration (October 22, 2025)
+- **Production Neon Database Connected**: App now uses Production Neon database (ep-green-term-af4ptxe0)
+  - Console displays "✅ Connected to Production Neon DB" on startup
+  - Smart detection shows which database environment is active
+  - Development database (ep-odd-scene-af56kk3x) remains available for testing
+- **Slug Migration Completed**: Generated SEO-friendly slugs for all existing records
+  - 9 listings updated with slugs (e.g., `nisantasi-merkezde-ferah-ve-modern-daire-sessiz-duzenli-tesvikiye-mahsisli-istanbul-3kb9un`)
+  - 4 seeker profiles updated with slugs (e.g., `zeynep-z-levent-nisantasi-beyoglu-mt2k40`)
+  - Migration script: `scripts/generate-slugs.ts` for future use
+- **Backend Fallback Logic**: Enhanced storage methods with ID fallback
+  - `getListingBySlug`: Tries slug first, falls back to ID for backwards compatibility
+  - `getSeekerProfileBySlug`: Same smart fallback pattern
+  - All existing ID-based URLs continue to work while new slugs are preferred
+- **SEO-Friendly URLs Active**: All detail pages now use proper slug format
+  - Listing URLs: `/oda-ilani/istanbul-nisantasi-ferah-daire-abc123`
+  - Seeker URLs: `/oda-arayan/zehra-k-istanbul-levent-xyz789`
+  - Verified working on both Preview tab and www.odanet.com.tr
+
 ### SEO-Friendly Slugs for Both Listings and Seekers (October 21, 2025)
 - **Complete Slug Implementation**: Automatic generation of unique, SEO-friendly slugs for both listings AND seeker profiles
   - Listing format: `{title}-{address}-{uniqueID}` (e.g., `nisantasi-ferah-daire-istanbul-abc123`)
