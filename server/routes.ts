@@ -651,6 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rentAmount: listing.rentAmount,
           totalOccupants: listing.totalOccupants,
           roommatePreference: listing.roommatePreference,
+          furnishingStatus: listing.furnishingStatus,
           images: listing.images || []
         })),
         ...recentSeekers.map(seeker => ({

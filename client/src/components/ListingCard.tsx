@@ -23,6 +23,7 @@ interface ListingCardProps {
     rentAmount?: string | number | null;
     totalOccupants?: number | null;
     roommatePreference?: string | null;
+    furnishingStatus?: string | null;
     images?: Array<{ imagePath?: string; isPrimary?: boolean }>;
     user?: { verificationStatus?: string | null };
   };
@@ -56,6 +57,7 @@ export default function ListingCard({
   const address = (listing?.address ?? "").toString();
   const totalOccupants = listing?.totalOccupants;
   const roommatePreference = listing?.roommatePreference;
+  const furnishingStatus = listing?.furnishingStatus;
 
   const amount = useMemo(() => {
     const v = listing?.rentAmount;
@@ -153,7 +155,7 @@ export default function ListingCard({
           {!addressOverlay && suburb && <p className="mt-0.5 text-[13px] sm:text-sm text-slate-600 truncate">{suburb}</p>}
           
           {/* Room info pills */}
-          {(totalOccupants || roommatePreference) && (
+          {(totalOccupants || roommatePreference || furnishingStatus) && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {totalOccupants && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[11px] sm:text-xs font-medium">
@@ -168,6 +170,9 @@ export default function ListingCard({
                   {roommatePreference === 'Kadın' ? '👩 Kadın' : roommatePreference === 'Erkek' ? '👨 Erkek' : '🤝 Farketmez'}
                 </span>
               )}
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] sm:text-xs font-medium">
+                {furnishingStatus === 'Eşyalı' ? '🛋️ Eşyalı' : furnishingStatus === 'Eşyasız' ? '📦 Eşyasız' : '🤝 Farketmez'}
+              </span>
             </div>
           )}
           

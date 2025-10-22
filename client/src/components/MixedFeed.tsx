@@ -14,6 +14,7 @@ type FeedItem =
       rentAmount: string | null;
       totalOccupants?: number | null;
       roommatePreference?: string | null;
+      furnishingStatus?: string | null;
       images: { imagePath: string; isPrimary?: boolean }[] 
     }
   | { 
@@ -170,6 +171,7 @@ export default function MixedFeed() {
                     rentAmount: item.rentAmount ?? undefined,
                     totalOccupants: item.totalOccupants ?? undefined,
                     roommatePreference: item.roommatePreference ?? undefined,
+                    furnishingStatus: item.furnishingStatus ?? undefined,
                     images: item.images
                   }} 
                 />
