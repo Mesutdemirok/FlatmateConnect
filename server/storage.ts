@@ -272,10 +272,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getListingBySlug(slug: string) {
-    const [listing] = await db
+    // Try to find by slug first
+    let [listing] = await db
       .select()
       .from(listings)
       .where(eq(listings.slug, slug));
+    
+    // If not found by slug, try by ID (backwards compatibility)
+    if (!listing) {
+      [listing] = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.id, slug));
+    }
+    
     if (!listing) return undefined;
     const [images, user] = await Promise.all([
       this.getListingImages(listing.id),
@@ -588,10 +598,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSeekerProfileBySlug(slug: string): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User }) | undefined> {
-    const [profile] = await db
+    // Try to find by slug first
+    let [profile] = await db
       .select()
       .from(seekerProfiles)
       .where(eq(seekerProfiles.slug, slug));
+
+    // If not found by slug, try by ID (backwards compatibility)
+    if (!profile) {
+      [profile] = await db
+        .select()
+        .from(seekerProfiles)
+        .where(eq(seekerProfiles.id, slug));
+    }
 
     if (!profile) return undefined;
 
