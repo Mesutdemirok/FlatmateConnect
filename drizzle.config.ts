@@ -3,35 +3,44 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
 import * as schema from "@shared/schema";
 
-// ✅ Required for WebSocket connections with Neon serverless
+// ✅ Required for WebSocket-based Neon connections in serverless environments
 neonConfig.webSocketConstructor = ws;
 
-// ✅ Always use DATABASE_URL directly
-const connectionString = process.env.DATABASE_URL?.trim();
+// ✅ Load and sanitize connection string
+const rawUrl = process.env.DATABASE_URL?.trim();
 
-if (!connectionString) {
+if (!rawUrl) {
   throw new Error(
-    "❌ Missing DATABASE_URL. Please set it in Replit Environment → Secrets.",
+    "❌ DATABASE_URL is missing. Please set it in Replit Secrets.",
   );
 }
 
-// ✅ Ensure Neon connection uses SSL (important for production)
-const pool = new Pool({
-  connectionString: connectionString.includes("?sslmode=")
-    ? connectionString
-    : `${connectionString}${connectionString.includes("?") ? "&" : "?"}sslmode=require`,
+// ✅ Always enforce SSL and clean query params
+const connectionString = rawUrl.includes("sslmode=")
+  ? rawUrl
+  : `${rawUrl}${rawUrl.includes("?") ? "&" : "?"}sslmode=require`;
+
+// ✅ Create connection pool
+export const pool = new Pool({
+  connectionString,
+  max: 5, // small pool size fits Neon’s connection limits
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 5000,
 });
 
 // ✅ Initialize Drizzle ORM with schema
-export const db = drizzle({ client: pool, schema });
+export const db = drizzle({
+  client: pool,
+  schema,
+});
 
-// ✅ (Optional) Log connection confirmation
-pool
-  .connect()
-  .then(() => console.log("✅ Connected successfully to Neon database"))
-  .catch((err) => {
+// ✅ Optional connection test (runs only once)
+(async () => {
+  try {
+    const client = await pool.connect();
+    console.log("✅ Connected to Neon (production) successfully");
+    client.release();
+  } catch (err: any) {
     console.error("❌ Database connection failed:", err.message);
-    process.exit(1);
-  });
-
-export { pool };
+  }
+})();
