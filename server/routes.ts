@@ -649,6 +649,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: listing.title,
           suburb: listing.address, // Use address as suburb for compatibility
           rentAmount: listing.rentAmount,
+          totalOccupants: listing.totalOccupants,
+          roommatePreference: listing.roommatePreference,
           images: listing.images || []
         })),
         ...recentSeekers.map(seeker => ({

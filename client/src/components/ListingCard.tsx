@@ -21,6 +21,8 @@ interface ListingCardProps {
     suburb?: string | null;
     address?: string | null;
     rentAmount?: string | number | null;
+    totalOccupants?: number | null;
+    roommatePreference?: string | null;
     images?: Array<{ imagePath?: string; isPrimary?: boolean }>;
     user?: { verificationStatus?: string | null };
   };
@@ -52,6 +54,8 @@ export default function ListingCard({
   const title = (listing?.title ?? "İlan").toString();
   const suburb = (listing?.suburb ?? "").toString();
   const address = (listing?.address ?? "").toString();
+  const totalOccupants = listing?.totalOccupants;
+  const roommatePreference = listing?.roommatePreference;
 
   const amount = useMemo(() => {
     const v = listing?.rentAmount;
@@ -144,9 +148,41 @@ export default function ListingCard({
           )}
         </div>
 
-        <div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[96px] flex flex-col justify-center">
+        <div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[96px] flex flex-col">
           <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2">{title}</h3>
           {!addressOverlay && suburb && <p className="mt-0.5 text-[13px] sm:text-sm text-slate-600 truncate">{suburb}</p>}
+          
+          {/* Room info pills */}
+          {(totalOccupants || roommatePreference) && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {totalOccupants && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[11px] sm:text-xs font-medium">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  {totalOccupants} kişi
+                </span>
+              )}
+              {roommatePreference && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[11px] sm:text-xs font-medium">
+                  {roommatePreference === 'Kadın' ? '👩 Kadın' : roommatePreference === 'Erkek' ? '👨 Erkek' : '🤝 Farketmez'}
+                </span>
+              )}
+            </div>
+          )}
+          
+          {/* Detay Gör Button - At bottom with mt-auto */}
+          <div className="mt-auto pt-2">
+            <Button
+              asChild
+              className="w-full h-9 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg transition-colors"
+              data-testid={`button-details-${id || "noid"}`}
+            >
+              <span>
+                Detay Gör
+              </span>
+            </Button>
+          </div>
         </div>
       </article>
     </Link>

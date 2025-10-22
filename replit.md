@@ -1,41 +1,33 @@
 # Odanet - Flatmate & Room Rental Platform
 
 ## Overview
-Odanet is a flatmate and room rental platform designed for the Turkish market. Its primary purpose is to connect individuals seeking shared accommodation with available room providers. The platform emphasizes verified profiles, intelligent matching algorithms, and secure communication channels to foster a trustworthy environment for users. Key features include comprehensive user and listing management, seeker profiles, real-time messaging, and advanced search and filtering capabilities.
+Odanet is a flatmate and room rental platform for the Turkish market, connecting individuals seeking shared accommodation with room providers. It focuses on verified profiles, intelligent matching, and secure communication to build a trustworthy environment. Key capabilities include comprehensive user and listing management, seeker profiles, real-time messaging, and advanced search and filtering.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend
-- **Framework**: React with TypeScript (Vite)
-- **Styling**: Tailwind CSS, shadcn/ui, Radix UI for accessible components.
-- **State Management**: React Query for server state, React hooks for local state.
-- **Routing**: Wouter for client-side routing.
-- **Internationalization**: i18next (Turkish primary locale, localized URLs).
-- **Authentication**: Replit Auth integration.
-- **UI/UX**: Mobile-first design, consistent branding with orange accents, gradient backgrounds, rounded cards, and icon-based feature chips.
+### UI/UX Decisions
+The platform features a mobile-first design with consistent branding, utilizing orange accents, gradient backgrounds, rounded cards, and icon-based feature chips. It includes responsive card layouts with dynamic aspect ratios, address overlays, and optimized mobile-first grids.
 
-### Backend
-- **Framework**: Express.js with TypeScript.
-- **Database**: PostgreSQL with Drizzle ORM.
-- **Authentication**: Replit Auth, session-based using `express-session`.
-- **File Handling**: Multer for image uploads, Cloudflare R2 for production storage.
-- **API Design**: RESTful with standardized error handling.
-- **System Design**: Modular schema with foreign key relationships.
+### Technical Implementations
+- **Frontend**: React with TypeScript (Vite), Tailwind CSS, shadcn/ui, Radix UI for accessibility. State management uses React Query for server state and React hooks for local state. Wouter handles client-side routing, and i18next provides internationalization (Turkish primary locale). Replit Auth is integrated for authentication.
+- **Backend**: Express.js with TypeScript. PostgreSQL is used as the database with Drizzle ORM. Authentication relies on Replit Auth and session-based `express-session`. Multer handles image uploads, with Cloudflare R2 for production storage. The API is RESTful with standardized error handling.
+- **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing using Sharp and Busboy. Cloudflare R2 serves as the CDN for production image delivery.
+- **SEO**: Implemented with React Helmet for dynamic meta tags, Open Graph, and Twitter card generation for social media sharing. Slugs are generated for listings and seeker profiles for SEO-friendly URLs.
 
-### Key Features
-- **User Management**: Profile creation, verification, image uploads.
+### Feature Specifications
+- **User Management**: Profile creation, verification, and image uploads.
 - **Listing System**: Detailed room listings with multiple images and filtering.
 - **Seeker Profiles**: Comprehensive profiles for accommodation seekers.
 - **Messaging System**: Real-time communication.
-- **Favorites System**: Save and manage favorite listings.
+- **Favorites System**: Allows users to save and manage favorite listings.
 - **Search & Filtering**: Location-based search with various filters for both room and flatmate searches.
-- **File Upload System**: Cloudflare R2 CDN storage for production, local storage for development, supporting multiple image uploads and optimized for mobile with image processing (HEIC/HEIF to JPEG conversion, compression, resizing).
-- **Homepage Feed**: Mixed feed displaying both listings and seeker profiles.
-- **Social Share Previews**: Dynamic Open Graph and Twitter card generation for social media sharing.
-- **UI Enhancements**: Consistent navigation, responsive card layouts with dynamic aspect ratios and address overlays, and optimized mobile-first grids.
+- **Homepage Feed**: A mixed feed displaying both listings and seeker profiles.
+
+### System Design Choices
+The system employs a modular schema with foreign key relationships for robust data management. Backend fallbacks for slug-based lookups ensure backward compatibility with ID-based URLs.
 
 ## External Dependencies
 
@@ -49,11 +41,6 @@ Preferred communication style: Simple, everyday language.
 - **Lucide React**: Icon library.
 - **class-variance-authority**: Component variant management.
 
-### Development & Build Tools
-- **Vite**: Fast build tool.
-- **TypeScript**: Type safety.
-- **Drizzle Kit**: Database migration.
-
 ### Form Management & Validation
 - **React Hook Form**: Form state management.
 - **Zod**: Schema validation.
@@ -66,167 +53,13 @@ Preferred communication style: Simple, everyday language.
 - **i18next**: Internationalization.
 - **date-fns**: Date manipulation.
 - **Sharp & Busboy**: Image processing for uploads.
-- **nanoid**: Compact, URL-safe unique ID generation for slugs.
-- **slugify**: Turkish-locale URL slug generation from text.
+- **nanoid**: Compact, URL-safe unique ID generation.
+- **slugify**: Turkish-locale URL slug generation.
 
 ### Cloud Services
-- **Cloudflare R2**: Object storage for images (bucket: `odanet-uploads`).
+- **Cloudflare R2**: Object storage for images (`odanet-uploads` bucket).
 - **Cloudflare CDN**: Custom domain (`cdn.odanet.com.tr`) for image delivery.
-- **AWS SDK S3 Client**: R2 API compatibility.
+- **AWS SDK S3 Client**: Used for R2 API compatibility.
 
 ### Analytics
-- **Google Analytics 4**: Event tracking (ID: G-ME5ES9KLDE)
-  - Automatic pageview tracking via Wouter routing
-  - Custom event tracking for user actions (signup, login, search, etc.)
-  - Real-time analytics monitoring
-
-### SEO & Meta Tags
-- **React Helmet**: Dynamic meta tag management
-- **SEOHead Component**: Reusable SEO component with Open Graph and Twitter cards
-  - Default Odanet title and description
-  - Dynamic meta tags for listing and seeker detail pages
-  - Proper canonical URLs and social media preview images
-
-## Recent Changes
-
-### Room Seeker Card Redesign for Visual Consistency (October 22, 2025)
-- **Complete Card Redesign**: Unified visual language across listing and seeker cards
-  - Desktop layout: 96×96 circular avatar on left, details grid on right (grid-cols-[96px_1fr])
-  - Mobile layout: Stacked (photo on top, content below)
-  - Matches ListingCard style: bg-white, ring-1 ring-slate-200, shadow-sm, rounded-2xl
-  - Equal card heights using h-full and items-stretch grid configuration
-- **Content Order & Pills**: Structured metadata display
-  - Name (text-lg md:text-xl font-semibold) → Budget (green pill bg-emerald-100) → Location (purple pill bg-violet-100) → Occupation (dark pill bg-slate-900) → Age (fuchsia pill bg-fuchsia-100) → CTA button
-  - Location fallback: "Lokasyon bilgisi yok" when missing
-  - Budget formatting: ₺ + thousand separators + "/ay"
-  - Occupation mapping: Öğrenci/Çalışan/Serbest → lowercase Turkish labels
-  - Name format: "First L." (first name + last initial with period)
-- **Orange CTA Button**: Consistent call-to-action across all cards
-  - Color: #EA580C (Odanet brand orange)
-  - Full width (w-full), positioned at bottom (mt-auto)
-  - Height: h-11 md:h-12 for touch-friendly mobile interaction
-  - Accessible implementation using Button asChild with Link
-  - Icon: MessageCircle from lucide-react
-- **Component Updates**: Unified implementation across all pages
-  - `SeekerCard.tsx`: Reusable component with proper TypeScript types
-  - `MixedFeed.tsx`: SeekerMiniCard updated to match SeekerCard design
-  - `SeekerList.tsx`: Replaced inline cards with SeekerCard component
-  - Grid configuration: items-stretch for equal heights
-- **Backend Enhancement**: Feed API updated to include slug, age, and occupation fields
-
-### Production Database Connection & Slug Migration (October 22, 2025)
-- **Production Neon Database Connected**: App now uses Production Neon database (ep-green-term-af4ptxe0)
-  - Console displays "✅ Connected to Production Neon DB" on startup
-  - Smart detection shows which database environment is active
-  - Development database (ep-odd-scene-af56kk3x) remains available for testing
-- **Slug Migration Completed**: Generated SEO-friendly slugs for all existing records
-  - 9 listings updated with slugs (e.g., `nisantasi-merkezde-ferah-ve-modern-daire-sessiz-duzenli-tesvikiye-mahsisli-istanbul-3kb9un`)
-  - 4 seeker profiles updated with slugs (e.g., `zeynep-z-levent-nisantasi-beyoglu-mt2k40`)
-  - Migration script: `scripts/generate-slugs.ts` for future use
-- **Backend Fallback Logic**: Enhanced storage methods with ID fallback
-  - `getListingBySlug`: Tries slug first, falls back to ID for backwards compatibility
-  - `getSeekerProfileBySlug`: Same smart fallback pattern
-  - All existing ID-based URLs continue to work while new slugs are preferred
-- **SEO-Friendly URLs Active**: All detail pages now use proper slug format
-  - Listing URLs: `/oda-ilani/istanbul-nisantasi-ferah-daire-abc123`
-  - Seeker URLs: `/oda-arayan/zehra-k-istanbul-levent-xyz789`
-  - Verified working on both Preview tab and www.odanet.com.tr
-
-### SEO-Friendly Slugs for Both Listings and Seekers (October 21, 2025)
-- **Complete Slug Implementation**: Automatic generation of unique, SEO-friendly slugs for both listings AND seeker profiles
-  - Listing format: `{title}-{address}-{uniqueID}` (e.g., `nisantasi-ferah-daire-istanbul-abc123`)
-  - Seeker format: `{fullName}-{preferredLocation}-{uniqueID}` (e.g., `ahmet-k-kadikoy-xyz789`)
-  - Turkish locale support via slugify library with character mapping (ş→s, ı→i, ğ→g, etc.)
-  - Unique ID suffix using nanoid (6-char lowercase) to prevent collisions
-  - Switched from shortid to nanoid for better performance and smaller bundle size
-- **Database Schema**: Added `slug` field to both listings and seeker_profiles tables with unique constraints
-- **New Endpoints**: 
-  - `GET /api/listings/slug/:slug` for slug-based listing lookup
-  - `GET /api/seekers/slug/:slug` for slug-based seeker lookup
-- **Storage Layer**: 
-  - Added `getListingBySlug` method to IStorage interface
-  - Added `getSeekerProfileBySlug` method to IStorage interface
-- **Frontend Routing**: Updated all routes to use :slug parameter instead of :id
-  - `/oda-ilani/:slug` for listings
-  - `/oda-arayan/:slug` for seekers
-- **Component Updates**: All components now use slug-based URLs with ID fallback for backwards compatibility
-  - `ListingCard.tsx`: Uses slug in links with ID fallback
-  - `SeekerCard.tsx`: Uses slug in links with ID fallback
-  - `FeaturedListings.tsx`: Uses slug with ID fallback
-  - `MixedFeed.tsx`: Updated types and links to support slugs
-  - `Profile.tsx`: My listings and favorites use slug-based navigation
-  - `ListingDetail.tsx`: Fetches listing by slug from API
-  - `SeekerDetail.tsx`: Fetches seeker profile by slug from API
-- **Type Safety**: Full TypeScript support throughout, updated FeedItem type to include slug field
-- **Backwards Compatibility**: ID-based fallback in all components ensures existing bookmarks/links continue working
-- **URL Format**: All listing and seeker URLs now use SEO-friendly slugs by default
-- **App Icons Updated**: Replaced all favicons and app icons with new red house logo
-  - Updated favicon.ico, apple-touch-icon.png, android-chrome icons
-  - Consistent branding across all platforms (iOS, Android, browsers)
-
-### Footer Social Media Icons Update (October 20, 2025)
-- **Complete Social Media Integration**: Added all 6 social platforms to footer
-  - Instagram, Facebook, TikTok, Pinterest, YouTube, İletişim (Contact)
-  - React Icons (FontAwesome) for consistent, crisp icon rendering
-  - All URLs corrected to use .com.tr domain format
-- **Visual Enhancements**:
-  - Orange circular buttons with white icons (brand consistency)
-  - Smooth hover effects: scale-105, shadow-lg, enhanced ring glow
-  - Responsive flex-wrap for mobile compatibility
-- **SEO Structured Data**: Updated Schema.org JSON-LD to include all social platforms
-- **Accessibility**: ARIA labels, keyboard navigation, focus states
-- **Test IDs**: Added data-testid attributes for automated testing
-
-### SEO Integration Across All Main Pages (October 19, 2025)
-- **SEOHead Component**: Clean, reusable component with TypeScript props
-  - Default title: "Odanet – Güvenli, kolay ve şeffaf oda & ev arkadaşı bul"
-  - Default description for home page
-  - Supports custom title, description, URL, and image per page
-- **Dynamic SEO on Detail Pages**:
-  - `ListingDetail`: Uses listing title, location, price, and description for SEO
-  - `SeekerDetail`: Uses seeker name, age, occupation, location, and budget for SEO
-  - Both use first image as Open Graph preview
-- **Static SEO on List Pages**:
-  - `Search`: "Oda İlanları - Kiralık Oda Bul | Odanet"
-  - `SeekerList`: "Oda Arayanlar - Ev Arkadaşı Bul | Odanet"
-  - `Profile`: "Profilim - Hesap Ayarları | Odanet"
-  - `Home`: Default Odanet branding
-- **Social Media Ready**: All pages have proper Open Graph and Twitter Card meta tags for rich previews when shared
-
-## Recent Changes
-
-### Google Analytics 4 Event Tracking Integration (October 19, 2025)
-- **Analytics Helper**: Created `/client/src/lib/analytics.ts` with reusable event tracking functions
-  - `trackSignup(method)` - User registration events
-  - `trackLogin(method)` - User login events
-  - `trackCreateListing()` - New listing creation
-  - `trackMessageSend()` - Message sending
-  - `trackSearch(query)` - Search actions
-  - `trackEvent(name, params)` - Generic custom events
-- **Automatic Pageview Tracking**: Integrated with Wouter router in `App.tsx`
-  - Tracks all route changes automatically
-  - No manual pageview calls needed
-- **GA Configuration**: Measurement ID G-ME5ES9KLDE
-  - Loaded in `index.html` with `send_page_view: false`
-  - Manual SPA pageview tracking via React
-  - Ready for real-time event monitoring
-- **Cleanup**: Removed Next.js leftover files (_app.tsx, ga.tsx, gtag.tsx)
-  - Consolidated to single analytics module
-  - Vite/React architecture compliant
-
-### Mobile Photo Upload Optimization (October 18, 2025)
-- **Sharp & Busboy Integration**: Installed image processing libraries for robust mobile uploads
-  - Sharp: HEIC/HEIF → JPEG conversion, auto-rotation (EXIF), compression (82% quality)
-  - Busboy: Multipart/form-data parsing for file uploads
-  - Automatic resize to max 1600px width (maintains aspect ratio)
-- **New Upload Endpoint**: `/api/uploads/seeker-photo`
-  - Accepts all image formats: JPEG, PNG, WebP, HEIC, HEIF
-  - Immediate processing and optimization on upload
-  - Returns both imagePath (for DB) and CDN URL (for preview)
-  - Maximum file size: 10MB (raw files, compressed to ~200-500KB)
-- **Frontend Upload UX**: Completely redesigned CreateSeekerProfile photo upload
-  - `accept="image/*"` + `capture="environment"` for mobile camera access
-  - Instant upload on file selection (no waiting for form submit)
-  - Real-time progress indicator (loading spinner)
-  - Preview with rounded image after successful upload
-  - Clear success/error messages in Turkish
+- **Google Analytics 4**: Event tracking (ID: G-ME5ES9KLDE) with automatic pageview tracking via Wouter routing and custom event tracking.

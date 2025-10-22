@@ -11,7 +11,9 @@ type FeedItem =
       slug?: string | null;
       title: string; 
       suburb: string | null; 
-      rentAmount: string | null; 
+      rentAmount: string | null;
+      totalOccupants?: number | null;
+      roommatePreference?: string | null;
       images: { imagePath: string; isPrimary?: boolean }[] 
     }
   | { 
@@ -166,6 +168,8 @@ export default function MixedFeed() {
                     title: item.title,
                     suburb: item.suburb ?? undefined,
                     rentAmount: item.rentAmount ?? undefined,
+                    totalOccupants: item.totalOccupants ?? undefined,
+                    roommatePreference: item.roommatePreference ?? undefined,
                     images: item.images
                   }} 
                 />
