@@ -644,6 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...recentListings.map(listing => ({
           type: 'listing' as const,
           id: listing.id,
+          slug: listing.slug,
           createdAt: listing.createdAt,
           title: listing.title,
           suburb: listing.address, // Use address as suburb for compatibility
@@ -653,11 +654,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...recentSeekers.map(seeker => ({
           type: 'seeker' as const,
           id: seeker.id,
+          slug: seeker.slug,
           createdAt: seeker.createdAt,
           displayName: seeker.fullName || 'İsimsiz',
           budgetMonthly: seeker.budgetMonthly ? parseInt(seeker.budgetMonthly) : null,
           preferredLocation: seeker.preferredLocation,
-          photoUrl: seeker.profilePhotoUrl
+          photoUrl: seeker.profilePhotoUrl,
+          age: seeker.age,
+          occupation: seeker.occupation
         }))
       ];
       

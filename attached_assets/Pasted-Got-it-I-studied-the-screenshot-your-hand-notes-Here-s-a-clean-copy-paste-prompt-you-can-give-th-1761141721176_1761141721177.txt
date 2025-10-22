@@ -1,0 +1,83 @@
+Got it—I studied the screenshot + your hand notes. Here’s a clean, copy-paste prompt you can give the dev/agent so the “Oda Arayanlar” card matches the room-listing cards in look, height, and layout across desktop & mobile.
+
+⸻
+
+AGENT PROMPT (TR) — Oda Arayan Kartı Revizyonu
+
+Amaç:
+“Oda Arayanlar” kartını (Room Seeker Card) oda ilan kartlarıyla aynı görsel dil, arka plan, kenarlık, gölgeler ve yükseklik ile uyumlu hale getir. Mobil, tablet ve masaüstünde tüm kartlar aynı yükseklikte hizalansın. Karttaki içerik sırası ve tipografi ekran görüntüsündeki notlara göre düzenlensin.
+
+Yapılacaklar (UI/UX)
+	1.	Kart Stili (ListingCard ile birebir):
+	•	Arka plan ve kenarlık: bg-white (veya ListingCard’da ne kullanılıyorsa onu kopyala), rounded-2xl, border border-slate-200, shadow-sm.
+	•	İç boşluk: p-4 md:p-5.
+	•	Kartın yüksekliği: h-full + ListingCard’daki min-h değeri neyse aynısını kullan (ör. min-h-[280px]).
+	•	CTA butonu kartın en altında sabitlensin (yapısal olarak flex flex-col h-full, CTA’ya mt-auto ver).
+	2.	Grid/Listing Sırası — Eşit Yükseklik:
+	•	Bu kartların yer aldığı grid konteynerinde grid auto-rows-fr items-stretch kullan.
+	•	Her kart bileşenine h-full ver. Böylece farklı içerik miktarında bile kartlar eşit yükseklikte görünecek.
+	3.	Yerleşim (Desktop & Mobile):
+	•	Desktop (md+): Solda profil fotoğrafı, sağda metin bilgileri. Düzen: grid grid-cols-[96px_1fr] gap-4.
+	•	Mobile (sm): Üstte foto, altta bilgiler (tek kolon). gap-3 yeterli.
+	•	Tüm öğeler soldan hizalı, temiz boşluklar.
+	4.	Profil Fotoğrafı (Soldaki alan):
+	•	Boyut: 96×96 px sabit çerçeve.
+	•	Stil: rounded-full overflow-hidden bg-slate-100 + img için w-full h-full object-cover object-center.
+	•	Foto yoksa placeholder (silüet) göster.
+	•	Not: Fotoğraf çevresinde ekstra boş alan bırakma; dairesel kırpma içinde tam dolu görünsün (ekran görüntüsünde işaretlenen “boş alan” kalkacak).
+	5.	Bilgi Bloğu (Sağ taraf):
+Aşağıdaki sıra ve etiketler Türkçe kalacak; tipografi ListingCard ile uyumlu olsun.
+	•	İsim: Örn. Mem D. (Baş harfler büyük, 1 satır, taşarsa ellipsis). Sınıf örn: text-lg md:text-xl font-semibold tracking-tight.
+	•	BÜTÇE (yeşil pill): “₺50.000/ay”. Binlik ayraçları kullan.
+Örnek pill sınıfları: inline-flex items-center rounded-full px-3 py-1 text-sm font-medium bg-emerald-100 text-emerald-700.
+	•	LOKASYON (mor pill): Lokasyon varsa semt/ilçe/şehir kısaltılmış göster (maks 1 satır). Yoksa metin “Lokasyon bilgisi yok”.
+Sınıf: bg-violet-100 text-violet-700.
+	•	MESLEK / DURUM (koyu pill): Örn. “çalışan”.
+Sınıf: bg-slate-900 text-white.
+	•	YAŞ (mor/fuşya pill): Örn. “40 yaş”.
+Sınıf: bg-fuchsia-100 text-fuchsia-700.
+	•	Her satır arası gap-y-2 md:gap-y-2.5.
+	6.	CTA Butonu:
+	•	Metin: “İletişime Geçin”.
+	•	Stil: Odanet turuncusu #EA580C (ListingCard’daki birincil buton neyse aynısı).
+	•	Tam genişlik (w-full), yükseklik h-11 md:h-12.
+	•	Odak/hover durumları ListingCard ile aynı.
+	7.	Metin/Veri Kuralları:
+	•	İsim: ad + soyadın ilk harfi + “.” (örn. “Mem D.”).
+	•	Bütçe: ₺ + binlik ayraç + “/ay”.
+	•	Lokasyon: varsa tek satıra sığacak şekilde kırp (ör. karakter sınırlaması 28–32). Yoksa “Lokasyon bilgisi yok” göster.
+	•	Meslek/Durum: kısa etiket (örn. “çalışan”, “öğrenci”).
+	•	Yaş: “NN yaş”.
+	8.	Boş/Kayıp Veriler:
+	•	Eksik alanlar pill olarak gizlenmesin; lokasyon özelinde “Lokasyon bilgisi yok” yazılsın, diğer eksikler gösterilmeyecek.
+	•	Kart yüksekliği yine sabit kalmalı (içerik yok diye kısalmayacak).
+	9.	Bileşen / Kod Notları:
+	•	Bileşen adı öneri: RoomSeekerCard.tsx (veya mevcut ad).
+	•	Stil tokenlarını ve buton komponentini ListingCard ile paylaştır (aynı sınıfları ve UI kit’i kullan).
+	•	Resim optimizasyonu için Next <Image /> kullan (width={96} height={96} priority={false}).
+
+Kabul Kriterleri (Acceptance)
+	•	Oda arayan kartı, oda ilan kartıyla aynı arka plan, aynı kenarlık/gölge ve aynı min-h değerini kullanıyor.
+	•	Grid’de tüm kartlar (oda + arayan) masaüstü ve mobilde eşit yükseklikte hizalanıyor.
+	•	Profil fotoğrafı solda 96×96 daire içinde object-cover ile boşluksuz görünüyor.
+	•	Sıralama: İsim → Bütçe → Lokasyon → Meslek/Durum → Yaş → CTA.
+	•	Lokasyon yoksa pill metni tam olarak “Lokasyon bilgisi yok”.
+	•	CTA turuncu (#EA580C), tam genişlikte ve kartın en altında.
+	•	Mobilde foto üstte, içerik altta; masaüstünde foto sol, içerik sağda; aralarındaki boşluklar tutarlı.
+	•	Görsel regresyon: Anasayfa, arama/keşif sayfası ve mobil görünümde ekran görüntüleri eklendi.
+
+Test Adımları
+	1.	Anasayfa ve “Oda Arayanlar” bölümünü sm, md, lg kırılımlarında kontrol et.
+	2.	Farklı veri kombinasyonları (lokasyon var/yok, uzun/kısa isim) için kart yüksekliği ve ellipsis davranışını doğrula.
+	3.	Lighthouse görsel tutarlılık ve erişilebilirlik (kontrast) kontrolü.
+
+⸻
+
+İstersen bu promptu İngilizce de veriyorum (aynı içerik):
+
+EN MINI PROMPT:
+“Please refactor the Room Seeker Card to exactly match the ListingCard visuals (background, border, shadow, min-height). Use a two-column layout on desktop (96×96 circular avatar on the left, details on the right) and stacked layout on mobile. Keep the order: Name → Budget (green pill) → Location (purple pill; if missing show ‘Lokasyon bilgisi yok’) → Occupation/Status (dark pill) → Age (fuchsia pill) → full-width CTA at the bottom (#EA580C). Ensure equal card heights across the grid using auto-rows-fr on the grid container and h-full + the same min-h as ListingCard on the card. Avatar must be object-cover with no extra whitespace. Apply the same button component/tokens as ListingCard. Provide screenshots for sm/md/lg.”
+
+⸻
+
+Hazırsan bunu ajana aynen gönder; kartları oda ilanlarıyla birebir hizalayacaklar.

@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import ListingCard from "@/components/ListingCard";
+import { Button } from "@/components/ui/button";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
-import { MapPin, Wallet } from "lucide-react";
+import { MapPin, Wallet, MessageCircle } from "lucide-react";
 
 type FeedItem =
   | { 
@@ -20,51 +21,110 @@ type FeedItem =
       displayName: string; 
       budgetMonthly: number | null; 
       preferredLocation: string | null; 
-      photoUrl: string | null 
+      photoUrl: string | null;
+      age: number | null;
+      occupation: string | null;
     };
+
+function formatOccupation(occupation: string | null | undefined): string {
+  if (!occupation) return "";
+  const map: Record<string, string> = {
+    "Öğrenci": "öğrenci",
+    "Çalışan": "çalışan",
+    "Serbest": "serbest meslek",
+    "Diğer": "diğer"
+  };
+  return map[occupation] || occupation.toLowerCase();
+}
 
 function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) {
   const photo = item.photoUrl 
     ? getAbsoluteImageUrl(item.photoUrl) 
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.displayName)}&background=8b5cf6&color=fff&size=400`;
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.displayName)}&background=8b5cf6&color=fff&size=256`;
+  
+  const occupation = formatOccupation(item.occupation);
+  const location = item.preferredLocation?.trim() || "";
   
   return (
-    <a 
-      href={`/oda-arayan/${item.slug || item.id}`} 
-      className="group block overflow-hidden rounded-2xl bg-white ring-1 ring-black/5 shadow-sm hover:shadow-lg transition-all duration-300"
+    <article 
+      className="h-full w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
       data-testid={`card-seeker-${item.id}`}
     >
-      <div className="relative h-44 sm:h-52 overflow-hidden">
-        <img 
-          src={photo} 
-          alt={item.displayName} 
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" 
-        />
-        {item.budgetMonthly != null && (
-          <div className="absolute top-2 left-2 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs sm:text-sm font-semibold px-2.5 py-1 shadow-lg flex items-center gap-1">
-            <Wallet className="w-3.5 h-3.5" />
-            ₺{item.budgetMonthly.toLocaleString("tr-TR")}/ay
+      {/* Mobile: Photo on top, Desktop: Photo on left */}
+      <div className="flex flex-col md:grid md:grid-cols-[96px_1fr] md:gap-4 h-full">
+        
+        {/* Profile Photo - 96x96 circular */}
+        <div className="flex-shrink-0">
+          <div className="w-full aspect-square md:w-24 md:h-24 md:aspect-auto md:m-4 overflow-hidden rounded-t-2xl md:rounded-full bg-slate-100">
+            <img 
+              src={photo} 
+              alt={item.displayName} 
+              className="w-full h-full object-cover object-center"
+              data-testid={`seeker-image-${item.id}`}
+            />
           </div>
-        )}
-        <div className="absolute top-2 right-2 rounded-full bg-purple-600/95 text-white text-[10px] sm:text-xs font-medium px-2 py-0.5 shadow">
-          Oda Arayan
+        </div>
+
+        {/* Content Area - Details + CTA */}
+        <div className="flex flex-col flex-1 p-4 md:py-5 md:pr-5 md:pl-0 gap-2 md:gap-2.5">
+          
+          {/* Name */}
+          <h3 
+            className="text-lg md:text-xl font-semibold tracking-tight text-slate-900 line-clamp-1" 
+            data-testid={`text-name-${item.id}`}
+          >
+            {item.displayName}
+          </h3>
+
+          {/* Pills Container */}
+          <div className="flex flex-wrap gap-2">
+            
+            {/* Budget - Green Pill */}
+            {item.budgetMonthly !== null && (
+              <span className="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium bg-emerald-100 text-emerald-700">
+                ₺{item.budgetMonthly.toLocaleString("tr-TR")}/ay
+              </span>
+            )}
+
+            {/* Location - Purple Pill */}
+            <span 
+              className="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium bg-violet-100 text-violet-700 max-w-[200px] truncate"
+              title={location || "Lokasyon bilgisi yok"}
+            >
+              {location || "Lokasyon bilgisi yok"}
+            </span>
+
+            {/* Occupation - Dark Pill */}
+            {occupation && (
+              <span className="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium bg-slate-900 text-white">
+                {occupation}
+              </span>
+            )}
+
+            {/* Age - Fuchsia Pill */}
+            {item.age && (
+              <span className="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium bg-fuchsia-100 text-fuchsia-700">
+                {item.age} yaş
+              </span>
+            )}
+          </div>
+
+          {/* CTA Button - At bottom with mt-auto */}
+          <div className="mt-auto pt-2">
+            <Button
+              asChild
+              className="w-full h-11 md:h-12 bg-[#EA580C] hover:bg-[#C2410C] text-white font-semibold rounded-lg transition-colors"
+              data-testid={`button-contact-${item.id}`}
+            >
+              <a href={`/oda-arayan/${item.slug || item.id}`}>
+                <MessageCircle className="w-4 h-4 mr-2" />
+                İletişime Geçin
+              </a>
+            </Button>
+          </div>
         </div>
       </div>
-      <div className="p-3 sm:p-4">
-        <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 line-clamp-1 mb-1" data-testid={`text-name-${item.id}`}>
-          {item.displayName}
-        </h3>
-        {item.preferredLocation && (
-          <p className="mt-0.5 text-sm text-slate-600 line-clamp-1 flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-            {item.preferredLocation}
-          </p>
-        )}
-        {!item.preferredLocation && (
-          <p className="mt-0.5 text-sm text-slate-400 italic">Lokasyon tercihi belirtilmemiş</p>
-        )}
-      </div>
-    </a>
+    </article>
   );
 }
 
@@ -75,7 +135,7 @@ export default function MixedFeed() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
         {[...Array(8)].map((_, i) => (
           <div 
             key={i} 
@@ -95,25 +155,25 @@ export default function MixedFeed() {
           Güncel İlanlar ve Oda Arayanlar
         </h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
           {data.map((item) =>
             item.type === 'listing' ? (
-              <ListingCard 
-                key={`feed-listing-${item.id}`} 
-                listing={{
-                  id: item.id,
-                  slug: item.slug,
-                  title: item.title,
-                  suburb: item.suburb ?? undefined,
-                  rentAmount: item.rentAmount ?? undefined,
-                  images: item.images
-                }} 
-              />
+              <div key={`feed-listing-${item.id}`} className="h-full">
+                <ListingCard 
+                  listing={{
+                    id: item.id,
+                    slug: item.slug,
+                    title: item.title,
+                    suburb: item.suburb ?? undefined,
+                    rentAmount: item.rentAmount ?? undefined,
+                    images: item.images
+                  }} 
+                />
+              </div>
             ) : (
-              <SeekerMiniCard 
-                key={`feed-seeker-${item.id}`} 
-                item={item} 
-              />
+              <div key={`feed-seeker-${item.id}`} className="h-full">
+                <SeekerMiniCard item={item} />
+              </div>
             )
           )}
         </div>
