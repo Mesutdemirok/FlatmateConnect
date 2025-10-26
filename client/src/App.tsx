@@ -19,6 +19,14 @@ import CreateSeekerProfile from "@/pages/CreateSeekerProfile";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
 import Auth from "@/pages/Auth";
+import Hakkimizda from "@/pages/hakkimizda";
+import Iletisim from "@/pages/iletisim";
+import KullanimKosullari from "@/pages/kullanim-kosullari";
+import IlanYayinlamaKurallari from "@/pages/ilan-yayinlama-kurallari";
+import GizlilikPolitikasi from "@/pages/GizlilikPolitikasi";
+import CerezPolitikasi from "@/pages/cerez-politikasi";
+import YardimMerkezi from "@/pages/yardim-merkezi";
+import GuvenliIlanRehberi from "@/pages/guvenli-ilan-rehberi";
 import "./i18n"; // Initialize i18n
 
 function ProtectedRoute({ component: Component, ...rest }: { component: () => JSX.Element; path?: string }) {
@@ -83,6 +91,16 @@ function Router() {
       <Route path="/oda-aramalari" component={SeekerList} />
       <Route path="/oda-ilani/:slug" component={ListingDetail} />
       <Route path="/oda-arayan/:slug" component={SeekerDetail} />
+      
+      {/* Footer pages - Static content */}
+      <Route path="/hakkimizda" component={Hakkimizda} />
+      <Route path="/iletisim" component={Iletisim} />
+      <Route path="/kullanim-kosullari" component={KullanimKosullari} />
+      <Route path="/ilan-yayinlama-kurallari" component={IlanYayinlamaKurallari} />
+      <Route path="/gizlilik-politikasi" component={GizlilikPolitikasi} />
+      <Route path="/cerez-politikasi" component={CerezPolitikasi} />
+      <Route path="/yardim-merkezi" component={YardimMerkezi} />
+      <Route path="/guvenli-ilan-rehberi" component={GuvenliIlanRehberi} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
