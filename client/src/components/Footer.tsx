@@ -1,47 +1,32 @@
-import React from "react";
-import { COMPANY } from "@/lib/company";
-import { MessageCircle, Mail } from "lucide-react";
-import { FaInstagram, FaFacebook, FaTiktok, FaPinterest, FaYoutube } from "react-icons/fa";
 import { Link, useLocation } from "wouter";
+import { COMPANY } from "@/lib/company";
+import { FOOTER_LINKS, SOCIAL_LINKS } from "@/components/FooterLinks";
+import { FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 
-type SocialProps = {
+type SocialIconProps = {
   href: string;
   label: string;
   children: React.ReactNode;
 };
 
-const Social = ({ href, label, children }: SocialProps) => (
+const SocialIcon = ({ href, label, children }: SocialIconProps) => (
   <a
     href={href}
     aria-label={label}
     target="_blank"
-    rel="noopener noreferrer me"
+    rel="noopener noreferrer"
     className="
-      inline-flex h-10 w-10 items-center justify-center rounded-full
-      bg-orange-600 text-white ring-1 ring-white/10
-      transition-all duration-200 transform
-      hover:bg-orange-700 hover:ring-white/20 hover:scale-105 hover:shadow-lg
-      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500
+      inline-flex h-9 w-9 items-center justify-center rounded-full
+      bg-gray-200 text-gray-600
+      transition-all duration-200
+      hover:bg-indigo-600 hover:text-white hover:scale-110
+      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
     "
-    data-testid={`social-${label.toLowerCase()}`}
+    data-testid={`social-${label.toLowerCase().replace(/\s+/g, '-')}`}
   >
     {children}
   </a>
-);
-
-// Simple helper for internal (SPA) links  
-const InternalLink = ({
-  to,
-  children,
-}: {
-  to: string;
-  children: React.ReactNode;
-}) => (
-  <Link href={to}>
-    <span className="hover:opacity-90 focus:outline-none focus:underline cursor-pointer">
-      {children}
-    </span>
-  </Link>
 );
 
 export default function Footer() {
@@ -51,121 +36,89 @@ export default function Footer() {
   const HIDE_ON = ["/mesaj", "/mesajlar", "/messages", "/chat"];
   if (HIDE_ON.some((p) => pathname.startsWith(p))) return null;
 
+  // Map social platform names to their respective icons
+  const getSocialIcon = (name: string) => {
+    switch (name) {
+      case "Facebook":
+        return <FaFacebook className="h-4 w-4" />;
+      case "Instagram":
+        return <FaInstagram className="h-4 w-4" />;
+      case "X":
+        return <FaXTwitter className="h-4 w-4" />;
+      case "LinkedIn":
+        return <FaLinkedin className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <footer
-      role="contentinfo"
-      className="mt-12 sm:mt-16 bg-gradient-to-r from-indigo-700 via-violet-700 to-fuchsia-700 text-white"
+      aria-label="Site Footer"
+      className="mt-12 sm:mt-16 border-t-4 border-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-gray-50"
+      style={{
+        borderImage: "linear-gradient(to right, rgb(79, 70, 229), rgb(124, 58, 237), rgb(192, 38, 211)) 1",
+      }}
     >
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10 lg:px-8">
-        {/* Brand + Links + Social */}
-        <div className="grid gap-8 md:grid-cols-3">
-          {/* Brand & Address */}
-          <div>
-            <h3 className="text-2xl font-extrabold tracking-tight">
-              {COMPANY.brand}
-            </h3>
-            <p className="mt-2 text-white/90">
-              {COMPANY.brand}, {COMPANY.legalName} şirketine aittir.
-            </p>
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:py-12 lg:px-8">
+        {/* Brand & Description */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            {COMPANY.brand}
+          </h2>
+          <p className="text-sm text-gray-600 max-w-2xl leading-relaxed">
+            Odanet, güvenli oda kiralama ve ev arkadaşı bulma deneyimini Türkiye'de daha şeffaf ve kolay hale getirir.
+          </p>
+        </div>
 
-            <address
-              className="not-italic mt-4 text-white/90 leading-relaxed"
-              itemScope
-              itemType="https://schema.org/PostalAddress"
-            >
-              <span itemProp="streetAddress">{COMPANY.street}</span>
-              <br />
-              <span itemProp="addressLocality">{COMPANY.district}</span> /{" "}
-              <span itemProp="addressRegion">{COMPANY.city}</span>
-              <br />
-              <span itemProp="addressCountry">{COMPANY.country}</span>
-              <br />
-              <a
-                href={`mailto:${COMPANY.email}`}
-                className="mt-2 inline-flex items-center gap-2 text-white underline decoration-white/40 underline-offset-4 hover:decoration-white"
-              >
-                <Mail className="h-4 w-4" />
-                {COMPANY.email}
-              </a>
-            </address>
-          </div>
-
-          {/* Quick links (SPA internal links) */}
-          <nav aria-label="Alt menü bağlantıları" className="space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
-              Bağlantılar
-            </p>
-            <ul
-              className="
-                space-y-2 text-white/90
-                sm:grid sm:grid-cols-2 sm:gap-y-2 sm:gap-x-6 sm:space-y-0
-              "
-            >
-              <li>
-                <InternalLink to="/ilan-olustur">Oda İlanı Ver</InternalLink>
-              </li>
-              <li>
-                <InternalLink to="/oda-arama-ilani-olustur">
-                  Oda Arama İlanı Ver
-                </InternalLink>
-              </li>
-              <li>
-                <InternalLink to="/oda-ilanlari">Oda İlanları</InternalLink>
-              </li>
-              <li>
-                <InternalLink to="/oda-aramalari">Oda Arayanlar</InternalLink>
-              </li>
-              <li className="sm:col-span-2">
-                <InternalLink to="/profil">Profilim</InternalLink>
-              </li>
-            </ul>
-          </nav>
-
-          {/* Social Media Icons */}
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
-              Sosyal Medya
-            </p>
-            <div className="mt-3 flex items-center gap-3 flex-wrap">
-              <Social
-                href="https://www.instagram.com/odanet.com.tr/"
-                label="Instagram"
-              >
-                <FaInstagram className="h-5 w-5" />
-              </Social>
-              <Social
-                href="https://www.facebook.com/odanet.com.tr/"
-                label="Facebook"
-              >
-                <FaFacebook className="h-5 w-5" />
-              </Social>
-              <Social
-                href="https://www.tiktok.com/@odanet.com.tr"
-                label="TikTok"
-              >
-                <FaTiktok className="h-5 w-5" />
-              </Social>
-              <Social
-                href="https://www.pinterest.com/odanet_/"
-                label="Pinterest"
-              >
-                <FaPinterest className="h-5 w-5" />
-              </Social>
-              <Social
-                href="https://www.youtube.com/@odanet_com_tr"
-                label="YouTube"
-              >
-                <FaYoutube className="h-5 w-5" />
-              </Social>
-              <Social href={`${COMPANY.site}/iletisim`} label="İletişim">
-                <MessageCircle className="h-5 w-5" />
-              </Social>
+        {/* Three Column Layout */}
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+          {FOOTER_LINKS.map((category) => (
+            <div key={category.title}>
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                {category.title}
+              </h3>
+              <ul className="space-y-2">
+                {category.links.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href}>
+                      <span className="text-sm text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">
+                        {link.label}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 my-6"></div>
+
+        {/* Social Media Icons */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+            Sosyal Medya
+          </h3>
+          <div className="flex items-center gap-3">
+            {SOCIAL_LINKS.map((social) => (
+              <SocialIcon
+                key={social.name}
+                href={social.href}
+                label={social.ariaLabel}
+              >
+                {getSocialIcon(social.name)}
+              </SocialIcon>
+            ))}
           </div>
         </div>
 
-        <div className="mt-8 border-t border-white/15 pt-5 text-center text-sm text-white/80">
-          © {new Date().getFullYear()} {COMPANY.brand}. Tüm hakları saklıdır.
+        {/* Bottom Legal Line */}
+        <div className="border-t border-gray-200 pt-6">
+          <p className="text-center text-xs text-gray-500">
+            © 2025 {COMPANY.legalNameShort} — Tüm hakları saklıdır.
+          </p>
         </div>
       </div>
     </footer>

@@ -1,7 +1,8 @@
 // client/src/lib/company.ts
 export const COMPANY = {
   brand: "Odanet",
-  legalName: "Mestok Bilişim ve Teknoloji",
+  legalName: "MESTOK Bilişim ve E-Ticaret Anonim Şirketi",
+  legalNameShort: "MESTOK Bilişim ve E-Ticaret A.Ş.",
   street: "Zümrütevler Mahallesi",
   district: "Maltepe",
   city: "İstanbul",

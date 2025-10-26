@@ -1,0 +1,71 @@
+Please completely refactor and modernize the footer of the Odanet platform according to the following requirements:
+
+⸻
+
+1️⃣ Company Information
+	•	Replace all old company names with:
+MESTOK Bilişim ve E-Ticaret Anonim Şirketi
+	•	Add a professional legal line at the very bottom:
+© 2025 MESTOK Bilişim ve E-Ticaret A.Ş. — Tüm hakları saklıdır.
+	•	Ensure the company name is used consistently in metadata and accessibility labels.
+
+⸻
+
+2️⃣ Footer Layout & Structure
+	•	Reorganize footer into three logical columns:
+	•	Kurumsal
+	•	Hakkımızda (/hakkimizda)
+	•	İletişim (/iletisim)
+	•	Yasal
+	•	Kullanım Koşulları (/kullanim-kosullari)
+	•	İlan Yayınlama Kuralları (/ilan-yayinlama-kurallari)
+	•	Gizlilik Politikası (/gizlilik-politikasi)
+	•	Çerez Politikası (/cerez-politikasi)
+	•	Destek
+	•	Yardım Merkezi (/yardim)
+	•	Güvenli İlan Rehberi (/guvenli-ilan)
+	•	Each column should have a clear heading with consistent font weight (font-semibold) and spacing (space-y-2).
+	•	Use grid or flex layout for columns on desktop and stack vertically on mobile.
+
+⸻
+
+3️⃣ Design & Visual Style
+	•	Apply Odanet brand gradient (Indigo → Violet → Fuchsia) subtly as a top border or background accent.
+	•	Keep background neutral (e.g. bg-gray-50 or bg-gray-100) for readability.
+	•	Use Tailwind typography classes: text-sm text-gray-600 hover:text-indigo-600 transition.
+	•	Add subtle dividers between sections (e.g. border-t border-gray-200 mt-6 pt-4).
+	•	Footer must remain lightweight and consistent with existing site tone.
+
+⸻
+
+4️⃣ Social Media Icons
+	•	Keep only Facebook, Instagram, X (Twitter), and LinkedIn icons.
+	•	Remove the Replit icon completely.
+	•	Place icons neatly aligned in one row under the main footer links with hover animations.
+
+⸻
+
+5️⃣ File Organization
+	•	Move all footer links into a separate file:
+client/src/components/FooterLinks.tsx
+Export them as a structured object or array for cleaner code.
+	•	Import that file into the main footer component (Footer.tsx).
+
+⸻
+
+6️⃣ Accessibility & SEO
+	•	Use <footer> semantic tag.
+	•	Add aria-label="Site Footer" for accessibility.
+	•	Ensure all links use <Link> from react-router-dom for client-side navigation.
+
+⸻
+
+7️⃣ Tone & Text
+	•	Add a small description paragraph at the top of the footer such as:
+"Odanet, güvenli oda kiralama ve ev arkadaşı bulma deneyimini Türkiye'de daha şeffaf ve kolay hale getirir."
+	•	Make sure text tone is formal, trustworthy, and matches Odanet’s brand language.
+
+⸻
+
+Keep styling strictly within Tailwind conventions and ensure full responsiveness on mobile, tablet, and desktop.
+Maintain a clean, minimal, and professional appearance — no visual clutter.
