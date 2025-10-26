@@ -28,13 +28,18 @@ export const FOOTER_LINKS: FooterLinkCategory[] = [
   {
     title: "Destek",
     links: [
-      { label: "Yardım Merkezi", href: "/yardim" },
-      { label: "Güvenli İlan Rehberi", href: "/guvenli-ilan" },
+      { label: "Yardım Merkezi", href: "/yardim-merkezi" },
+      { label: "Güvenli İlan Rehberi", href: "/guvenli-ilan-rehberi" },
     ],
   },
 ];
 
 export const SOCIAL_LINKS = [
+  {
+    name: "TikTok",
+    href: "https://www.tiktok.com/@odanet.com.tr",
+    ariaLabel: "TikTok'ta Odanet",
+  },
   {
     name: "Facebook",
     href: "https://www.facebook.com/odanet.com.tr/",
@@ -46,13 +51,13 @@ export const SOCIAL_LINKS = [
     ariaLabel: "Instagram'da Odanet",
   },
   {
-    name: "X",
-    href: "https://x.com/odanet_com_tr",
-    ariaLabel: "X'te Odanet",
+    name: "Pinterest",
+    href: "https://www.pinterest.com/odanet_/",
+    ariaLabel: "Pinterest'te Odanet",
   },
   {
-    name: "LinkedIn",
-    href: "https://www.linkedin.com/company/odanet/",
-    ariaLabel: "LinkedIn'de Odanet",
+    name: "YouTube",
+    href: "https://www.youtube.com/@odanet_com_tr",
+    ariaLabel: "YouTube'da Odanet",
   },
 ];

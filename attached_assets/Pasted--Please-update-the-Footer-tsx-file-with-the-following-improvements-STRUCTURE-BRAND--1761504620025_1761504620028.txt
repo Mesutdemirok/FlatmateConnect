@@ -1,0 +1,68 @@
+
+Please update the `Footer.tsx` file with the following improvements:
+
+---
+
+### STRUCTURE & BRAND
+- Replace the current company name with: **MESTOK Bilişim ve E-Ticaret A.Ş.**
+- Keep footer layout clean, 3-column grid on desktop and stacked layout on mobile.
+- Ensure all text is in Turkish and typography aligns with Odanet’s brand (use Tailwind’s `text-gray-700`, `font-medium`, `hover:text-indigo-600`).
+
+---
+
+### LINKS
+Create three clearly defined sections:
+1. **Kurumsal**
+   - Hakkımızda → `/hakkimizda`
+   - İletişim → `/iletisim`
+
+2. **Yasal**
+   - Kullanım Koşulları → `/kullanim-kosullari`
+   - İlan Yayınlama Kuralları → `/ilan-yayinlama-kurallari`
+   - Gizlilik Politikası → `/gizlilik-politikasi`
+   - Çerez Politikası → `/cerez-politikasi` *(placeholder, page not required yet)*
+
+3. **Destek**
+   - Yardım Merkezi → `/yardim-merkezi`
+   - Güvenli İlan Rehberi → `/guvenli-ilan-rehberi`
+
+Ensure all links use working `<Link>` components (Next.js or React Router according to project setup).
+
+---
+
+### SOCIAL MEDIA
+- Remove the **Replit** icon completely.
+- Add only the following social icons (use `lucide-react` or existing icon set):
+  - TikTok → use link from existing code (`tiktok.com/@odanet`)
+  - Facebook → use existing link
+  - Instagram → use existing link
+  - Pinterest → use existing link
+  - YouTube → use existing link
+- Each icon should be circular, have subtle hover animation (`hover:scale-110 transition-transform`), and open links in a new tab (`target="_blank" rel="noopener noreferrer"`).
+
+---
+
+### FOOTER BOTTOM BAR
+Add a small bottom area with:
+
+© {new Date().getFullYear()} MESTOK Bilişim ve E-Ticaret A.Ş. — Odanet Tüm Hakları Saklıdır.
+
+Text should be centered, `text-sm`, `text-gray-500`, and responsive.
+
+---
+
+### RESPONSIVENESS
+- Ensure layout collapses gracefully on screens < 640px.
+- Use `flex flex-col sm:flex-row sm:justify-between sm:items-start gap-8`.
+
+---
+
+### FINAL RESULT
+The footer should look visually clean and structured like:
+
+[KURUMSAL] | [YASAL] | [DESTEK]
+Each with its items neatly spaced, plus the 5 social media icons centered below.
+
+---
+
+Ensure the final version is fully working, responsive, and linked correctly to all pages.

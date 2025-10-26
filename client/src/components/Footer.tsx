@@ -1,8 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { COMPANY } from "@/lib/company";
 import { FOOTER_LINKS, SOCIAL_LINKS } from "@/components/FooterLinks";
-import { FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
+import { FaFacebook, FaInstagram, FaTiktok, FaPinterest, FaYoutube } from "react-icons/fa";
 
 type SocialIconProps = {
   href: string;
@@ -17,8 +16,8 @@ const SocialIcon = ({ href, label, children }: SocialIconProps) => (
     target="_blank"
     rel="noopener noreferrer"
     className="
-      inline-flex h-9 w-9 items-center justify-center rounded-full
-      bg-gray-200 text-gray-600
+      inline-flex h-10 w-10 items-center justify-center rounded-full
+      bg-gray-200 text-gray-700
       transition-all duration-200
       hover:bg-indigo-600 hover:text-white hover:scale-110
       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
@@ -39,14 +38,16 @@ export default function Footer() {
   // Map social platform names to their respective icons
   const getSocialIcon = (name: string) => {
     switch (name) {
+      case "TikTok":
+        return <FaTiktok className="h-5 w-5" />;
       case "Facebook":
-        return <FaFacebook className="h-4 w-4" />;
+        return <FaFacebook className="h-5 w-5" />;
       case "Instagram":
-        return <FaInstagram className="h-4 w-4" />;
-      case "X":
-        return <FaXTwitter className="h-4 w-4" />;
-      case "LinkedIn":
-        return <FaLinkedin className="h-4 w-4" />;
+        return <FaInstagram className="h-5 w-5" />;
+      case "Pinterest":
+        return <FaPinterest className="h-5 w-5" />;
+      case "YouTube":
+        return <FaYoutube className="h-5 w-5" />;
       default:
         return null;
     }
@@ -55,7 +56,7 @@ export default function Footer() {
   return (
     <footer
       aria-label="Site Footer"
-      className="mt-12 sm:mt-16 border-t-4 border-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-gray-50"
+      className="mt-12 sm:mt-16 border-t-4 bg-gray-50"
       style={{
         borderImage: "linear-gradient(to right, rgb(79, 70, 229), rgb(124, 58, 237), rgb(192, 38, 211)) 1",
       }}
@@ -66,13 +67,13 @@ export default function Footer() {
           <h2 className="text-2xl font-bold text-gray-900 mb-3">
             {COMPANY.brand}
           </h2>
-          <p className="text-sm text-gray-600 max-w-2xl leading-relaxed">
+          <p className="text-sm text-gray-700 max-w-2xl leading-relaxed">
             Odanet, güvenli oda kiralama ve ev arkadaşı bulma deneyimini Türkiye'de daha şeffaf ve kolay hale getirir.
           </p>
         </div>
 
         {/* Three Column Layout */}
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-8 mb-8">
           {FOOTER_LINKS.map((category) => (
             <div key={category.title}>
               <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
@@ -82,7 +83,7 @@ export default function Footer() {
                 {category.links.map((link) => (
                   <li key={link.href}>
                     <Link href={link.href}>
-                      <span className="text-sm text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">
+                      <span className="text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors cursor-pointer">
                         {link.label}
                       </span>
                     </Link>
@@ -96,12 +97,12 @@ export default function Footer() {
         {/* Divider */}
         <div className="border-t border-gray-200 my-6"></div>
 
-        {/* Social Media Icons */}
+        {/* Social Media Icons - Centered */}
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 text-center">
             Sosyal Medya
           </h3>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center gap-3">
             {SOCIAL_LINKS.map((social) => (
               <SocialIcon
                 key={social.name}
@@ -116,8 +117,8 @@ export default function Footer() {
 
         {/* Bottom Legal Line */}
         <div className="border-t border-gray-200 pt-6">
-          <p className="text-center text-xs text-gray-500">
-            © 2025 {COMPANY.legalNameShort} — Tüm hakları saklıdır.
+          <p className="text-center text-sm text-gray-500">
+            © {new Date().getFullYear()} {COMPANY.legalNameShort} — Odanet Tüm Hakları Saklıdır.
           </p>
         </div>
       </div>
