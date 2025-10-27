@@ -75,7 +75,7 @@
       rel="stylesheet"
     />
 
-    <!-- ✅ Google Analytics 4 -->
+    <!-- ✅ Google Analytics 4 (Manual SPA tracking) -->
     <script
       async
       src="https://www.googletagmanager.com/gtag/js?id=G-ME5ES9KLDE"
@@ -86,7 +86,7 @@
         dataLayer.push(arguments);
       }
       gtag("js", new Date());
-      // React SPA: page views are handled manually
+      // React SPA: manual page view tracking in App.tsx
       gtag("config", "G-ME5ES9KLDE", { send_page_view: false });
     </script>
 
@@ -122,16 +122,18 @@
   </head>
 
   <body>
-    <!-- ✅ Moved noscript here (valid HTML position) -->
+    <!-- ✅ NoScript for Facebook Pixel -->
     <noscript>
       <img
         height="1"
         width="1"
         style="display: none"
         src="https://www.facebook.com/tr?id=854057480480595&ev=PageView&noscript=1"
+        alt="Facebook Pixel"
       />
     </noscript>
 
+    <!-- ✅ React Mount Point -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
