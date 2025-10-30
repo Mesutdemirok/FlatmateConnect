@@ -243,10 +243,27 @@ export default function CreateSeekerProfile() {
     
     const file = e.target.files[0];
     
-    // Validate file type (JPG, PNG, WEBP)
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type.toLowerCase())) {
-      const errorMsg = 'Sadece JPG, PNG veya WEBP formatında fotoğraf yükleyebilirsiniz';
+    console.log('Selected file:', file.name, file.type, file.size);
+    
+    // Validate file type (JPG, PNG, WEBP, HEIC, HEIF)
+    const allowedTypes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/webp',
+      'image/heic',
+      'image/heif',
+      '' // Some browsers don't set type for HEIC
+    ];
+    
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
+    
+    const isValidType = allowedTypes.includes(file.type.toLowerCase()) || 
+                        (fileExtension && allowedExtensions.includes(fileExtension));
+    
+    if (!isValidType) {
+      const errorMsg = 'Sadece JPG, PNG, WEBP veya HEIC formatında fotoğraf yükleyebilirsiniz';
       setPhotoError(errorMsg);
       toast({
         title: 'Geçersiz Dosya Formatı',
@@ -257,10 +274,10 @@ export default function CreateSeekerProfile() {
       return;
     }
     
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Validate file size (10MB max to accommodate HEIC)
+    const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      const errorMsg = 'Fotoğraf boyutu en fazla 5MB olabilir';
+      const errorMsg = 'Fotoğraf boyutu en fazla 10MB olabilir';
       setPhotoError(errorMsg);
       toast({
         title: 'Dosya Çok Büyük',
@@ -283,18 +300,28 @@ export default function CreateSeekerProfile() {
       const formData = new FormData();
       formData.append('file', file);
 
+      console.log('Uploading to /api/uploads/seeker-photo...');
+
       const response = await fetch('/api/uploads/seeker-photo', {
         method: 'POST',
         body: formData,
         credentials: 'include',
       });
 
+      console.log('Upload response status:', response.status);
+
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          throw new Error(`Upload failed with status ${response.status}`);
+        }
         throw new Error(errorData.message || 'Upload failed');
       }
 
       const data = await response.json();
+      console.log('Upload success:', data);
       
       // Store the image path and URL
       setUploadedPhotoPath(data.imagePath);
@@ -442,7 +469,7 @@ export default function CreateSeekerProfile() {
                                 </Button>
                               </div>
                               <p className="text-sm text-muted-foreground">
-                                JPG, PNG veya WEBP (Max 5MB)
+                                JPG, PNG, WEBP, HEIC (Max 10MB)
                               </p>
                             </div>
                           )}
@@ -453,7 +480,7 @@ export default function CreateSeekerProfile() {
                       <input
                         id="photo-input"
                         type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
                         capture="environment"
                         onChange={handlePhotoChange}
                         className="hidden"
