@@ -1,0 +1,75 @@
+Aynen—tek prompt halinde veriyorum. Replit’te ajana birebir yapıştırabilirsin:
+
+⸻
+
+PROMPT — Auth sayfalarını düzenle (Facebook kaldır, Google’ı etkinleştir, yerleşim + header/footer)
+
+Amaç:
+	•	Facebook ile giriş/üyelik tamamen kaldırılsın (UI + kod + config).
+	•	Google ile devam et butonu /giris ve /uye-ol sayfalarında aktif olsun.
+	•	Buton, sayfa başlığının altındaki kısa açıklamanın hemen altında konumlansın.
+	•	Sayfanın en üstünde “← Ana sayfaya geri dön” butonu/linki olsun ( / ).
+	•	Bu sayfalarda Header ve Footer görünür olsun (mevcutta gizliyse Layout’a dahil et).
+	•	Mobil ve masaüstünde aynı görünüm; temiz ve tutarlı stil.
+
+Yapılacaklar
+
+1) Facebook’u tamamen kaldır
+	•	UI: Tüm sayfalardan “Facebook ile giriş yap” butonunu ve ilgili banner/placeholder metinlerini kaldır.
+	•	Kod: Facebook OAuth’a ait route, provider, env/secrets, SDK import’ları ve dead-code’ları devre dışı bırak/sil.
+	•	Metin: “Yakında gelecek” uyarıları tamamen kaldır.
+
+2) Google ile giriş/üyelik butonu (iki sayfa)
+	•	Sayfalar: /giris ve /uye-ol
+	•	Yerleşim:
+	•	Başlık: “Odanet’e Hoş Geldiniz”
+	•	Alt açıklama: “Güvenli ve kolay oda arama deneyimi”
+	•	Bu açıklamanın hemen altında geniş bir Google ile devam et butonu.
+	•	Davranış:
+	•	OnClick:
+
+const next = new URLSearchParams(window.location.search).get('next') || '/profil';
+window.location.href = `${process.env.NEXT_PUBLIC_API_BASE ?? ''}/api/oauth/google/redirect?next=${encodeURIComponent(next)}`;
+
+
+	•	/auth/callback’te JWT httpOnly cookie set edildikten sonra next varsa oraya, yoksa /profil’e yönlendir.
+
+	•	Stil (Tailwind örnek): w-full h-11 md:h-12 rounded-xl border border-slate-300 flex items-center justify-center gap-2 font-medium
+	•	Solunda küçük Google “G” ikonu (SVG).
+	•	Metin: “Google ile devam et”.
+
+3) Üstte “Ana sayfaya geri dön” ve Layout
+	•	Sayfanın en üstüne (header’ın altında) sol tarafa “← Ana sayfaya geri dön” linki ekle; /’a götürsün.
+	•	Auth sayfaları Header ve Footer’ı kullansın (gizleniyorsa gizlemeyi kaldır).
+	•	Zaten giriş yapmış kullanıcı auth sayfalarına gelirse otomatik /profil’e yönlendir.
+
+4) Backend bağlantısı (zaten varsa dokunmadan kullan)
+	•	GET /api/oauth/google/redirect → Google’a yönlendirirken next paramını koru.
+	•	GET /api/oauth/google/callback → Google profilini al, email ile firstOrCreate, email_verified_at=now(), JWT üret, httpOnly cookie (domain .odanet.com.tr), sonra next//profil.
+	•	CORS/cookie ayarları https://www.odanet.com.tr için açık.
+
+5) Config/ENV
+	•	Aşağıdaki env’ler kullanılsın (prod):
+
+FRONTEND_URL=https://www.odanet.com.tr
+GOOGLE_CLIENT_ID=…
+GOOGLE_CLIENT_SECRET=…
+GOOGLE_REDIRECT_URI=https://www.odanet.com.tr/api/oauth/google/callback
+
+
+	•	Frontend base için gerekiyorsa: NEXT_PUBLIC_API_BASE (aynı origin ise zorunlu değil).
+
+Kabul Kriterleri
+	•	Facebook ile ilgili tüm butonlar/bağlantılar/metinler yok.
+	•	/giris ve /uye-ol’da başlık + açıklama altında tam genişlik Google ile devam et butonu görünüyor ve çalışıyor.
+	•	Üye yoksa Google dönüşünde hesap oluşturuluyor, varsa giriş yapılıyor.
+	•	Header ve Footer bu iki sayfada görünüyor.
+	•	Sayfa üstünde “← Ana sayfaya geri dön” linki var ve /’a götürüyor.
+	•	Mobil/desktop düzeni tutarlı; “Yakında gelecek” metni tamamen kaldırıldı.
+
+Test
+	1.	/uye-ol → Google ile devam et → Google → dönüş → /profil.
+	2.	Çıkış yap, /giris’te aynı akışı dene.
+	3.	redirect_uri_mismatch çıkarsa hatadaki tam URL’yi Google Console’daki Authorized redirect URIs listesine ekle.
+
+⸻
