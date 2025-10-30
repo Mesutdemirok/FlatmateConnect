@@ -46,9 +46,11 @@ export default function CreateSeekerProfile() {
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [uploadedPhotoPath, setUploadedPhotoPath] = useState<string | null>(null);
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch existing seeker profile for editing
@@ -217,9 +219,11 @@ export default function CreateSeekerProfile() {
     setProfilePhoto(null);
     setUploadedPhotoPath(null);
     setUploadedPhotoUrl(null);
+    setPhotoPreviewUrl(null);
+    setPhotoError(null);
     toast({
-      title: 'Fotoğraf işaretlendi',
-      description: 'Fotoğraf kaydettiğinizde silinecek',
+      title: 'Fotoğraf silindi',
+      description: 'Yeni bir fotoğraf yükleyebilirsiniz',
     });
   };
 
@@ -233,21 +237,43 @@ export default function CreateSeekerProfile() {
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhotoError(null);
+    
     if (!e.target.files || !e.target.files[0]) return;
     
     const file = e.target.files[0];
     
-    // Validate file size (10MB for raw files, will be compressed)
-    if (file.size > 10 * 1024 * 1024) {
+    // Validate file type (JPG, PNG, WEBP)
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      const errorMsg = 'Sadece JPG, PNG veya WEBP formatında fotoğraf yükleyebilirsiniz';
+      setPhotoError(errorMsg);
       toast({
-        title: 'Hata',
-        description: 'Dosya boyutu çok büyük (Max 10MB)',
+        title: 'Geçersiz Dosya Formatı',
+        description: errorMsg,
         variant: "destructive",
       });
+      e.target.value = '';
+      return;
+    }
+    
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      const errorMsg = 'Fotoğraf boyutu en fazla 5MB olabilir';
+      setPhotoError(errorMsg);
+      toast({
+        title: 'Dosya Çok Büyük',
+        description: errorMsg,
+        variant: "destructive",
+      });
+      e.target.value = '';
       return;
     }
 
-    // Set file for preview
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setPhotoPreviewUrl(previewUrl);
     setProfilePhoto(file);
     setPhotoToDelete(false);
     setIsUploadingPhoto(true);
@@ -264,7 +290,8 @@ export default function CreateSeekerProfile() {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Upload failed');
       }
 
       const data = await response.json();
@@ -274,17 +301,21 @@ export default function CreateSeekerProfile() {
       setUploadedPhotoUrl(data.url);
       
       toast({
-        title: 'Başarılı',
+        title: 'Başarılı!',
         description: 'Fotoğraf yüklendi ve optimize edildi',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Photo upload error:', error);
+      const errorMsg = error.message || 'Fotoğraf yüklenirken bir hata oluştu';
+      setPhotoError(errorMsg);
       toast({
-        title: 'Hata',
-        description: 'Fotoğraf yüklenirken bir hata oluştu',
+        title: 'Yükleme Hatası',
+        description: errorMsg,
         variant: "destructive",
       });
       setProfilePhoto(null);
+      setPhotoPreviewUrl(null);
+      e.target.value = '';
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -325,67 +356,118 @@ export default function CreateSeekerProfile() {
               <CardContent className="space-y-6">
                 {/* Profil Fotoğrafı */}
                 <FormItem>
-                  <FormLabel>Profil Fotoğrafı</FormLabel>
+                  <FormLabel>Profil Fotoğrafı (İsteğe Bağlı)</FormLabel>
                   <FormControl>
                     <div className="space-y-4">
-                      <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                        {isUploadingPhoto ? (
-                          <>
-                            <Loader2 className="h-8 w-8 mx-auto mb-2 text-violet-600 animate-spin" />
-                            <p className="text-sm text-violet-600 font-medium">
-                              Fotoğraf yükleniyor ve optimize ediliyor...
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              onChange={handlePhotoChange}
-                              className="cursor-pointer"
-                              data-testid="input-photo"
-                              disabled={isUploadingPhoto}
-                            />
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Tüm formatlar desteklenir (HEIC, PNG, JPG, WebP - Max 10MB)
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Otomatik optimizasyon ve döndürme
-                            </p>
-                          </>
-                        )}
-                        {uploadedPhotoUrl && (
-                          <div className="mt-4">
-                            <img 
-                              src={uploadedPhotoUrl} 
-                              alt="Önizleme" 
-                              className="w-32 h-32 object-cover rounded-full mx-auto border-2 border-green-500"
-                            />
-                            <p className="text-sm text-green-600 mt-2 font-medium">
-                              ✓ Fotoğraf yüklendi
-                            </p>
+                      {/* Photo Preview or Upload Area */}
+                      {(uploadedPhotoUrl || photoPreviewUrl || existingPhotoUrl) && !photoToDelete ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-center">
+                            <div className="relative">
+                              <img 
+                                src={uploadedPhotoUrl || photoPreviewUrl || existingPhotoUrl || ''} 
+                                alt="Profil Fotoğrafı" 
+                                className="w-32 h-32 object-cover rounded-full border-4 border-green-500 shadow-lg"
+                                data-testid="photo-preview"
+                              />
+                              {isUploadingPhoto && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                                  <Loader2 className="h-8 w-8 text-white animate-spin" />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        {!uploadedPhotoUrl && existingPhotoUrl && !photoToDelete && (
-                          <p className="text-sm text-blue-600 mt-2">
-                            Mevcut fotoğraf var
+                          {uploadedPhotoUrl && !isUploadingPhoto && (
+                            <p className="text-sm text-green-600 text-center font-medium">
+                              ✓ Fotoğraf başarıyla yüklendi
+                            </p>
+                          )}
+                          {isUploadingPhoto && (
+                            <p className="text-sm text-violet-600 text-center font-medium">
+                              Yükleniyor ve optimize ediliyor...
+                            </p>
+                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => document.getElementById('photo-input')?.click()}
+                              className="flex-1 flex items-center gap-2"
+                              disabled={isUploadingPhoto}
+                              data-testid="change-photo-button"
+                            >
+                              <Upload className="h-4 w-4" />
+                              Değiştir
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={handleDeletePhoto}
+                              className="flex-1 flex items-center gap-2"
+                              disabled={isUploadingPhoto}
+                              data-testid="delete-photo-button"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Sil
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-violet-400 transition-colors">
+                          {isUploadingPhoto ? (
+                            <div className="space-y-3">
+                              <Loader2 className="h-12 w-12 mx-auto text-violet-600 animate-spin" />
+                              <p className="text-sm text-violet-600 font-medium">
+                                Fotoğraf yükleniyor...
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+                                <Upload className="h-8 w-8 text-gray-400" />
+                              </div>
+                              <div>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="lg"
+                                  onClick={() => document.getElementById('photo-input')?.click()}
+                                  className="font-medium"
+                                  data-testid="upload-photo-button"
+                                >
+                                  <Upload className="h-4 w-4 mr-2" />
+                                  Fotoğraf Yükle
+                                </Button>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                JPG, PNG veya WEBP (Max 5MB)
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Hidden File Input */}
+                      <input
+                        id="photo-input"
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        capture="environment"
+                        onChange={handlePhotoChange}
+                        className="hidden"
+                        data-testid="input-photo"
+                        disabled={isUploadingPhoto}
+                      />
+                      
+                      {/* Error Message */}
+                      {photoError && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <p className="text-sm text-red-600 font-medium">
+                            {photoError}
                           </p>
-                        )}
-                      </div>
-                      {(existingPhotoUrl || uploadedPhotoUrl) && !photoToDelete && (
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={handleDeletePhoto}
-                          className="w-full flex items-center gap-2"
-                          data-testid="delete-photo-button"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Fotoğrafı Sil
-                        </Button>
+                        </div>
                       )}
                     </div>
                   </FormControl>
