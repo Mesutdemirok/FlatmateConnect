@@ -1,0 +1,70 @@
+Aynen—işte ajana yapıştırmalık tek, kısa ve net prompt. Bu prompt sadece “ilanlar görünmüyor” sorununu uçtan uca çözer (DB bağlantısı + endpoint + filtre):
+
+⸻
+
+PROMPT — İlanlar boş geliyor → DB & API hızlı onarım
+
+HEDEF: Production DB’ye bağlan, /api/listings misafire veri döndürsün, ana sayfada kartlar görünsün.
+
+1) ENV senkronu
+	•	App Secrets ve Publishing → Environment variables içinde ikisini de ayarla:
+	•	DATABASE_URL = <Neon PROD URL>
+	•	POSTGRES_URL = <Neon PROD URL> (yedek)
+	•	Kaydet, Republish/Restart et.
+
+2) DB init (tek satırlık fallback + cache)
+	•	server/db.ts içinde yalnızca şu değişikliği yap:
+
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import * as schema from "@shared/schema";
+
+neonConfig.webSocketConstructor = ws;
+neonConfig.fetchConnectionCache = true;
+
+const connectionString = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
+if (!connectionString) throw new Error("Missing DATABASE_URL/POSTGRES_URL");
+
+export const pool = new Pool({ connectionString });
+export const db = drizzle({ client: pool, schema });
+
+
+	•	Bağlandığın host’u logla (mevcut log kodu kalabilir) ve ep-green-term-af4ptxe0 olduğunu doğrula.
+
+3) API public ve veri döndürsün
+	•	routes/api.php içinde auth dışı olsun:
+
+Route::get('/listings', [ListingController::class, 'index']);
+Route::get('/listings/{id}', [ListingController::class, 'show']);
+
+
+	•	Hızlı test: GET /api/listings?limit=6 → 200 ve boş olmayan dizi.
+
+4) Varsayılan filtre çok kısıtlıysa gevşet
+	•	ListingController@index içinde geçici güvenli default uygula:
+
+$q->where(function($qq){
+    $qq->whereIn('status', ['published','active'])
+       ->orWhereNull('status')
+       ->orWhere('status','');
+});
+
+
+	•	Gerekirse tek seferlik düzeltme:
+
+UPDATE listings
+SET status='published'
+WHERE status IS NULL OR status='' OR status='active';
+
+
+
+5) Doğrulama
+	•	Shell: echo $DATABASE_URL ve echo $POSTGRES_URL → ikisi de PROD Neon.
+	•	Log: “✅ Connected to Production Neon DB” ve host ep-green-term-af4ptxe0.
+	•	GET /api/listings?limit=6 → 200 + veri.
+	•	Ana sayfa ve /oda-ilanlari → kartlar görünür.
+
+⸻
+
+Bu kadar.
