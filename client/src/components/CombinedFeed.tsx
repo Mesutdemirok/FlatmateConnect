@@ -49,17 +49,13 @@ export default function CombinedFeed() {
               <ListingCard
                 key={`l-${item.data.id}-${idx}`}
                 listing={item.data}
-                /* taller image for room listings */
                 imageAspect="4/3"
-                /* show address chip inside the photo */
                 addressOverlay
               />
             ) : (
               <SeekerCard
                 key={`s-${item.data.id}-${idx}`}
                 seeker={item.data}
-                /* a little shorter than listings */
-                imageAspect="16/9"
               />
             ),
           )}
