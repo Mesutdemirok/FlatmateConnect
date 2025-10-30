@@ -123,6 +123,15 @@ export default function Auth() {
     }
   };
 
+  const handleGoogleLogin = () => {
+    // Store next path in sessionStorage for OAuth callback
+    if (nextPath && nextPath !== '/profil') {
+      sessionStorage.setItem('oauth_next_path', nextPath);
+    }
+    // Redirect to Google OAuth endpoint
+    window.location.href = "/api/oauth/google/redirect";
+  };
+
   const handleSocialLogin = (provider: string) => {
     toast({
       title: "Yakında gelecek",
@@ -217,8 +226,8 @@ export default function Auth() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full border-gray-300 hover:bg-gray-50"
-                  onClick={() => handleSocialLogin('Google')}
+                  className="w-full border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                  onClick={handleGoogleLogin}
                   data-testid="button-google-login"
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">

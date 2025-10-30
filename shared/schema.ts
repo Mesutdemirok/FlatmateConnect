@@ -33,6 +33,7 @@ export const users = pgTable("users", {
   password: varchar("password"),
   passwordResetToken: varchar("password_reset_token"),
   passwordResetExpires: timestamp("password_reset_expires"),
+  emailVerifiedAt: timestamp("email_verified_at"), // Google OAuth will set this
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),

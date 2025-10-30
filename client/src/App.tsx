@@ -19,6 +19,7 @@ import CreateSeekerProfile from "@/pages/CreateSeekerProfile";
 import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
 import Auth from "@/pages/Auth";
+import AuthCallback from "@/pages/AuthCallback";
 import Hakkimizda from "@/pages/hakkimizda";
 import Iletisim from "@/pages/iletisim";
 import KullanimKosullari from "@/pages/kullanim-kosullari";
@@ -65,6 +66,8 @@ function Router() {
       {/* Auth routes - Turkish URLs - Unified auth page */}
       <Route path="/giris" component={Auth} />
       <Route path="/uye-ol" component={Auth} />
+      <Route path="/auth" component={Auth} />
+      <Route path="/auth/callback" component={AuthCallback} />
       
       {/* Home route - Same for all users */}
       <Route path="/" component={Home} />
