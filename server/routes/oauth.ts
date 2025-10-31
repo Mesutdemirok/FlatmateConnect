@@ -13,6 +13,14 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI!;
 const FRONTEND_URL = process.env.FRONTEND_URL!;
 const JWT_SECRET = process.env.JWT_SECRET!;
 
+// Debug: Log environment variables (without exposing secrets)
+console.log("🔍 OAuth Environment Variables:");
+console.log("   GOOGLE_CLIENT_ID:", GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : "NOT SET");
+console.log("   GOOGLE_CLIENT_SECRET:", GOOGLE_CLIENT_SECRET ? "SET (hidden)" : "NOT SET");
+console.log("   GOOGLE_REDIRECT_URI:", GOOGLE_REDIRECT_URI || "NOT SET");
+console.log("   FRONTEND_URL:", FRONTEND_URL || "NOT SET");
+console.log("   JWT_SECRET:", JWT_SECRET ? "SET (hidden)" : "NOT SET");
+
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URI || !FRONTEND_URL || !JWT_SECRET) {
   console.error("❌ Missing required environment variables for Google OAuth");
   console.error("Required: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, FRONTEND_URL, JWT_SECRET");
@@ -60,7 +68,9 @@ router.get("/api/oauth/google/redirect", async (req: Request, res: Response) => 
       state: state,
     });
 
-    console.log("🔐 Redirecting to Google OAuth:", authUrl.href);
+    console.log("🔐 OAuth Redirect Details:");
+    console.log("   Using GOOGLE_REDIRECT_URI:", GOOGLE_REDIRECT_URI);
+    console.log("   Full Google OAuth URL:", authUrl.href);
     res.redirect(authUrl.href);
   } catch (error) {
     console.error("❌ OAuth redirect error:", error);
@@ -189,8 +199,11 @@ router.get("/api/oauth/google/callback", async (req: Request, res: Response) => 
     res.clearCookie("oauth_state");
 
     // Redirect to frontend callback
-    console.log("🔄 Redirecting to frontend:", `${FRONTEND_URL}/auth/callback`);
-    res.redirect(`${FRONTEND_URL}/auth/callback`);
+    const callbackUrl = `${FRONTEND_URL}/auth/callback`;
+    console.log("🔄 OAuth Success - Redirecting to frontend:");
+    console.log("   FRONTEND_URL:", FRONTEND_URL);
+    console.log("   Full callback URL:", callbackUrl);
+    res.redirect(callbackUrl);
 
   } catch (error) {
     console.error("❌ OAuth callback error:", error);
