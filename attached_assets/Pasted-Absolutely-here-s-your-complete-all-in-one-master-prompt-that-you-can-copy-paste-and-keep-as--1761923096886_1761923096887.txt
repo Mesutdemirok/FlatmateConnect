@@ -1,0 +1,134 @@
+Absolutely ✅ — here’s your complete, all-in-one master prompt that you can copy, paste, and keep as your permanent fix tool for Odanet’s backend.
+
+This single prompt combines Phase 1 (Fix) + Phase 2 (Verify) + Phase 3 (Recover).
+It tells the agent exactly what to do, what not to touch, and what the end state should look like.
+
+⸻
+
+🧩 ODANET — FULL DATABASE + OAUTH FIX PROMPT
+
+Prompt:
+
+⸻
+
+🔧 Context
+
+The Odanet app is connected to the Neon production database but throws
+error: column "email_verified_at" does not exist and
+Veritabanı hatası oluştu.
+This means the production database schema is out of sync with the current Drizzle ORM models.
+
+🎯 Goal
+
+Synchronize the Neon production database schema with Drizzle ORM, verify all API routes and OAuth redirects, and prepare a self-healing setup for future schema drift.
+Do not reset passwords, OAuth credentials, or re-deploy the app.
+
+⸻
+
+🪄 STEP 1 — Fix (Migration / Schema Sync)
+	1.	Connect to the existing Neon production DB using this connection string:
+
+postgresql://neondb_owner:npg_xHrRZ2cq4GEFh@ep-noisy-sun-afcx37wr-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require
+
+
+	2.	Run a schema comparison between Drizzle ORM and the current database.
+	3.	Apply any missing migrations to align tables and columns, especially:
+	•	add email_verified_at TIMESTAMP to the users table
+	•	apply all other pending migrations.
+	4.	Example commands (run whichever applies):
+
+npx drizzle-kit push:pg
+
+or
+
+npm run db:push
+
+
+	5.	Confirm successful output:
+
+✅ Migration applied successfully.
+✅ email_verified_at column added.
+
+
+
+⸻
+
+🧭 STEP 2 — Verify (Functional Check)
+
+After migrations finish:
+	1.	Test these endpoints:
+	•	/api/seekers/public → expect 200 OK + JSON array
+	•	/api/listings → expect 200 OK + listings data
+	2.	Confirm the users table now contains email_verified_at.
+	3.	Test Google OAuth:
+	•	Open https://www.odanet.com.tr/giris
+	•	Click “Google ile devam et”
+	•	Allow access
+	•	Expect redirect → /profil
+	4.	Expected console log:
+
+✅ API /api/seekers/public → 200 OK
+✅ API /api/listings → 200 OK
+✅ Database synced (email_verified_at confirmed)
+✅ OAuth redirect → /profil successful
+
+
+
+⸻
+
+♻️ STEP 3 — Recovery / Self-Healing Routine
+
+If this issue ever happens again (e.g. “Veritabanı hatası oluştu” or missing columns):
+	1.	Re-use the same DB connection string above (no password reset).
+	2.	Run schema validation and, if needed, re-apply migrations:
+
+npx drizzle-kit push:pg
+
+
+	3.	Log:
+	•	✅ Database connection status
+	•	✅ Schema verification result
+	•	✅ Migration summary
+	4.	Confirm that /api/seekers/public and /api/listings return 200 OK.
+	5.	Do not modify OAuth, JWT, or Cloudflare R2 configs.
+
+Expected final output:
+
+✅ Connected to Neon successfully
+✅ Schema synced to latest Drizzle models
+✅ All API routes responding 200 OK
+✅ Google OAuth redirect working
+
+
+⸻
+
+🚫 DO NOT
+	•	Reset or recreate the database
+	•	Change secrets (FRONTEND_URL, GOOGLE_*, JWT_SECRET)
+	•	Modify file storage or Cloudflare settings
+
+⸻
+
+✅ DONE WHEN
+	•	/api/listings and /api/seekers/public return 200 OK
+	•	No “column missing” or “Veritabanı hatası oluştu” logs
+	•	Google OAuth login → redirects to /profil
+	•	Console shows:
+
+✅ Migration applied successfully
+✅ Connected to database: ep-noisy-sun-afcx37wr-pooler...
+✅ Server running on port 5000
+
+
+
+⸻
+
+
+⸻
+
+💡 How to use it:
+	•	Paste this entire prompt into your Replit agent.
+	•	Wait for it to finish (usually < 2 minutes).
+	•	Then test your site: https://www.odanet.com.tr￼
+
+This one prompt covers everything — it’ll fix, verify, and future-proof your database + OAuth integration in a single run.
