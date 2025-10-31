@@ -6,11 +6,16 @@ import { Loader2 } from "lucide-react";
 
 export default function AuthCallback() {
   const [, navigate] = useLocation();
-  const { refreshUser } = useAuth();
+  const { refreshUser, user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleCallback = async () => {
       console.log('🔄 OAuth callback handler started');
+      console.log('📊 Initial auth state:', { 
+        isAuthenticated, 
+        hasUser: !!user,
+        userId: user?.id 
+      });
       
       // Check URL for error parameters
       const params = new URLSearchParams(window.location.search);
@@ -25,6 +30,7 @@ export default function AuthCallback() {
       console.log('✅ No OAuth errors, proceeding with authentication');
 
       // Wait a moment for cookie to be set
+      console.log('⏳ Waiting 500ms for cookie to be set...');
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Refresh auth state
@@ -32,18 +38,29 @@ export default function AuthCallback() {
       await refreshUser();
       console.log('✅ User authentication refreshed');
 
+      // Wait a bit for state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Restore next path from sessionStorage
       const nextPath = sessionStorage.getItem('oauth_next_path');
       console.log('📍 Checking next path from sessionStorage:', nextPath);
       
+      const targetPath = nextPath || '/profil';
+      
+      console.log('🚀 About to navigate to:', targetPath);
+      console.log('📊 Final auth state before navigation:', { 
+        isAuthenticated, 
+        hasUser: !!user,
+        userId: user?.id 
+      });
+      
       if (nextPath) {
-        console.log('✅ Navigating to saved path:', nextPath);
         sessionStorage.removeItem('oauth_next_path');
-        navigate(nextPath);
-      } else {
-        console.log('ℹ️ No saved path, navigating to default /profil');
-        navigate('/profil');
       }
+      
+      console.log('⏩ Calling navigate() now...');
+      navigate(targetPath);
+      console.log('✅ Navigate() called successfully');
     };
 
     handleCallback();
