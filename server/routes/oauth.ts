@@ -206,7 +206,25 @@ router.get("/api/oauth/google/callback", async (req: Request, res: Response) => 
     res.redirect(callbackUrl);
 
   } catch (error) {
-    console.error("❌ OAuth callback error:", error);
+    console.error("❌ OAuth callback error - DETAILED DEBUG:");
+    console.error("   Error type:", error?.constructor?.name);
+    console.error("   Error message:", error instanceof Error ? error.message : String(error));
+    console.error("   Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    
+    // Check if it's a database error
+    if (error && typeof error === 'object' && 'code' in error) {
+      console.error("   Database error code:", (error as any).code);
+      console.error("   Database error severity:", (error as any).severity);
+    }
+    
+    // Log cookies and request details for debugging
+    console.error("   Cookies present:", {
+      code_verifier: !!req.cookies.code_verifier,
+      oauth_state: !!req.cookies.oauth_state,
+    });
+    console.error("   Request URL:", req.url);
+    console.error("   Request query:", req.query);
+    
     res.redirect(`${FRONTEND_URL}/auth?error=oauth_failed`);
   }
 });
