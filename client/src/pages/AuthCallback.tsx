@@ -10,29 +10,38 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
+      console.log('🔄 OAuth callback handler started');
+      
       // Check URL for error parameters
       const params = new URLSearchParams(window.location.search);
       const error = params.get('error');
       
       if (error) {
-        console.error('OAuth error:', error);
+        console.error('❌ OAuth error detected:', error);
         navigate('/auth?error=' + error);
         return;
       }
+
+      console.log('✅ No OAuth errors, proceeding with authentication');
 
       // Wait a moment for cookie to be set
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Refresh auth state
+      console.log('🔄 Refreshing user authentication state...');
       await refreshUser();
+      console.log('✅ User authentication refreshed');
 
       // Restore next path from sessionStorage
       const nextPath = sessionStorage.getItem('oauth_next_path');
+      console.log('📍 Checking next path from sessionStorage:', nextPath);
+      
       if (nextPath) {
+        console.log('✅ Navigating to saved path:', nextPath);
         sessionStorage.removeItem('oauth_next_path');
         navigate(nextPath);
       } else {
-        // Default to profile page
+        console.log('ℹ️ No saved path, navigating to default /profil');
         navigate('/profil');
       }
     };

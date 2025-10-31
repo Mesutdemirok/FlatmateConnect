@@ -127,12 +127,15 @@ export default function Auth() {
 
   const handleGoogleLogin = () => {
     // Store next path in sessionStorage for OAuth callback
+    console.log('🔐 Starting Google OAuth login, next path:', nextPath);
     if (nextPath && nextPath !== '/profil') {
       sessionStorage.setItem('oauth_next_path', nextPath);
+      console.log('✅ Saved next path to sessionStorage:', nextPath);
+    } else {
+      console.log('ℹ️ Using default next path: /profil');
     }
-    // Redirect to Google OAuth endpoint with next parameter
-    const next = encodeURIComponent(nextPath);
-    window.location.href = `/api/oauth/google/redirect?next=${next}`;
+    // Redirect to Google OAuth endpoint
+    window.location.href = `/api/oauth/google/redirect`;
   };
 
   return (
