@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getAuthHeaders } from "@/lib/queryClient";
 import NumberInput from "@/components/forms/NumberInput";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -121,6 +121,7 @@ export default function CreateListing() {
           
           const imageResponse = await fetch(`/api/listings/${listing.id}/images`, {
             method: 'POST',
+            headers: getAuthHeaders(),
             body: formData,
             credentials: 'include',
           });

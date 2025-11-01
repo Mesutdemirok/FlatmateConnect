@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getAuthHeaders } from "@/lib/queryClient";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 import NumberInput from "@/components/forms/NumberInput";
 import Header from "@/components/Header";
@@ -122,6 +122,7 @@ export default function EditListing() {
           
           const imageResponse = await fetch(`/api/listings/${id}/images`, {
             method: 'POST',
+            headers: getAuthHeaders(),
             body: formData,
             credentials: 'include',
           });

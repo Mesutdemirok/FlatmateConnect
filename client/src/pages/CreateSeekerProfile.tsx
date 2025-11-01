@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getAuthHeaders } from "@/lib/queryClient";
 import { SeekerProfileWithRelations } from "@/lib/seekerApi";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -304,6 +304,7 @@ export default function CreateSeekerProfile() {
 
       const response = await fetch('/api/uploads/seeker-photo', {
         method: 'POST',
+        headers: getAuthHeaders(),
         body: formData,
         credentials: 'include',
       });
