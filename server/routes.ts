@@ -98,7 +98,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const token = generateToken(user.id, user.email);
       
+      // Detect HTTPS and production domain (consistent with OAuth)
+      const isHttps = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https';
+      const isProductionDomain = req.get('host')?.includes('odanet.com.tr');
+      
+      // Set httpOnly cookie with JWT (same settings as OAuth)
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: isHttps,
+        sameSite: 'lax',
+        domain: isProductionDomain ? '.odanet.com.tr' : undefined,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+      
       const { password, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
+      
+      console.log('✅ User registered and logged in:', user.id);
       
       res.status(201).json({ 
         user: userWithoutPassword, 
@@ -136,13 +151,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const token = generateToken(user.id, user.email);
       
+      // Detect HTTPS and production domain (consistent with OAuth)
+      const isHttps = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https';
+      const isProductionDomain = req.get('host')?.includes('odanet.com.tr');
+      
+      // Set httpOnly cookie with JWT (same settings as OAuth)
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: isHttps,
+        sameSite: 'lax',
+        domain: isProductionDomain ? '.odanet.com.tr' : undefined,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+      
       const { password: _, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
       
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      console.log('✅ User logged in:', user.id);
       
       res.json({ 
         user: userWithoutPassword, 
@@ -156,7 +180,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/auth/logout', (req, res) => {
-    res.clearCookie('token');
+    // Detect HTTPS and production domain (same as login/register)
+    const isHttps = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https';
+    const isProductionDomain = req.get('host')?.includes('odanet.com.tr');
+    
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isHttps,
+      sameSite: 'lax' as const,
+      domain: isProductionDomain ? '.odanet.com.tr' : undefined,
+      path: '/',
+    };
+    
+    // Clear both cookie names with proper options for production
+    res.clearCookie('token', cookieOptions);
+    res.clearCookie('auth_token', cookieOptions);
+    
+    console.log('✅ User logged out (cookies cleared with domain:', isProductionDomain ? '.odanet.com.tr' : 'localhost', ')');
     res.json({ message: 'Çıkış yapıldı' });
   });
 
