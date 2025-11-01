@@ -7,552 +7,428 @@ import { jwtAuth } from "../auth";
 
 const router = Router();
 
-/**
- * Upload endpoint for seeker profile photos
- * - Requires authentication
- * - Accepts HEIC/HEIF/JPEG/PNG/WebP
- * - Converts all to JPEG with compression
- * - Auto-rotates based on EXIF
- * - Resizes to max 1600px width
- * - Uploads to R2 storage
- */
-router.post("/api/uploads/seeker-photo", jwtAuth, (req: Request, res: Response) => {
-  console.log('📸 Seeker photo upload started');
-  console.log('Headers:', req.headers);
-  
-  const bb = Busboy({ headers: req.headers });
-  let hasFile = false;
-  let responseSent = false;
+// --- helpers ---------------------------------------------------------------
 
-  bb.on("file", (fieldname: string, file: NodeJS.ReadableStream, info: Busboy.FileInfo) => {
-    hasFile = true;
-    const { mimeType, filename } = info;
-    
-    console.log('📁 File received:', { fieldname, filename, mimeType });
-
-    // Accept common image formats including HEIC
-    const allowed = [
-      "image/jpeg",
-      "image/jpg", 
-      "image/png",
-      "image/webp",
-      "image/heic",
-      "image/heif",
-      "" // Some browsers don't set MIME type for HEIC
-    ];
-    
-    // Also check file extension
-    const fileExtension = filename.split('.').pop()?.toLowerCase() || '';
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
-    
-    const isValidType = allowed.includes(mimeType.toLowerCase()) || allowedExtensions.includes(fileExtension);
-
-    if (!isValidType) {
-      console.log('❌ Invalid file type:', mimeType, fileExtension);
-      file.resume(); // Drain the stream
-      if (!responseSent) {
-        responseSent = true;
-        return res.status(400).json({ 
-          message: `Desteklenmeyen dosya formatı (${mimeType || fileExtension}). JPEG, PNG, WebP veya HEIC kullanın.` 
-        });
-      }
-      return;
-    }
-
-    const chunks: Buffer[] = [];
-    let totalSize = 0;
-    
-    file.on("data", (chunk: Buffer) => {
-      chunks.push(chunk);
-      totalSize += chunk.length;
-      
-      // Limit file size to 15MB during upload
-      if (totalSize > 15 * 1024 * 1024) {
-        console.log('❌ File too large:', totalSize);
-        file.resume();
-        if (!responseSent) {
-          responseSent = true;
-          return res.status(400).json({ 
-            message: "Dosya çok büyük. Maksimum 10MB yükleyebilirsiniz." 
-          });
-        }
-      }
-    });
-
-    file.on("end", async () => {
-      if (responseSent) return;
-      
-      try {
-        const inputBuffer = Buffer.concat(chunks);
-        console.log('✓ File buffered:', inputBuffer.length, 'bytes');
-        
-        // Process image with Sharp:
-        // 1. Auto-rotate based on EXIF orientation
-        // 2. Resize to max 1600px width (maintain aspect ratio)
-        // 3. Convert to JPEG with 82% quality
-        console.log('🔄 Processing image...');
-        const processedBuffer = await sharp(inputBuffer)
-          .rotate() // Auto-rotate based on EXIF
-          .resize({
-            width: 1600,
-            withoutEnlargement: true, // Don't upscale smaller images
-            fit: 'inside'
-          })
-          .jpeg({
-            quality: 82,
-            progressive: true
-          })
-          .toBuffer();
-
-        console.log('✓ Image processed:', processedBuffer.length, 'bytes');
-
-        // Generate unique filename
-        const timestamp = Date.now();
-        const randomSuffix = Math.random().toString(36).substring(2, 8);
-        const r2Key = `seekers/${timestamp}-${randomSuffix}.jpg`;
-
-        console.log('☁️ Uploading to R2:', r2Key);
-        // Upload to R2
-        await uploadBufferToR2(r2Key, processedBuffer, {
-          contentType: "image/jpeg",
-          cacheControl: "public, max-age=31536000, immutable"
-        });
-
-        // Return both the key and full CDN URL
-        const cdnUrl = getR2Url(r2Key);
-        console.log('✅ Upload complete:', cdnUrl);
-
-        if (!responseSent) {
-          responseSent = true;
-          return res.json({
-            success: true,
-            imagePath: r2Key, // Store this in DB
-            url: cdnUrl // Use this for immediate preview
-          });
-        }
-
-      } catch (error) {
-        console.error("❌ Image processing error:", error);
-        if (!responseSent) {
-          responseSent = true;
-          return res.status(500).json({ 
-            message: "Fotoğraf işlenirken hata oluştu. Lütfen tekrar deneyin.",
-            error: error instanceof Error ? error.message : String(error)
-          });
-        }
-      }
-    });
-
-    file.on("error", (error: Error) => {
-      console.error("❌ File stream error:", error);
-      if (!responseSent) {
-        responseSent = true;
-        res.status(500).json({ 
-          message: "Dosya yüklenirken hata oluştu.",
-          error: error.message
-        });
-      }
-    });
-  });
-
-  bb.on("finish", () => {
-    if (!hasFile && !responseSent) {
-      console.log('❌ No file received');
-      responseSent = true;
-      res.status(400).json({ 
-        message: "Fotoğraf seçilmedi." 
-      });
-    }
-  });
-
-  bb.on("error", (error: Error) => {
-    console.error("❌ Busboy error:", error);
-    if (!responseSent) {
-      responseSent = true;
-      res.status(500).json({ 
-        message: "Dosya yüklemesi başarısız oldu.",
-        error: error.message
-      });
-    }
-  });
-
-  req.pipe(bb);
-});
-
-/**
- * Upload endpoint for user profile photos
- * - Requires authentication
- * - Accepts HEIC/HEIF/JPEG/PNG/WebP
- * - Converts all to JPEG with compression
- * - Auto-rotates based on EXIF
- * - Resizes to max 800px (for profile photos)
- * - Uploads to R2 storage
- */
-router.post("/api/uploads/profile-photo", jwtAuth, (req: Request, res: Response) => {
-  console.log('👤 Profile photo upload started');
-  console.log('Headers:', req.headers);
-  
-  const bb = Busboy({ headers: req.headers });
-  let hasFile = false;
-  let responseSent = false;
-
-  bb.on("file", (fieldname: string, file: NodeJS.ReadableStream, info: Busboy.FileInfo) => {
-    hasFile = true;
-    const { mimeType, filename } = info;
-    
-    console.log('📁 File received:', { fieldname, filename, mimeType });
-
-    const allowed = [
-      "image/jpeg",
-      "image/jpg", 
-      "image/png",
-      "image/webp",
-      "image/heic",
-      "image/heif",
-      ""
-    ];
-    
-    const fileExtension = filename.split('.').pop()?.toLowerCase() || '';
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
-    
-    const isValidType = allowed.includes(mimeType.toLowerCase()) || allowedExtensions.includes(fileExtension);
-
-    if (!isValidType) {
-      console.log('❌ Invalid file type:', mimeType, fileExtension);
-      file.resume();
-      if (!responseSent) {
-        responseSent = true;
-        return res.status(400).json({ 
-          message: `Desteklenmeyen dosya formatı. JPEG, PNG, WebP veya HEIC kullanın.` 
-        });
-      }
-      return;
-    }
-
-    const chunks: Buffer[] = [];
-    let totalSize = 0;
-    
-    file.on("data", (chunk: Buffer) => {
-      chunks.push(chunk);
-      totalSize += chunk.length;
-      
-      if (totalSize > 10 * 1024 * 1024) {
-        console.log('❌ File too large:', totalSize);
-        file.resume();
-        if (!responseSent) {
-          responseSent = true;
-          return res.status(400).json({ 
-            message: "Dosya çok büyük. Maksimum 10MB yükleyebilirsiniz." 
-          });
-        }
-      }
-    });
-
-    file.on("end", async () => {
-      if (responseSent) return;
-      
-      try {
-        const inputBuffer = Buffer.concat(chunks);
-        console.log('✓ File buffered:', inputBuffer.length, 'bytes');
-        
-        // Process profile photos smaller (800px) than seeker photos
-        console.log('🔄 Processing image...');
-        const processedBuffer = await sharp(inputBuffer)
-          .rotate()
-          .resize({
-            width: 800,
-            height: 800,
-            fit: 'cover' // Square profile photo
-          })
-          .jpeg({
-            quality: 85,
-            progressive: true
-          })
-          .toBuffer();
-
-        console.log('✓ Image processed:', processedBuffer.length, 'bytes');
-
-        const timestamp = Date.now();
-        const randomSuffix = Math.random().toString(36).substring(2, 8);
-        const r2Key = `profiles/${timestamp}-${randomSuffix}.jpg`;
-
-        console.log('☁️ Uploading to R2:', r2Key);
-        await uploadBufferToR2(r2Key, processedBuffer, {
-          contentType: "image/jpeg",
-          cacheControl: "public, max-age=31536000, immutable"
-        });
-
-        const cdnUrl = getR2Url(r2Key);
-        console.log('✅ Upload complete:', cdnUrl);
-
-        if (!responseSent) {
-          responseSent = true;
-          return res.json({
-            success: true,
-            imagePath: r2Key,
-            url: cdnUrl
-          });
-        }
-
-      } catch (error) {
-        console.error("❌ Image processing error:", error);
-        if (!responseSent) {
-          responseSent = true;
-          return res.status(500).json({ 
-            message: "Fotoğraf işlenirken hata oluştu.",
-            error: error instanceof Error ? error.message : String(error)
-          });
-        }
-      }
-    });
-
-    file.on("error", (error: Error) => {
-      console.error("❌ File stream error:", error);
-      if (!responseSent) {
-        responseSent = true;
-        res.status(500).json({ 
-          message: "Dosya yüklenirken hata oluştu.",
-          error: error.message
-        });
-      }
-    });
-  });
-
-  bb.on("finish", () => {
-    if (!hasFile && !responseSent) {
-      console.log('❌ No file received');
-      responseSent = true;
-      res.status(400).json({ 
-        message: "Fotoğraf seçilmedi." 
-      });
-    }
-  });
-
-  bb.on("error", (error: Error) => {
-    console.error("❌ Busboy error:", error);
-    if (!responseSent) {
-      responseSent = true;
-      res.status(500).json({ 
-        message: "Dosya yüklemesi başarısız oldu.",
-        error: error.message
-      });
-    }
-  });
-
-  req.pipe(bb);
-});
-
-/**
- * Upload endpoint for listing images
- * - Requires authentication
- * - Verifies listing ownership
- * - Accepts multiple images
- * - Converts all to JPEG with compression
- * - Auto-rotates based on EXIF
- * - Resizes to max 1600px width
- * - Uploads to R2 storage
- * - Saves to database
- */
-router.post("/api/listings/:id/images", jwtAuth, async (req: Request, res: Response) => {
-  const listingId = req.params.id;
-  const userId = req.userId;
-  
-  console.log('🏠 Listing images upload started for listing:', listingId, 'by user:', userId);
-  
-  // Verify listing ownership BEFORE processing any files
-  try {
-    const listing = await storage.getListing(listingId);
-    if (!listing) {
-      return res.status(404).json({ message: "İlan bulunamadı" });
-    }
-    if (listing.userId !== userId) {
-      console.log('❌ Unauthorized: User', userId, 'tried to upload to listing owned by', listing.userId);
-      return res.status(403).json({ message: "Bu ilana resim yükleme yetkiniz yok" });
-    }
-    console.log('✓ Ownership verified for listing:', listingId);
-  } catch (error) {
-    console.error('❌ Error verifying listing ownership:', error);
-    return res.status(500).json({ message: "İlan doğrulanamadı" });
+function badRequest(res: Response, message: string, extra: any = {}) {
+  res.type("application/json");
+  return res.status(400).json({ success: false, message, ...extra });
+}
+function serverError(res: Response, err: any, fallback = "Sunucu hatası.") {
+  const msg = err instanceof Error ? err.message : String(err);
+  res.type("application/json");
+  return res
+    .status(500)
+    .json({ success: false, message: fallback, error: msg });
+}
+function sanityCheckMultipart(req: Request, res: Response): boolean {
+  const ct = req.headers["content-type"] || "";
+  if (typeof ct !== "string" || !ct.startsWith("multipart/form-data")) {
+    badRequest(res, "Geçersiz içerik türü. multipart/form-data bekleniyor.");
+    return false;
   }
-  
-  console.log('Headers:', req.headers);
-  
-  const bb = Busboy({ headers: req.headers });
-  const uploadedImages: Array<{ imagePath: string; url: string }> = [];
-  let responseSent = false;
-  let filesProcessing = 0;
-  let filesCompleted = 0;
+  return true;
+}
+function makeBusboy(req: Request, res: Response) {
+  try {
+    // Busboy v1 default export accepts { headers }
+    return Busboy({ headers: req.headers });
+  } catch (e) {
+    serverError(res, e, "Yükleme başlatılamadı.");
+    return null;
+  }
+}
 
-  bb.on("file", (fieldname: string, file: NodeJS.ReadableStream, info: Busboy.FileInfo) => {
-    filesProcessing++;
-    const { mimeType, filename } = info;
-    
-    console.log('📁 File received:', { fieldname, filename, mimeType });
+const ALLOWED_MIME = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "", // some browsers omit HEIC mime
+]);
+const ALLOWED_EXT = new Set(["jpg", "jpeg", "png", "webp", "heic", "heif"]);
+const MAX_MB = 10; // keep UI text & server limit consistent
+const MAX_BYTES = MAX_MB * 1024 * 1024;
 
-    // Accept common image formats including HEIC
-    const allowed = [
-      "image/jpeg",
-      "image/jpg", 
-      "image/png",
-      "image/webp",
-      "image/heic",
-      "image/heif",
-      "" // Some browsers don't set MIME type for HEIC
-    ];
-    
-    const fileExtension = filename.split('.').pop()?.toLowerCase() || '';
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
-    
-    const isValidType = allowed.includes(mimeType.toLowerCase()) || allowedExtensions.includes(fileExtension);
+// --- 1) Seeker profile photo ----------------------------------------------
 
-    if (!isValidType) {
-      console.log('❌ Invalid file type:', mimeType, fileExtension);
-      file.resume();
-      filesCompleted++;
-      return;
-    }
+router.post("/uploads/seeker-photo", jwtAuth, (req: Request, res: Response) => {
+  res.type("application/json");
+  if (!sanityCheckMultipart(req, res)) return;
 
-    const chunks: Buffer[] = [];
-    let totalSize = 0;
-    
-    file.on("data", (chunk: Buffer) => {
-      chunks.push(chunk);
-      totalSize += chunk.length;
-      
-      if (totalSize > 15 * 1024 * 1024) {
-        console.log('❌ File too large:', totalSize);
+  const bb = makeBusboy(req, res);
+  if (!bb) return;
+
+  let hasFile = false;
+  let sent = false;
+
+  bb.on(
+    "file",
+    (_field: string, file: NodeJS.ReadableStream, info: Busboy.FileInfo) => {
+      hasFile = true;
+      const { mimeType, filename } = info;
+
+      const ext = (filename.split(".").pop() || "").toLowerCase();
+      const valid =
+        ALLOWED_MIME.has((mimeType || "").toLowerCase()) ||
+        ALLOWED_EXT.has(ext);
+      if (!valid) {
         file.resume();
-        filesCompleted++;
+        if (!sent) {
+          sent = true;
+          return badRequest(
+            res,
+            `Desteklenmeyen dosya formatı (${mimeType || ext}). JPEG/PNG/WebP/HEIC kullanın.`,
+          );
+        }
+        return;
       }
-    });
 
-    file.on("end", async () => {
-      try {
-        const inputBuffer = Buffer.concat(chunks);
-        console.log('✓ File buffered:', inputBuffer.length, 'bytes');
-        
-        const processedBuffer = await sharp(inputBuffer)
-          .rotate()
-          .resize({
-            width: 1600,
-            withoutEnlargement: true,
-            fit: 'inside'
-          })
-          .jpeg({
-            quality: 82,
-            progressive: true
-          })
-          .toBuffer();
+      const chunks: Buffer[] = [];
+      let total = 0;
 
-        console.log('✓ Image processed:', processedBuffer.length, 'bytes');
+      file.on("data", (chunk: Buffer) => {
+        total += chunk.length;
+        if (total > MAX_BYTES) {
+          file.resume();
+        } else {
+          chunks.push(chunk);
+        }
+      });
 
-        const timestamp = Date.now();
-        const randomSuffix = Math.random().toString(36).substring(2, 8);
-        const r2Key = `listings/${timestamp}-${randomSuffix}.jpg`;
-
-        console.log('☁️ Uploading to R2:', r2Key);
-        await uploadBufferToR2(r2Key, processedBuffer, {
-          contentType: "image/jpeg",
-          cacheControl: "public, max-age=31536000, immutable"
-        });
-
-        const cdnUrl = getR2Url(r2Key);
-        console.log('✅ Upload complete:', cdnUrl);
-
-        // Save image to database
+      file.on("end", async () => {
+        if (sent) return;
+        if (total > MAX_BYTES) {
+          sent = true;
+          return badRequest(
+            res,
+            `Dosya çok büyük. Maksimum ${MAX_MB}MB yükleyebilirsiniz.`,
+          );
+        }
         try {
-          await storage.addListingImage({
-            listingId,
-            imagePath: r2Key,
-            isPrimary: uploadedImages.length === 0 // First image is primary
+          const input = Buffer.concat(chunks);
+          const processed = await sharp(input)
+            .rotate()
+            .resize({ width: 1600, withoutEnlargement: true, fit: "inside" })
+            .jpeg({ quality: 82, progressive: true })
+            .toBuffer();
+
+          const key = `seekers/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+          await uploadBufferToR2(key, processed, {
+            contentType: "image/jpeg",
+            cacheControl: "public, max-age=31536000, immutable",
           });
-          console.log('💾 Image saved to database');
-        } catch (dbError) {
-          console.error('❌ Database save error:', dbError);
-          // Continue anyway - image is already uploaded to R2
-        }
 
-        uploadedImages.push({
-          imagePath: r2Key,
-          url: cdnUrl
-        });
-
-        filesCompleted++;
-        
-        // If all files are processed, send response
-        if (filesCompleted === filesProcessing && !responseSent) {
-          responseSent = true;
-          return res.json({
-            success: true,
-            images: uploadedImages,
-            count: uploadedImages.length
-          });
-        }
-
-      } catch (error) {
-        console.error("❌ Image processing error:", error);
-        filesCompleted++;
-        
-        // If all files are processed (even with errors), send response
-        if (filesCompleted === filesProcessing && !responseSent) {
-          responseSent = true;
-          if (uploadedImages.length > 0) {
-            return res.json({
-              success: true,
-              images: uploadedImages,
-              count: uploadedImages.length,
-              errors: 'Some images failed to process'
-            });
-          } else {
-            return res.status(500).json({ 
-              message: "Resimlerin işlenmesinde hata oluştu.",
-              error: error instanceof Error ? error.message : String(error)
-            });
+          sent = true;
+          return res
+            .status(201)
+            .json({ success: true, imagePath: key, url: getR2Url(key) });
+        } catch (e) {
+          if (!sent) {
+            sent = true;
+            return serverError(
+              res,
+              e,
+              "Fotoğraf işlenirken hata oluştu. Lütfen tekrar deneyin.",
+            );
           }
         }
-      }
-    });
+      });
 
-    file.on("error", (error: Error) => {
-      console.error("❌ File stream error:", error);
-      filesCompleted++;
-    });
-  });
+      file.on("error", (e: Error) => {
+        if (!sent) {
+          sent = true;
+          return serverError(res, e, "Dosya yüklenirken hata oluştu.");
+        }
+      });
+    },
+  );
 
   bb.on("finish", () => {
-    // Wait a moment for all async operations to complete
-    setTimeout(() => {
-      if (!responseSent) {
-        if (uploadedImages.length > 0) {
-          responseSent = true;
-          res.json({
-            success: true,
-            images: uploadedImages,
-            count: uploadedImages.length
-          });
-        } else if (filesProcessing === 0) {
-          console.log('❌ No files received');
-          responseSent = true;
-          res.status(400).json({ 
-            message: "Resim seçilmedi." 
-          });
-        }
-      }
-    }, 100);
+    if (!hasFile && !sent) {
+      sent = true;
+      return badRequest(res, "Fotoğraf seçilmedi.");
+    }
   });
 
-  bb.on("error", (error: Error) => {
-    console.error("❌ Busboy error:", error);
-    if (!responseSent) {
-      responseSent = true;
-      res.status(500).json({ 
-        message: "Dosya yüklemesi başarısız oldu.",
-        error: error.message
-      });
+  bb.on("error", (e: Error) => {
+    if (!sent) {
+      sent = true;
+      return serverError(res, e, "Dosya yüklemesi başarısız oldu.");
     }
   });
 
   req.pipe(bb);
+});
+
+// --- 2) User profile photo (square 800x800) --------------------------------
+
+router.post(
+  "/uploads/profile-photo",
+  jwtAuth,
+  (req: Request, res: Response) => {
+    res.type("application/json");
+    if (!sanityCheckMultipart(req, res)) return;
+
+    const bb = makeBusboy(req, res);
+    if (!bb) return;
+
+    let hasFile = false;
+    let sent = false;
+
+    bb.on(
+      "file",
+      (_field: string, file: NodeJS.ReadableStream, info: Busboy.FileInfo) => {
+        hasFile = true;
+        const { mimeType, filename } = info;
+
+        const ext = (filename.split(".").pop() || "").toLowerCase();
+        const valid =
+          ALLOWED_MIME.has((mimeType || "").toLowerCase()) ||
+          ALLOWED_EXT.has(ext);
+        if (!valid) {
+          file.resume();
+          if (!sent) {
+            sent = true;
+            return badRequest(
+              res,
+              "Desteklenmeyen dosya formatı. JPEG/PNG/WebP/HEIC kullanın.",
+            );
+          }
+          return;
+        }
+
+        const chunks: Buffer[] = [];
+        let total = 0;
+
+        file.on("data", (chunk: Buffer) => {
+          total += chunk.length;
+          if (total > MAX_BYTES) {
+            file.resume();
+          } else {
+            chunks.push(chunk);
+          }
+        });
+
+        file.on("end", async () => {
+          if (sent) return;
+          if (total > MAX_BYTES) {
+            sent = true;
+            return badRequest(
+              res,
+              `Dosya çok büyük. Maksimum ${MAX_MB}MB yükleyebilirsiniz.`,
+            );
+          }
+          try {
+            const input = Buffer.concat(chunks);
+            const processed = await sharp(input)
+              .rotate()
+              .resize({ width: 800, height: 800, fit: "cover" })
+              .jpeg({ quality: 85, progressive: true })
+              .toBuffer();
+
+            const key = `profiles/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+            await uploadBufferToR2(key, processed, {
+              contentType: "image/jpeg",
+              cacheControl: "public, max-age=31536000, immutable",
+            });
+
+            sent = true;
+            return res
+              .status(201)
+              .json({ success: true, imagePath: key, url: getR2Url(key) });
+          } catch (e) {
+            if (!sent) {
+              sent = true;
+              return serverError(res, e, "Fotoğraf işlenirken hata oluştu.");
+            }
+          }
+        });
+
+        file.on("error", (e: Error) => {
+          if (!sent) {
+            sent = true;
+            return serverError(res, e, "Dosya yüklenirken hata oluştu.");
+          }
+        });
+      },
+    );
+
+    bb.on("finish", () => {
+      if (!hasFile && !sent) {
+        sent = true;
+        return badRequest(res, "Fotoğraf seçilmedi.");
+      }
+    });
+
+    bb.on("error", (e: Error) => {
+      if (!sent) {
+        sent = true;
+        return serverError(res, e, "Dosya yüklemesi başarısız oldu.");
+      }
+    });
+
+    req.pipe(bb);
+  },
+);
+
+// --- 3) Listing images (multi-file) ----------------------------------------
+
+router.post(
+  "/listings/:id/images",
+  jwtAuth,
+  async (req: Request, res: Response) => {
+    res.type("application/json");
+    const listingId = req.params.id;
+    const userId = (req as any).userId;
+
+    // Verify ownership BEFORE reading file streams
+    try {
+      const listing = await storage.getListing(listingId);
+      if (!listing) return badRequest(res, "İlan bulunamadı");
+      if (listing.userId !== userId)
+        return res
+          .status(403)
+          .json({
+            success: false,
+            message: "Bu ilana resim yükleme yetkiniz yok",
+          });
+    } catch (e) {
+      return serverError(res, e, "İlan doğrulanamadı");
+    }
+
+    if (!sanityCheckMultipart(req, res)) return;
+
+    const bb = makeBusboy(req, res);
+    if (!bb) return;
+
+    const uploaded: Array<{ imagePath: string; url: string }> = [];
+    let filesProcessing = 0;
+    let filesFinished = 0;
+    let sent = false;
+
+    const maybeFlush = () => {
+      if (!sent && filesProcessing > 0 && filesFinished === filesProcessing) {
+        sent = true;
+        return res
+          .status(201)
+          .json({ success: true, images: uploaded, count: uploaded.length });
+      }
+    };
+
+    bb.on(
+      "file",
+      async (
+        _field: string,
+        file: NodeJS.ReadableStream,
+        info: Busboy.FileInfo,
+      ) => {
+        filesProcessing++;
+        const { mimeType, filename } = info;
+
+        const ext = (filename.split(".").pop() || "").toLowerCase();
+        const valid =
+          ALLOWED_MIME.has((mimeType || "").toLowerCase()) ||
+          ALLOWED_EXT.has(ext);
+        if (!valid) {
+          file.resume();
+          filesFinished++;
+          return maybeFlush();
+        }
+
+        const chunks: Buffer[] = [];
+        let total = 0;
+
+        file.on("data", (chunk: Buffer) => {
+          total += chunk.length;
+          if (total > MAX_BYTES) {
+            file.resume();
+          } else {
+            chunks.push(chunk);
+          }
+        });
+
+        file.on("end", async () => {
+          try {
+            if (total > MAX_BYTES) {
+              filesFinished++;
+              return maybeFlush();
+            }
+            const input = Buffer.concat(chunks);
+            const processed = await sharp(input)
+              .rotate()
+              .resize({ width: 1600, withoutEnlargement: true, fit: "inside" })
+              .jpeg({ quality: 82, progressive: true })
+              .toBuffer();
+
+            const key = `listings/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+            await uploadBufferToR2(key, processed, {
+              contentType: "image/jpeg",
+              cacheControl: "public, max-age=31536000, immutable",
+            });
+
+            try {
+              await storage.addListingImage({
+                listingId,
+                imagePath: key,
+                isPrimary: uploaded.length === 0,
+              });
+            } catch (dbErr) {
+              // non-fatal: image is uploaded; we still return its URL
+              console.error("DB save error (listing image):", dbErr);
+            }
+
+            uploaded.push({ imagePath: key, url: getR2Url(key) });
+            filesFinished++;
+            return maybeFlush();
+          } catch (e) {
+            console.error("Image processing error:", e);
+            filesFinished++;
+            return maybeFlush();
+          }
+        });
+
+        file.on("error", (e: Error) => {
+          console.error("File stream error:", e);
+          filesFinished++;
+          return maybeFlush();
+        });
+      },
+    );
+
+    bb.on("finish", () => {
+      // No files case
+      if (!sent && filesProcessing === 0) {
+        sent = true;
+        return badRequest(res, "Resim seçilmedi.");
+      }
+      // Else wait for maybeFlush from file handlers
+    });
+
+    bb.on("error", (e: Error) => {
+      if (!sent) {
+        sent = true;
+        return serverError(res, e, "Dosya yüklemesi başarısız oldu.");
+      }
+    });
+
+    req.pipe(bb);
+  },
+);
+
+// --- JSON-only error boundary for this router -------------------------------
+
+router.use((err: any, _req: Request, res: Response, _next: any) => {
+  const code = err?.status || 500;
+  res.type("application/json");
+  res
+    .status(code)
+    .json({
+      success: false,
+      message: "İstek işlenemedi.",
+      error: err?.message || String(err),
+    });
 });
 
 export default router;
