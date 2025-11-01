@@ -44,20 +44,25 @@ router.get("/api/oauth/google/redirect", async (req: Request, res: Response) => 
     const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier);
     const state = client.randomState();
 
+    // Detect if we're on HTTPS (production domain or Replit)
+    const isHttps = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https';
+    
     // Store code_verifier and state in session (httpOnly cookie)
     res.cookie("code_verifier", codeVerifier, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps, // Use secure cookies on HTTPS
       sameSite: "lax",
       maxAge: 10 * 60 * 1000, // 10 minutes
     });
 
     res.cookie("oauth_state", state, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps, // Use secure cookies on HTTPS
       sameSite: "lax",
       maxAge: 10 * 60 * 1000, // 10 minutes
     });
+    
+    console.log("🍪 OAuth cookies set (secure:", isHttps, ")");
 
     // Build authorization URL
     const authUrl = client.buildAuthorizationUrl(config, {
@@ -185,14 +190,20 @@ router.get("/api/oauth/google/callback", async (req: Request, res: Response) => 
 
     console.log("✅ JWT token generated for user:", user.id);
 
+    // Detect if we're on HTTPS (production domain or Replit)
+    const isHttps = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https';
+    const isProductionDomain = req.get('host')?.includes('odanet.com.tr');
+    
     // Set httpOnly cookie with JWT (domain: .odanet.com.tr for subdomain access)
     res.cookie("auth_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps, // Use secure cookies on HTTPS
       sameSite: "lax",
-      domain: process.env.NODE_ENV === "production" ? ".odanet.com.tr" : undefined,
+      domain: isProductionDomain ? ".odanet.com.tr" : undefined,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
+    
+    console.log("🍪 Auth token cookie set (secure:", isHttps, "domain:", isProductionDomain ? ".odanet.com.tr" : "localhost", ")");
 
     // Clear temporary OAuth cookies
     res.clearCookie("code_verifier");
