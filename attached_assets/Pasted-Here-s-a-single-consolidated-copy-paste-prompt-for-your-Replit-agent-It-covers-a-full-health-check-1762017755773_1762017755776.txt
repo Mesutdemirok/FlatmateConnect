@@ -1,0 +1,249 @@
+Here’s a single, consolidated copy-paste prompt for your Replit agent. It covers a full health check, profile/listing visibility, messaging, Google auth, weak-spot discovery, and fixes—with clear deliverables and “done” criteria.
+
+⸻
+
+Odanet (odanet.com.tr) — Full Health Check & Fixes (Single Brief)
+
+Scope: End-to-end audit and repair of the Odanet room/flat-sharing platform (frontend, API, DB, auth, uploads, messaging). Provide a written changelog and demonstrable proofs that every critical flow works in production.
+
+0) Ground Rules
+	•	Target: https://www.odanet.com.tr (production) and current Replit deployment.
+	•	Do not hardcode secrets. Use environment variables (see §A). Remove dead/duplicate keys.
+	•	Document everything in docs/HealthCheck.md with: Issue → Root cause → Fix → Files changed → Retest steps.
+	•	Provide short screen recordings/GIFs in docs/ proving each main flow.
+	•	Add automated tests (API + E2E) as regression guards.
+
+1) Profile Image Upload — BUG
+
+Symptoms: Profile pictures don’t upload/render; silent failures occur.
+Tasks:
+	•	Trace UI → API (e.g., /api/uploads) → storage → DB → render path.
+	•	Validate file types/size, sanitize names, generate responsive variants, fallback avatar.
+	•	Persist final image URL on the correct profile/user record; ensure profile header & listing cards read the same field.
+	•	Return clear success/error toasts.
+Deliverables:
+	•	Working upload E2E; avatar renders across app.
+	•	Unit test for upload API; E2E test that uploads and verifies the rendered avatar.
+
+2) Room Seeker Flow — Role & Visibility — BUG
+
+Symptoms: After completion, role assignment is wrong/incomplete; listing visibility inconsistent.
+Tasks:
+	•	Normalize role logic: ROOM_SEEKER vs ROOM_LISTER vs ADMIN (no cross-contamination).
+	•	Transactional write: create/update seeker record + correct role + cache invalidation.
+	•	Ensure seeker “listing” shows under Profile → My Listings and appears wherever seekers should be surfaced.
+Deliverables:
+	•	Deterministic role assignment; seeker record visible in profile.
+	•	E2E test: complete seeker flow → assert role + visibility.
+
+3) Room Listing Creation — Submission Error — BUG
+
+Symptoms: Room Listing form fails to submit and does not persist.
+Tasks:
+	•	Identify failure point (client validation, API, DB write).
+	•	Adopt a single validation schema (e.g., Zod/Yup) shared client/server.
+	•	Persist required fields (title, price, city/district, photos, availability, furnished, etc.).
+	•	Confirm images upload; thumbnails render on list/cards/detail.
+Deliverables:
+	•	Successful submission → redirect to detail; record saved.
+	•	API tests (create/update) + E2E tests (create/edit/delete).
+
+4) Listing Visibility in Profile & Messages — PARITY CHECK
+
+Goal: Users must clearly see their own listings and related conversations.
+Tasks:
+	•	Profile → My Listings: Show all user listings (ROOM + SEEKER) with status (draft/published), edit/delete, and (if present) views.
+	•	Message linkage: From a listing detail, Message/Contact opens a thread; thread appears in Inbox for both parties; thread clearly links back to that listing.
+	•	Unread counts, last-message preview, participant avatars/names correct.
+	•	Permissions: authors can manage their listings; others can only message; admins can moderate.
+Deliverables:
+	•	E2E test: User A posts listing → User B messages → both see thread in Inbox with listing context; replies work.
+
+5) Google Registration & Login — NOT WORKING
+
+Tasks:
+	•	Audit Google OAuth end-to-end:
+	•	Register Authorized redirect URIs for production + Replit preview.
+	•	Scopes minimal (email, profile). Enforce account linking (no duplicate users for same email).
+	•	Verify login/signup/logout/session refresh; fix loops/redirects.
+	•	Post-auth redirect: previous page or dashboard.
+	•	Surface errors (toast + console), not silent failures.
+Deliverables:
+	•	Working Google sign-in/out on production; linking for existing email works.
+	•	Tests: new Google user; link to existing email; logout; session persistence.
+	•	Document exact redirect URIs and env keys in docs/HealthCheck.md.
+
+6) General Platform Health Check
+
+DB & Models
+	•	Validate schema for users, profiles, listings, images, threads, messages, roles, sessions, oauth_accounts.
+	•	Enforce FKs, cascading deletes where safe, unique constraints (one profile per user), indexes for city/price/created_at.
+	•	Add seed-safe defaults and consistent timestamps.
+
+API Surface
+	•	Inventory all public endpoints: auth, profile, uploads, listings (CRUD), search, threads/messages.
+	•	Ensure consistent HTTP codes & JSON error shapes; request validation on all writes.
+
+Security & Privacy
+	•	AuthZ checks on every mutation; rate limits on sensitive routes; sanitize inputs; escape output.
+	•	Cookie flags: Secure, HttpOnly, SameSite; CSRF protection where relevant.
+
+UI/UX
+	•	Clear success/error toasts; skeleton loaders; mobile responsiveness (forms/cards/modals).
+	•	Accessible labels, ARIA, keyboard focus states; alt text on images.
+
+Performance
+	•	Image optimization (sizes, lazy load); pagination on list endpoints; avoid N+1 queries; cache headers where safe.
+
+SEO & Analytics
+	•	Canonicals, meta/OG, robots.
+	•	Verify GA4 fires on pageview + key conversions (listing created, message sent).
+
+Observability
+	•	Centralized error logging (Sentry if available, else structured logs).
+	•	Dev shows stack traces; prod shows friendly error messages.
+
+7) Automated Test Matrix (Create/Commit)
+	•	E2E (Playwright/Cypress)
+	1.	Email signup → profile completion → avatar upload.
+	2.	Google login (new + existing link).
+	3.	Create Room Listing (with photos) → visible on profile → another user messages → both see thread.
+	4.	Create Room Seeker profile → correct role → visible on profile → messaging works.
+	5.	Edit & delete listing (owner only); permission enforcement.
+	•	API tests with Postman collection or .http scripts for core routes.
+	•	Add a minimal seed to support tests (see §C).
+
+8) Definition of Done — Must ALL Pass
+	•	Profile image upload fully works; avatar renders in profile and listing cards.
+	•	Room Seeker flow sets correct role; seeker record visible in My Listings.
+	•	Room Listing creation persists; detail + cards render; images work.
+	•	From a listing, users can start a conversation; threads appear in Inbox with unread badges & correct back-link to the listing.
+	•	Google auth functional on odanet.com.tr with correct redirects and account linking.
+	•	Tests run green (CI or local) and cover the flows above.
+	•	docs/HealthCheck.md contains findings, fixes, retest steps, and short screen-caps.
+
+9) Final Verification
+	•	Deploy to production; verify all flows in an incognito window.
+	•	Add a one-page summary at the top of docs/HealthCheck.md: What was broken → What changed → Remaining issues → Steps to reproduce verified flows.
+
+⸻
+
+A) ENV — Standardize Keys (Single Source of Truth)
+
+Create .env.example; ensure .env matches. Keep one auth path only (NextAuth or Custom).
+
+App & URLs
+	•	NODE_ENV=production
+	•	PORT=3000
+	•	BASE_URL=https://www.odanet.com.tr
+	•	NEXT_PUBLIC_BASE_URL=https://www.odanet.com.tr
+
+Database (Neon Postgres)
+	•	DATABASE_URL=postgresql://…neon.tech/neondb?sslmode=require
+
+Auth (choose ONE)
+	•	NextAuth-style (recommended if present)
+	•	AUTH_SECRET=<32+ chars>
+	•	AUTH_TRUST_HOST=true
+	•	AUTH_URL=https://www.odanet.com.tr
+	•	GOOGLE_CLIENT_ID=...
+	•	GOOGLE_CLIENT_SECRET=...
+	•	(Optional) NEXTAUTH_URL=https://www.odanet.com.tr
+	•	Custom Express OAuth
+	•	SESSION_SECRET=<32+ chars>
+	•	COOKIE_NAME=odanet_session
+	•	GOOGLE_CLIENT_ID=...
+	•	GOOGLE_CLIENT_SECRET=...
+	•	OAUTH_REDIRECT_URI=https://www.odanet.com.tr/api/auth/callback/google
+	•	OAUTH_ALLOWED_REDIRECT_ORIGINS=https://www.odanet.com.tr,https://<replit-preview-domain>
+
+Uploads/Storage (pick one)
+	•	Local: UPLOAD_DIR=./uploads  IMAGE_BASE_URL=/uploads
+	•	S3: S3_BUCKET=... S3_REGION=... S3_ACCESS_KEY_ID=... S3_SECRET_ACCESS_KEY=... IMAGE_BASE_URL=https://<bucket>.s3.<region>.amazonaws.com
+
+Email (if used)
+	•	SMTP_HOST=... SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... SMTP_FROM="Odanet <no-reply@odanet.com.tr>"
+
+Analytics / Observability
+	•	NEXT_PUBLIC_GA4_ID=G-XXXXXXX
+	•	(Optional) SENTRY_DSN=...
+
+DoD (ENV)
+	•	Only one auth path remains.
+	•	.env.example accurate; app boots with .env; no missing/misnamed keys.
+	•	Code references only these canonical names.
+
+⸻
+
+B) Google OAuth Redirects — Register Correct URIs
+
+Register both production and Replit preview redirect URIs in Google Cloud Console.
+
+If NextAuth-style:
+	•	https://www.odanet.com.tr/api/auth/callback/google
+	•	https://<replit-preview-domain>/api/auth/callback/google
+
+If Custom OAuth:
+	•	Use the exact route your router serves (e.g., /api/auth/callback/google).
+
+DoD (OAuth)
+	•	New Google user can sign up in production.
+	•	Existing email links Google without duplicate users.
+	•	Post-auth redirect to last page or dashboard works.
+
+⸻
+
+C) Seed Dataset — Minimal, Realistic, Reversible
+
+Provide ONE of the following:
+
+Option 1 — Postgres SQL (scripts/seed.sql)
+	•	Create 3 users: admin@odanet.com.tr, lister@odanet.com.tr, seeker@odanet.com.tr.
+	•	Create profiles (display names, avatar URLs).
+	•	Ensure roles table has ADMIN, ROOM_LISTER, ROOM_SEEKER; map roles to users.
+	•	Seed one ROOM listing (Kadıköy) with two images and one SEEKER listing.
+	•	Create a thread tied to the ROOM listing; seed 2 sample messages.
+	•	Place placeholder images in public/seed/... (or S3) and ensure IMAGE_BASE_URL resolves.
+
+Run:
+psql "$DATABASE_URL" -f scripts/seed.sql
+
+Option 2 — Prisma (if applicable)
+	•	prisma/seed.ts upserts the same users/roles/listings/thread/messages.
+	•	Add to package.json:
+
+{ "scripts": { "seed": "ts-node --transpile-only prisma/seed.ts" } }
+
+Passwords & Auth Notes
+	•	If password auth exists, set seed passwords to Test1234! (hashed).
+	•	If Google-only, allow later linking to these emails via oauth_accounts.
+
+DoD (Seed)
+	1.	lister@odanet.com.tr sees Kadıköy listing under My Listings.
+	2.	seeker@odanet.com.tr sees Inbox thread linked to that listing.
+	3.	admin@odanet.com.tr has ADMIN role.
+	4.	Seed images render correctly.
+
+⸻
+
+D) Post-Seed E2E Checks — Must Pass
+	•	Avatar upload for each seed user (persists + renders).
+	•	Room Listing flow: create with photos → profile shows it → public page loads → another user messages.
+	•	Room Seeker flow: complete → correct role → visible in profile → messaging works.
+	•	Inbox/Threads: unread badges, listing context, deep-link to listing.
+	•	Google Sign-In: new + existing link flows.
+
+⸻
+
+E) Output & Handover
+	•	Commit: .env.example, scripts/seed.sql (or prisma/seed.ts), test suites, and docs/HealthCheck.md.
+	•	Top of docs/HealthCheck.md includes:
+	•	Final env keys in use
+	•	Registered redirect URIs
+	•	Seed instructions + how to reset DB
+	•	Short screen-caps proving each flow
+	•	One-page summary: broken → changes → remaining issues → verified reproduction steps
+
+⸻
+
+Please execute the full health check, implement the fixes, commit tests and docs, deploy to production, and confirm all DoD items pass in an incognito session on https://www.odanet.com.tr.
