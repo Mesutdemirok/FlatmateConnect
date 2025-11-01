@@ -67,6 +67,7 @@ function Router() {
       <Route path="/giris" component={Auth} />
       <Route path="/uye-ol" component={Auth} />
       <Route path="/auth" component={Auth} />
+      <Route path="/auth/register" component={Auth} />
       <Route path="/auth/callback" component={AuthCallback} />
       
       {/* Home route - Same for all users */}

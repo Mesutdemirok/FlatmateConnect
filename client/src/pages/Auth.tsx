@@ -39,7 +39,9 @@ export default function Auth() {
 
   // Default tab based on URL
   const [activeTab, setActiveTab] = useState<string>(
-    window.location.pathname === '/uye-ol' ? 'register' : 'login'
+    window.location.pathname === '/uye-ol' || window.location.pathname === '/auth/register' 
+      ? 'register' 
+      : 'login'
   );
 
   // Redirect authenticated users to /profil

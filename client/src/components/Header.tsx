@@ -173,9 +173,17 @@ export default function Header() {
               </div>
             ) : (
               <div className="hidden sm:flex items-center gap-2">
-                <Link href="/giris" data-testid="auth-link">
-                  <Button className="bg-white text-indigo-700 hover:bg-indigo-100 font-semibold">
-                    Giriş Yap / Üye Ol
+                <Link href="/auth" data-testid="login-link">
+                  <Button 
+                    variant="outline"
+                    className="bg-white/10 text-white border-white/30 hover:bg-white/20 font-medium"
+                  >
+                    Giriş Yap
+                  </Button>
+                </Link>
+                <Link href="/auth/register" data-testid="register-link">
+                  <Button className="bg-white text-indigo-700 hover:bg-indigo-50 font-semibold">
+                    Üye Ol
                   </Button>
                 </Link>
               </div>
@@ -272,10 +280,17 @@ export default function Header() {
               </>
             ) : (
               <>
-                {/* Giriş Yap / Üye Ol - Unified */}
-                <Link href="/giris">
-                  <div className="block rounded-lg px-3 py-2.5 hover:bg-indigo-100/50 transition-colors cursor-pointer font-semibold">
-                    Giriş Yap / Üye Ol
+                {/* Giriş Yap */}
+                <Link href="/auth" data-testid="mobile-login-link">
+                  <div className="block rounded-lg px-3 py-2.5 hover:bg-indigo-100/50 transition-colors cursor-pointer font-medium">
+                    Giriş Yap
+                  </div>
+                </Link>
+                
+                {/* Üye Ol */}
+                <Link href="/auth/register" data-testid="mobile-register-link">
+                  <div className="block rounded-lg px-3 py-2.5 hover:bg-fuchsia-100/50 transition-colors cursor-pointer font-semibold">
+                    Üye Ol
                   </div>
                 </Link>
               </>
