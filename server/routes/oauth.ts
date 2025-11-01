@@ -16,11 +16,11 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI!;
 const FRONTEND_URL = process.env.FRONTEND_URL!;
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-// Debug log (no secrets shown)
+// Debug log (safe)
 console.log("🔍 OAuth Environment Variables:");
 console.log(
   "   GOOGLE_CLIENT_ID:",
-  GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.substring(0, 20)}...` : "NOT SET",
+  GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.slice(0, 20)}...` : "NOT SET",
 );
 console.log("   GOOGLE_REDIRECT_URI:", GOOGLE_REDIRECT_URI || "NOT SET");
 console.log("   FRONTEND_URL:", FRONTEND_URL || "NOT SET");
@@ -36,48 +36,42 @@ if (
   console.error("❌ Missing required environment variables for Google OAuth");
 }
 
-/**
- * 1️⃣ Redirect user to Google's OAuth consent screen
- * GET /api/oauth/google/redirect
- */
+/* ---------------------------------------------------------
+   🔧 Helper: cookie options for Odanet domain
+--------------------------------------------------------- */
+function getCookieOptions(req: Request, shortLived = false) {
+  const isHttps =
+    req.protocol === "https" || req.get("x-forwarded-proto") === "https";
+  const isProductionDomain = req.get("host")?.includes("odanet.com.tr");
+  return {
+    httpOnly: true,
+    secure: isHttps,
+    sameSite: "none" as const,
+    domain: isProductionDomain ? ".odanet.com.tr" : undefined,
+    maxAge: shortLived ? 10 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000, // 10 min or 7 days
+  };
+}
+
+/* ---------------------------------------------------------
+   1️⃣ Redirect user to Google OAuth consent screen
+--------------------------------------------------------- */
 router.get("/oauth/google/redirect", async (req: Request, res: Response) => {
   try {
-    // openid-client v6 API
     const config = await client.discovery(
       new URL("https://accounts.google.com"),
       GOOGLE_CLIENT_ID,
-      {
-        client_secret: GOOGLE_CLIENT_SECRET,
-      }
+      { client_secret: GOOGLE_CLIENT_SECRET },
     );
 
-    console.log("🔐 OAuth Redirect Details:");
-    console.log("   Using GOOGLE_REDIRECT_URI:", GOOGLE_REDIRECT_URI);
-
-    // Generate PKCE and state
     const codeVerifier = client.randomPKCECodeVerifier();
     const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier);
     const state = client.randomState();
 
-    // Detect if we're on HTTPS (production domain or Replit)
-    const isHttps = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https';
-    
-    // Store code_verifier and state in session (httpOnly cookie)
-    res.cookie("code_verifier", codeVerifier, {
-      httpOnly: true,
-      secure: isHttps, // Use secure cookies on HTTPS
-      sameSite: "lax",
-      maxAge: 10 * 60 * 1000, // 10 minutes
-    });
+    // 🍪 Set short-lived cookies for OAuth flow
+    res.cookie("code_verifier", codeVerifier, getCookieOptions(req, true));
+    res.cookie("oauth_state", state, getCookieOptions(req, true));
 
-    res.cookie("oauth_state", state, {
-      httpOnly: true,
-      secure: isHttps, // Use secure cookies on HTTPS
-      sameSite: "lax",
-      maxAge: 10 * 60 * 1000, // 10 minutes
-    });
-    
-    console.log("🍪 OAuth cookies set (secure:", isHttps, ")");
+    console.log("🍪 OAuth cookies set with domain .odanet.com.tr");
 
     // Build authorization URL
     const authUrl = client.buildAuthorizationUrl(config, {
@@ -85,7 +79,7 @@ router.get("/oauth/google/redirect", async (req: Request, res: Response) => {
       scope: "openid email profile",
       code_challenge: codeChallenge,
       code_challenge_method: "S256",
-      state: state,
+      state,
     });
 
     console.log("🔄 Redirecting to Google OAuth...");
@@ -96,76 +90,73 @@ router.get("/oauth/google/redirect", async (req: Request, res: Response) => {
   }
 });
 
-/**
- * 2️⃣ Handle Google's callback
- * GET /api/oauth/google/callback
- */
+/* ---------------------------------------------------------
+   2️⃣ Handle Google's OAuth callback
+--------------------------------------------------------- */
 router.get("/oauth/google/callback", async (req: Request, res: Response) => {
   try {
     const { code, state } = req.query;
     const codeVerifier = req.cookies?.code_verifier;
     const storedState = req.cookies?.oauth_state;
 
-    console.log("🔐 OAuth Callback - Validating state and code");
+    console.log("🔐 Google OAuth callback received");
 
-    // Validate state and code
     if (!code || typeof code !== "string") {
-      console.error("❌ No code received from Google");
+      console.error("❌ Missing code from Google");
       return res.redirect(`${FRONTEND_URL}/auth?error=no_code`);
     }
-
     if (!codeVerifier) {
-      console.error("❌ No code_verifier found in cookies");
+      console.error("❌ Missing code_verifier in cookies");
       return res.redirect(`${FRONTEND_URL}/auth?error=no_code_verifier`);
     }
-
     if (!storedState || state !== storedState) {
-      console.error("❌ State mismatch or missing");
+      console.error("❌ OAuth state mismatch");
       return res.redirect(`${FRONTEND_URL}/auth?error=state_mismatch`);
     }
 
-    console.log("✅ No OAuth errors, proceeding with authentication");
-
-    // openid-client v6 API
     const config = await client.discovery(
       new URL("https://accounts.google.com"),
       GOOGLE_CLIENT_ID,
-      {
-        client_secret: GOOGLE_CLIENT_SECRET,
-      }
+      { client_secret: GOOGLE_CLIENT_SECRET },
     );
 
-    console.log("✅ Google OAuth config discovered");
+    console.log("✅ Google configuration discovered");
 
     // Exchange authorization code for tokens
-    const tokens = await client.authorizationCodeGrant(config, new URL(req.url, GOOGLE_REDIRECT_URI), {
-      pkceCodeVerifier: codeVerifier,
-      expectedState: storedState,
-      idTokenExpected: true,
+    const tokens = await client.authorizationCodeGrant(
+      config,
+      new URL(req.url, GOOGLE_REDIRECT_URI),
+      {
+        pkceCodeVerifier: codeVerifier,
+        expectedState: storedState,
+        idTokenExpected: true,
+      },
+    );
+
+    console.log("✅ Tokens received, fetching user info...");
+    const userinfo = await client.fetchUserInfo(
+      config,
+      tokens.access_token,
+      "sub",
+    );
+
+    console.log("✅ Google user info:", {
+      email: userinfo.email,
+      verified: userinfo.email_verified,
     });
 
-    console.log("✅ Tokens received, fetching userinfo...");
-
-    // Fetch user info
-    const userinfo = await client.fetchUserInfo(config, tokens.access_token, "sub");
-
-    console.log("✅ Google user info received:", { 
-      email: userinfo.email, 
-      verified: userinfo.email_verified 
-    });
-
-    if (!userinfo.email || typeof userinfo.email !== "string") {
-      console.error("❌ No email in userinfo");
+    if (!userinfo.email) {
+      console.error("❌ No email in Google userinfo");
       return res.redirect(`${FRONTEND_URL}/auth?error=no_email`);
     }
 
-    // Find or create user in database
+    // 🧠 Find or create user
     let user = await db.query.users.findFirst({
       where: eq(users.email, userinfo.email),
     });
 
     if (!user) {
-      console.log("➕ Creating new user from Google OAuth");
+      console.log("➕ Creating new user from Google account");
       const [newUser] = await db
         .insert(users)
         .values({
@@ -179,40 +170,23 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
       user = newUser;
     }
 
-    console.log("✅ User found/created:", user.id);
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    console.log("✅ JWT token generated for user:", user.id);
-
-    // Detect if we're on HTTPS (production domain or Replit)
-    const isHttps = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https';
-    const isProductionDomain = req.get('host')?.includes('odanet.com.tr');
-    
-    // Set httpOnly cookie with JWT (domain: .odanet.com.tr for subdomain access)
-    res.cookie("auth_token", token, {
-      httpOnly: true,
-      secure: isHttps, // Use secure cookies on HTTPS
-      sameSite: "lax",
-      domain: isProductionDomain ? ".odanet.com.tr" : undefined,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    // 🪙 Create JWT
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
+      expiresIn: "7d",
     });
-    
-    console.log("🍪 Auth token cookie set (secure:", isHttps, "domain:", isProductionDomain ? ".odanet.com.tr" : "localhost", ")");
 
-    // Clear temporary OAuth cookies
-    res.clearCookie("code_verifier");
-    res.clearCookie("oauth_state");
+    // 🍪 Set JWT cookie
+    res.cookie("auth_token", token, getCookieOptions(req));
+    console.log("🍪 Auth cookie set for domain .odanet.com.tr");
 
-    console.log("🔄 OAuth Success - Redirecting to frontend:", `${FRONTEND_URL}/auth/callback`);
+    // 🧹 Clear temp cookies
+    res.clearCookie("code_verifier", getCookieOptions(req, true));
+    res.clearCookie("oauth_state", getCookieOptions(req, true));
+
+    console.log("✅ OAuth success - redirecting to frontend");
     res.redirect(`${FRONTEND_URL}/auth/callback`);
-  } catch (error) {
-    console.error("❌ OAuth callback error:", error);
+  } catch (error: any) {
+    console.error("❌ OAuth callback error:", error?.message || error);
     res.redirect(`${FRONTEND_URL}/auth?error=oauth_failed`);
   }
 });
