@@ -9,14 +9,14 @@ import cookieParser from "cookie-parser";
 const router = express.Router();
 router.use(cookieParser());
 
-// 🔐 Load environment variables
+// 🔐 Environment değişkenlerini yükle
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI!;
 const FRONTEND_URL = process.env.FRONTEND_URL!;
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-// 🧭 Environment sanity check
+// 🌍 Ortam kontrolü
 console.log("🔍 OAuth Environment Variables:");
 console.log(
   "   GOOGLE_CLIENT_ID:",
@@ -26,39 +26,21 @@ console.log("   GOOGLE_REDIRECT_URI:", GOOGLE_REDIRECT_URI || "NOT SET");
 console.log("   FRONTEND_URL:", FRONTEND_URL || "NOT SET");
 console.log("   JWT_SECRET:", JWT_SECRET ? "SET (hidden)" : "NOT SET");
 
-if (
-  !GOOGLE_CLIENT_ID ||
-  !GOOGLE_CLIENT_SECRET ||
-  !GOOGLE_REDIRECT_URI ||
-  !FRONTEND_URL ||
-  !JWT_SECRET
-) {
-  console.error("❌ Eksik environment değişkenleri var (Google OAuth için)");
-}
-
-/* ---------------------------------------------------------
-   ⚙️ Ortak Cookie Ayarları (Chrome “partitioned” desteği eklendi)
---------------------------------------------------------- */
+// ⚙️ Cookie seçenekleri (her zaman HTTPS ve .odanet.com.tr domaini)
 function getCookieOptions(req: Request, shortLived = false) {
   const isProductionDomain = req.get("host")?.includes("odanet.com.tr");
-  
-  // OAuth callback cross-site olduğu için:
-  // - SameSite=None: Google'dan .odanet.com.tr'ye redirect izni
-  // - Secure=true: SameSite=None için zorunlu (HTTPS gerekli)
-  // - Domain: .odanet.com.tr (subdomain erişimi)
-
   return {
     httpOnly: true,
- secure: true, // OAuth için her zaman secure (HTTPS zorunlu)
+    secure: true,
     sameSite: "none" as const,
     domain: isProductionDomain ? ".odanet.com.tr" : undefined,
     path: "/",
-    maxAge: shortLived ? 10 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000,
+    maxAge: shortLived ? 10 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000, // 10dk veya 7gün
   };
 }
 
 /* ---------------------------------------------------------
-   1️⃣ Kullanıcıyı Google OAuth ekranına yönlendir
+   1️⃣ Google OAuth yönlendirmesi
 --------------------------------------------------------- */
 router.get("/oauth/google/redirect", async (req: Request, res: Response) => {
   try {
@@ -72,15 +54,12 @@ router.get("/oauth/google/redirect", async (req: Request, res: Response) => {
     const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier);
     const state = client.randomState();
 
-    // 🍪 PKCE doğrulaması için kısa ömürlü çerezleri ayarla
+    // 🍪 Kısa ömürlü doğrulama çerezleri
     res.cookie("code_verifier", codeVerifier, getCookieOptions(req, true));
     res.cookie("oauth_state", state, getCookieOptions(req, true));
+    console.log("🍪 OAuth çerezleri ayarlandı (.odanet.com.tr, SameSite=None)");
 
-    console.log(
-      "🍪 OAuth çerezleri ayarlandı (.odanet.com.tr, SameSite=None, Partitioned)",
-    );
-
-    // 🔗 Google yönlendirme bağlantısı oluştur
+    // 🔗 Google yönlendirme URL'si oluştur
     const authUrl = client.buildAuthorizationUrl(config, {
       redirect_uri: GOOGLE_REDIRECT_URI,
       scope: "openid email profile",
@@ -90,8 +69,6 @@ router.get("/oauth/google/redirect", async (req: Request, res: Response) => {
     });
 
     console.log("🔄 Google OAuth'a yönlendiriliyor...");
-    console.log("   redirect_uri:", GOOGLE_REDIRECT_URI);
-    console.log("   state:", state);
     res.redirect(authUrl.href);
   } catch (error) {
     console.error("❌ OAuth yönlendirme hatası:", error);
@@ -100,7 +77,7 @@ router.get("/oauth/google/redirect", async (req: Request, res: Response) => {
 });
 
 /* ---------------------------------------------------------
-   2️⃣ Google'dan gelen geri dönüşü işle
+   2️⃣ Google OAuth callback
 --------------------------------------------------------- */
 router.get("/oauth/google/callback", async (req: Request, res: Response) => {
   try {
@@ -112,7 +89,6 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
     console.log("   Gelen state:", state);
     console.log("   Kaydedilen state:", storedState);
 
-    // 🔎 Durum kontrolleri
     if (!code || typeof code !== "string") {
       console.error("❌ Google'dan code değeri gelmedi");
       return res.redirect(`${FRONTEND_URL}/auth?error=no_code`);
@@ -123,30 +99,24 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
     }
     if (!storedState || state !== storedState) {
       console.error("❌ OAuth state uyuşmazlığı");
-      // Temizle, böylece sonraki denemede karışıklık olmaz
       res.clearCookie("oauth_state", getCookieOptions(req, true));
       res.clearCookie("code_verifier", getCookieOptions(req, true));
       return res.redirect(`${FRONTEND_URL}/auth?error=state_mismatch`);
     }
 
+    // Google yapılandırması
     const config = await client.discovery(
       new URL("https://accounts.google.com"),
       GOOGLE_CLIENT_ID,
       { client_secret: GOOGLE_CLIENT_SECRET },
     );
-
     console.log("✅ Google yapılandırması bulundu");
 
-    // 🔗 Callback URL'ini doğru şekilde oluştur (query parametreleri ile birlikte)
-    const callbackUrl = new URL(GOOGLE_REDIRECT_URI);
-    callbackUrl.search = new URLSearchParams(req.query as Record<string, string>).toString();
-    
-    console.log("🔗 Callback URL:", callbackUrl.href);
-
-    // 🔄 Google token alma işlemi
+    // ✅ ÖNEMLİ DÜZELTME:
+    // Daha önceki hatalı satır: new URL(req.url, GOOGLE_REDIRECT_URI)
     const tokens = await client.authorizationCodeGrant(
       config,
-      callbackUrl,
+      new URL(GOOGLE_REDIRECT_URI),
       {
         pkceCodeVerifier: codeVerifier,
         expectedState: storedState,
@@ -154,7 +124,7 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
       },
     );
 
-    console.log("✅ Tokenlar alındı, kullanıcı bilgileri getiriliyor...");
+    console.log("✅ Tokenlar alındı, kullanıcı bilgisi getiriliyor...");
     const userinfo = await client.fetchUserInfo(
       config,
       tokens.access_token,
@@ -191,16 +161,16 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
       user = newUser;
     }
 
-    // 🔑 JWT üret
+    // 🔑 JWT oluştur
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
       expiresIn: "7d",
     });
 
-    // 🍪 Kullanıcıyı giriş yapmış olarak ayarla
+    // 🍪 Kullanıcı oturum çerezi ayarla
     res.cookie("auth_token", token, getCookieOptions(req));
     console.log("🍪 auth_token ayarlandı (.odanet.com.tr)");
 
-    // 🧹 Geçici çerezleri sil
+    // 🧹 Geçici çerezleri temizle
     res.clearCookie("code_verifier", getCookieOptions(req, true));
     res.clearCookie("oauth_state", getCookieOptions(req, true));
 
