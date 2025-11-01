@@ -137,9 +137,13 @@ export const seekerProfiles = pgTable("seeker_profiles", {
   about: text("about"), // Bio/description
   preferredLocation: text("preferred_location"), // Single location preference
   
-  // Lifestyle Preferences (normalized)
-  smokingPreference: varchar("smoking_preference"), // non-smoker | smoker | social-smoker | no-preference
-  petPreference: varchar("pet_preference"), // no-pets | cat-friendly | dog-friendly | all-pets | no-preference
+  // Personal Lifestyle (about the seeker)
+  isSmoker: varchar("is_smoker"), // "true" | "false" - Whether the seeker smokes
+  hasPets: varchar("has_pets"), // "true" | "false" - Whether the seeker has pets
+  
+  // Roommate Preferences (what they want in a roommate)
+  smokingPreference: varchar("smoking_preference"), // İçebilir | İçemez | Farketmez
+  petPreference: varchar("pet_preference"), // Olabilir | Olmamalı | Farketmez
   cleanlinessLevel: varchar("cleanliness_level"), // very-clean | clean | average | relaxed
   socialLevel: varchar("social_level"),
   workSchedule: varchar("work_schedule"),
