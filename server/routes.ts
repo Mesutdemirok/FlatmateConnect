@@ -58,17 +58,17 @@ const seekerUpload = multer({
 
 /* -------------------------------------------------------
    🔐 Ortak Cookie Ayarları
+   Production: SameSite=None, Secure, domain=.odanet.com.tr
 ------------------------------------------------------- */
 function getCookieOptions(req: express.Request) {
-  const isHttps =
-    req.protocol === "https" || req.get("x-forwarded-proto") === "https";
   const isProductionDomain = req.get("host")?.includes("odanet.com.tr");
   return {
     httpOnly: true,
-    secure: isHttps,
-    sameSite: "none" as const, // OAuth ile tam uyum
+    secure: true, // Always secure (HTTPS enforced via trust proxy)
+    sameSite: "none" as const, // Required for OAuth cross-site cookies
     domain: isProductionDomain ? ".odanet.com.tr" : undefined,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   };
 }
 

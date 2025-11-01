@@ -168,29 +168,26 @@ app.use((req, res, next) => {
 });
 
 /* ---------------------------------------------------------
-   API routers (OAuth first, then uploads)
---------------------------------------------------------- */
-app.use("/api", oauthRouter);
-app.use("/api", uploadsRouter);
-
-/* ---------------------------------------------------------
-   API 404 guard — MUST come after all /api routers and BEFORE Vite/static
-   Prevents Vite SPA fallback (HTML) from handling unknown /api paths.
---------------------------------------------------------- */
-app.use("/api", (req, res) => {
-  res.status(404).type("application/json").json({
-    success: false,
-    message: "API route not found",
-    method: req.method,
-    path: req.originalUrl,
-  });
-});
-
-/* ---------------------------------------------------------
-   App bootstrap, OG handlers, Vite/static, and error boundary
+   App bootstrap - Register routes FIRST, then 404 handler
 --------------------------------------------------------- */
 (async () => {
+  // 1️⃣ Register all API routes (auth, listings, seekers, etc.)
   const server = await registerRoutes(app);
+  
+  // 2️⃣ Mount OAuth and Upload routers
+  app.use("/api", oauthRouter);
+  app.use("/api", uploadsRouter);
+  
+  // 3️⃣ API 404 guard — MUST come AFTER all /api routers
+  // Prevents Vite SPA fallback (HTML) from handling unknown /api paths
+  app.use("/api", (req, res) => {
+    res.status(404).type("application/json").json({
+      success: false,
+      message: "API route not found",
+      method: req.method,
+      path: req.originalUrl,
+    });
+  });
 
   // OG (social meta) for bots only or explicit ?_og=1
   app.get("/oda-ilani/:id", (req, res, next) => ogHandler(req, res, next));
