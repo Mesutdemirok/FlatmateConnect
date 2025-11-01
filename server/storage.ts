@@ -175,7 +175,7 @@ export interface IStorage {
   createSeekerProfile(profile: InsertSeekerProfile & { slug?: string }): Promise<SeekerProfile>;
   updateSeekerProfile(
     id: string,
-    profile: Partial<InsertSeekerProfile>,
+    profile: Partial<InsertSeekerProfile> & { slug?: string },
   ): Promise<SeekerProfile>;
   deleteSeekerProfile(id: string): Promise<void>;
 

@@ -236,8 +236,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /* -------------------------------------------------------
-     🧍 Seeker & Others (unchanged core)
+     🧍 Seeker Profiles
   ------------------------------------------------------- */
+  // Get all public seeker profiles
   app.get("/api/seekers/public", async (req, res) => {
     try {
       const seekers = await storage.getSeekerProfiles({
@@ -261,6 +262,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("❌ Error fetching seeker by slug:", err);
       res.status(500).json({ message: "Profil getirilemedi" });
+    }
+  });
+
+  // Get user's seeker profile
+  app.get("/api/seekers/user/:userId", jwtAuth, async (req, res) => {
+    try {
+      const seeker = await storage.getUserSeekerProfile(req.params.userId);
+      if (!seeker) {
+        return res.status(404).json({ message: "Profil bulunamadı" });
+      }
+      res.json(seeker);
+    } catch (err) {
+      console.error("❌ Error fetching user seeker profile:", err);
+      res.status(500).json({ message: "Profil getirilemedi" });
+    }
+  });
+
+  // Create new seeker profile
+  app.post("/api/seekers", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const data = insertSeekerProfileSchema.parse({ ...req.body, userId });
+      const slug = makeSlug([data.fullName || '', data.preferredLocation || '']);
+      const seeker = await storage.createSeekerProfile({ 
+        ...data, 
+        slug,
+        isActive: true,
+        isPublished: true 
+      });
+      res.status(201).json(seeker);
+    } catch (err: any) {
+      console.error("❌ Error creating seeker profile:", err);
+      res.status(400).json({ message: err.message || "Profil oluşturulamadı" });
+    }
+  });
+
+  // Update seeker profile
+  app.put("/api/seekers/:id", jwtAuth, async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      if (!seeker || seeker.userId !== req.userId) {
+        return res.status(403).json({ message: "Yetkiniz yok" });
+      }
+      
+      const data = insertSeekerProfileSchema.parse(req.body);
+      const slug = makeSlug([data.fullName || seeker.fullName || '', data.preferredLocation || seeker.preferredLocation || '']);
+      const updateData = { ...data, slug } as Parameters<typeof storage.updateSeekerProfile>[1];
+      const updated = await storage.updateSeekerProfile(req.params.id, updateData);
+      res.json(updated);
+    } catch (err: any) {
+      console.error("❌ Error updating seeker profile:", err);
+      res.status(400).json({ message: err.message || "Profil güncellenemedi" });
+    }
+  });
+
+  // Delete seeker profile
+  app.delete("/api/seekers/:id", jwtAuth, async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      if (!seeker || seeker.userId !== req.userId) {
+        return res.status(403).json({ message: "Yetkiniz yok" });
+      }
+      await storage.deleteSeekerProfile(req.params.id);
+      res.status(204).send();
+    } catch (err) {
+      console.error("❌ Error deleting seeker profile:", err);
+      res.status(500).json({ message: "Profil silinemedi" });
+    }
+  });
+
+  // Delete seeker profile photo
+  app.delete("/api/seekers/:id/photo", jwtAuth, async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      if (!seeker || seeker.userId !== req.userId) {
+        return res.status(403).json({ message: "Yetkiniz yok" });
+      }
+      
+      // Update profile to remove photo
+      await storage.updateSeekerProfile(req.params.id, { profilePhotoUrl: null });
+      res.json({ message: "Fotoğraf silindi" });
+    } catch (err) {
+      console.error("❌ Error deleting seeker photo:", err);
+      res.status(500).json({ message: "Fotoğraf silinemedi" });
     }
   });
 
