@@ -1,0 +1,232 @@
+
+
+Addendum — Standardize ENV Keys + Seed Dataset (Odanet)
+
+A) Environment Variables (single source of truth)
+
+Create .env.example and ensure .env in Replit matches it. Remove unused keys after migration. Use these canonical names:
+
+App & URLs
+	•	NODE_ENV=production
+	•	PORT=3000
+	•	BASE_URL=https://www.odanet.com.tr
+	•	NEXT_PUBLIC_BASE_URL=https://www.odanet.com.tr
+
+Database (Neon Postgres)
+	•	DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=require
+
+Auth (choose ONE path and delete the other)
+	•	Path 1: NextAuth v5 (recommended if present)
+	•	AUTH_SECRET=...  (random 32+ chars)
+	•	AUTH_TRUST_HOST=true
+	•	AUTH_URL=https://www.odanet.com.tr
+	•	GOOGLE_CLIENT_ID=...
+	•	GOOGLE_CLIENT_SECRET=...
+	•	(Optional) NEXTAUTH_URL=https://www.odanet.com.tr
+	•	Path 2: Custom OAuth (Express)
+	•	SESSION_SECRET=... (random 32+ chars)
+	•	COOKIE_NAME=odanet_session
+	•	GOOGLE_CLIENT_ID=...
+	•	GOOGLE_CLIENT_SECRET=...
+	•	OAUTH_REDIRECT_URI=https://www.odanet.com.tr/api/auth/callback/google
+	•	OAUTH_ALLOWED_REDIRECT_ORIGINS=https://www.odanet.com.tr,https://<replit-preview-domain>
+
+Uploads/Storage (pick local OR S3 and delete the other)
+	•	Local: UPLOAD_DIR=./uploads  IMAGE_BASE_URL=/uploads
+	•	S3: S3_BUCKET=... S3_REGION=... S3_ACCESS_KEY_ID=... S3_SECRET_ACCESS_KEY=... IMAGE_BASE_URL=https://<bucket>.s3.<region>.amazonaws.com
+
+Email (if used)
+	•	SMTP_HOST=... SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... SMTP_FROM="Odanet <no-reply@odanet.com.tr>"
+
+Analytics / Observability
+	•	NEXT_PUBLIC_GA4_ID=G-XXXXXXX
+	•	(Optional) SENTRY_DSN=...
+
+Definition of Done (ENV)
+	•	One auth path only (NextAuth or Custom) remains.
+	•	.env.example is accurate; app boots with .env in Replit without missing keys.
+	•	All code paths import these canonical names (no stray process.env.X elsewhere).
+
+⸻
+
+B) Google OAuth Redirects to Register
+
+Register both production and Replit preview URIs in Google Cloud Console.
+
+If using NextAuth-style routes:
+	•	Authorized redirect URIs:
+	•	https://www.odanet.com.tr/api/auth/callback/google
+	•	https://<your-replit-preview-domain>/api/auth/callback/google
+
+If using Custom Express OAuth routes:
+	•	Match whatever your router expects (e.g., /api/auth/callback/google).
+
+Definition of Done (OAuth)
+	•	New user can sign in with Google on production.
+	•	Existing email user links Google without duplicate accounts.
+	•	Post-auth redirect returns to last visited page or dashboard.
+
+⸻
+
+C) Seed Dataset (minimal, realistic, reversible)
+
+Create one of these, based on the stack:
+	•	If Prisma exists: prisma/seed.ts + npm run seed
+	•	Otherwise: scripts/seed.sql (Postgres SQL)
+
+Also add placeholder images at:
+	•	public/seed/kadikoy1.jpg, public/seed/kadikoy2.jpg
+	•	public/seed/seeker-avatar.jpg
+	•	Or, if using local uploads: uploads/seed/... and set IMAGE_BASE_URL accordingly.
+
+Option 1 — Postgres SQL (place at scripts/seed.sql)
+
+-- Enable UUID if needed (Neon: pgcrypto provides gen_random_uuid)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Adjust table/column names to match your schema, keep semantics identical.
+
+-- USERS
+INSERT INTO users (id, email, email_verified, created_at)
+VALUES
+  (gen_random_uuid(), 'admin@odanet.com.tr', NOW(), NOW()),
+  (gen_random_uuid(), 'lister@odanet.com.tr', NOW(), NOW()),
+  (gen_random_uuid(), 'seeker@odanet.com.tr', NOW(), NOW())
+ON CONFLICT (email) DO NOTHING;
+
+-- PROFILES (avatar, display name)
+INSERT INTO profiles (id, user_id, display_name, avatar_url, created_at)
+SELECT gen_random_uuid(), u.id, 'Admin', '/seed/seeker-avatar.jpg', NOW()
+FROM users u WHERE u.email='admin@odanet.com.tr'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO profiles (id, user_id, display_name, avatar_url, created_at)
+SELECT gen_random_uuid(), u.id, 'Ayşe (Lister)', '/seed/seeker-avatar.jpg', NOW()
+FROM users u WHERE u.email='lister@odanet.com.tr'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO profiles (id, user_id, display_name, avatar_url, created_at)
+SELECT gen_random_uuid(), u.id, 'Mehmet (Seeker)', '/seed/seeker-avatar.jpg', NOW()
+FROM users u WHERE u.email='seeker@odanet.com.tr'
+ON CONFLICT DO NOTHING;
+
+-- ROLES and USER_ROLES
+INSERT INTO roles (name) VALUES ('ADMIN'), ('ROOM_LISTER'), ('ROOM_SEEKER')
+ON CONFLICT DO NOTHING;
+
+-- Map roles
+INSERT INTO user_roles (user_id, role_name)
+SELECT u.id, 'ADMIN' FROM users u WHERE u.email='admin@odanet.com.tr'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO user_roles (user_id, role_name)
+SELECT u.id, 'ROOM_LISTER' FROM users u WHERE u.email='lister@odanet.com.tr'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO user_roles (user_id, role_name)
+SELECT u.id, 'ROOM_SEEKER' FROM users u WHERE u.email='seeker@odanet.com.tr'
+ON CONFLICT DO NOTHING;
+
+-- LISTINGS (one Room Listing + one Room Seeker profile)
+-- Room Listing (Kadıköy)
+INSERT INTO listings (id, user_id, type, title, description, city, district, price_try, furnished, available_from, status, created_at)
+SELECT gen_random_uuid(), u.id, 'ROOM', 
+'Geniş Oda – Kadıköy Merkez', 
+'Temiz, aydınlık oda. Metroya 5 dk. Ev arkadaşları düzenli ve sessiz.',
+'İstanbul', 'Kadıköy', 18000, true, NOW()::date + 7, 'PUBLISHED', NOW()
+FROM users u WHERE u.email='lister@odanet.com.tr'
+ON CONFLICT DO NOTHING;
+
+-- Photos for the listing (adjust table name if different)
+INSERT INTO images (id, listing_id, url, position, created_at)
+SELECT gen_random_uuid(), l.id, '/seed/kadikoy1.jpg', 1, NOW()
+FROM listings l WHERE l.title='Geniş Oda – Kadıköy Merkez'
+ON CONFLICT DO NOTHING;
+INSERT INTO images (id, listing_id, url, position, created_at)
+SELECT gen_random_uuid(), l.id, '/seed/kadikoy2.jpg', 2, NOW()
+FROM listings l WHERE l.title='Geniş Oda – Kadıköy Merkez'
+ON CONFLICT DO NOTHING;
+
+-- Room Seeker record (profile-style listing)
+INSERT INTO listings (id, user_id, type, title, description, city, budget_try, furnished, status, created_at)
+SELECT gen_random_uuid(), u.id, 'SEEKER',
+'İstanbul Anadolu Yakası Oda Arıyorum',
+'Temiz ve sessiz ortam. Sigara yok. Uzun süreli.',
+'İstanbul', 15000, true, 'PUBLISHED', NOW()
+FROM users u WHERE u.email='seeker@odanet.com.tr'
+ON CONFLICT DO NOTHING;
+
+-- THREAD + MESSAGES (link to the ROOM listing)
+-- Create thread between lister and seeker for the Kadıköy listing
+INSERT INTO threads (id, listing_id, created_at)
+SELECT gen_random_uuid(), l.id, NOW()
+FROM listings l WHERE l.title='Geniş Oda – Kadıköy Merkez'
+ON CONFLICT DO NOTHING;
+
+-- Associate participants (adjust table names if needed)
+INSERT INTO thread_participants (thread_id, user_id)
+SELECT t.id, u.id
+FROM threads t, users u
+WHERE t.listing_id = (SELECT id FROM listings WHERE title='Geniş Oda – Kadıköy Merkez')
+  AND u.email IN ('lister@odanet.com.tr','seeker@odanet.com.tr')
+ON CONFLICT DO NOTHING;
+
+-- Seed a short conversation
+INSERT INTO messages (id, thread_id, sender_id, body, created_at)
+SELECT gen_random_uuid(), t.id, (SELECT id FROM users WHERE email='seeker@odanet.com.tr'),
+'Merhaba, ilanınızla ilgileniyorum. Müsaitse görüşebilir miyiz?', NOW()
+FROM threads t WHERE t.listing_id=(SELECT id FROM listings WHERE title='Geniş Oda – Kadıköy Merkez')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO messages (id, thread_id, sender_id, body, created_at)
+SELECT gen_random_uuid(), t.id, (SELECT id FROM users WHERE email='lister@odanet.com.tr'),
+'Merhaba! Pazartesi 18:00 uygun. Detayları mesajdan paylaşırım.', NOW()
+FROM threads t WHERE t.listing_id=(SELECT id FROM listings WHERE title='Geniş Oda – Kadıköy Merkez')
+ON CONFLICT DO NOTHING;
+
+Run:
+psql "$DATABASE_URL" -f scripts/seed.sql
+
+Option 2 — Prisma (if present)
+	•	Create prisma/seed.ts that:
+	•	Upserts the same three users (admin, lister, seeker) and roles.
+	•	Creates one ROOM listing with two images, one SEEKER listing.
+	•	Opens a thread and two messages between lister and seeker.
+	•	Add script to package.json:
+
+{ "scripts": { "seed": "ts-node --transpile-only prisma/seed.ts" } }
+
+
+
+Passwords & Auth Notes
+	•	If you have password auth, set all seed users to password: Test1234! (hash via your existing signup path or bcrypt in the seed).
+	•	If Google-only, ensure oauth_accounts (or equivalent) can link later when you log in with these emails.
+
+Definition of Done (Seed)
+	•	After seeding, you can:
+	1.	Log in as lister@odanet.com.tr and see the Kadıköy listing under My Profile → My Listings.
+	2.	Log in as seeker@odanet.com.tr and see the Inbox thread linked back to that listing.
+	3.	Admin user exists with ADMIN role.
+	•	Images render from public/seed/... (or S3) with correct IMAGE_BASE_URL.
+
+⸻
+
+D) Post-Seed E2E Checks (must pass)
+	•	Profile image upload: Update avatar for each seed user; persists and displays.
+	•	Room Listing flow: Create a new listing with photos; appears on profile; public detail page loads; messaging works.
+	•	Room Seeker flow: Complete seeker profile; correct role; appears in profile; can message a lister.
+	•	Inbox/Threads: Unread badges update; thread shows listing context; deep-link to listing works.
+	•	Google Sign-In: Works for a new account and links for an existing email without duplication.
+
+⸻
+
+E) Output
+	•	Commit .env.example, scripts/seed.sql (or prisma/seed.ts), and update docs/HealthCheck.md with:
+	•	Final env keys in use
+	•	Redirect URIs registered
+	•	Seed instructions + how to reset DB
+	•	Short screen-caps proving each flow passes
+
+⸻
+
+If you’d like, I can now merge the original health-check prompt and this addendum into a single, copy-paste block.
