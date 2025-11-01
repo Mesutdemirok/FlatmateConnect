@@ -16,7 +16,7 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI!;
 const FRONTEND_URL = process.env.FRONTEND_URL!;
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-// Debug log (safe)
+// 🧭 Environment sanity check
 console.log("🔍 OAuth Environment Variables:");
 console.log(
   "   GOOGLE_CLIENT_ID:",
@@ -33,27 +33,30 @@ if (
   !FRONTEND_URL ||
   !JWT_SECRET
 ) {
-  console.error("❌ Missing required environment variables for Google OAuth");
+  console.error("❌ Eksik environment değişkenleri var (Google OAuth için)");
 }
 
 /* ---------------------------------------------------------
-   🔧 Helper: cookie options for Odanet domain
+   ⚙️ Ortak Cookie Ayarları (Chrome “partitioned” desteği eklendi)
 --------------------------------------------------------- */
 function getCookieOptions(req: Request, shortLived = false) {
-  const isHttps =
-    req.protocol === "https" || req.get("x-forwarded-proto") === "https";
+  // Google OAuth HTTPS gerektirir
+  const isHttps = true;
   const isProductionDomain = req.get("host")?.includes("odanet.com.tr");
+
   return {
     httpOnly: true,
     secure: isHttps,
     sameSite: "none" as const,
     domain: isProductionDomain ? ".odanet.com.tr" : undefined,
-    maxAge: shortLived ? 10 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000, // 10 min or 7 days
+    path: "/",
+    partitioned: true, // ✅ Chrome’un yeni cross-site cookie koruması için gerekli
+    maxAge: shortLived ? 10 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000,
   };
 }
 
 /* ---------------------------------------------------------
-   1️⃣ Redirect user to Google OAuth consent screen
+   1️⃣ Kullanıcıyı Google OAuth ekranına yönlendir
 --------------------------------------------------------- */
 router.get("/oauth/google/redirect", async (req: Request, res: Response) => {
   try {
@@ -67,13 +70,15 @@ router.get("/oauth/google/redirect", async (req: Request, res: Response) => {
     const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier);
     const state = client.randomState();
 
-    // 🍪 Set short-lived cookies for OAuth flow
+    // 🍪 PKCE doğrulaması için kısa ömürlü çerezleri ayarla
     res.cookie("code_verifier", codeVerifier, getCookieOptions(req, true));
     res.cookie("oauth_state", state, getCookieOptions(req, true));
 
-    console.log("🍪 OAuth cookies set with domain .odanet.com.tr");
+    console.log(
+      "🍪 OAuth çerezleri ayarlandı (.odanet.com.tr, SameSite=None, Partitioned)",
+    );
 
-    // Build authorization URL
+    // 🔗 Google yönlendirme bağlantısı oluştur
     const authUrl = client.buildAuthorizationUrl(config, {
       redirect_uri: GOOGLE_REDIRECT_URI,
       scope: "openid email profile",
@@ -82,16 +87,18 @@ router.get("/oauth/google/redirect", async (req: Request, res: Response) => {
       state,
     });
 
-    console.log("🔄 Redirecting to Google OAuth...");
+    console.log("🔄 Google OAuth'a yönlendiriliyor...");
+    console.log("   redirect_uri:", GOOGLE_REDIRECT_URI);
+    console.log("   state:", state);
     res.redirect(authUrl.href);
   } catch (error) {
-    console.error("❌ OAuth redirect error:", error);
+    console.error("❌ OAuth yönlendirme hatası:", error);
     res.status(500).json({ message: "Google OAuth başlatılamadı" });
   }
 });
 
 /* ---------------------------------------------------------
-   2️⃣ Handle Google's OAuth callback
+   2️⃣ Google'dan gelen geri dönüşü işle
 --------------------------------------------------------- */
 router.get("/oauth/google/callback", async (req: Request, res: Response) => {
   try {
@@ -99,18 +106,24 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
     const codeVerifier = req.cookies?.code_verifier;
     const storedState = req.cookies?.oauth_state;
 
-    console.log("🔐 Google OAuth callback received");
+    console.log("🔐 Google OAuth geri dönüşü alındı");
+    console.log("   Gelen state:", state);
+    console.log("   Kaydedilen state:", storedState);
 
+    // 🔎 Durum kontrolleri
     if (!code || typeof code !== "string") {
-      console.error("❌ Missing code from Google");
+      console.error("❌ Google'dan code değeri gelmedi");
       return res.redirect(`${FRONTEND_URL}/auth?error=no_code`);
     }
     if (!codeVerifier) {
-      console.error("❌ Missing code_verifier in cookies");
+      console.error("❌ code_verifier çerezi bulunamadı");
       return res.redirect(`${FRONTEND_URL}/auth?error=no_code_verifier`);
     }
     if (!storedState || state !== storedState) {
-      console.error("❌ OAuth state mismatch");
+      console.error("❌ OAuth state uyuşmazlığı");
+      // Temizle, böylece sonraki denemede karışıklık olmaz
+      res.clearCookie("oauth_state", getCookieOptions(req, true));
+      res.clearCookie("code_verifier", getCookieOptions(req, true));
       return res.redirect(`${FRONTEND_URL}/auth?error=state_mismatch`);
     }
 
@@ -120,9 +133,9 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
       { client_secret: GOOGLE_CLIENT_SECRET },
     );
 
-    console.log("✅ Google configuration discovered");
+    console.log("✅ Google yapılandırması bulundu");
 
-    // Exchange authorization code for tokens
+    // 🔄 Google token alma işlemi
     const tokens = await client.authorizationCodeGrant(
       config,
       new URL(req.url, GOOGLE_REDIRECT_URI),
@@ -133,30 +146,30 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
       },
     );
 
-    console.log("✅ Tokens received, fetching user info...");
+    console.log("✅ Tokenlar alındı, kullanıcı bilgileri getiriliyor...");
     const userinfo = await client.fetchUserInfo(
       config,
       tokens.access_token,
       "sub",
     );
 
-    console.log("✅ Google user info:", {
+    console.log("✅ Google kullanıcı bilgisi:", {
       email: userinfo.email,
       verified: userinfo.email_verified,
     });
 
     if (!userinfo.email) {
-      console.error("❌ No email in Google userinfo");
+      console.error("❌ Kullanıcı e-posta bilgisi yok");
       return res.redirect(`${FRONTEND_URL}/auth?error=no_email`);
     }
 
-    // 🧠 Find or create user
+    // 🧠 Kullanıcıyı bul veya oluştur
     let user = await db.query.users.findFirst({
       where: eq(users.email, userinfo.email),
     });
 
     if (!user) {
-      console.log("➕ Creating new user from Google account");
+      console.log("➕ Yeni kullanıcı oluşturuluyor (Google hesabından)");
       const [newUser] = await db
         .insert(users)
         .values({
@@ -170,23 +183,23 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
       user = newUser;
     }
 
-    // 🪙 Create JWT
+    // 🔑 JWT üret
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
       expiresIn: "7d",
     });
 
-    // 🍪 Set JWT cookie
+    // 🍪 Kullanıcıyı giriş yapmış olarak ayarla
     res.cookie("auth_token", token, getCookieOptions(req));
-    console.log("🍪 Auth cookie set for domain .odanet.com.tr");
+    console.log("🍪 auth_token ayarlandı (.odanet.com.tr)");
 
-    // 🧹 Clear temp cookies
+    // 🧹 Geçici çerezleri sil
     res.clearCookie("code_verifier", getCookieOptions(req, true));
     res.clearCookie("oauth_state", getCookieOptions(req, true));
 
-    console.log("✅ OAuth success - redirecting to frontend");
+    console.log("✅ OAuth başarılı — frontend'e yönlendiriliyor");
     res.redirect(`${FRONTEND_URL}/auth/callback`);
   } catch (error: any) {
-    console.error("❌ OAuth callback error:", error?.message || error);
+    console.error("❌ OAuth callback hatası:", error?.message || error);
     res.redirect(`${FRONTEND_URL}/auth?error=oauth_failed`);
   }
 });
