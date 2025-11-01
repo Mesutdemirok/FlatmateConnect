@@ -11,6 +11,21 @@ import { Client as AppStorage } from "@replit/object-storage";
 
 const app = express();
 
+/* ---------------------------------------------------------
+   🌐 Force all requests to use "www.odanet.com.tr"
+   This ensures cookies and OAuth redirect URIs always match
+--------------------------------------------------------- */
+app.use((req, res, next) => {
+  const host = req.headers.host;
+  // Only redirect plain "odanet.com.tr" to "www.odanet.com.tr"
+  if (host && /^odanet\.com\.tr$/i.test(host)) {
+    const redirectUrl = `https://www.odanet.com.tr${req.originalUrl}`;
+    console.log(`🌐 Redirecting to www: ${redirectUrl}`);
+    return res.redirect(301, redirectUrl);
+  }
+  next();
+});
+
 // 🧩 Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
