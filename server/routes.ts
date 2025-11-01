@@ -159,6 +159,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user profile
+  app.patch("/api/users/profile", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const { firstName, lastName, profileImageUrl, phone, bio } = req.body;
+      
+      const updateData: any = {};
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (profileImageUrl !== undefined) updateData.profileImageUrl = profileImageUrl;
+      if (phone !== undefined) updateData.phone = phone;
+      if (bio !== undefined) updateData.bio = bio;
+      
+      const updatedUser = await storage.updateUser(userId, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+      }
+      
+      const { password, ...safeUser } = updatedUser;
+      res.json(safeUser);
+    } catch (err) {
+      console.error("❌ Profile update error:", err);
+      res.status(500).json({ message: "Profil güncellenemedi" });
+    }
+  });
+
   /* -------------------------------------------------------
      🏠 Listings
   ------------------------------------------------------- */
