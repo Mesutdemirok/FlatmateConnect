@@ -40,17 +40,19 @@ if (
    ⚙️ Ortak Cookie Ayarları (Chrome “partitioned” desteği eklendi)
 --------------------------------------------------------- */
 function getCookieOptions(req: Request, shortLived = false) {
-  // Google OAuth HTTPS gerektirir
-  const isHttps = true;
   const isProductionDomain = req.get("host")?.includes("odanet.com.tr");
+  
+  // OAuth callback cross-site olduğu için:
+  // - SameSite=None: Google'dan .odanet.com.tr'ye redirect izni
+  // - Secure=true: SameSite=None için zorunlu (HTTPS gerekli)
+  // - Domain: .odanet.com.tr (subdomain erişimi)
 
   return {
     httpOnly: true,
-    secure: isHttps,
+ secure: true, // OAuth için her zaman secure (HTTPS zorunlu)
     sameSite: "none" as const,
     domain: isProductionDomain ? ".odanet.com.tr" : undefined,
     path: "/",
-    partitioned: true, // ✅ Chrome’un yeni cross-site cookie koruması için gerekli
     maxAge: shortLived ? 10 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000,
   };
 }
@@ -135,10 +137,16 @@ router.get("/oauth/google/callback", async (req: Request, res: Response) => {
 
     console.log("✅ Google yapılandırması bulundu");
 
+    // 🔗 Callback URL'ini doğru şekilde oluştur (query parametreleri ile birlikte)
+    const callbackUrl = new URL(GOOGLE_REDIRECT_URI);
+    callbackUrl.search = new URLSearchParams(req.query as Record<string, string>).toString();
+    
+    console.log("🔗 Callback URL:", callbackUrl.href);
+
     // 🔄 Google token alma işlemi
     const tokens = await client.authorizationCodeGrant(
       config,
-      new URL(req.url, GOOGLE_REDIRECT_URI),
+      callbackUrl,
       {
         pkceCodeVerifier: codeVerifier,
         expectedState: storedState,
