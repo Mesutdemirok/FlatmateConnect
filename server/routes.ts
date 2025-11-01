@@ -195,6 +195,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get listing by slug
+  app.get("/api/listings/slug/:slug", async (req, res) => {
+    try {
+      const listing = await storage.getListingBySlug(req.params.slug);
+      if (!listing) {
+        return res.status(404).json({ message: "İlan bulunamadı" });
+      }
+      res.json(listing);
+    } catch (err) {
+      console.error("❌ Error fetching listing by slug:", err);
+      res.status(500).json({ message: "İlan getirilemedi" });
+    }
+  });
+
   /* -------------------------------------------------------
      🧍 Seeker & Others (unchanged core)
   ------------------------------------------------------- */
@@ -207,6 +221,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(seekers);
     } catch {
       res.status(500).json({ message: "Veritabanı hatası" });
+    }
+  });
+
+  // Get seeker profile by slug
+  app.get("/api/seekers/slug/:slug", async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfileBySlug(req.params.slug);
+      if (!seeker) {
+        return res.status(404).json({ message: "Profil bulunamadı" });
+      }
+      res.json(seeker);
+    } catch (err) {
+      console.error("❌ Error fetching seeker by slug:", err);
+      res.status(500).json({ message: "Profil getirilemedi" });
     }
   });
 
