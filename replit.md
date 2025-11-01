@@ -12,9 +12,10 @@ Preferred communication style: Simple, everyday language.
 The platform features a mobile-first design with consistent branding, utilizing orange accents, gradient backgrounds, rounded cards, and icon-based feature chips. It includes responsive card layouts with dynamic aspect ratios, address overlays, and optimized mobile-first grids.
 
 ### Technical Implementations
-- **Frontend**: React with TypeScript (Vite), Tailwind CSS, shadcn/ui, Radix UI for accessibility. State management uses React Query for server state and React hooks for local state. Wouter handles client-side routing, and i18next provides internationalization (Turkish primary locale). Replit Auth is integrated for authentication.
-- **Backend**: Express.js with TypeScript. PostgreSQL is used as the database with Drizzle ORM. Authentication relies on Replit Auth and session-based `express-session`. Multer handles image uploads, with Cloudflare R2 for production storage. The API is RESTful with standardized error handling.
-- **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing using Sharp and Busboy. Cloudflare R2 serves as the CDN for production image delivery.
+- **Frontend**: React with TypeScript (Vite), Tailwind CSS, shadcn/ui, Radix UI for accessibility. State management uses React Query for server state and React hooks for local state. Wouter handles client-side routing, and i18next provides internationalization (Turkish primary locale).
+- **Backend**: Express.js with TypeScript. PostgreSQL is used as the database with Drizzle ORM. The API is RESTful with standardized error handling.
+- **Authentication**: Unified JWT-based authentication supporting both Google OAuth and email/password. All auth flows set identical secure cookies (`auth_token`) with SameSite=None, Secure flags, and domain `.odanet.com.tr` for production. OAuth callback: `https://www.odanet.com.tr/api/oauth/google/callback`.
+- **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing using Sharp and Busboy. Cloudflare R2 serves as the CDN for production image delivery. All upload endpoints require JWT authentication with ownership verification.
 - **SEO**: Implemented with React Helmet for dynamic meta tags, Open Graph, and Twitter card generation for social media sharing. Slugs are generated for listings and seeker profiles for SEO-friendly URLs.
 
 ### Feature Specifications
@@ -46,8 +47,9 @@ The system employs a modular schema with foreign key relationships for robust da
 - **Zod**: Schema validation.
 
 ### Authentication
-- **Replit Auth**: OIDC-based authentication.
-- **Passport.js**: Authentication middleware.
+- **JWT (jsonwebtoken)**: Token-based authentication.
+- **bcrypt**: Password hashing.
+- **Google OAuth 2.0**: Social login via openid-client.
 
 ### Utilities
 - **i18next**: Internationalization.
