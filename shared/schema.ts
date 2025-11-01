@@ -277,6 +277,7 @@ export const insertSeekerProfileSchema = createInsertSchema(seekerProfiles).omit
   createdAt: true,
   updatedAt: true,
 }).extend({
+  preferredLocation: z.string().regex(/^[\s\S]*$/).optional(),
   budgetMonthly: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
   age: z.union([z.string(), z.number()]).transform(val => Number(val)).optional(),
 });

@@ -12,13 +12,16 @@ import { Client as AppStorage } from "@replit/object-storage";
 const app = express();
 
 /* ---------------------------------------------------------
-   🌐 Force all requests to use "www.odanet.com.tr"
-   This ensures cookies and OAuth redirect URIs always match
+   Core server settings
+--------------------------------------------------------- */
+app.set("trust proxy", 1); // Replit/Proxy friendliness: correct proto & secure cookies
+
+/* ---------------------------------------------------------
+   🌐 Force host = www.odanet.com.tr (but allow preview hosts)
 --------------------------------------------------------- */
 app.use((req, res, next) => {
-  const host = req.headers.host;
-  // Only redirect plain "odanet.com.tr" to "www.odanet.com.tr"
-  if (host && /^odanet\.com\.tr$/i.test(host)) {
+  const host = req.headers.host || "";
+  if (/^odanet\.com\.tr$/i.test(host)) {
     const redirectUrl = `https://www.odanet.com.tr${req.originalUrl}`;
     console.log(`🌐 Redirecting to www: ${redirectUrl}`);
     return res.redirect(301, redirectUrl);
@@ -26,22 +29,19 @@ app.use((req, res, next) => {
   next();
 });
 
-// 🧩 Middleware setup
+/* ---------------------------------------------------------
+   Middleware
+--------------------------------------------------------- */
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// 🔐 OAuth routes (must be before general API routes)
-app.use("/api", oauthRouter);
-
-// 📦 Upload routes (for multipart/form-data)
-app.use("/api", uploadsRouter);
-
-// 🔧 Local upload directory setup
+/* ---------------------------------------------------------
+   Static uploads (local) + health
+--------------------------------------------------------- */
 const LOCAL_UPLOAD_DIR = path.join(process.cwd(), "uploads");
 fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
 
-// 🧠 MIME types map
 const mimeMap: Record<string, string> = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
@@ -54,12 +54,10 @@ const mimeMap: Record<string, string> = {
   ".json": "application/json",
 };
 
-// ✅ Health check endpoint
 app.get("/uploads/health.txt", (_req, res) =>
   res.type("text/plain").send("ok"),
 );
 
-// ✅ Serve local uploads (priority 1)
 app.use(
   "/uploads",
   express.static(LOCAL_UPLOAD_DIR, {
@@ -73,7 +71,9 @@ app.use(
   }),
 );
 
-// ✅ Optional: Replit Object Storage fallback
+/* ---------------------------------------------------------
+   Optional: Replit Object Storage fallback for /uploads/*
+--------------------------------------------------------- */
 const OBJECT_STORAGE_ENABLED =
   process.env.ENABLE_REPLIT_OBJECT_STORAGE === "true";
 let bucket: AppStorage | null = null;
@@ -92,14 +92,12 @@ if (OBJECT_STORAGE_ENABLED) {
   );
 }
 
-// ✅ Serve uploaded files (with fallback)
 app.get("/uploads/:folder/:filename", async (req, res) => {
   try {
     const { folder, filename } = req.params;
     const key = `${folder}/${filename}`;
     const localPath = path.join(LOCAL_UPLOAD_DIR, folder, filename);
 
-    // Try local first
     if (fs.existsSync(localPath)) {
       const ext = path.extname(filename).toLowerCase();
       const contentType = mimeMap[ext] || "application/octet-stream";
@@ -108,7 +106,6 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
       return fs.createReadStream(localPath).pipe(res);
     }
 
-    // Then try Object Storage
     if (OBJECT_STORAGE_ENABLED && bucket) {
       const result = await bucket.downloadAsBytes(key);
       if (!result.ok || !result.value) {
@@ -141,46 +138,61 @@ app.get("/uploads/:folder/:filename", async (req, res) => {
   }
 });
 
-// ✅ Request logger for API routes
+/* ---------------------------------------------------------
+   API request logger (after static, before routes)
+--------------------------------------------------------- */
 app.use((req, res, next) => {
   const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined;
+  const { method, path: p } = req;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
+  let capturedJson: any;
+  const originalJson = res.json.bind(res);
+  res.json = (body: any) => {
+    capturedJson = body;
+    return originalJson(body);
   };
 
   res.on("finish", () => {
-    if (path.startsWith("/api")) {
-      const duration = Date.now() - start;
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+    if (p.startsWith("/api")) {
+      const ms = Date.now() - start;
+      let line = `${method} ${p} ${res.statusCode} in ${ms}ms`;
+      if (capturedJson) {
+        const sample = JSON.stringify(capturedJson);
+        line += ` :: ${sample.length > 200 ? sample.slice(0, 200) + "…" : sample}`;
       }
-      if (logLine.length > 120) logLine = logLine.slice(0, 119) + "…";
-      log(logLine);
+      log(line);
     }
   });
 
   next();
 });
 
-// 🚀 App startup
+/* ---------------------------------------------------------
+   API routers (OAuth first, then uploads)
+--------------------------------------------------------- */
+app.use("/api", oauthRouter);
+app.use("/api", uploadsRouter);
+
+/* ---------------------------------------------------------
+   API 404 guard — MUST come after all /api routers and BEFORE Vite/static
+   Prevents Vite SPA fallback (HTML) from handling unknown /api paths.
+--------------------------------------------------------- */
+app.use("/api", (req, res) => {
+  res.status(404).type("application/json").json({
+    success: false,
+    message: "API route not found",
+    method: req.method,
+    path: req.originalUrl,
+  });
+});
+
+/* ---------------------------------------------------------
+   App bootstrap, OG handlers, Vite/static, and error boundary
+--------------------------------------------------------- */
 (async () => {
   const server = await registerRoutes(app);
 
-  // Global error handler
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  // 🧭 OG (social meta preview) handlers
+  // OG (social meta) for bots only or explicit ?_og=1
   app.get("/oda-ilani/:id", (req, res, next) => ogHandler(req, res, next));
   app.get("/oda-arayan/:id", (req, res, next) => ogHandler(req, res, next));
   app.get("/", (req, res, next) => {
@@ -193,16 +205,33 @@ app.use((req, res, next) => {
     next();
   });
 
-  // ⚙️ Setup Vite or serve static build
+  // Dev vs Prod asset serving
   const isDevelopment =
-    process.env.NODE_ENV?.trim().toLowerCase() !== "production";
+    (process.env.NODE_ENV || "").trim().toLowerCase() !== "production";
   if (isDevelopment) {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // 🟢 Start server
+  /* -------------------------------------------------------
+     Final error boundary — JSON for API, HTML otherwise
+  ------------------------------------------------------- */
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    const status = err?.status || err?.statusCode || 500;
+    const message = err?.message || "Internal Server Error";
+    if (req.path.startsWith("/api")) {
+      // Always JSON for API
+      return res
+        .status(status)
+        .type("application/json")
+        .json({ success: false, message });
+    }
+    // Non-API: allow Vite/static error pages if any
+    res.status(status).type("text/plain").send(message);
+  });
+
+  // Start server
   const port = parseInt(process.env.PORT || "5000", 10);
   server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
     log(`✅ Server running on port ${port}`),
