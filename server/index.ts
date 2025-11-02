@@ -2,7 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { registerRoutes } from "./routes";
-import { log } from "./og"; // optional
+import { log } from "./vite";
 import path from "path";
 
 const app = express();

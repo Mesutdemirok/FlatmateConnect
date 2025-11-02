@@ -419,8 +419,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /* -------------------------------------------------------
-     🌍 Server Start
+     🌍 Vite Setup (Development) or Static Files (Production)
   ------------------------------------------------------- */
   const httpServer = createServer(app);
+  
+  // Import Vite setup functions
+  const { setupVite, serveStatic } = await import("./vite");
+  
+  if (process.env.NODE_ENV === "production") {
+    serveStatic(app);
+  } else {
+    await setupVite(app, httpServer);
+  }
+  
   return httpServer;
 }

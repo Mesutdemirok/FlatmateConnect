@@ -72,13 +72,147 @@ var init_r2_utils = __esm({
   }
 });
 
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path3 from "path";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+var vite_config_default;
+var init_vite_config = __esm({
+  async "vite.config.ts"() {
+    "use strict";
+    vite_config_default = defineConfig({
+      plugins: [
+        react(),
+        runtimeErrorOverlay(),
+        ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
+          await import("@replit/vite-plugin-cartographer").then(
+            (m) => m.cartographer()
+          ),
+          await import("@replit/vite-plugin-dev-banner").then(
+            (m) => m.devBanner()
+          )
+        ] : []
+      ],
+      resolve: {
+        alias: {
+          "@": path3.resolve(import.meta.dirname, "client", "src"),
+          "@shared": path3.resolve(import.meta.dirname, "shared"),
+          "@assets": path3.resolve(import.meta.dirname, "attached_assets")
+        }
+      },
+      root: path3.resolve(import.meta.dirname, "client"),
+      build: {
+        outDir: path3.resolve(import.meta.dirname, "dist/public"),
+        emptyOutDir: true
+      },
+      server: {
+        fs: {
+          strict: true,
+          deny: ["**/.*"]
+        }
+      }
+    });
+  }
+});
+
+// server/vite.ts
+var vite_exports = {};
+__export(vite_exports, {
+  log: () => log,
+  serveStatic: () => serveStatic,
+  setupVite: () => setupVite
+});
+import express from "express";
+import fs3 from "fs";
+import path4 from "path";
+import { createServer as createViteServer, createLogger } from "vite";
+import { nanoid } from "nanoid";
+function log(message, source = "express") {
+  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
+async function setupVite(app2, server) {
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server },
+    allowedHosts: true
+  };
+  const vite = await createViteServer({
+    ...vite_config_default,
+    configFile: false,
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      }
+    },
+    server: serverOptions,
+    appType: "custom"
+  });
+  app2.use(vite.middlewares);
+  app2.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+      return next();
+    }
+    try {
+      const clientTemplate = path4.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html"
+      );
+      let template = await fs3.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+}
+function serveStatic(app2) {
+  const distPath = path4.resolve(import.meta.dirname, "..", "dist", "public");
+  if (!fs3.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    );
+  }
+  app2.use(express.static(distPath));
+  app2.use("*", (req, res, next) => {
+    if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+      return next();
+    }
+    res.sendFile(path4.resolve(distPath, "index.html"));
+  });
+}
+var viteLogger;
+var init_vite = __esm({
+  async "server/vite.ts"() {
+    "use strict";
+    await init_vite_config();
+    viteLogger = createLogger();
+  }
+});
+
 // server/index.ts
-import express2 from "express";
+import express3 from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
 // server/routes.ts
-import express from "express";
+import express2 from "express";
 import { createServer } from "http";
 
 // shared/schema.ts
@@ -853,8 +987,8 @@ var jwtAuth = async (req, res, next) => {
 
 // server/routes.ts
 import multer from "multer";
-import path3 from "path";
-import fs3 from "fs";
+import path5 from "path";
+import fs4 from "fs";
 
 // shared/slug.ts
 import slugify from "slugify";
@@ -875,15 +1009,15 @@ function makeSlug(parts) {
 
 // server/routes.ts
 var uploadDir = "uploads/listings";
-fs3.mkdirSync(uploadDir, { recursive: true });
+fs4.mkdirSync(uploadDir, { recursive: true });
 var seekerUploadDir = "uploads/seekers";
-fs3.mkdirSync(seekerUploadDir, { recursive: true });
+fs4.mkdirSync(seekerUploadDir, { recursive: true });
 var upload = multer({
   storage: multer.diskStorage({
     destination: uploadDir,
     filename: (req, file, cb) => {
       const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      cb(null, file.fieldname + "-" + unique + path3.extname(file.originalname));
+      cb(null, file.fieldname + "-" + unique + path5.extname(file.originalname));
     }
   }),
   fileFilter: (req, file, cb) => {
@@ -897,7 +1031,7 @@ var seekerUpload = multer({
     destination: seekerUploadDir,
     filename: (req, file, cb) => {
       const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      cb(null, "seeker-" + unique + path3.extname(file.originalname));
+      cb(null, "seeker-" + unique + path5.extname(file.originalname));
     }
   }),
   fileFilter: (req, file, cb) => {
@@ -921,7 +1055,7 @@ function getCookieOptions(req) {
   };
 }
 async function registerRoutes(app2) {
-  app2.use("/uploads", express.static("uploads"));
+  app2.use("/uploads", express2.static("uploads"));
   app2.get("/api/health", (req, res) => {
     res.json({
       ok: true,
@@ -1192,17 +1326,23 @@ async function registerRoutes(app2) {
     }
   });
   const httpServer = createServer(app2);
+  const { setupVite: setupVite2, serveStatic: serveStatic2 } = await init_vite().then(() => vite_exports);
+  if (process.env.NODE_ENV === "production") {
+    serveStatic2(app2);
+  } else {
+    await setupVite2(app2, httpServer);
+  }
   return httpServer;
 }
 
 // server/index.ts
-var app = express2();
+var app = express3();
 app.get("/health", (_req, res) => res.status(200).send("ok"));
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, message: "Backend running fine \u2705" });
 });
-app.use(express2.json());
-app.use(express2.urlencoded({ extended: false }));
+app.use(express3.json());
+app.use(express3.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(
   cors({
