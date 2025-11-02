@@ -73,8 +73,9 @@ var init_r2_utils = __esm({
 });
 
 // server/index.ts
-import express3 from "express";
+import express2 from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 // server/routes.ts
 import express from "express";
@@ -140,6 +141,8 @@ var users = pgTable("users", {
   password: varchar("password"),
   passwordResetToken: varchar("password_reset_token"),
   passwordResetExpires: timestamp("password_reset_expires"),
+  emailVerifiedAt: timestamp("email_verified_at"),
+  // Google OAuth will set this
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -155,6 +158,7 @@ var users = pgTable("users", {
 var listings = pgTable("listings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  slug: varchar("slug").unique(),
   // Basic Information
   address: text("address").notNull(),
   title: varchar("title").notNull(),
@@ -228,6 +232,7 @@ var favorites = pgTable("favorites", {
 var seekerProfiles = pgTable("seeker_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  slug: varchar("slug").unique(),
   // Personal Information
   profilePhotoUrl: varchar("profile_photo_url"),
   // Profile photo
@@ -245,11 +250,16 @@ var seekerProfiles = pgTable("seeker_profiles", {
   // Bio/description
   preferredLocation: text("preferred_location"),
   // Single location preference
-  // Lifestyle Preferences (normalized)
+  // Personal Lifestyle (about the seeker)
+  isSmoker: varchar("is_smoker"),
+  // "true" | "false" - Whether the seeker smokes
+  hasPets: varchar("has_pets"),
+  // "true" | "false" - Whether the seeker has pets
+  // Roommate Preferences (what they want in a roommate)
   smokingPreference: varchar("smoking_preference"),
-  // non-smoker | smoker | social-smoker | no-preference
+  // İçebilir | İçemez | Farketmez
   petPreference: varchar("pet_preference"),
-  // no-pets | cat-friendly | dog-friendly | all-pets | no-preference
+  // Olabilir | Olmamalı | Farketmez
   cleanlinessLevel: varchar("cleanliness_level"),
   // very-clean | clean | average | relaxed
   socialLevel: varchar("social_level"),
@@ -341,6 +351,7 @@ var seekerPhotosRelations = relations(seekerPhotos, ({ one }) => ({
 }));
 var insertListingSchema = createInsertSchema(listings).omit({
   id: true,
+  slug: true,
   createdAt: true,
   updatedAt: true
 }).extend({
@@ -365,9 +376,11 @@ var insertListingImageSchema = createInsertSchema(listingImages).omit({
 });
 var insertSeekerProfileSchema = createInsertSchema(seekerProfiles).omit({
   id: true,
+  slug: true,
   createdAt: true,
   updatedAt: true
 }).extend({
+  preferredLocation: z.string().regex(/^[\s\S]*$/).optional(),
   budgetMonthly: z.union([z.string(), z.number()]).transform((val) => String(val)).optional(),
   age: z.union([z.string(), z.number()]).transform((val) => Number(val)).optional()
 });
@@ -391,18 +404,25 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
 neonConfig.webSocketConstructor = ws;
 var connectionString = process.env.DATABASE_URL;
-if (connectionString?.startsWith("DATABASE_URL=")) {
-  connectionString = connectionString.replace(/^DATABASE_URL=/, "");
-}
-if (!connectionString || connectionString.includes("PGUSER") || connectionString.includes("PGHOST")) {
-  const { PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE } = process.env;
-  if (!PGUSER || !PGPASSWORD || !PGHOST || !PGPORT || !PGDATABASE) {
-    throw new Error("Database connection not configured. Missing PG* environment variables.");
-  }
-  connectionString = `postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=require`;
+if (!connectionString) {
+  throw new Error(
+    "\u274C Missing DATABASE_URL environment variable. Please set it in your environment settings."
+  );
 }
 var pool = new Pool({ connectionString });
 var db = drizzle({ client: pool, schema: schema_exports });
+var dbHost = connectionString.split("@")[1]?.split("/")[0] || "unknown";
+var isProductionDB = dbHost.includes("ep-green-term-af4ptxe0");
+var isDevelopmentDB = dbHost.includes("ep-odd-scene-af56kk3x");
+if (isProductionDB) {
+  console.log("\u2705 Connected to Production Neon DB");
+  console.log(`\u{1F4CD} Database: ${dbHost}`);
+} else if (isDevelopmentDB) {
+  console.log("\u2705 Connected to Development Neon DB");
+  console.log(`\u{1F4CD} Database: ${dbHost}`);
+} else {
+  console.log("\u2705 Connected to database:", dbHost);
+}
 
 // server/storage.ts
 import { eq, and, or, ilike, gte, lte, desc, asc } from "drizzle-orm";
@@ -462,6 +482,10 @@ var DatabaseStorage = class {
     }).returning();
     return user;
   }
+  async updateUser(id, data) {
+    const [user] = await db.update(users).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where(eq(users.id, id)).returning();
+    return user;
+  }
   // Listing operations
   async getListings(filters) {
     const conditions = [eq(listings.status, "active")];
@@ -495,6 +519,18 @@ var DatabaseStorage = class {
   }
   async getListing(id) {
     const [listing] = await db.select().from(listings).where(eq(listings.id, id));
+    if (!listing) return void 0;
+    const [images, user] = await Promise.all([
+      this.getListingImages(listing.id),
+      this.getUser(listing.userId)
+    ]);
+    return { ...listing, images, user };
+  }
+  async getListingBySlug(slug) {
+    let [listing] = await db.select().from(listings).where(eq(listings.slug, slug));
+    if (!listing) {
+      [listing] = await db.select().from(listings).where(eq(listings.id, slug));
+    }
     if (!listing) return void 0;
     const [images, user] = await Promise.all([
       this.getListingImages(listing.id),
@@ -694,6 +730,18 @@ var DatabaseStorage = class {
     ]);
     return { ...profile, photos, user };
   }
+  async getSeekerProfileBySlug(slug) {
+    let [profile] = await db.select().from(seekerProfiles).where(eq(seekerProfiles.slug, slug));
+    if (!profile) {
+      [profile] = await db.select().from(seekerProfiles).where(eq(seekerProfiles.id, slug));
+    }
+    if (!profile) return void 0;
+    const [photos, user] = await Promise.all([
+      this.getSeekerPhotos(profile.id),
+      this.getUser(profile.userId)
+    ]);
+    return { ...profile, photos, user };
+  }
   async getUserSeekerProfile(userId) {
     const [profile] = await db.select().from(seekerProfiles).where(eq(seekerProfiles.userId, userId));
     if (!profile) return void 0;
@@ -780,312 +828,315 @@ async function comparePassword(password, hash) {
 var jwtAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    const cookieToken = req.cookies?.token;
+    const cookieToken = req.cookies?.auth_token || req.cookies?.token;
     const token = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : cookieToken;
+    console.log("\u{1F510} JWT Auth Check:", {
+      hasAuthHeader: !!authHeader,
+      hasAuthTokenCookie: !!req.cookies?.auth_token,
+      hasTokenCookie: !!req.cookies?.token,
+      tokenFound: !!token,
+      path: req.path
+    });
     if (!token) {
+      console.log("\u274C No JWT token found in Authorization header or cookies");
       return res.status(401).json({ message: "Yetkisiz eri\u015Fim" });
     }
     const decoded = jwt.verify(token, JWT_SECRET);
     req.userId = decoded.userId;
+    console.log("\u2705 JWT verified successfully for user:", decoded.userId);
     next();
   } catch (error) {
-    console.error("JWT verification error:", error);
+    console.error("\u274C JWT verification error:", error);
     return res.status(401).json({ message: "Ge\xE7ersiz veya s\xFCresi dolmu\u015F token" });
   }
 };
-
-// server/i18n.ts
-var turkishErrors = {
-  // Authentication errors
-  unauthorized: "Bu i\u015Flem i\xE7in yetkiniz bulunmuyor",
-  invalid_credentials: "Ge\xE7ersiz giri\u015F bilgileri",
-  session_expired: "Oturumunuzin s\xFCresi dolmu\u015F",
-  // Validation errors
-  required_field: "Bu alan zorunludur",
-  invalid_email: "Ge\xE7erli bir e-posta adresi giriniz",
-  invalid_phone: "Ge\xE7erli bir telefon numaras\u0131 giriniz",
-  invalid_date: "Ge\xE7erli bir tarih giriniz",
-  invalid_number: "Ge\xE7erli bir say\u0131 giriniz",
-  min_length: "En az {{count}} karakter olmal\u0131d\u0131r",
-  max_length: "En fazla {{count}} karakter olmal\u0131d\u0131r",
-  // Database errors
-  database_error: "Veritaban\u0131 hatas\u0131 olu\u015Ftu",
-  not_found: "Kay\u0131t bulunamad\u0131",
-  duplicate_entry: "Bu kay\u0131t zaten mevcut",
-  // Listing errors
-  listing_not_found: "\u0130lan bulunamad\u0131",
-  listing_creation_failed: "\u0130lan olu\u015Fturulamad\u0131",
-  listing_update_failed: "\u0130lan g\xFCncellenemedi",
-  listing_delete_failed: "\u0130lan silinemedi",
-  // User errors
-  user_not_found: "Kullan\u0131c\u0131 bulunamad\u0131",
-  profile_update_failed: "Profil g\xFCncellenemedi",
-  // Message errors
-  message_send_failed: "Mesaj g\xF6nderilemedi",
-  conversation_not_found: "Konu\u015Fma bulunamad\u0131",
-  // File upload errors  
-  file_too_large: "Dosya \xE7ok b\xFCy\xFCk",
-  invalid_file_type: "Ge\xE7ersiz dosya t\xFCr\xFC",
-  upload_failed: "Y\xFCkleme ba\u015Far\u0131s\u0131z",
-  // General errors
-  internal_server_error: "Sunucu hatas\u0131 olu\u015Ftu",
-  bad_request: "Ge\xE7ersiz istek"
-};
-function getErrorMessage(key, lang = "tr", params) {
-  const messages2 = lang === "tr" ? turkishErrors : turkishErrors;
-  let message = messages2[key] || turkishErrors.internal_server_error;
-  if (params) {
-    Object.keys(params).forEach((param) => {
-      message = message.replace(new RegExp(`{{${param}}}`, "g"), params[param]);
-    });
-  }
-  return message;
-}
-function detectLanguage(req) {
-  const acceptLanguage = req.headers["accept-language"];
-  if (acceptLanguage && acceptLanguage.includes("en")) {
-    return "en";
-  }
-  return "tr";
-}
 
 // server/routes.ts
 import multer from "multer";
 import path3 from "path";
 import fs3 from "fs";
-var uploadDir = "uploads/listings";
-if (!fs3.existsSync(uploadDir)) {
-  fs3.mkdirSync(uploadDir, { recursive: true });
+
+// shared/slug.ts
+import slugify from "slugify";
+import { customAlphabet } from "nanoid";
+var nano = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 6);
+function makeSlug(parts) {
+  const base = parts.filter(Boolean).map(
+    (p) => slugify(String(p), {
+      lower: true,
+      strict: true,
+      // remove punctuation
+      locale: "tr",
+      trim: true
+    })
+  ).filter(Boolean).join("-").replace(/-+/g, "-");
+  return `${base}-${nano()}`;
 }
+
+// server/routes.ts
+var uploadDir = "uploads/listings";
+fs3.mkdirSync(uploadDir, { recursive: true });
+var seekerUploadDir = "uploads/seekers";
+fs3.mkdirSync(seekerUploadDir, { recursive: true });
 var upload = multer({
   storage: multer.diskStorage({
     destination: uploadDir,
     filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      cb(null, file.fieldname + "-" + uniqueSuffix + path3.extname(file.originalname));
+      const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(null, file.fieldname + "-" + unique + path3.extname(file.originalname));
     }
   }),
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      const lang = detectLanguage(req);
-      cb(new Error(getErrorMessage("invalid_file_type", lang)));
-    }
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Ge\xE7ersiz dosya t\xFCr\xFC"));
   },
-  limits: {
-    fileSize: 5 * 1024 * 1024
-    // 5MB limit
-  }
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
-var seekerUploadDir = "uploads/seekers";
-if (!fs3.existsSync(seekerUploadDir)) {
-  fs3.mkdirSync(seekerUploadDir, { recursive: true });
-}
 var seekerUpload = multer({
   storage: multer.diskStorage({
     destination: seekerUploadDir,
     filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      cb(null, "seeker-" + uniqueSuffix + path3.extname(file.originalname));
+      const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(null, "seeker-" + unique + path3.extname(file.originalname));
     }
   }),
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      const lang = detectLanguage(req);
-      cb(new Error(getErrorMessage("invalid_file_type", lang)));
-    }
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Ge\xE7ersiz dosya t\xFCr\xFC"));
   },
-  limits: {
-    fileSize: 5 * 1024 * 1024
-    // 5MB limit
-  }
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
+function getCookieOptions(req) {
+  const isProductionDomain = req.get("host")?.includes("odanet.com.tr");
+  return {
+    httpOnly: true,
+    secure: true,
+    // Always secure (HTTPS enforced via trust proxy)
+    sameSite: "none",
+    // Required for OAuth cross-site cookies
+    domain: isProductionDomain ? ".odanet.com.tr" : void 0,
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60 * 1e3
+    // 7 days
+  };
+}
 async function registerRoutes(app2) {
   app2.use("/uploads", express.static("uploads"));
   app2.get("/api/health", (req, res) => {
     res.json({
       ok: true,
-      version: "1.0.0",
       env: process.env.NODE_ENV || "development",
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
   });
   app2.post("/api/auth/register", async (req, res) => {
     try {
-      const lang = detectLanguage(req);
       const userData = insertUserSchema.parse(req.body);
-      const existingUser = await storage.getUserByEmail(userData.email);
-      if (existingUser) {
-        return res.status(400).json({ message: "Bu e-posta adresi zaten kullan\u0131l\u0131yor" });
-      }
-      const hashedPassword = await hashPassword(userData.password);
-      const user = await storage.createUser({
-        ...userData,
-        password: hashedPassword
-      });
+      const existing = await storage.getUserByEmail(userData.email);
+      if (existing)
+        return res.status(400).json({ message: "Bu e-posta zaten kay\u0131tl\u0131" });
+      const hashed = await hashPassword(userData.password);
+      const user = await storage.createUser({ ...userData, password: hashed });
       const token = generateToken(user.id, user.email);
-      const { password, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
-      res.status(201).json({
-        user: userWithoutPassword,
-        token
-      });
-    } catch (error) {
-      console.error("Error registering user:", error);
-      const lang = detectLanguage(req);
-      if (error.name === "ZodError") {
-        res.status(400).json({ message: "Ge\xE7ersiz kay\u0131t bilgileri", error: error.message });
-      } else {
-        res.status(500).json({ message: "Kay\u0131t i\u015Flemi ba\u015Far\u0131s\u0131z oldu" });
-      }
+      res.cookie("auth_token", token, getCookieOptions(req));
+      const { password, ...safeUser } = user;
+      res.status(201).json({ user: safeUser, token });
+    } catch (err) {
+      console.error("\u274C Register Error:", err);
+      res.status(500).json({ message: "Kay\u0131t ba\u015Far\u0131s\u0131z" });
     }
   });
   app2.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      const lang = detectLanguage(req);
-      if (!email || !password) {
-        return res.status(400).json({ message: "E-posta ve \u015Fifre gereklidir" });
-      }
+      if (!email || !password)
+        return res.status(400).json({ message: "E-posta ve \u015Fifre gerekli" });
       const user = await storage.getUserByEmail(email);
-      if (!user || !user.password) {
-        return res.status(401).json({ message: "Ge\xE7ersiz e-posta veya \u015Fifre" });
-      }
-      const isPasswordValid = await comparePassword(password, user.password);
-      if (!isPasswordValid) {
-        return res.status(401).json({ message: "Ge\xE7ersiz e-posta veya \u015Fifre" });
-      }
+      if (!user || !user.password)
+        return res.status(401).json({ message: "Ge\xE7ersiz bilgiler" });
+      const match = await comparePassword(password, user.password);
+      if (!match) return res.status(401).json({ message: "Ge\xE7ersiz bilgiler" });
       const token = generateToken(user.id, user.email);
-      const { password: _, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 7 * 24 * 60 * 60 * 1e3
-      });
-      res.json({
-        user: userWithoutPassword,
-        token
-      });
-    } catch (error) {
-      console.error("Error logging in:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: "Giri\u015F i\u015Flemi ba\u015Far\u0131s\u0131z oldu" });
+      res.cookie("auth_token", token, getCookieOptions(req));
+      const { password: _, ...safeUser } = user;
+      res.json({ user: safeUser, token });
+    } catch (err) {
+      console.error("\u274C Login Error:", err);
+      res.status(500).json({ message: "Giri\u015F ba\u015Far\u0131s\u0131z" });
     }
   });
   app2.post("/api/auth/logout", (req, res) => {
-    res.clearCookie("token");
+    const options = getCookieOptions(req);
+    res.clearCookie("auth_token", { ...options, path: "/" });
+    console.log("\u{1F6AA} Kullan\u0131c\u0131 \xE7\u0131k\u0131\u015F yapt\u0131, \xE7erez silindi");
     res.json({ message: "\xC7\u0131k\u0131\u015F yap\u0131ld\u0131" });
   });
   app2.get("/api/auth/me", jwtAuth, async (req, res) => {
     try {
       const user = await storage.getUser(req.userId);
-      if (!user) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: getErrorMessage("user_not_found", lang) });
+      if (!user)
+        return res.status(404).json({ message: "Kullan\u0131c\u0131 bulunamad\u0131" });
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (err) {
+      res.status(500).json({ message: "Kullan\u0131c\u0131 bilgisi al\u0131namad\u0131" });
+    }
+  });
+  app2.patch("/api/users/profile", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId;
+      const { firstName, lastName, profileImageUrl, phone, bio } = req.body;
+      const updateData = {};
+      if (firstName !== void 0) updateData.firstName = firstName;
+      if (lastName !== void 0) updateData.lastName = lastName;
+      if (profileImageUrl !== void 0) updateData.profileImageUrl = profileImageUrl;
+      if (phone !== void 0) updateData.phone = phone;
+      if (bio !== void 0) updateData.bio = bio;
+      const updatedUser = await storage.updateUser(userId, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Kullan\u0131c\u0131 bulunamad\u0131" });
       }
-      const { password, passwordResetToken, passwordResetExpires, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("user_not_found", lang) });
+      const { password, ...safeUser } = updatedUser;
+      res.json(safeUser);
+    } catch (err) {
+      console.error("\u274C Profile update error:", err);
+      res.status(500).json({ message: "Profil g\xFCncellenemedi" });
     }
   });
   app2.get("/api/listings", async (req, res) => {
     try {
-      const filters = {
-        location: req.query.location,
-        minPrice: req.query.minPrice ? Number(req.query.minPrice) : void 0,
-        maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : void 0,
-        availableFrom: req.query.availableFrom,
-        suburb: req.query.suburb,
-        city: req.query.city,
-        postcode: req.query.postcode,
-        roomType: req.query.roomType,
-        propertyType: req.query.propertyType,
-        furnished: req.query.furnished === "true" ? true : req.query.furnished === "false" ? false : void 0,
-        billsIncluded: req.query.billsIncluded === "true" ? true : req.query.billsIncluded === "false" ? false : void 0,
-        parkingAvailable: req.query.parkingAvailable === "true" ? true : req.query.parkingAvailable === "false" ? false : void 0,
-        internetIncluded: req.query.internetIncluded === "true" ? true : req.query.internetIncluded === "false" ? false : void 0
-      };
-      const listings2 = await storage.getListings(filters);
+      const listings2 = await storage.getListings({});
       res.json(listings2);
-    } catch (error) {
-      console.error("Error fetching listings:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/listings/:id", async (req, res) => {
-    try {
-      const listing = await storage.getListing(req.params.id);
-      if (!listing) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: getErrorMessage("listing_not_found", lang) });
-      }
-      res.json(listing);
-    } catch (error) {
-      console.error("Error fetching listing:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
+    } catch (err) {
+      res.status(500).json({ message: "Veritaban\u0131 hatas\u0131" });
     }
   });
   app2.post("/api/listings", jwtAuth, async (req, res) => {
     try {
       const userId = req.userId;
-      const listingData = insertListingSchema.parse({
-        ...req.body,
-        userId
-      });
-      const listing = await storage.createListing(listingData);
+      const data = insertListingSchema.parse({ ...req.body, userId });
+      const slug = makeSlug([data.title, data.address]);
+      const listing = await storage.createListing({ ...data, slug });
       res.status(201).json(listing);
-    } catch (error) {
-      console.error("Error creating listing:", error);
-      const lang = detectLanguage(req);
-      if (error.name === "ZodError") {
-        res.status(400).json({ message: getErrorMessage("bad_request", lang), error: error.message });
-      } else {
-        res.status(400).json({ message: getErrorMessage("listing_creation_failed", lang), error: error.message });
-      }
-    }
-  });
-  app2.put("/api/listings/:id", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const listing = await storage.getListing(req.params.id);
-      if (!listing || listing.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: getErrorMessage("listing_not_found", lang) });
-      }
-      const updates = insertListingSchema.partial().parse(req.body);
-      const updated = await storage.updateListing(req.params.id, updates);
-      res.json(updated);
-    } catch (error) {
-      console.error("Error updating listing:", error);
-      const lang = detectLanguage(req);
-      if (error.name === "ZodError") {
-        res.status(400).json({ message: getErrorMessage("bad_request", lang), error: error.message });
-      } else {
-        res.status(400).json({ message: getErrorMessage("listing_update_failed", lang), error: error.message });
-      }
+    } catch (err) {
+      res.status(400).json({ message: "\u0130lan olu\u015Fturulamad\u0131" });
     }
   });
   app2.delete("/api/listings/:id", jwtAuth, async (req, res) => {
     try {
-      const userId = req.userId;
       const listing = await storage.getListing(req.params.id);
-      if (!listing || listing.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: getErrorMessage("listing_not_found", lang) });
-      }
+      if (!listing || listing.userId !== req.userId)
+        return res.status(403).json({ message: "Yetkiniz yok" });
       await storage.deleteListing(req.params.id);
       res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting listing:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("listing_delete_failed", lang) });
+    } catch {
+      res.status(500).json({ message: "\u0130lan silinemedi" });
+    }
+  });
+  app2.get("/api/listings/slug/:slug", async (req, res) => {
+    try {
+      const listing = await storage.getListingBySlug(req.params.slug);
+      if (!listing) {
+        return res.status(404).json({ message: "\u0130lan bulunamad\u0131" });
+      }
+      res.json(listing);
+    } catch (err) {
+      console.error("\u274C Error fetching listing by slug:", err);
+      res.status(500).json({ message: "\u0130lan getirilemedi" });
+    }
+  });
+  app2.get("/api/seekers/public", async (req, res) => {
+    try {
+      const seekers = await storage.getSeekerProfiles({
+        isPublished: true,
+        isActive: true
+      });
+      res.json(seekers);
+    } catch {
+      res.status(500).json({ message: "Veritaban\u0131 hatas\u0131" });
+    }
+  });
+  app2.get("/api/seekers/slug/:slug", async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfileBySlug(req.params.slug);
+      if (!seeker) {
+        return res.status(404).json({ message: "Profil bulunamad\u0131" });
+      }
+      res.json(seeker);
+    } catch (err) {
+      console.error("\u274C Error fetching seeker by slug:", err);
+      res.status(500).json({ message: "Profil getirilemedi" });
+    }
+  });
+  app2.get("/api/seekers/user/:userId", jwtAuth, async (req, res) => {
+    try {
+      const seeker = await storage.getUserSeekerProfile(req.params.userId);
+      if (!seeker) {
+        return res.status(404).json({ message: "Profil bulunamad\u0131" });
+      }
+      res.json(seeker);
+    } catch (err) {
+      console.error("\u274C Error fetching user seeker profile:", err);
+      res.status(500).json({ message: "Profil getirilemedi" });
+    }
+  });
+  app2.post("/api/seekers", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId;
+      const data = insertSeekerProfileSchema.parse({ ...req.body, userId });
+      const slug = makeSlug([data.fullName || "", data.preferredLocation || ""]);
+      const seeker = await storage.createSeekerProfile({
+        ...data,
+        slug,
+        isActive: true,
+        isPublished: true
+      });
+      res.status(201).json(seeker);
+    } catch (err) {
+      console.error("\u274C Error creating seeker profile:", err);
+      res.status(400).json({ message: err.message || "Profil olu\u015Fturulamad\u0131" });
+    }
+  });
+  app2.put("/api/seekers/:id", jwtAuth, async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      if (!seeker || seeker.userId !== req.userId) {
+        return res.status(403).json({ message: "Yetkiniz yok" });
+      }
+      const data = insertSeekerProfileSchema.parse(req.body);
+      const slug = makeSlug([data.fullName || seeker.fullName || "", data.preferredLocation || seeker.preferredLocation || ""]);
+      const updateData = { ...data, slug };
+      const updated = await storage.updateSeekerProfile(req.params.id, updateData);
+      res.json(updated);
+    } catch (err) {
+      console.error("\u274C Error updating seeker profile:", err);
+      res.status(400).json({ message: err.message || "Profil g\xFCncellenemedi" });
+    }
+  });
+  app2.delete("/api/seekers/:id", jwtAuth, async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      if (!seeker || seeker.userId !== req.userId) {
+        return res.status(403).json({ message: "Yetkiniz yok" });
+      }
+      await storage.deleteSeekerProfile(req.params.id);
+      res.status(204).send();
+    } catch (err) {
+      console.error("\u274C Error deleting seeker profile:", err);
+      res.status(500).json({ message: "Profil silinemedi" });
+    }
+  });
+  app2.delete("/api/seekers/:id/photo", jwtAuth, async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      if (!seeker || seeker.userId !== req.userId) {
+        return res.status(403).json({ message: "Yetkiniz yok" });
+      }
+      await storage.updateSeekerProfile(req.params.id, { profilePhotoUrl: null });
+      res.json({ message: "Foto\u011Fraf silindi" });
+    } catch (err) {
+      console.error("\u274C Error deleting seeker photo:", err);
+      res.status(500).json({ message: "Foto\u011Fraf silinemedi" });
     }
   });
   app2.get("/api/my-listings", jwtAuth, async (req, res) => {
@@ -1093,122 +1144,9 @@ async function registerRoutes(app2) {
       const userId = req.userId;
       const listings2 = await storage.getUserListings(userId);
       res.json(listings2);
-    } catch (error) {
-      console.error("Error fetching user listings:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.post("/api/listings/:id/images", jwtAuth, upload.array("images", 10), async (req, res) => {
-    try {
-      const userId = req.userId;
-      const listing = await storage.getListing(req.params.id);
-      if (!listing || listing.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: getErrorMessage("listing_not_found", lang) });
-      }
-      const files = req.files;
-      const images = [];
-      const { uploadToR2: uploadToR22 } = await Promise.resolve().then(() => (init_r2_utils(), r2_utils_exports));
-      const R2_PUBLIC_URL2 = process.env.R2_PUBLIC_URL || process.env.VITE_R2_PUBLIC_URL;
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const r2Key = `uploads/listings/${file.filename}`;
-        let fullImageUrl = `/${r2Key}`;
-        try {
-          await uploadToR22(file.path, r2Key);
-          if (R2_PUBLIC_URL2) {
-            fullImageUrl = `${R2_PUBLIC_URL2}/${r2Key}`;
-          }
-          console.log(`\u2705 Uploaded to R2: ${fullImageUrl}`);
-        } catch (r2Error) {
-          console.error(`\u274C R2 upload failed for ${r2Key}:`, r2Error);
-        }
-        const image = await storage.addListingImage({
-          listingId: req.params.id,
-          imagePath: fullImageUrl,
-          isPrimary: i === 0
-          // First image is primary
-        });
-        images.push(image);
-      }
-      res.json(images);
-    } catch (error) {
-      console.error("Error uploading images:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("upload_failed", lang) });
-    }
-  });
-  app2.delete("/api/listings/:listingId/images/:imageId", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const listing = await storage.getListing(req.params.listingId);
-      if (!listing || listing.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: getErrorMessage("listing_not_found", lang) });
-      }
-      await storage.deleteListingImage(req.params.imageId);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting image:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.put("/api/listings/:listingId/images/:imageId/primary", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const listing = await storage.getListing(req.params.listingId);
-      if (!listing || listing.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: getErrorMessage("listing_not_found", lang) });
-      }
-      await storage.setPrimaryImage(req.params.listingId, req.params.imageId);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error setting primary image:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/listings/:id/images", async (req, res) => {
-    try {
-      const images = await storage.getListingImages(req.params.id);
-      res.json(images);
-    } catch (error) {
-      console.error("Error fetching listing images:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/preferences", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const preferences = await storage.getUserPreferences(userId);
-      res.json(preferences);
-    } catch (error) {
-      console.error("Error fetching preferences:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.put("/api/preferences", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const preferencesData = insertUserPreferencesSchema.parse({
-        ...req.body,
-        userId
-      });
-      const preferences = await storage.upsertUserPreferences(preferencesData);
-      res.json(preferences);
-    } catch (error) {
-      console.error("Error updating preferences:", error);
-      const lang = detectLanguage(req);
-      if (error.name === "ZodError") {
-        res.status(400).json({ message: getErrorMessage("bad_request", lang), error: error.message });
-      } else {
-        res.status(400).json({ message: getErrorMessage("profile_update_failed", lang), error: error.message });
-      }
+    } catch (err) {
+      console.error("\u274C Error fetching my listings:", err);
+      res.status(500).json({ message: "\u0130lanlar y\xFCklenemedi" });
     }
   });
   app2.get("/api/conversations", jwtAuth, async (req, res) => {
@@ -1216,837 +1154,76 @@ async function registerRoutes(app2) {
       const userId = req.userId;
       const conversations = await storage.getConversations(userId);
       res.json(conversations);
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("conversation_not_found", lang) });
+    } catch (err) {
+      console.error("\u274C Error fetching conversations:", err);
+      res.status(500).json({ message: "Konu\u015Fmalar y\xFCklenemedi" });
     }
   });
-  app2.get("/api/messages/:otherUserId", jwtAuth, async (req, res) => {
+  app2.get("/api/messages/:userId", jwtAuth, async (req, res) => {
     try {
-      const userId = req.userId;
-      const { otherUserId } = req.params;
-      const { listingId } = req.query;
-      const messages2 = await storage.getMessages(userId, otherUserId, listingId);
+      const currentUserId = req.userId;
+      const otherUserId = req.params.userId;
+      const listingId = req.query.listingId;
+      const messages2 = await storage.getMessages(currentUserId, otherUserId, listingId);
       res.json(messages2);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
+    } catch (err) {
+      console.error("\u274C Error fetching messages:", err);
+      res.status(500).json({ message: "Mesajlar y\xFCklenemedi" });
     }
   });
   app2.post("/api/messages", jwtAuth, async (req, res) => {
     try {
-      const userId = req.userId;
-      const messageData = insertMessageSchema.parse({
-        ...req.body,
-        senderId: userId
-      });
-      const message = await storage.sendMessage(messageData);
+      const senderId = req.userId;
+      const data = insertMessageSchema.parse({ ...req.body, senderId });
+      const message = await storage.sendMessage(data);
       res.status(201).json(message);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      const lang = detectLanguage(req);
-      if (error.name === "ZodError") {
-        res.status(400).json({ message: getErrorMessage("bad_request", lang), error: error.message });
-      } else {
-        res.status(400).json({ message: getErrorMessage("message_send_failed", lang), error: error.message });
-      }
+    } catch (err) {
+      console.error("\u274C Error sending message:", err);
+      res.status(400).json({ message: err.message || "Mesaj g\xF6nderilemedi" });
     }
   });
-  app2.put("/api/messages/:id/read", jwtAuth, async (req, res) => {
+  app2.patch("/api/messages/:id/read", jwtAuth, async (req, res) => {
     try {
       await storage.markMessageAsRead(req.params.id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error marking message as read:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/favorites", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const favorites2 = await storage.getFavorites(userId);
-      res.json(favorites2);
-    } catch (error) {
-      console.error("Error fetching favorites:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.post("/api/favorites", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const favoriteData = insertFavoriteSchema.parse({
-        ...req.body,
-        userId
-      });
-      const favorite = await storage.addFavorite(favoriteData);
-      res.status(201).json(favorite);
-    } catch (error) {
-      console.error("Error adding favorite:", error);
-      const lang = detectLanguage(req);
-      if (error.name === "ZodError") {
-        res.status(400).json({ message: getErrorMessage("bad_request", lang), error: error.message });
-      } else {
-        res.status(400).json({ message: getErrorMessage("database_error", lang), error: error.message });
-      }
-    }
-  });
-  app2.delete("/api/favorites/:listingId", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      await storage.removeFavorite(userId, req.params.listingId);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error removing favorite:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/favorites/:listingId/check", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const isFavorite = await storage.isFavorite(userId, req.params.listingId);
-      res.json({ isFavorite });
-    } catch (error) {
-      console.error("Error checking favorite:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/seekers", async (req, res) => {
-    try {
-      const filters = {
-        minBudget: req.query.minBudget ? Number(req.query.minBudget) : void 0,
-        maxBudget: req.query.maxBudget ? Number(req.query.maxBudget) : void 0,
-        gender: req.query.gender,
-        location: req.query.location,
-        isFeatured: req.query.featured === "true" ? true : void 0
-      };
-      const seekers = await storage.getSeekerProfiles(filters);
-      res.json(seekers);
-    } catch (error) {
-      console.error("Error fetching seekers:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/seekers/featured", async (req, res) => {
-    try {
-      const count = req.query.count ? Number(req.query.count) : 4;
-      const seekers = await storage.getSeekerProfiles({ isFeatured: true });
-      res.json(seekers.slice(0, count));
-    } catch (error) {
-      console.error("Error fetching featured seekers:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/seekers/public", async (req, res) => {
-    try {
-      const limit = req.query.limit ? Number(req.query.limit) : 4;
-      const seekers = await storage.getSeekerProfiles({
-        isPublished: true,
-        isActive: true
-      });
-      res.json(seekers.slice(0, limit));
-    } catch (error) {
-      console.error("Error fetching public seekers:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/feed", async (req, res) => {
-    try {
-      const limit = req.query.limit ? Number(req.query.limit) : 24;
-      const listings2 = await storage.getListings({ isPublished: true });
-      const recentListings = listings2.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 12);
-      const seekers = await storage.getSeekerProfiles({ isPublished: true, isActive: true });
-      const recentSeekers = seekers.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 12);
-      const feedItems = [
-        ...recentListings.map((listing) => ({
-          type: "listing",
-          id: listing.id,
-          createdAt: listing.createdAt,
-          title: listing.title,
-          suburb: listing.address,
-          // Use address as suburb for compatibility
-          rentAmount: listing.rentAmount,
-          images: listing.images || []
-        })),
-        ...recentSeekers.map((seeker) => ({
-          type: "seeker",
-          id: seeker.id,
-          createdAt: seeker.createdAt,
-          displayName: seeker.fullName || "\u0130simsiz",
-          budgetMonthly: seeker.budgetMonthly ? parseInt(seeker.budgetMonthly) : null,
-          preferredLocation: seeker.preferredLocation,
-          photoUrl: seeker.profilePhotoUrl
-        }))
-      ];
-      const sortedFeed = feedItems.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, limit);
-      res.json(sortedFeed);
-    } catch (error) {
-      console.error("Error fetching feed:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/seekers/:id", async (req, res) => {
-    try {
-      const seeker = await storage.getSeekerProfile(req.params.id);
-      if (!seeker) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: "Oda arayan profil bulunamad\u0131" });
-      }
-      res.json(seeker);
-    } catch (error) {
-      console.error("Error fetching seeker:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.get("/api/seekers/user/:userId", async (req, res) => {
-    try {
-      const seeker = await storage.getUserSeekerProfile(req.params.userId);
-      if (!seeker) {
-        return res.status(404).json({ message: "Profil bulunamad\u0131" });
-      }
-      res.json(seeker);
-    } catch (error) {
-      console.error("Error fetching user seeker profile:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.post("/api/seekers", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      console.log("[POST /api/seekers] Request body:", JSON.stringify(req.body, null, 2));
-      console.log("[POST /api/seekers] userId from JWT:", userId);
-      const seekerData = insertSeekerProfileSchema.parse({
-        ...req.body,
-        userId,
-        isPublished: true
-        // Auto-publish new seeker profiles
-      });
-      console.log("[POST /api/seekers] Parsed seeker data:", JSON.stringify(seekerData, null, 2));
-      const seeker = await storage.createSeekerProfile(seekerData);
-      console.log("[POST /api/seekers] Seeker profile created successfully:", seeker.id);
-      res.status(201).json(seeker);
-    } catch (error) {
-      console.error("[POST /api/seekers] Error creating seeker profile:", error);
-      if (error.name === "ZodError") {
-        console.error("[POST /api/seekers] Zod validation errors:", JSON.stringify(error.errors, null, 2));
-      }
-      const lang = detectLanguage(req);
-      if (error.name === "ZodError") {
-        res.status(400).json({ message: getErrorMessage("bad_request", lang), error: error.message, details: error.errors });
-      } else {
-        res.status(400).json({ message: "Profil olu\u015Fturulamad\u0131", error: error.message });
-      }
-    }
-  });
-  app2.put("/api/seekers/:id", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const seeker = await storage.getSeekerProfile(req.params.id);
-      if (!seeker || seeker.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: "Profil bulunamad\u0131 veya yetkiniz yok" });
-      }
-      const updatedSeeker = await storage.updateSeekerProfile(req.params.id, req.body);
-      res.json(updatedSeeker);
-    } catch (error) {
-      console.error("Error updating seeker profile:", error);
-      const lang = detectLanguage(req);
-      res.status(400).json({ message: "Profil g\xFCncellenemedi", error: error.message });
-    }
-  });
-  app2.delete("/api/seekers/:id", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const seeker = await storage.getSeekerProfile(req.params.id);
-      if (!seeker || seeker.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: "Profil bulunamad\u0131 veya yetkiniz yok" });
-      }
-      await storage.deleteSeekerProfile(req.params.id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting seeker profile:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.post("/api/seekers/:id/photo", jwtAuth, seekerUpload.single("photo"), async (req, res) => {
-    try {
-      const userId = req.userId;
-      const seeker = await storage.getSeekerProfile(req.params.id);
-      if (!seeker || seeker.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: "Profil bulunamad\u0131 veya yetkiniz yok" });
-      }
-      const file = req.file;
-      if (!file) {
-        return res.status(400).json({ message: "Foto\u011Fraf se\xE7ilmedi" });
-      }
-      const { uploadToR2: uploadToR22 } = await Promise.resolve().then(() => (init_r2_utils(), r2_utils_exports));
-      const r2Key = `uploads/seekers/${file.filename}`;
-      let photoUrl = `/${r2Key}`;
-      try {
-        await uploadToR22(file.path, r2Key);
-        photoUrl = r2Key;
-        console.log(`\u2705 Uploaded profile photo to R2: ${r2Key}`);
-      } catch (r2Error) {
-        console.error(`\u274C R2 upload failed for ${r2Key}:`, r2Error);
-      }
-      await storage.updateSeekerProfile(req.params.id, {
-        profilePhotoUrl: photoUrl
-      });
-      await storage.addSeekerPhoto({
-        seekerId: req.params.id,
-        imagePath: photoUrl,
-        sortOrder: 0
-      });
-      const updatedSeeker = await storage.getSeekerProfile(req.params.id);
-      res.status(200).json(updatedSeeker);
-    } catch (error) {
-      console.error("Error uploading profile photo:", error);
-      const lang = detectLanguage(req);
-      res.status(400).json({ message: "Foto\u011Fraf y\xFCklenemedi", error: error.message });
-    }
-  });
-  app2.delete("/api/seekers/:id/photo", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const seeker = await storage.getSeekerProfile(req.params.id);
-      if (!seeker || seeker.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: "Profil bulunamad\u0131 veya yetkiniz yok" });
-      }
-      await storage.updateSeekerProfile(req.params.id, {
-        profilePhotoUrl: null
-      });
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting profile photo:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
-    }
-  });
-  app2.post("/api/seekers/:id/photos", jwtAuth, seekerUpload.array("photos", 5), async (req, res) => {
-    try {
-      const userId = req.userId;
-      const seeker = await storage.getSeekerProfile(req.params.id);
-      if (!seeker || seeker.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: "Profil bulunamad\u0131 veya yetkiniz yok" });
-      }
-      const files = req.files;
-      const existingPhotos = await storage.getSeekerPhotos(req.params.id);
-      const { uploadToR2: uploadToR22 } = await Promise.resolve().then(() => (init_r2_utils(), r2_utils_exports));
-      const R2_PUBLIC_URL2 = process.env.R2_PUBLIC_URL || process.env.VITE_R2_PUBLIC_URL;
-      const photoPromises = files.map(async (file, index2) => {
-        const r2Key = `uploads/seekers/${file.filename}`;
-        let fullImageUrl = `/${r2Key}`;
-        try {
-          await uploadToR22(file.path, r2Key);
-          if (R2_PUBLIC_URL2) {
-            fullImageUrl = `${R2_PUBLIC_URL2}/${r2Key}`;
-          }
-          console.log(`\u2705 Uploaded to R2: ${fullImageUrl}`);
-        } catch (r2Error) {
-          console.error(`\u274C R2 upload failed for ${r2Key}:`, r2Error);
-        }
-        return storage.addSeekerPhoto({
-          seekerId: req.params.id,
-          imagePath: fullImageUrl,
-          sortOrder: existingPhotos.length + index2
-        });
-      });
-      const photos = await Promise.all(photoPromises);
-      if (files.length > 0 && !seeker.profilePhotoUrl) {
-        const firstPhotoUrl = R2_PUBLIC_URL2 ? `${R2_PUBLIC_URL2}/uploads/seekers/${files[0].filename}` : `/uploads/seekers/${files[0].filename}`;
-        await storage.updateSeekerProfile(req.params.id, {
-          profilePhotoUrl: firstPhotoUrl
-        });
-      }
-      res.status(201).json(photos);
-    } catch (error) {
-      console.error("Error adding seeker photos:", error);
-      const lang = detectLanguage(req);
-      res.status(400).json({ message: "Foto\u011Fraflar eklenemedi", error: error.message });
-    }
-  });
-  app2.delete("/api/seekers/:seekerId/photos/:photoId", jwtAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const seeker = await storage.getSeekerProfile(req.params.seekerId);
-      if (!seeker || seeker.userId !== userId) {
-        const lang = detectLanguage(req);
-        return res.status(404).json({ message: "Profil bulunamad\u0131 veya yetkiniz yok" });
-      }
-      await storage.deleteSeekerPhoto(req.params.photoId);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting seeker photo:", error);
-      const lang = detectLanguage(req);
-      res.status(500).json({ message: getErrorMessage("database_error", lang) });
+      res.json({ message: "Mesaj okundu olarak i\u015Faretlendi" });
+    } catch (err) {
+      console.error("\u274C Error marking message as read:", err);
+      res.status(500).json({ message: "\u0130\u015Flem ba\u015Far\u0131s\u0131z" });
     }
   });
   const httpServer = createServer(app2);
   return httpServer;
 }
 
-// server/vite.ts
-import express2 from "express";
-import fs4 from "fs";
-import path5 from "path";
-import { createServer as createViteServer, createLogger } from "vite";
-
-// vite.config.ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import path4 from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-var vite_config_default = defineConfig({
-  plugins: [
-    react(),
-    runtimeErrorOverlay(),
-    ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
-      await import("@replit/vite-plugin-cartographer").then(
-        (m) => m.cartographer()
-      ),
-      await import("@replit/vite-plugin-dev-banner").then(
-        (m) => m.devBanner()
-      )
-    ] : []
-  ],
-  resolve: {
-    alias: {
-      "@": path4.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path4.resolve(import.meta.dirname, "shared"),
-      "@assets": path4.resolve(import.meta.dirname, "attached_assets")
-    }
-  },
-  root: path4.resolve(import.meta.dirname, "client"),
-  build: {
-    outDir: path4.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true
-  },
-  server: {
-    fs: {
-      strict: true,
-      deny: ["**/.*"]
-    }
-  }
-});
-
-// server/vite.ts
-import { nanoid } from "nanoid";
-var viteLogger = createLogger();
-function log(message, source = "express") {
-  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true
-  });
-  console.log(`${formattedTime} [${source}] ${message}`);
-}
-async function setupVite(app2, server) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true
-  };
-  const vite = await createViteServer({
-    ...vite_config_default,
-    configFile: false,
-    customLogger: {
-      ...viteLogger,
-      error: (msg, options) => {
-        viteLogger.error(msg, options);
-        process.exit(1);
-      }
-    },
-    server: serverOptions,
-    appType: "custom"
-  });
-  app2.use(vite.middlewares);
-  app2.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
-    try {
-      const clientTemplate = path5.resolve(
-        import.meta.dirname,
-        "..",
-        "client",
-        "index.html"
-      );
-      let template = await fs4.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
-    } catch (e) {
-      vite.ssrFixStacktrace(e);
-      next(e);
-    }
-  });
-}
-function serveStatic(app2) {
-  const distPath = path5.resolve(import.meta.dirname, "..", "dist", "public");
-  if (!fs4.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
-  }
-  app2.use(express2.static(distPath));
-  app2.use("*", (req, res, next) => {
-    if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
-      return next();
-    }
-    res.sendFile(path5.resolve(distPath, "index.html"));
-  });
-}
-
-// server/og.ts
-var BOT_RE = /(facebookexternalhit|whatsapp|twitterbot|slackbot|linkedinbot|telegram|discord|pinterest)/i;
-var BASE = "https://www.odanet.com.tr";
-function getAbsoluteImageUrl(path7) {
-  const FALLBACK = `${BASE}/og/og-home.jpg`;
-  if (!path7) return FALLBACK;
-  if (path7.startsWith("http://") || path7.startsWith("https://")) {
-    const customDomain = process.env.R2_PUBLIC_URL || "";
-    if (customDomain && path7.includes(".r2.dev")) {
-      const r2Pattern = /https?:\/\/pub-[a-zA-Z0-9]+\.r2\.dev/;
-      return path7.replace(r2Pattern, customDomain);
-    }
-    return path7;
-  }
-  const publicUrl = process.env.R2_PUBLIC_URL;
-  const isProduction = process.env.NODE_ENV?.trim().toLowerCase() === "production";
-  if (isProduction && publicUrl) {
-    return `${publicUrl}/${path7.replace(/^\/+/, "")}`;
-  }
-  return `${BASE}${path7.startsWith("/") ? path7 : `/${path7}`}`;
-}
-function ogHtml({
-  title,
-  description,
-  url,
-  image
-}) {
-  return `<!doctype html><html lang="tr"><head>
-<meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
-<link rel="icon" href="/favicon.ico" /><link rel="canonical" href="${url}" />
-<title>${title}</title>
-<meta name="description" content="${description}" />
-<meta property="og:type" content="article" /><meta property="og:site_name" content="Odanet" />
-<meta property="og:url" content="${url}" /><meta property="og:title" content="${title}" />
-<meta property="og:description" content="${description}" /><meta property="og:image" content="${image}" />
-<meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" />
-<meta name="twitter:card" content="summary_large_image" /><meta name="twitter:title" content="${title}" />
-<meta name="twitter:description" content="${description}" /><meta name="twitter:image" content="${image}" />
-</head><body><script>location.replace("${url}");</script></body></html>`;
-}
-async function ogHandler(req, res, next) {
-  const ua = String(req.headers["user-agent"] || "");
-  const isBot = BOT_RE.test(ua) || req.query._og === "1";
-  if (!isBot) {
-    return next();
-  }
-  try {
-    if (req.path.startsWith("/oda-ilani/")) {
-      const id = req.params.id || req.path.split("/oda-ilani/")[1]?.split("?")[0];
-      if (!id) return next();
-      const listing = await storage.getListing(id);
-      if (!listing) {
-        return res.status(404).send("Listing not found");
-      }
-      const title = listing.title || "Oda ilan\u0131";
-      const locationParts = [listing.address].filter(Boolean);
-      const desc2 = locationParts.join(" \u2022 ") || "Odanet \xFCzerinde yay\u0131nlanan oda ilan\u0131";
-      const firstImg = listing.images?.find((img) => img.isPrimary)?.imagePath || listing.images?.[0]?.imagePath;
-      const image = firstImg ? getAbsoluteImageUrl(firstImg) : `${BASE}/og/og-home.jpg`;
-      return res.send(ogHtml({
-        title: `${title} \u2013 Odanet`,
-        description: desc2,
-        url: `${BASE}/oda-ilani/${id}`,
-        image
-      }));
-    }
-    if (req.path.startsWith("/oda-arayan/")) {
-      const id = req.params.id || req.path.split("/oda-arayan/")[1]?.split("?")[0];
-      if (!id) return next();
-      const seeker = await storage.getSeekerProfile(id);
-      if (!seeker) {
-        return res.status(404).send("Seeker profile not found");
-      }
-      const displayName = seeker.fullName || seeker.user?.firstName || "Kullan\u0131c\u0131";
-      const desc2 = seeker.preferredLocation ? `Tercih edilen b\xF6lge: ${seeker.preferredLocation}` : "Odanet \xFCzerinde oda arayan kullan\u0131c\u0131 profili";
-      const photo = seeker.profilePhotoUrl || seeker.photos?.[0]?.imagePath;
-      const image = photo ? getAbsoluteImageUrl(photo) : `${BASE}/og/og-home.jpg`;
-      return res.send(ogHtml({
-        title: `${displayName} \u2013 Oda ar\u0131yor`,
-        description: desc2,
-        url: `${BASE}/oda-arayan/${id}`,
-        image
-      }));
-    }
-    if (req.path === "/" || req.path === "") {
-      return res.send(ogHtml({
-        title: "Odanet \u2013 G\xFCvenli, kolay ve \u015Feffaf oda & ev arkada\u015F\u0131 bul",
-        description: "Do\u011Frulanm\u0131\u015F profiller ve ger\xE7ek ilanlarla sana en uygun oda ya da ev arkada\u015F\u0131n\u0131 hemen bul.",
-        url: `${BASE}/`,
-        image: `${BASE}/og/og-home.jpg`
-      }));
-    }
-    return next();
-  } catch (error) {
-    console.error("OG handler error:", error);
-    return next();
-  }
-}
-
-// server/routes/uploads.ts
-init_r2_utils();
-import { Router } from "express";
-import Busboy from "busboy";
-import sharp from "sharp";
-var router = Router();
-router.post("/api/uploads/seeker-photo", (req, res) => {
-  const bb = Busboy({ headers: req.headers });
-  let hasFile = false;
-  bb.on("file", (fieldname, file, info) => {
-    hasFile = true;
-    const { mimeType, filename } = info;
-    const allowed = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-      "image/heic",
-      "image/heif"
-    ];
-    if (!allowed.includes(mimeType.toLowerCase())) {
-      file.resume();
-      return res.status(400).json({
-        message: "Desteklenmeyen dosya format\u0131. JPEG, PNG, WebP veya HEIC kullan\u0131n."
-      });
-    }
-    const chunks = [];
-    file.on("data", (chunk) => {
-      chunks.push(chunk);
-    });
-    file.on("end", async () => {
-      try {
-        const inputBuffer = Buffer.concat(chunks);
-        const processedBuffer = await sharp(inputBuffer).rotate().resize({
-          width: 1600,
-          withoutEnlargement: true,
-          // Don't upscale smaller images
-          fit: "inside"
-        }).jpeg({
-          quality: 82,
-          progressive: true
-        }).toBuffer();
-        const timestamp2 = Date.now();
-        const randomSuffix = Math.random().toString(36).substring(2, 8);
-        const r2Key = `seekers/${timestamp2}-${randomSuffix}.jpg`;
-        await uploadBufferToR2(r2Key, processedBuffer, {
-          contentType: "image/jpeg",
-          cacheControl: "public, max-age=31536000, immutable"
-        });
-        const cdnUrl = getR2Url(r2Key);
-        return res.json({
-          success: true,
-          imagePath: r2Key,
-          // Store this in DB
-          url: cdnUrl
-          // Use this for immediate preview
-        });
-      } catch (error) {
-        console.error("Image processing error:", error);
-        return res.status(500).json({
-          message: "Foto\u011Fraf i\u015Flenirken hata olu\u015Ftu. L\xFCtfen tekrar deneyin."
-        });
-      }
-    });
-    file.on("error", (error) => {
-      console.error("File stream error:", error);
-      res.status(500).json({
-        message: "Dosya y\xFCklenirken hata olu\u015Ftu."
-      });
-    });
-  });
-  bb.on("finish", () => {
-    if (!hasFile) {
-      res.status(400).json({
-        message: "Foto\u011Fraf se\xE7ilmedi."
-      });
-    }
-  });
-  bb.on("error", (error) => {
-    console.error("Busboy error:", error);
-    res.status(500).json({
-      message: "Dosya y\xFCklemesi ba\u015Far\u0131s\u0131z oldu."
-    });
-  });
-  req.pipe(bb);
-});
-var uploads_default = router;
-
 // server/index.ts
-import path6 from "path";
-import fs5 from "fs";
-import { Client as AppStorage } from "@replit/object-storage";
-var app = express3();
-app.use(express3.json());
-app.use(express3.urlencoded({ extended: false }));
+var app = express2();
+app.get("/health", (_req, res) => res.status(200).send("ok"));
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true, message: "Backend running fine \u2705" });
+});
+app.use(express2.json());
+app.use(express2.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(uploads_default);
-var LOCAL_UPLOAD_DIR = path6.join(process.cwd(), "uploads");
-fs5.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
-var mimeMap = {
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".png": "image/png",
-  ".gif": "image/gif",
-  ".webp": "image/webp",
-  ".avif": "image/avif",
-  ".pdf": "application/pdf",
-  ".txt": "text/plain",
-  ".json": "application/json"
-};
-app.get(
-  "/uploads/health.txt",
-  (_req, res) => res.type("text/plain").send("ok")
-);
 app.use(
-  "/uploads",
-  express3.static(LOCAL_UPLOAD_DIR, {
-    immutable: true,
-    maxAge: "1y",
-    setHeaders(res, filePath) {
-      const ext = path6.extname(filePath).toLowerCase();
-      if (mimeMap[ext]) {
-        res.setHeader("Content-Type", mimeMap[ext]);
-      }
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    }
+  cors({
+    origin: [
+      "https://www.odanet.com.tr",
+      "https://odanet.com.tr",
+      "https://flatmate-connect-1-mesudemirok.replit.app"
+    ],
+    credentials: true
   })
 );
-var OBJECT_STORAGE_ENABLED = process.env.ENABLE_REPLIT_OBJECT_STORAGE === "true";
-var bucket = null;
-if (OBJECT_STORAGE_ENABLED) {
-  try {
-    bucket = new AppStorage();
-    log("\u2705 Replit Object Storage initialized");
-  } catch (err) {
-    log(`\u26A0\uFE0F Object Storage initialization failed: ${err.message}`);
-    bucket = null;
-  }
-} else {
-  log("\u26A0\uFE0F Replit Object Storage disabled - using Cloudflare R2 and local storage");
-}
-app.get("/uploads/:folder/:filename", async (req, res) => {
-  try {
-    const { folder, filename } = req.params;
-    const key = `${folder}/${filename}`;
-    log(`\u{1F50E} Fetching from storage: ${key}`);
-    const localPath = path6.join(LOCAL_UPLOAD_DIR, folder, filename);
-    if (fs5.existsSync(localPath)) {
-      const ext = path6.extname(filename).toLowerCase();
-      const contentType = mimeMap[ext] || "application/octet-stream";
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      return fs5.createReadStream(localPath).pipe(res);
-    }
-    if (OBJECT_STORAGE_ENABLED && bucket) {
-      const result = await bucket.downloadAsBytes(key);
-      if (!result.ok || !result.value) {
-        log(`\u26A0\uFE0F Not found in Object Storage: ${key}`);
-        return res.status(404).send("Not found");
-      }
-      let fileData;
-      if (Buffer.isBuffer(result.value)) {
-        fileData = result.value;
-      } else if (Array.isArray(result.value)) {
-        fileData = Buffer.from(result.value);
-      } else {
-        fileData = Buffer.from(result.value);
-      }
-      const ext = path6.extname(filename).toLowerCase();
-      const contentType = mimeMap[ext] || "application/octet-stream";
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      res.setHeader("Content-Length", fileData.length);
-      return res.end(fileData);
-    }
-    log(`\u26A0\uFE0F Not found locally and object storage disabled: ${key}`);
-    return res.status(404).send("Not found");
-  } catch (err) {
-    log(`\u274C Error serving upload: ${err.message}`);
-    res.status(500).type("text/plain").send(`Internal error: ${err.message || "Unknown error"}`);
-  }
-});
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path7 = req.path;
-  let capturedJsonResponse;
-  const originalResJson = res.json;
-  res.json = function(bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-  res.on("finish", () => {
-    if (path7.startsWith("/api")) {
-      const duration = Date.now() - start;
-      let logLine = `${req.method} ${path7} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-      if (logLine.length > 120) {
-        logLine = logLine.slice(0, 119) + "\u2026";
-      }
-      log(logLine);
-    }
-  });
-  next();
-});
 (async () => {
-  const server = await registerRoutes(app);
-  app.use((err, _req, res, _next) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    throw err;
-  });
-  app.get("/oda-ilani/:id", (req, res, next) => ogHandler(req, res, next));
-  app.get("/oda-arayan/:id", (req, res, next) => ogHandler(req, res, next));
-  app.get("/", (req, res, next) => {
-    const ua = String(req.headers["user-agent"] || "");
-    const isBot = /(facebookexternalhit|whatsapp|twitterbot|slackbot|linkedinbot|telegram|discord|pinterest)/i.test(ua) || req.query._og === "1";
-    if (isBot) {
-      return ogHandler(req, res, next);
-    }
-    next();
-  });
-  const isDevelopment = process.env.NODE_ENV?.trim().toLowerCase() !== "production";
-  if (isDevelopment) {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+  try {
+    const server = await registerRoutes(app);
+    const port = parseInt(process.env.PORT || "5000", 10);
+    const host = "0.0.0.0";
+    server.listen(port, host, () => {
+      console.log(`\u2705 Odanet backend running on port ${port}`);
+    });
+  } catch (err) {
+    console.error("\u274C Server startup error:", err);
+    process.exit(1);
   }
-  const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen(
-    { port, host: "0.0.0.0", reusePort: true },
-    () => log(`\u2705 Server running on port ${port}`)
-  );
 })();
