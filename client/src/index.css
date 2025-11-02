@@ -17,7 +17,7 @@
   --secondary-foreground: hsl(210, 40%, 98%);
   --muted: hsl(210, 40%, 96%);
   --muted-foreground: hsl(215, 25%, 65%);
-  --accent: hsl(25, 95%, 53%);
+  --accent: hsl(5.05deg 87.07% 45.49%);
   --accent-foreground: hsl(210, 40%, 98%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(210, 40%, 98%);
@@ -26,9 +26,9 @@
   --ring: hsl(263, 70%, 50%);
   --chart-1: hsl(206, 100%, 50%);
   --chart-2: hsl(142, 70%, 45%);
-  --chart-3: hsl(25, 95%, 53%);
+  --chart-3: hsl(172.08deg 100% 50.98%);
   --chart-4: hsl(147, 78%, 42%);
-  --chart-5: hsl(341, 75%, 51%);
+  --chart-5: hsl(160deg 94.21% 47.45%);
   --sidebar: hsl(210, 40%, 100%);
   --sidebar-foreground: hsl(215, 25%, 27%);
   --sidebar-primary: hsl(263, 70%, 50%);

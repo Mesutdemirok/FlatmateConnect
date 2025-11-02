@@ -252,7 +252,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: true,
       });
       res.json(seekers);
-    } catch {
+    } catch (err: any) {
+      console.error("❌ /api/seekers/public error:", err);
       res.status(500).json({ message: "Veritabanı hatası" });
     }
   });

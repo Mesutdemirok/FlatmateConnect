@@ -1328,7 +1328,8 @@ async function registerRoutes(app2) {
         isActive: true
       });
       res.json(seekers);
-    } catch {
+    } catch (err) {
+      console.error("\u274C /api/seekers/public error:", err);
       res.status(500).json({ message: "Veritaban\u0131 hatas\u0131" });
     }
   });
