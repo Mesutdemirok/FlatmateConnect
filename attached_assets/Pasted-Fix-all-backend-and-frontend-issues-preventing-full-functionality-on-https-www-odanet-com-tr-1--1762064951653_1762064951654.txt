@@ -1,0 +1,38 @@
+Fix all backend and frontend issues preventing full functionality on https://www.odanet.com.tr.
+
+1️⃣ SEEKER PROFILE CREATION
+• The POST request to /api/seekers returns error: "column 'is_smoker' of relation 'seeker_profiles' does not exist".
+→ Add the missing columns `is_smoker VARCHAR(10)` and `has_pets VARCHAR(10)` to the seeker_profiles table in Neon Postgres.
+→ Update schema definitions (Drizzle schema, Zod schema, and any ORM mapping) so that the backend can correctly insert and read these fields.
+→ Verify that when users submit the seeker profile form, their data is saved successfully in the database and returned in GET /api/seekers.
+
+2️⃣ HOMEPAGE LISTINGS
+• Currently the homepage only shows “Room Listings” and not “Room Seeker” cards.
+→ Fetch both room listings and seeker listings from the database.
+→ Display seeker cards alongside room cards in the home page search view.
+→ Ensure both types have proper filtering (e.g., “Oda Ara” and “Oda Arkadaşı Ara”) and correct image handling.
+
+3️⃣ USER DASHBOARD (Profilim → İlanlarım)
+• When a user has created both a room listing and a room seeker listing, only room listings appear.
+→ Make sure the user profile page (/profil) lists both:
+   - Oda İlanlarım (room listings)
+   - Oda Arama İlanlarım (seeker listings)
+→ Fetch them from the correct tables, show status (active, pending, etc.), and allow edit/delete for each.
+
+4️⃣ MESSAGING (Sunucu hatası)
+• Sending a message fails with "Sunucu hatası, lütfen daha sonra tekrar deneyiniz".
+→ Fix the backend message API (check /api/messages or socket events).
+→ Verify that:
+   - WebSocket or fetch connection works correctly in production,
+   - CORS and SameSite cookie policies are configured properly for the domain .odanet.com.tr,
+   - Message creation, retrieval, and notification flow are functional.
+
+5️⃣ FINAL TESTS
+→ Test full flow in production:
+   - Register or login (both email/password and Google OAuth),
+   - Create both room and seeker listings,
+   - View them on homepage and profile page,
+   - Send and receive messages without errors.
+→ Clean up console logs and ensure all API routes return proper JSON (no 404s).
+
+Goal: Make the entire Odanet platform production-ready with all core features (login, listings, seeker profiles, messages) working flawlessly on https://www.odanet.com.tr.

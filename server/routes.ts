@@ -350,6 +350,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /* -------------------------------------------------------
+     📋 My Listings
+  ------------------------------------------------------- */
+  app.get("/api/my-listings", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const listings = await storage.getListings({ userId });
+      res.json(listings);
+    } catch (err) {
+      console.error("❌ Error fetching my listings:", err);
+      res.status(500).json({ message: "İlanlar yüklenemedi" });
+    }
+  });
+
+  /* -------------------------------------------------------
+     💬 Messaging
+  ------------------------------------------------------- */
+  // Get user's conversations
+  app.get("/api/conversations", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const conversations = await storage.getConversations(userId);
+      res.json(conversations);
+    } catch (err) {
+      console.error("❌ Error fetching conversations:", err);
+      res.status(500).json({ message: "Konuşmalar yüklenemedi" });
+    }
+  });
+
+  // Get messages with a specific user
+  app.get("/api/messages/:userId", jwtAuth, async (req, res) => {
+    try {
+      const currentUserId = req.userId!;
+      const otherUserId = req.params.userId;
+      const listingId = req.query.listingId as string | undefined;
+      
+      const messages = await storage.getMessages(currentUserId, otherUserId, listingId);
+      res.json(messages);
+    } catch (err) {
+      console.error("❌ Error fetching messages:", err);
+      res.status(500).json({ message: "Mesajlar yüklenemedi" });
+    }
+  });
+
+  // Send a message
+  app.post("/api/messages", jwtAuth, async (req, res) => {
+    try {
+      const senderId = req.userId!;
+      const data = insertMessageSchema.parse({ ...req.body, senderId });
+      
+      const message = await storage.sendMessage(data);
+      res.status(201).json(message);
+    } catch (err: any) {
+      console.error("❌ Error sending message:", err);
+      res.status(400).json({ message: err.message || "Mesaj gönderilemedi" });
+    }
+  });
+
+  // Mark message as read
+  app.patch("/api/messages/:id/read", jwtAuth, async (req, res) => {
+    try {
+      await storage.markMessageAsRead(req.params.id);
+      res.json({ message: "Mesaj okundu olarak işaretlendi" });
+    } catch (err) {
+      console.error("❌ Error marking message as read:", err);
+      res.status(500).json({ message: "İşlem başarısız" });
+    }
+  });
+
+  /* -------------------------------------------------------
      🌍 Server Start
   ------------------------------------------------------- */
   const httpServer = createServer(app);
