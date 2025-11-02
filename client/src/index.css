@@ -5,19 +5,19 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(165.07deg 91.7% 52.75%);
+  --background: hsl(180deg 29.58% 86.08%);
   --foreground: hsl(220deg 3.8% 15.49%);
-  --card: hsl(210, 40%, 100%);
+  --card: hsl(0deg 77.94% 73.33%);
   --card-foreground: hsl(0deg 0% 3.14%);
   --popover: hsl(0deg 71.43% 79.41%);
   --popover-foreground: hsl(215, 25%, 27%);
-  --primary: hsl(263, 70%, 50%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(290, 70%, 50%);
+  --primary: hsl(260.96deg 80.58% 79.8%);
+  --primary-foreground: hsl(180deg 3.45% 5.69%);
+  --secondary: hsl(193.55deg 48.44% 74.9%);
   --secondary-foreground: hsl(210, 40%, 98%);
   --muted: hsl(210, 40%, 96%);
   --muted-foreground: hsl(215, 25%, 65%);
-  --accent: hsl(5.05deg 87.07% 45.49%);
+  --accent: hsl(6.77deg 64.88% 59.8%);
   --accent-foreground: hsl(210, 40%, 98%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(210, 40%, 98%);
@@ -26,7 +26,7 @@
   --ring: hsl(263, 70%, 50%);
   --chart-1: hsl(206, 100%, 50%);
   --chart-2: hsl(142, 70%, 45%);
-  --chart-3: hsl(172.08deg 100% 50.98%);
+  --chart-3: hsl(170.23deg 100% 91.57%);
   --chart-4: hsl(147, 78%, 42%);
   --chart-5: hsl(160deg 94.21% 47.45%);
   --sidebar: hsl(210, 40%, 100%);
@@ -37,7 +37,7 @@
   --sidebar-accent-foreground: hsl(263, 70%, 50%);
   --sidebar-border: hsl(214, 32%, 91%);
   --sidebar-ring: hsl(263, 70%, 50%);
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: 'Roboto', sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
   --radius: 8px;
