@@ -355,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/my-listings", jwtAuth, async (req, res) => {
     try {
       const userId = req.userId!;
-      const listings = await storage.getListings({ userId });
+      const listings = await storage.getUserListings(userId);
       res.json(listings);
     } catch (err) {
       console.error("❌ Error fetching my listings:", err);
