@@ -1403,6 +1403,29 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Profil silinemedi" });
     }
   });
+  app2.post("/api/uploads/seeker-photo", jwtAuth, seekerUpload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+      const imagePath = `/uploads/seekers/${req.file.filename}`;
+      const imageUrl = `${req.protocol}://${req.get("host")}${imagePath}`;
+      console.log("\u2705 Seeker photo uploaded:", {
+        filename: req.file.filename,
+        path: imagePath,
+        url: imageUrl
+      });
+      res.status(200).json({
+        success: true,
+        imagePath,
+        url: imageUrl,
+        message: "Photo uploaded successfully"
+      });
+    } catch (err) {
+      console.error("\u274C Error uploading seeker photo:", err);
+      res.status(500).json({ error: err.message || "Photo upload failed" });
+    }
+  });
   app2.delete("/api/seekers/:id/photo", jwtAuth, async (req, res) => {
     try {
       const seeker = await storage.getSeekerProfile(req.params.id);

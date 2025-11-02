@@ -339,6 +339,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload seeker profile photo
+  app.post("/api/uploads/seeker-photo", jwtAuth, seekerUpload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const imagePath = `/uploads/seekers/${req.file.filename}`;
+      const imageUrl = `${req.protocol}://${req.get('host')}${imagePath}`;
+
+      console.log('✅ Seeker photo uploaded:', {
+        filename: req.file.filename,
+        path: imagePath,
+        url: imageUrl
+      });
+
+      res.status(200).json({
+        success: true,
+        imagePath: imagePath,
+        url: imageUrl,
+        message: "Photo uploaded successfully"
+      });
+    } catch (err: any) {
+      console.error("❌ Error uploading seeker photo:", err);
+      res.status(500).json({ error: err.message || "Photo upload failed" });
+    }
+  });
+
   // Delete seeker profile photo
   app.delete("/api/seekers/:id/photo", jwtAuth, async (req, res) => {
     try {
