@@ -5,11 +5,11 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(210, 40%, 98%);
-  --foreground: hsl(215, 25%, 27%);
+  --background: hsl(165.07deg 91.7% 52.75%);
+  --foreground: hsl(220deg 3.8% 15.49%);
   --card: hsl(210, 40%, 100%);
-  --card-foreground: hsl(215, 25%, 27%);
-  --popover: hsl(210, 40%, 100%);
+  --card-foreground: hsl(0deg 0% 3.14%);
+  --popover: hsl(0deg 71.43% 79.41%);
   --popover-foreground: hsl(215, 25%, 27%);
   --primary: hsl(263, 70%, 50%);
   --primary-foreground: hsl(210, 40%, 98%);
@@ -22,7 +22,7 @@
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(210, 40%, 98%);
   --border: hsl(214, 32%, 91%);
-  --input: hsl(214, 32%, 91%);
+  --input: hsl(214.89deg 64.98% 57.45%);
   --ring: hsl(263, 70%, 50%);
   --chart-1: hsl(206, 100%, 50%);
   --chart-2: hsl(142, 70%, 45%);
