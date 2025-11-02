@@ -119,7 +119,7 @@ export default function CreateListing() {
             formData.append('images', image);
           });
           
-          const imageResponse = await fetch(`/api/listings/${listing.id}/images`, {
+          const imageResponse = await fetch(`/api/uploads/listings/${listing.id}/images`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: formData,

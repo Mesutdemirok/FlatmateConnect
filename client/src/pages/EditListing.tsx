@@ -120,7 +120,7 @@ export default function EditListing() {
           const formData = new FormData();
           newImages.forEach(image => formData.append('images', image));
           
-          const imageResponse = await fetch(`/api/listings/${id}/images`, {
+          const imageResponse = await fetch(`/api/uploads/listings/${id}/images`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: formData,
