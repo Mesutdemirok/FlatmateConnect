@@ -79,8 +79,8 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
         className="h-full w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
         data-testid={`card-seeker-${seeker.id}`}
       >
-        {/* Image Section - Desktop: full cover image like ListingCard, Mobile: with overlay */}
-        <div className="relative w-full aspect-[16/10] md:h-48 overflow-hidden">
+        {/* Image Section - Same aspect ratio as ListingCard for consistent height */}
+        <div className="relative w-full aspect-[16/10] overflow-hidden">
           <img 
             src={photo} 
             alt={name} 
@@ -106,38 +106,10 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
             </div>
           )}
 
-          {/* Mobile: Info overlay on bottom of image with gradient */}
-          <div className="md:hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent px-3 py-3">
-            <h3 className="text-base font-semibold text-white mb-1.5 line-clamp-1" data-testid={`text-name-${seeker.id}`}>
-              {name}
-            </h3>
-            <div className="flex flex-wrap gap-1.5">
-              {budget && (
-                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700">
-                  {budget}/ay
-                </span>
-              )}
-              {location && (
-                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-violet-100 text-violet-700 max-w-[120px] truncate">
-                  {location}
-                </span>
-              )}
-              {occupation && (
-                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-900 text-white">
-                  {occupation}
-                </span>
-              )}
-              {seeker.age && (
-                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-fuchsia-100 text-fuchsia-700">
-                  {seeker.age} yaş
-                </span>
-              )}
-            </div>
-          </div>
         </div>
 
-        {/* Desktop: Text area with pills - same layout as ListingCard */}
-        <div className="hidden md:flex md:flex-col px-3 pb-3 sm:px-4 sm:pb-4 min-h-[96px]">
+        {/* Text area with pills - matching ListingCard exactly for uniform height */}
+        <div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[96px] flex flex-col">
           <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2">
             {name}
           </h3>
@@ -158,7 +130,7 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
             </div>
           )}
 
-          {/* CTA Button - At bottom with mt-auto - same size as ListingCard */}
+          {/* CTA Button - At bottom with mt-auto - matching ListingCard exactly */}
           <div className="mt-auto pt-2">
             <Button
               asChild
@@ -171,20 +143,6 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
               </span>
             </Button>
           </div>
-        </div>
-
-        {/* Mobile: Compact white area with only CTA button */}
-        <div className="md:hidden px-3 py-2.5">
-          <Button
-            asChild
-            className="w-full h-11 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg transition-colors"
-            data-testid={`button-contact-${seeker.id}`}
-          >
-            <span>
-              <MessageCircle className="w-4 h-4 mr-2 inline" />
-              İletişime Geçin
-            </span>
-          </Button>
         </div>
       </article>
     </Link>
