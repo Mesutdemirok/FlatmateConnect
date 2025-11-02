@@ -103,7 +103,7 @@ export default function ListingCard({
   return (
     <Link href={listingUrl}>
       <article
-        className="w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
+        className="h-full w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
         data-testid={`listing-card-${id || "noid"}`}
       >
         <div className={`relative w-full ${aspectClass(imageAspect)} overflow-hidden`}>
