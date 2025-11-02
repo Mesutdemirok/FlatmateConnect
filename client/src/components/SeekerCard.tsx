@@ -80,7 +80,7 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
         data-testid={`card-seeker-${seeker.id}`}
       >
         {/* Image Section - Desktop: full cover image like ListingCard, Mobile: with overlay */}
-        <div className="relative w-full aspect-[16/10] overflow-hidden">
+        <div className="relative w-full aspect-[16/10] md:h-48 overflow-hidden">
           <img 
             src={photo} 
             alt={name} 
