@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Heart, ShieldCheck } from "lucide-react";
+import { Heart, ShieldCheck, MapPin } from "lucide-react";
 import { Link } from "wouter";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -33,18 +33,20 @@ interface ListingCardProps {
 }
 
 const aspectClass = (a?: AspectOpt) =>
-  a === "4/3" ? "aspect-[4/3]" :
-  a === "16/9" ? "aspect-[16/9]" :
-  "aspect-[16/10]";
+  a === "4/3"
+    ? "aspect-[4/3]"
+    : a === "16/9"
+      ? "aspect-[16/9]"
+      : "aspect-[16/10]";
 
 const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=60";
 
-export default function ListingCard({ 
-  listing, 
-  isFavorited = false, 
-  imageAspect = "16/10", 
-  addressOverlay = false 
+export default function ListingCard({
+  listing,
+  isFavorited = false,
+  imageAspect = "16/10",
+  addressOverlay = false,
 }: ListingCardProps) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
@@ -58,21 +60,22 @@ export default function ListingCard({
   const totalOccupants = listing?.totalOccupants;
   const roommatePreference = listing?.roommatePreference;
   const furnishingStatus = listing?.furnishingStatus;
+  const isVerified = listing?.user?.verificationStatus === "verified";
 
   const amount = useMemo(() => {
     const v = listing?.rentAmount;
-    if (typeof v === "string") return Number(v.replace(/[^\d.,-]/g, "").replace(",", "."));
+    if (typeof v === "string")
+      return Number(v.replace(/[^\d.,-]/g, "").replace(",", "."));
     return Number(v ?? 0);
   }, [listing?.rentAmount]);
 
-  const imgs = Array.isArray(listing?.images) && listing?.images.length
-    ? listing!.images
-    : [{ imagePath: FALLBACK_IMG, isPrimary: true }];
+  const imgs =
+    Array.isArray(listing?.images) && listing?.images.length
+      ? listing!.images
+      : [{ imagePath: FALLBACK_IMG, isPrimary: true }];
 
-  const primary = imgs.find(i => i?.isPrimary) ?? imgs[0];
+  const primary = imgs.find((i) => i?.isPrimary) ?? imgs[0];
   const imageUrl = getAbsoluteImageUrl(primary?.imagePath || FALLBACK_IMG);
-  const isVerified = listing?.user?.verificationStatus === "verified";
-
   const [favorite, setFavorite] = useState(isFavorited);
 
   const toggleFavorite = useMutation({
@@ -82,42 +85,57 @@ export default function ListingCard({
       else await apiRequest("POST", "/api/favorites", { listingId: id });
     },
     onSuccess: () => {
-      setFavorite(f => !f);
+      setFavorite((f) => !f);
       queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
-      toast({ title: favorite ? t("success.removed_from_favorites") : t("success.added_to_favorites") });
+      toast({
+        title: favorite
+          ? t("success.removed_from_favorites")
+          : t("success.added_to_favorites"),
+      });
     },
     onError: (err) => {
       if (isUnauthorizedError(err)) {
-        toast({ title: t("errors.unauthorized"), description: "Lütfen giriş yapın.", variant: "destructive" });
+        toast({
+          title: t("errors.unauthorized"),
+          description: "Lütfen giriş yapın.",
+          variant: "destructive",
+        });
         setTimeout(() => (window.location.href = "/giris"), 400);
         return;
       }
-      toast({ title: "Hata", description: "Favoriler güncellenemedi.", variant: "destructive" });
-    }
+      toast({
+        title: "Hata",
+        description: "Favoriler güncellenemedi.",
+        variant: "destructive",
+      });
+    },
   });
 
   const listingUrl = listing?.slug
     ? `/oda-ilani/${listing.slug}`
-    : id ? `/oda-ilani/${id}` : "#";
+    : id
+      ? `/oda-ilani/${id}`
+      : "#";
 
   return (
     <Link href={listingUrl}>
-      <article
-        className="h-full w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
-        data-testid={`listing-card-${id || "noid"}`}
-      >
-        <div className={`relative w-full ${aspectClass(imageAspect)} overflow-hidden`}>
+      <article className="group flex h-full w-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition hover:shadow-lg hover:-translate-y-[2px]">
+        {/* IMAGE AREA */}
+        <div className="relative w-full h-[180px] md:h-[220px] overflow-hidden">
           <img
             src={imageUrl}
             alt={title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
-            data-testid={`listing-image-${id || "noid"}`}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
 
-          <div className="absolute right-2 top-2 rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-indigo-700 shadow">
-            {formatCurrency(Number.isFinite(amount) ? amount : 0)} <span className="text-xs text-indigo-600">/ay</span>
+          {/* PRICE BADGE */}
+          <div className="absolute top-2 right-2 rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-indigo-700 shadow">
+            {formatCurrency(Number.isFinite(amount) ? amount : 0)}{" "}
+            <span className="text-xs text-indigo-600">/ay</span>
           </div>
 
+          {/* FAVORITE BUTTON */}
           <Button
             variant="secondary"
             size="icon"
@@ -128,64 +146,79 @@ export default function ListingCard({
               if (!isAuthenticated) return (window.location.href = "/giris");
               toggleFavorite.mutate();
             }}
-            data-testid={`favorite-button-${id || "noid"}`}
           >
-            <Heart className="h-5 w-5" strokeWidth={2} fill={favorite ? "currentColor" : "none"} />
+            <Heart
+              className="h-5 w-5"
+              strokeWidth={2}
+              fill={favorite ? "currentColor" : "none"}
+            />
           </Button>
 
-          {isVerified && !addressOverlay && (
+          {/* VERIFIED ICON */}
+          {isVerified && (
             <div className="absolute bottom-2 left-2 rounded-full bg-emerald-600/95 p-1.5 text-white shadow ring-1 ring-white/50">
               <ShieldCheck className="h-4 w-4" />
             </div>
           )}
 
+          {/* ADDRESS OVERLAY */}
           {addressOverlay && (address || suburb) && (
             <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-slate-700 shadow-sm ring-1 ring-black/5">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-violet-600" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 22s8-4.5 8-12a8 8 0 1 0-16 0c0 7.5 8 12 8 12Z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
+              <MapPin className="w-3.5 h-3.5 text-violet-600" />
               <span className="max-w-[14ch] truncate">{address || suburb}</span>
             </div>
           )}
         </div>
 
-        <div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[96px] flex flex-col">
-          <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2">{title}</h3>
-          {!addressOverlay && suburb && <p className="mt-0.5 text-[13px] sm:text-sm text-slate-600 truncate">{suburb}</p>}
-          
-          {/* Room info pills */}
+        {/* INFO AREA */}
+        <div className="flex flex-col flex-1 px-4 py-3 md:py-4">
+          <h3 className="text-[15px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2">
+            {title}
+          </h3>
+          {!addressOverlay && suburb && (
+            <p className="mt-0.5 text-[13px] sm:text-sm text-slate-600 truncate flex items-center gap-1">
+              <MapPin className="w-4 h-4 text-violet-500" />
+              {suburb}
+            </p>
+          )}
+
+          {/* ROOM INFO BADGES */}
           {(totalOccupants || roommatePreference || furnishingStatus) && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
+            <div className="flex flex-wrap gap-1.5 mt-3">
               {totalOccupants && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[11px] sm:text-xs font-medium">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  {totalOccupants} kişi
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[11px] sm:text-xs font-medium">
+                  👥 {totalOccupants} kişi
                 </span>
               )}
-              {roommatePreference && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[11px] sm:text-xs font-medium">
-                  {roommatePreference === 'Kadın' ? '👩 Kadın' : roommatePreference === 'Erkek' ? '👨 Erkek' : '🤝 Farketmez'}
+              {roommatePreference && roommatePreference !== "Farketmez" && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[11px] sm:text-xs font-medium">
+                  {roommatePreference === "Kadın" ? "👩 Kadın" : "👨 Erkek"}
                 </span>
               )}
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] sm:text-xs font-medium">
-                {furnishingStatus === 'Eşyalı' ? '🛋️ Eşyalı' : furnishingStatus === 'Eşyasız' ? '📦 Eşyasız' : '🤝 Farketmez'}
-              </span>
+              {(!roommatePreference || roommatePreference === "Farketmez") && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] sm:text-xs font-medium">
+                  🤝 Farketmez
+                </span>
+              )}
+              {furnishingStatus && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] sm:text-xs font-medium">
+                  {furnishingStatus === "Eşyalı"
+                    ? "🛋️ Eşyalı"
+                    : furnishingStatus === "Eşyasız"
+                      ? "📦 Eşyasız"
+                      : "🤝 Farketmez"}
+                </span>
+              )}
             </div>
           )}
-          
-          {/* Detay Gör Button - At bottom with mt-auto */}
-          <div className="mt-auto pt-2">
+
+          {/* CTA BUTTON */}
+          <div className="mt-auto pt-3">
             <Button
               asChild
-              className="w-full h-9 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg transition-colors"
-              data-testid={`button-details-${id || "noid"}`}
+              className="w-full h-9 md:h-10 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg flex items-center justify-center transition"
             >
-              <span>
-                Detay Gör
-              </span>
+              <span>Detay Gör</span>
             </Button>
           </div>
         </div>

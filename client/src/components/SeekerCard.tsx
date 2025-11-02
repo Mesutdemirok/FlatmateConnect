@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, MapPin } from "lucide-react";
 
 type Seeker = {
   id: string;
@@ -19,9 +19,7 @@ type Seeker = {
 function nameOf(s: Seeker) {
   if (s.fullName) {
     const parts = s.fullName.trim().split(/\s+/);
-    if (parts.length > 1) {
-      return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
-    }
+    if (parts.length > 1) return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
     return parts[0];
   }
   if (s.user?.firstName) {
@@ -33,29 +31,30 @@ function nameOf(s: Seeker) {
 
 function photoOf(s: Seeker) {
   if (s.profilePhotoUrl) return getAbsoluteImageUrl(s.profilePhotoUrl);
-  const p = s.photos?.find(x => x.sortOrder === 0) || s.photos?.[0];
+  const p = s.photos?.find((x) => x.sortOrder === 0) || s.photos?.[0];
   if (p?.imagePath) return getAbsoluteImageUrl(p.imagePath);
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(nameOf(s))}&background=8b5cf6&color=fff&size=512`;
 }
 
-function formatBudget(budget: string | null | undefined): string {
+function formatBudget(budget?: string | null) {
   if (!budget) return "";
-  const num = typeof budget === "string" 
-    ? Number(budget.replace(/[^\d.,-]/g, "").replace(",", "."))
-    : Number(budget);
+  const num =
+    typeof budget === "string"
+      ? Number(budget.replace(/[^\d.,-]/g, "").replace(",", "."))
+      : Number(budget);
   if (!Number.isFinite(num)) return "";
   return `₺${num.toLocaleString("tr-TR")}`;
 }
 
-function formatOccupation(occupation: string | null | undefined): string {
-  if (!occupation) return "";
+function formatOccupation(o?: string | null) {
+  if (!o) return "";
   const map: Record<string, string> = {
-    "Öğrenci": "öğrenci",
-    "Çalışan": "çalışan",
-    "Serbest": "serbest meslek",
-    "Diğer": "diğer"
+    Öğrenci: "öğrenci",
+    Çalışan: "çalışan",
+    Serbest: "serbest meslek",
+    Diğer: "diğer",
   };
-  return map[occupation] || occupation.toLowerCase();
+  return map[o] || o.toLowerCase();
 }
 
 interface SeekerCardProps {
@@ -66,7 +65,6 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
   const seekerUrl = seeker.slug
     ? `/oda-arayan/${seeker.slug}`
     : `/oda-arayan/${seeker.id}`;
-  
   const name = nameOf(seeker);
   const photo = photoOf(seeker);
   const budget = formatBudget(seeker.budgetMonthly);
@@ -75,71 +73,66 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
 
   return (
     <Link href={seekerUrl}>
-      <article 
-        className="h-full w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
-        data-testid={`card-seeker-${seeker.id}`}
-      >
-        {/* Image Section - Same aspect ratio as ListingCard for consistent height */}
-        <div className="relative w-full aspect-[16/10] overflow-hidden">
-          <img 
-            src={photo} 
-            alt={name} 
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
-            data-testid={`seeker-image-${seeker.id}`}
+      <article className="group flex h-full w-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition hover:shadow-lg hover:-translate-y-[2px]">
+        {/* Image area */}
+        <div className="relative w-full h-[180px] md:h-[220px] overflow-hidden">
+          <img
+            src={photo}
+            alt={name}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
 
-          {/* Desktop: Budget badge (top-right) - same as ListingCard price */}
-          {budget && (
-            <div className="hidden md:block absolute right-2 top-2 rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-indigo-700 shadow">
-              {budget} <span className="text-xs text-indigo-600">/ay</span>
-            </div>
-          )}
+          {/* Top badges */}
+          <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+            {budget && (
+              <span className="rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-indigo-700 shadow-sm">
+                {budget} <span className="text-xs text-indigo-500">/ay</span>
+              </span>
+            )}
+          </div>
 
-          {/* Desktop: Location chip (bottom-left) - same as ListingCard address overlay */}
-          {location && (
-            <div className="hidden md:inline-flex absolute left-2 bottom-2 sm:left-3 sm:bottom-3 items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-slate-700 shadow-sm ring-1 ring-black/5">
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-violet-600" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 22s8-4.5 8-12a8 8 0 1 0-16 0c0 7.5 8 12 8 12Z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              <span className="max-w-[14ch] truncate">{location}</span>
-            </div>
-          )}
-
+          {/* Name overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
+            <h3 className="text-white text-[15px] sm:text-[17px] font-semibold drop-shadow-sm">
+              {name}
+            </h3>
+          </div>
         </div>
 
-        {/* Text area with pills - matching ListingCard exactly for uniform height */}
-        <div className="px-3 pb-3 sm:px-4 sm:pb-4 min-h-[96px] flex flex-col">
-          <h3 className="text-[15.5px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2">
-            {name}
-          </h3>
-          
-          {/* Pills for occupation and age */}
-          {(occupation || seeker.age) && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {occupation && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-900 text-white text-[11px] sm:text-xs font-medium">
-                  {occupation}
-                </span>
-              )}
-              {seeker.age && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-700 text-[11px] sm:text-xs font-medium">
-                  {seeker.age} yaş
-                </span>
-              )}
+        {/* Info area */}
+        <div className="flex flex-col flex-1 px-4 py-3 md:py-4">
+          {/* location */}
+          {location && (
+            <div className="flex items-center gap-1 text-slate-600 text-[13px] sm:text-sm font-medium mb-1">
+              <MapPin className="w-4 h-4 text-violet-600" />
+              <span className="truncate">{location}</span>
             </div>
           )}
 
-          {/* CTA Button - At bottom with mt-auto - matching ListingCard exactly */}
+          {/* tags */}
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {occupation && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[11px] sm:text-xs font-medium">
+                {occupation}
+              </span>
+            )}
+            {seeker.age && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-700 text-[11px] sm:text-xs font-medium">
+                {seeker.age} yaş
+              </span>
+            )}
+          </div>
+
+          {/* CTA */}
           <div className="mt-auto pt-2">
             <Button
               asChild
-              className="w-full h-9 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg transition-colors"
-              data-testid={`button-contact-${seeker.id}`}
+              className="w-full h-9 md:h-10 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-2"
             >
               <span>
-                <MessageCircle className="w-4 h-4 mr-2 inline" />
-                İletişime Geçin
+                <MessageCircle className="w-4 h-4" />
+                <span className="ml-1.5">İletişime Geç</span>
               </span>
             </Button>
           </div>
