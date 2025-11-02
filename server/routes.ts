@@ -17,6 +17,7 @@ import path from "path";
 import fs from "fs";
 import { makeSlug } from "@shared/slug";
 import oauthRouter from "./routes/oauth";
+import uploadsRouter from "./routes/uploads";
 
 /* -------------------------------------------------------
    🧰 File Upload Setup
@@ -83,6 +84,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
      🔐 Google OAuth Routes
   ------------------------------------------------------- */
   app.use("/api", oauthRouter);
+
+  /* -------------------------------------------------------
+     📸 File Upload Routes
+  ------------------------------------------------------- */
+  app.use("/api/uploads", uploadsRouter);
 
   /* -------------------------------------------------------
      🩺 Health Check
@@ -212,6 +218,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(listing);
     } catch (err) {
       res.status(400).json({ message: "İlan oluşturulamadı" });
+    }
+  });
+
+  // Get single listing by ID
+  app.get("/api/listings/:id", async (req, res) => {
+    try {
+      const listing = await storage.getListing(req.params.id);
+      if (!listing) {
+        return res.status(404).json({ message: "İlan bulunamadı" });
+      }
+      res.json(listing);
+    } catch (err) {
+      console.error("❌ Error fetching listing by ID:", err);
+      res.status(500).json({ message: "İlan getirilemedi" });
+    }
+  });
+
+  // Update listing
+  app.put("/api/listings/:id", jwtAuth, async (req, res) => {
+    try {
+      const listing = await storage.getListing(req.params.id);
+      if (!listing || listing.userId !== req.userId) {
+        return res.status(403).json({ message: "Yetkiniz yok" });
+      }
+      
+      // Parse and validate, then strip immutable fields (userId, id)
+      const { userId: _, id: __, ...requestData } = req.body;
+      const data = insertListingSchema.partial().parse(requestData);
+      const slug = data.title || data.address 
+        ? makeSlug([data.title || listing.title, data.address || listing.address])
+        : listing.slug;
+      
+      const updateData = { ...data, slug } as Parameters<typeof storage.updateListing>[1];
+      const updated = await storage.updateListing(req.params.id, updateData);
+      res.json(updated);
+    } catch (err: any) {
+      console.error("❌ Error updating listing:", err);
+      res.status(400).json({ message: err.message || "İlan güncellenemedi" });
     }
   });
 

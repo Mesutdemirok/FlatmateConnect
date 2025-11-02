@@ -24,6 +24,7 @@ interface ListingCardProps {
     totalOccupants?: number | null;
     roommatePreference?: string | null;
     furnishingStatus?: string | null;
+    smokingPolicy?: string | null;
     images?: Array<{ imagePath?: string; isPrimary?: boolean }>;
     user?: { verificationStatus?: string | null };
   };
@@ -60,6 +61,7 @@ export default function ListingCard({
   const totalOccupants = listing?.totalOccupants;
   const roommatePreference = listing?.roommatePreference;
   const furnishingStatus = listing?.furnishingStatus;
+  const smokingPolicy = listing?.smokingPolicy;
   const isVerified = listing?.user?.verificationStatus === "verified";
 
   const amount = useMemo(() => {
@@ -183,7 +185,7 @@ export default function ListingCard({
           )}
 
           {/* ROOM INFO BADGES */}
-          {(totalOccupants || roommatePreference || furnishingStatus) && (
+          {(totalOccupants || roommatePreference || furnishingStatus || smokingPolicy) && (
             <div className="flex flex-wrap gap-1.5 mt-3">
               {totalOccupants && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[11px] sm:text-xs font-medium">
@@ -198,6 +200,11 @@ export default function ListingCard({
               {(!roommatePreference || roommatePreference === "Farketmez") && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] sm:text-xs font-medium">
                   🤝 Farketmez
+                </span>
+              )}
+              {smokingPolicy && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px] sm:text-xs font-medium">
+                  {smokingPolicy === "İçilmez" ? "🚭 İçilmez" : smokingPolicy === "İçilir" ? "🚬 İçilir" : "🤝 Farketmez"}
                 </span>
               )}
               {furnishingStatus && (

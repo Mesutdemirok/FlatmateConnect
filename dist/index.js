@@ -210,6 +210,7 @@ var init_vite = __esm({
 import express4 from "express";
 import cookieParser2 from "cookie-parser";
 import cors from "cors";
+import path6 from "path";
 
 // server/routes.ts
 import express3 from "express";
@@ -1148,6 +1149,316 @@ router.get("/oauth/google/callback", async (req, res) => {
 });
 var oauth_default = router;
 
+// server/routes/uploads.ts
+init_r2_utils();
+import { Router } from "express";
+import Busboy from "busboy";
+import sharp from "sharp";
+var router2 = Router();
+function badRequest(res, message, extra = {}) {
+  res.type("application/json");
+  return res.status(400).json({ success: false, message, ...extra });
+}
+function serverError(res, err, fallback = "Sunucu hatas\u0131.") {
+  const msg = err instanceof Error ? err.message : String(err);
+  res.type("application/json");
+  return res.status(500).json({ success: false, message: fallback, error: msg });
+}
+function sanityCheckMultipart(req, res) {
+  const ct = req.headers["content-type"] || "";
+  if (typeof ct !== "string" || !ct.startsWith("multipart/form-data")) {
+    badRequest(res, "Ge\xE7ersiz i\xE7erik t\xFCr\xFC. multipart/form-data bekleniyor.");
+    return false;
+  }
+  return true;
+}
+function makeBusboy(req, res) {
+  try {
+    return Busboy({ headers: req.headers });
+  } catch (e) {
+    serverError(res, e, "Y\xFCkleme ba\u015Flat\u0131lamad\u0131.");
+    return null;
+  }
+}
+var ALLOWED_MIME = /* @__PURE__ */ new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  ""
+  // some browsers omit HEIC mime
+]);
+var ALLOWED_EXT = /* @__PURE__ */ new Set(["jpg", "jpeg", "png", "webp", "heic", "heif"]);
+var MAX_MB = 10;
+var MAX_BYTES = MAX_MB * 1024 * 1024;
+router2.post("/seeker-photo", jwtAuth, (req, res) => {
+  res.type("application/json");
+  if (!sanityCheckMultipart(req, res)) return;
+  const bb = makeBusboy(req, res);
+  if (!bb) return;
+  let hasFile = false;
+  let sent = false;
+  bb.on("file", (_field, file, info) => {
+    hasFile = true;
+    const { mimeType, filename } = info;
+    const ext = (filename.split(".").pop() || "").toLowerCase();
+    const valid = ALLOWED_MIME.has((mimeType || "").toLowerCase()) || ALLOWED_EXT.has(ext);
+    if (!valid) {
+      file.resume();
+      if (!sent) {
+        sent = true;
+        return badRequest(
+          res,
+          `Desteklenmeyen dosya format\u0131 (${mimeType || ext}). JPEG/PNG/WebP/HEIC kullan\u0131n.`
+        );
+      }
+      return;
+    }
+    const chunks = [];
+    let total = 0;
+    file.on("data", (chunk) => {
+      total += chunk.length;
+      if (total > MAX_BYTES) file.resume();
+      else chunks.push(chunk);
+    });
+    file.on("end", async () => {
+      if (sent) return;
+      if (total > MAX_BYTES) {
+        sent = true;
+        return badRequest(res, `Dosya \xE7ok b\xFCy\xFCk. Maksimum ${MAX_MB}MB y\xFCkleyebilirsiniz.`);
+      }
+      try {
+        const input = Buffer.concat(chunks);
+        const processed = await sharp(input).rotate().resize({ width: 1600, withoutEnlargement: true, fit: "inside" }).jpeg({ quality: 82, progressive: true }).toBuffer();
+        const key = `seekers/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        await uploadBufferToR2(key, processed, {
+          contentType: "image/jpeg",
+          cacheControl: "public, max-age=31536000, immutable"
+        });
+        sent = true;
+        return res.status(201).json({
+          success: true,
+          imagePath: key,
+          url: getR2Url(key),
+          message: "Foto\u011Fraf ba\u015Far\u0131yla y\xFCklendi."
+        });
+      } catch (e) {
+        if (!sent) {
+          sent = true;
+          return serverError(res, e, "Foto\u011Fraf i\u015Flenirken hata olu\u015Ftu.");
+        }
+      }
+    });
+    file.on("error", (e) => {
+      if (!sent) {
+        sent = true;
+        return serverError(res, e, "Dosya y\xFCklenirken hata olu\u015Ftu.");
+      }
+    });
+  });
+  bb.on("finish", () => {
+    if (!hasFile && !sent) {
+      sent = true;
+      return badRequest(res, "Foto\u011Fraf se\xE7ilmedi.");
+    }
+  });
+  bb.on("error", (e) => {
+    if (!sent) {
+      sent = true;
+      return serverError(res, e, "Dosya y\xFCklemesi ba\u015Far\u0131s\u0131z oldu.");
+    }
+  });
+  req.pipe(bb);
+});
+router2.post("/profile-photo", jwtAuth, (req, res) => {
+  res.type("application/json");
+  if (!sanityCheckMultipart(req, res)) return;
+  const bb = makeBusboy(req, res);
+  if (!bb) return;
+  let hasFile = false;
+  let sent = false;
+  bb.on("file", (_field, file, info) => {
+    hasFile = true;
+    const { mimeType, filename } = info;
+    const ext = (filename.split(".").pop() || "").toLowerCase();
+    const valid = ALLOWED_MIME.has((mimeType || "").toLowerCase()) || ALLOWED_EXT.has(ext);
+    if (!valid) {
+      file.resume();
+      if (!sent) {
+        sent = true;
+        return badRequest(res, "Desteklenmeyen dosya format\u0131. JPEG/PNG/WebP/HEIC kullan\u0131n.");
+      }
+      return;
+    }
+    const chunks = [];
+    let total = 0;
+    file.on("data", (chunk) => {
+      total += chunk.length;
+      if (total > MAX_BYTES) file.resume();
+      else chunks.push(chunk);
+    });
+    file.on("end", async () => {
+      if (sent) return;
+      if (total > MAX_BYTES) {
+        sent = true;
+        return badRequest(res, `Dosya \xE7ok b\xFCy\xFCk. Maksimum ${MAX_MB}MB y\xFCkleyebilirsiniz.`);
+      }
+      try {
+        const input = Buffer.concat(chunks);
+        const processed = await sharp(input).rotate().resize({ width: 800, height: 800, fit: "cover" }).jpeg({ quality: 85, progressive: true }).toBuffer();
+        const key = `profiles/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        await uploadBufferToR2(key, processed, {
+          contentType: "image/jpeg",
+          cacheControl: "public, max-age=31536000, immutable"
+        });
+        sent = true;
+        return res.status(201).json({
+          success: true,
+          imagePath: key,
+          url: getR2Url(key),
+          message: "Profil foto\u011Fraf\u0131 ba\u015Far\u0131yla y\xFCklendi."
+        });
+      } catch (e) {
+        if (!sent) {
+          sent = true;
+          return serverError(res, e, "Foto\u011Fraf i\u015Flenirken hata olu\u015Ftu.");
+        }
+      }
+    });
+    file.on("error", (e) => {
+      if (!sent) {
+        sent = true;
+        return serverError(res, e, "Dosya y\xFCklenirken hata olu\u015Ftu.");
+      }
+    });
+  });
+  bb.on("finish", () => {
+    if (!hasFile && !sent) {
+      sent = true;
+      return badRequest(res, "Foto\u011Fraf se\xE7ilmedi.");
+    }
+  });
+  bb.on("error", (e) => {
+    if (!sent) {
+      sent = true;
+      return serverError(res, e, "Dosya y\xFCklemesi ba\u015Far\u0131s\u0131z oldu.");
+    }
+  });
+  req.pipe(bb);
+});
+router2.post("/listings/:id/images", jwtAuth, async (req, res) => {
+  res.type("application/json");
+  const listingId = req.params.id;
+  const userId = req.userId;
+  try {
+    const listing = await storage.getListing(listingId);
+    if (!listing) return badRequest(res, "\u0130lan bulunamad\u0131");
+    if (listing.userId !== userId)
+      return res.status(403).json({
+        success: false,
+        message: "Bu ilana resim y\xFCkleme yetkiniz yok."
+      });
+  } catch (e) {
+    return serverError(res, e, "\u0130lan do\u011Frulanamad\u0131.");
+  }
+  if (!sanityCheckMultipart(req, res)) return;
+  const bb = makeBusboy(req, res);
+  if (!bb) return;
+  const uploaded = [];
+  let filesProcessing = 0;
+  let filesFinished = 0;
+  let sent = false;
+  const maybeFlush = () => {
+    if (!sent && filesProcessing > 0 && filesFinished === filesProcessing) {
+      sent = true;
+      return res.status(201).json({
+        success: true,
+        images: uploaded,
+        count: uploaded.length
+      });
+    }
+  };
+  bb.on("file", async (_field, file, info) => {
+    filesProcessing++;
+    const { mimeType, filename } = info;
+    const ext = (filename.split(".").pop() || "").toLowerCase();
+    const valid = ALLOWED_MIME.has((mimeType || "").toLowerCase()) || ALLOWED_EXT.has(ext);
+    if (!valid) {
+      file.resume();
+      filesFinished++;
+      return maybeFlush();
+    }
+    const chunks = [];
+    let total = 0;
+    file.on("data", (chunk) => {
+      total += chunk.length;
+      if (total > MAX_BYTES) file.resume();
+      else chunks.push(chunk);
+    });
+    file.on("end", async () => {
+      try {
+        if (total > MAX_BYTES) {
+          filesFinished++;
+          return maybeFlush();
+        }
+        const input = Buffer.concat(chunks);
+        const processed = await sharp(input).rotate().resize({ width: 1600, withoutEnlargement: true, fit: "inside" }).jpeg({ quality: 82, progressive: true }).toBuffer();
+        const key = `listings/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        await uploadBufferToR2(key, processed, {
+          contentType: "image/jpeg",
+          cacheControl: "public, max-age=31536000, immutable"
+        });
+        try {
+          await storage.addListingImage({
+            listingId,
+            imagePath: key,
+            isPrimary: uploaded.length === 0
+          });
+        } catch (dbErr) {
+          console.error("DB save error (listing image):", dbErr);
+        }
+        uploaded.push({ imagePath: key, url: getR2Url(key) });
+        filesFinished++;
+        return maybeFlush();
+      } catch (e) {
+        console.error("Image processing error:", e);
+        filesFinished++;
+        return maybeFlush();
+      }
+    });
+    file.on("error", (e) => {
+      console.error("File stream error:", e);
+      filesFinished++;
+      return maybeFlush();
+    });
+  });
+  bb.on("finish", () => {
+    if (!sent && filesProcessing === 0) {
+      sent = true;
+      return badRequest(res, "Resim se\xE7ilmedi.");
+    }
+  });
+  bb.on("error", (e) => {
+    if (!sent) {
+      sent = true;
+      return serverError(res, e, "Dosya y\xFCklemesi ba\u015Far\u0131s\u0131z oldu.");
+    }
+  });
+  req.pipe(bb);
+});
+router2.use((err, _req, res, _next) => {
+  const code = err?.status || 500;
+  res.type("application/json");
+  res.status(code).json({
+    success: false,
+    message: "\u0130stek i\u015Flenemedi.",
+    error: err?.message || String(err)
+  });
+});
+var uploads_default = router2;
+
 // server/routes.ts
 var uploadDir = "uploads/listings";
 fs4.mkdirSync(uploadDir, { recursive: true });
@@ -1198,6 +1509,7 @@ function getCookieOptions2(req) {
 async function registerRoutes(app2) {
   app2.use("/uploads", express3.static("uploads"));
   app2.use("/api", oauth_default);
+  app2.use("/api/uploads", uploads_default);
   app2.get("/api/health", (req, res) => {
     res.json({
       ok: true,
@@ -1296,6 +1608,35 @@ async function registerRoutes(app2) {
       res.status(201).json(listing);
     } catch (err) {
       res.status(400).json({ message: "\u0130lan olu\u015Fturulamad\u0131" });
+    }
+  });
+  app2.get("/api/listings/:id", async (req, res) => {
+    try {
+      const listing = await storage.getListing(req.params.id);
+      if (!listing) {
+        return res.status(404).json({ message: "\u0130lan bulunamad\u0131" });
+      }
+      res.json(listing);
+    } catch (err) {
+      console.error("\u274C Error fetching listing by ID:", err);
+      res.status(500).json({ message: "\u0130lan getirilemedi" });
+    }
+  });
+  app2.put("/api/listings/:id", jwtAuth, async (req, res) => {
+    try {
+      const listing = await storage.getListing(req.params.id);
+      if (!listing || listing.userId !== req.userId) {
+        return res.status(403).json({ message: "Yetkiniz yok" });
+      }
+      const { userId: _, id: __, ...requestData } = req.body;
+      const data = insertListingSchema.partial().parse(requestData);
+      const slug = data.title || data.address ? makeSlug([data.title || listing.title, data.address || listing.address]) : listing.slug;
+      const updateData = { ...data, slug };
+      const updated = await storage.updateListing(req.params.id, updateData);
+      res.json(updated);
+    } catch (err) {
+      console.error("\u274C Error updating listing:", err);
+      res.status(400).json({ message: err.message || "\u0130lan g\xFCncellenemedi" });
     }
   });
   app2.delete("/api/listings/:id", jwtAuth, async (req, res) => {
@@ -1502,6 +1843,10 @@ async function registerRoutes(app2) {
 }
 
 // server/index.ts
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+var __filename = fileURLToPath(import.meta.url);
+var __dirname = dirname(__filename);
 var app = express4();
 app.get("/health", (_req, res) => res.status(200).send("ok"));
 app.get("/api/health", (_req, res) => {
@@ -1520,6 +1865,8 @@ app.use(
     credentials: true
   })
 );
+app.use("/uploads", express4.static(path6.join(__dirname, "../uploads")));
+app.use("/api/uploads", uploads_default);
 (async () => {
   try {
     const server = await registerRoutes(app);
@@ -1527,9 +1874,20 @@ app.use(
     const host = "0.0.0.0";
     server.listen(port, host, () => {
       console.log(`\u2705 Odanet backend running on port ${port}`);
+      console.log(`\u{1F310} Accessible at: http://localhost:${port}`);
     });
   } catch (err) {
     console.error("\u274C Server startup error:", err);
     process.exit(1);
   }
 })();
+app.use(
+  (err, _req, res, _next) => {
+    console.error("Unhandled error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Beklenmeyen sunucu hatas\u0131.",
+      error: err?.message || err
+    });
+  }
+);
