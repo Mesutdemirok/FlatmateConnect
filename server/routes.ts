@@ -16,6 +16,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { makeSlug } from "@shared/slug";
+import oauthRouter from "./routes/oauth";
 
 /* -------------------------------------------------------
    🧰 File Upload Setup
@@ -77,6 +78,11 @@ function getCookieOptions(req: express.Request) {
 ------------------------------------------------------- */
 export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/uploads", express.static("uploads"));
+
+  /* -------------------------------------------------------
+     🔐 Google OAuth Routes
+  ------------------------------------------------------- */
+  app.use("/api", oauthRouter);
 
   /* -------------------------------------------------------
      🩺 Health Check
