@@ -12,24 +12,31 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, X, Upload, Star } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Loader2, X, Upload, Star, Home } from "lucide-react";
 import { z } from "zod";
 
 const editListingSchema = z.object({
-  title: z.string().min(10, 'Başlık en az 10 karakter olmalıdır'),
   address: z.string().min(5, 'Lütfen geçerli bir adres giriniz'),
-  rentAmount: z.union([z.string(), z.number()]).transform(val => String(val)),
-  billsIncluded: z.boolean(),
+  title: z.string().min(10, 'Başlık en az 10 karakter olmalıdır'),
+  rentAmount: z.coerce.number().positive('Kira tutarı 0\'dan büyük olmalıdır'),
+  billsIncluded: z.enum(['yes', 'no']),
+  excludedBills: z.array(z.string()).optional().default([]),
   propertyType: z.string().min(1, 'Lütfen konut tipini seçiniz'),
+  internetIncluded: z.enum(['yes', 'no']),
+  totalRooms: z.coerce.number().int().positive('Oda sayısı 0\'dan büyük olmalıdır'),
+  bathroomType: z.string().min(1, 'Lütfen banyo tipini seçiniz'),
   furnishingStatus: z.string().min(1, 'Lütfen eşya durumunu seçiniz'),
-  totalRooms: z.union([z.string(), z.number()]).transform(val => Number(val)),
-  totalOccupants: z.union([z.string(), z.number()]).transform(val => Number(val)),
-  roommatePreference: z.string(),
-  smokingPolicy: z.string(),
+  amenities: z.array(z.string()).default([]),
+  totalOccupants: z.coerce.number().int().positive('Kişi sayısı 0\'dan büyük olmalıdır'),
+  roommatePreference: z.string().min(1, 'Lütfen ev arkadaşı tercihinizi seçiniz'),
+  smokingPolicy: z.string().min(1, 'Lütfen sigara politikasını seçiniz'),
 });
 
 type EditListingFormData = z.infer<typeof editListingSchema>;
@@ -57,31 +64,42 @@ export default function EditListing() {
   const form = useForm<EditListingFormData>({
     resolver: zodResolver(editListingSchema),
     defaultValues: {
-      title: '',
       address: '',
-      rentAmount: '0',
-      billsIncluded: false,
+      title: '',
+      rentAmount: 0,
+      billsIncluded: 'no',
+      excludedBills: [],
       propertyType: '',
+      internetIncluded: 'no',
+      totalRooms: 0,
+      bathroomType: '',
       furnishingStatus: '',
-      totalRooms: 1,
-      totalOccupants: 1,
+      amenities: [],
+      totalOccupants: 0,
       roommatePreference: '',
       smokingPolicy: '',
     },
   });
 
+  // Watch billsIncluded field to show/hide excluded bills
+  const billsIncluded = form.watch('billsIncluded');
+
   // Populate form when listing loads
   useEffect(() => {
     if (listing) {
       form.reset({
-        title: listing.title || '',
         address: listing.address || '',
-        rentAmount: listing.rentAmount || '0',
-        billsIncluded: listing.billsIncluded || false,
+        title: listing.title || '',
+        rentAmount: parseFloat(listing.rentAmount) || 0,
+        billsIncluded: listing.billsIncluded ? 'yes' : 'no',
+        excludedBills: listing.excludedBills || [],
         propertyType: listing.propertyType || '',
+        internetIncluded: listing.internetIncluded ? 'yes' : 'no',
+        totalRooms: listing.totalRooms || 0,
+        bathroomType: listing.bathroomType || '',
         furnishingStatus: listing.furnishingStatus || '',
-        totalRooms: listing.totalRooms || 1,
-        totalOccupants: listing.totalOccupants || 1,
+        amenities: listing.amenities || [],
+        totalOccupants: listing.totalOccupants || 0,
         roommatePreference: listing.roommatePreference || '',
         smokingPolicy: listing.smokingPolicy || '',
       });
@@ -109,7 +127,22 @@ export default function EditListing() {
 
   const updateListingMutation = useMutation({
     mutationFn: async (data: EditListingFormData) => {
-      const response = await apiRequest('PUT', `/api/listings/${id}`, data);
+      const response = await apiRequest('PUT', `/api/listings/${id}`, {
+        address: data.address,
+        title: data.title,
+        rentAmount: data.rentAmount.toString(),
+        billsIncluded: data.billsIncluded === 'yes',
+        excludedBills: data.excludedBills || [],
+        propertyType: data.propertyType,
+        internetIncluded: data.internetIncluded === 'yes',
+        totalRooms: data.totalRooms,
+        bathroomType: data.bathroomType,
+        furnishingStatus: data.furnishingStatus,
+        amenities: data.amenities,
+        totalOccupants: data.totalOccupants,
+        roommatePreference: data.roommatePreference,
+        smokingPolicy: data.smokingPolicy,
+      });
       return response.json();
     },
     onSuccess: async () => {
@@ -244,58 +277,142 @@ export default function EditListing() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Title */}
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Başlık</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Address */}
+                {/* 1. Address */}
                 <FormField
                   control={form.control}
                   name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Adres</FormLabel>
+                      <FormLabel>1. İlan adresiniz nedir? *</FormLabel>
                       <FormControl>
-                        <Textarea {...field} rows={2} />
+                        <Input placeholder="örn., Kadıköy, İstanbul" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Rent Amount */}
+                {/* 2. Title */}
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>2. İlan başlığınız nedir? *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="örn., Kadıköy'de geniş ve aydınlık oda" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 3. Rent Amount */}
                 <FormField
                   control={form.control}
                   name="rentAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Aylık Kira (₺)</FormLabel>
+                      <FormLabel>3. Aylık kira bedeli ne kadar? *</FormLabel>
                       <FormControl>
-                        <NumberInput {...field} />
+                        <div className="relative">
+                          <span className="absolute left-3 top-2.5">₺</span>
+                          <NumberInput 
+                            placeholder="5000" 
+                            className="pl-8"
+                            value={field.value?.toString() || ''}
+                            onChange={(val) => field.onChange(parseFloat(val) || 0)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Property Type */}
+                {/* 4. Bills Included */}
+                <FormField
+                  control={form.control}
+                  name="billsIncluded"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>4. Fiyata faturalar dahil mi? *</FormLabel>
+                      <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value}>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="bills-yes" />
+                            <Label htmlFor="bills-yes">Evet</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="bills-no" />
+                            <Label htmlFor="bills-no">Hayır</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 4b. Excluded Bills (conditional) */}
+                {billsIncluded === 'no' && (
+                  <FormField
+                    control={form.control}
+                    name="excludedBills"
+                    render={() => (
+                      <FormItem>
+                        <div className="mb-3">
+                          <FormLabel className="text-base">Hangi faturalar dahil değil?</FormLabel>
+                          <FormDescription>Dahil olmayan faturaları işaretleyin</FormDescription>
+                        </div>
+                        <div className="space-y-3">
+                          {['Su', 'Elektrik', 'Telefon', 'Doğalgaz', 'İnternet'].map((bill) => (
+                            <FormField
+                              key={bill}
+                              control={form.control}
+                              name="excludedBills"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={bill}
+                                    className="flex flex-row items-start space-x-3 space-y-0"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(bill)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...field.value, bill])
+                                            : field.onChange(
+                                                field.value?.filter(
+                                                  (value) => value !== bill
+                                                )
+                                              );
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-normal">
+                                      {bill}
+                                    </FormLabel>
+                                  </FormItem>
+                                );
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {/* 5. Property Type */}
                 <FormField
                   control={form.control}
                   name="propertyType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Konut Tipi</FormLabel>
+                      <FormLabel>5. Konut tipi nedir? *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -304,8 +421,221 @@ export default function EditListing() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="rezidans">Rezidans</SelectItem>
-                          <SelectItem value="apartman">Apartman</SelectItem>
+                          <SelectItem value="daire">Daire</SelectItem>
                           <SelectItem value="mustakil">Müstakil Ev</SelectItem>
+                          <SelectItem value="diger">Diğer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 6. Internet Included */}
+                <FormField
+                  control={form.control}
+                  name="internetIncluded"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>6. Evde internet mevcut mu? *</FormLabel>
+                      <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value}>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="internet-yes" />
+                            <Label htmlFor="internet-yes">Evet</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="internet-no" />
+                            <Label htmlFor="internet-no">Hayır</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 7. Total Rooms */}
+                <FormField
+                  control={form.control}
+                  name="totalRooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>7. Evde toplam kaç oda var? *</FormLabel>
+                      <FormControl>
+                        <NumberInput
+                          placeholder="örn., 3"
+                          value={field.value?.toString() || ''}
+                          onChange={(val) => field.onChange(parseInt(val) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 8. Bathroom Type */}
+                <FormField
+                  control={form.control}
+                  name="bathroomType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>8. Banyo durumu nedir? *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="ortak">Ortak</SelectItem>
+                          <SelectItem value="ozel">Özel</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 9. Furnishing Status */}
+                <FormField
+                  control={form.control}
+                  name="furnishingStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>9. Evin eşya durumu nedir? *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Eşyalı">Eşyalı</SelectItem>
+                          <SelectItem value="Eşyasız">Eşyasız</SelectItem>
+                          <SelectItem value="Kısmen Eşyalı">Kısmen Eşyalı</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 10. Amenities */}
+                <FormField
+                  control={form.control}
+                  name="amenities"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>10. Odada hangi eşyalar mevcut?</FormLabel>
+                      <div className="grid grid-cols-2 gap-4">
+                        {[
+                          { id: 'yatak', label: 'Yatak' },
+                          { id: 'dolap', label: 'Dolap' },
+                          { id: 'masa', label: 'Masa' },
+                          { id: 'sandalye', label: 'Sandalye' },
+                          { id: 'klima', label: 'Klima' },
+                          { id: 'tv', label: 'TV' },
+                          { id: 'diger', label: 'Diğer' },
+                        ].map((item) => (
+                          <FormField
+                            key={item.id}
+                            control={form.control}
+                            name="amenities"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={item.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(item.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...field.value, item.id])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== item.id
+                                              )
+                                            )
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {item.label}
+                                  </FormLabel>
+                                </FormItem>
+                              )
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 11. Total Occupants */}
+                <FormField
+                  control={form.control}
+                  name="totalOccupants"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>11. Evde toplam kaç kişi yaşamaktadır? *</FormLabel>
+                      <FormControl>
+                        <NumberInput 
+                          placeholder="2" 
+                          value={field.value?.toString() || ''}
+                          onChange={(val) => field.onChange(parseInt(val) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 12. Roommate Preference */}
+                <FormField
+                  control={form.control}
+                  name="roommatePreference"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>12. Ev arkadaşı tercihiniz nedir? *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Kadın">Kadın</SelectItem>
+                          <SelectItem value="Erkek">Erkek</SelectItem>
+                          <SelectItem value="Farketmez">Farketmez</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 13. Smoking Policy */}
+                <FormField
+                  control={form.control}
+                  name="smokingPolicy"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>13. Evde sigara politikası nedir? *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="İçilir">İçilir</SelectItem>
+                          <SelectItem value="İçilmez">İçilmez</SelectItem>
+                          <SelectItem value="Farketmez">Farketmez</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
