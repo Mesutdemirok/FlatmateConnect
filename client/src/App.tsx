@@ -80,6 +80,9 @@ function Router() {
       <Route path="/mesajlar">
         <ProtectedRoute component={Messages} path="/mesajlar" />
       </Route>
+      <Route path="/mesajlar/:userId">
+        <ProtectedRoute component={Messages} path="/mesajlar/:userId" />
+      </Route>
       <Route path="/ilan-olustur">
         <ProtectedRoute component={CreateListing} path="/ilan-olustur" />
       </Route>
