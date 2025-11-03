@@ -14,6 +14,7 @@ type Seeker = {
   budgetMonthly?: string | null;
   age?: number | null;
   occupation?: string | null;
+  genderPreference?: string | null;
 };
 
 function nameOf(s: Seeker) {
@@ -120,6 +121,11 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
             {seeker.age && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-700 text-[11px] sm:text-xs font-medium">
                 {seeker.age} yaş
+              </span>
+            )}
+            {seeker.genderPreference && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[11px] sm:text-xs font-medium">
+                {seeker.genderPreference === "Kadın" ? "Tercih: Kadın" : seeker.genderPreference === "Erkek" ? "Tercih: Erkek" : "Tercih: Farketmez"}
               </span>
             )}
           </div>

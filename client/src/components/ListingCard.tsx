@@ -192,28 +192,19 @@ export default function ListingCard({
                   👥 {totalOccupants} kişi
                 </span>
               )}
-              {roommatePreference && roommatePreference !== "Farketmez" && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[11px] sm:text-xs font-medium">
-                  {roommatePreference === "Kadın" ? "👩 Kadın" : "👨 Erkek"}
+              {furnishingStatus && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] sm:text-xs font-medium">
+                  {furnishingStatus === "Eşyalı" ? "🛋️ Eşyalı" : furnishingStatus === "Eşyasız" ? "📦 Eşyasız" : furnishingStatus === "Kısmen Eşyalı" ? "🛋️ Kısmen Eşyalı" : furnishingStatus}
                 </span>
               )}
-              {(!roommatePreference || roommatePreference === "Farketmez") && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] sm:text-xs font-medium">
-                  🤝 Farketmez
+              {roommatePreference && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[11px] sm:text-xs font-medium">
+                  {roommatePreference === "Kadın" ? "Tercih: Kadın" : roommatePreference === "Erkek" ? "Tercih: Erkek" : "Tercih: Farketmez"}
                 </span>
               )}
               {smokingPolicy && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px] sm:text-xs font-medium">
                   {smokingPolicy === "İçilmez" ? "🚭 İçilmez" : smokingPolicy === "İçilir" ? "🚬 İçilir" : "🤝 Farketmez"}
-                </span>
-              )}
-              {furnishingStatus && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] sm:text-xs font-medium">
-                  {furnishingStatus === "Eşyalı"
-                    ? "🛋️ Eşyalı"
-                    : furnishingStatus === "Eşyasız"
-                      ? "📦 Eşyasız"
-                      : "🤝 Farketmez"}
                 </span>
               )}
             </div>
