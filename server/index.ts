@@ -3,7 +3,6 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";
 import { registerRoutes } from "./routes";
-import { log } from "./og"; // optional
 import uploadsRouter from "./routes/uploads";
 import { fileURLToPath } from "url";
 import { dirname } from "path";

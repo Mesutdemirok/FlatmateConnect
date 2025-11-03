@@ -54,10 +54,15 @@ router.get("/oauth/google/callback", async (req, res) => {
     
     console.log("✅ Received authorization code (length:", code.length, ")");
 
-
-    // Exchange code for tokens
+    // Exchange code for tokens - explicitly use HTTPS redirect URI
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || "https://www.odanet.com.tr/api/oauth/google/callback";
+    console.log("🔐 Using redirect URI for token exchange:", redirectUri);
     console.log("🔄 Exchanging authorization code for tokens...");
-    const { tokens } = await oauth2Client.getToken(code);
+    
+    const { tokens } = await oauth2Client.getToken({
+      code,
+      redirect_uri: redirectUri,
+    });
     oauth2Client.setCredentials(tokens);
     console.log("✅ Received tokens from Google");
 
@@ -120,6 +125,20 @@ router.get("/oauth/google/callback", async (req, res) => {
     return res.redirect(frontendUrl);
   } catch (err: any) {
     console.error("❌ Google OAuth callback error:", err.message || err);
+    
+    // Enhanced error logging without exposing secrets
+    if (err.response?.data) {
+      console.error("🔍 Google API Error Details:", {
+        error: err.response.data.error,
+        error_description: err.response.data.error_description,
+        status: err.response.status,
+      });
+    }
+    
+    if (err.code) {
+      console.error("🔍 Error Code:", err.code);
+    }
+    
     return res.redirect("/auth?error=oauth_failed");
   }
 });
