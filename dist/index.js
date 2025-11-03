@@ -208,7 +208,7 @@ var init_vite = __esm({
 
 // server/index.ts
 import express4 from "express";
-import cookieParser2 from "cookie-parser";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import path6 from "path";
 
@@ -1010,141 +1010,114 @@ function makeSlug(parts) {
 
 // server/routes/oauth.ts
 import express from "express";
-import * as client from "openid-client";
-import jwt2 from "jsonwebtoken";
-import { eq as eq2 } from "drizzle-orm";
-import cookieParser from "cookie-parser";
+import { google } from "googleapis";
 var router = express.Router();
-router.use(cookieParser());
-var GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-var GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-var GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
-var FRONTEND_URL = process.env.FRONTEND_URL;
-var JWT_SECRET2 = process.env.JWT_SECRET;
-console.log("\u{1F50D} OAuth Environment Variables:");
-console.log(
-  "   GOOGLE_CLIENT_ID:",
-  GOOGLE_CLIENT_ID ? `${GOOGLE_CLIENT_ID.slice(0, 20)}...` : "NOT SET"
-);
-console.log("   GOOGLE_REDIRECT_URI:", GOOGLE_REDIRECT_URI || "NOT SET");
-console.log("   FRONTEND_URL:", FRONTEND_URL || "NOT SET");
-console.log("   JWT_SECRET:", JWT_SECRET2 ? "SET (hidden)" : "NOT SET");
-function getCookieOptions(req, shortLived = false) {
-  const isProductionDomain = req.get("host")?.includes("odanet.com.tr");
-  return {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    domain: isProductionDomain ? ".odanet.com.tr" : void 0,
-    path: "/",
-    maxAge: shortLived ? 10 * 60 * 1e3 : 7 * 24 * 60 * 60 * 1e3
-    // 10dk veya 7gün
-  };
-}
-router.get("/oauth/google/redirect", async (req, res) => {
-  try {
-    const config = await client.discovery(
-      new URL("https://accounts.google.com"),
-      GOOGLE_CLIENT_ID,
-      { client_secret: GOOGLE_CLIENT_SECRET }
-    );
-    const codeVerifier = client.randomPKCECodeVerifier();
-    const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier);
-    const state = client.randomState();
-    res.cookie("code_verifier", codeVerifier, getCookieOptions(req, true));
-    res.cookie("oauth_state", state, getCookieOptions(req, true));
-    console.log("\u{1F36A} OAuth \xE7erezleri ayarland\u0131 (.odanet.com.tr, SameSite=None)");
-    const authUrl = client.buildAuthorizationUrl(config, {
-      redirect_uri: GOOGLE_REDIRECT_URI,
-      scope: "openid email profile",
-      code_challenge: codeChallenge,
-      code_challenge_method: "S256",
-      state
-    });
-    console.log("\u{1F504} Google OAuth'a y\xF6nlendiriliyor...");
-    res.redirect(authUrl.href);
-  } catch (error) {
-    console.error("\u274C OAuth y\xF6nlendirme hatas\u0131:", error);
-    res.status(500).json({ message: "Google OAuth ba\u015Flat\u0131lamad\u0131" });
-  }
+console.log("\u{1F50D} OAuth Configuration:");
+console.log("   GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + "...");
+console.log("   GOOGLE_REDIRECT_URI:", process.env.GOOGLE_REDIRECT_URI);
+console.log("   FRONTEND_URL:", process.env.FRONTEND_URL);
+var oauth2Client = new google.auth.OAuth2({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  redirectUri: process.env.GOOGLE_REDIRECT_URI
+});
+router.get("/oauth/test", (req, res) => {
+  res.json({
+    status: "OAuth routes are working",
+    callbackUrl: process.env.GOOGLE_REDIRECT_URI,
+    frontendUrl: process.env.FRONTEND_URL,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  });
+});
+router.get("/oauth/google", (req, res) => {
+  console.log("\u{1F504} Initiating Google OAuth flow...");
+  const url = oauth2Client.generateAuthUrl({
+    access_type: "offline",
+    prompt: "consent",
+    scope: ["openid", "email", "profile"]
+  });
+  console.log("\u2705 Redirecting to Google consent screen");
+  res.redirect(url);
 });
 router.get("/oauth/google/callback", async (req, res) => {
+  console.log("\u{1F514} OAuth callback hit! Query params:", Object.keys(req.query));
+  console.log("\u{1F514} Callback URL:", req.protocol + "://" + req.get("host") + req.originalUrl);
   try {
-    const { code, state } = req.query;
-    const codeVerifier = req.cookies?.code_verifier;
-    const storedState = req.cookies?.oauth_state;
-    console.log("\u{1F510} Google OAuth geri d\xF6n\xFC\u015F\xFC al\u0131nd\u0131");
-    console.log("   Gelen state:", state);
-    console.log("   Kaydedilen state:", storedState);
-    if (!code || typeof code !== "string") {
-      console.error("\u274C Google'dan code de\u011Feri gelmedi");
-      return res.redirect(`${FRONTEND_URL}/auth?error=no_code`);
+    const code = req.query.code;
+    if (!code) {
+      console.error("\u274C No code in query params:", req.query);
+      return res.redirect("/auth?error=oauth_failed");
     }
-    if (!codeVerifier) {
-      console.error("\u274C code_verifier \xE7erezi bulunamad\u0131");
-      return res.redirect(`${FRONTEND_URL}/auth?error=no_code_verifier`);
-    }
-    if (!storedState || state !== storedState) {
-      console.error("\u274C OAuth state uyu\u015Fmazl\u0131\u011F\u0131");
-      res.clearCookie("oauth_state", getCookieOptions(req, true));
-      res.clearCookie("code_verifier", getCookieOptions(req, true));
-      return res.redirect(`${FRONTEND_URL}/auth?error=state_mismatch`);
-    }
-    const config = await client.discovery(
-      new URL("https://accounts.google.com"),
-      GOOGLE_CLIENT_ID,
-      { client_secret: GOOGLE_CLIENT_SECRET }
-    );
-    console.log("\u2705 Google yap\u0131land\u0131rmas\u0131 bulundu");
-    const tokens = await client.authorizationCodeGrant(
-      config,
-      new URL(GOOGLE_REDIRECT_URI),
-      {
-        pkceCodeVerifier: codeVerifier,
-        expectedState: storedState,
-        idTokenExpected: true
-      }
-    );
-    console.log("\u2705 Tokenlar al\u0131nd\u0131, kullan\u0131c\u0131 bilgisi getiriliyor...");
-    const userinfo = await client.fetchUserInfo(
-      config,
-      tokens.access_token,
-      "sub"
-    );
-    console.log("\u2705 Google kullan\u0131c\u0131 bilgisi:", {
-      email: userinfo.email,
-      verified: userinfo.email_verified
+    console.log("\u2705 Received authorization code (length:", code.length, ")");
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || "https://www.odanet.com.tr/api/oauth/google/callback";
+    console.log("\u{1F510} Using redirect URI for token exchange:", redirectUri);
+    console.log("\u{1F504} Exchanging authorization code for tokens...");
+    const { tokens } = await oauth2Client.getToken({
+      code,
+      redirect_uri: redirectUri
     });
-    if (!userinfo.email) {
-      console.error("\u274C Kullan\u0131c\u0131 e-posta bilgisi yok");
-      return res.redirect(`${FRONTEND_URL}/auth?error=no_email`);
+    oauth2Client.setCredentials(tokens);
+    console.log("\u2705 Received tokens from Google");
+    console.log("\u{1F504} Fetching user info from Google...");
+    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
+    const { data } = await oauth2.userinfo.get();
+    if (!data.email) {
+      console.error("\u274C No email returned from Google:", data);
+      return res.redirect("/auth?error=oauth_failed");
     }
-    let user = await db.query.users.findFirst({
-      where: eq2(users.email, userinfo.email)
-    });
+    console.log("\u2705 Google user info received:", data.email);
+    console.log("\u{1F504} Checking if user exists in database...");
+    let user = await storage.getUserByEmail(data.email);
     if (!user) {
-      console.log("\u2795 Yeni kullan\u0131c\u0131 olu\u015Fturuluyor (Google hesab\u0131ndan)");
-      const [newUser] = await db.insert(users).values({
-        email: userinfo.email,
-        firstName: userinfo.given_name || null,
-        lastName: userinfo.family_name || null,
-        profileImageUrl: userinfo.picture || null,
-        emailVerifiedAt: userinfo.email_verified ? /* @__PURE__ */ new Date() : null
-      }).returning();
-      user = newUser;
+      console.log("\u{1F4DD} Creating new user in database...");
+      user = await storage.createUser({
+        email: data.email,
+        firstName: data.given_name || "",
+        lastName: data.family_name || "",
+        profileImageUrl: data.picture || "",
+        password: null
+        // Not needed for Google users
+      });
+      console.log("\u2705 New user created:", user.id);
+    } else {
+      console.log("\u2705 Existing user found:", user.id);
     }
-    const token = jwt2.sign({ userId: user.id, email: user.email }, JWT_SECRET2, {
-      expiresIn: "7d"
+    const token = generateToken(user.id, user.email);
+    console.log("\u2705 JWT token generated");
+    const isProduction = req.get("host")?.includes("odanet.com.tr");
+    const cookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      domain: isProduction ? ".odanet.com.tr" : void 0,
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1e3
+    };
+    res.cookie("auth_token", token, cookieOptions);
+    console.log("\u{1F36A} Auth cookie set with options:", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      domain: cookieOptions.domain,
+      path: "/"
     });
-    res.cookie("auth_token", token, getCookieOptions(req));
-    console.log("\u{1F36A} auth_token ayarland\u0131 (.odanet.com.tr)");
-    res.clearCookie("code_verifier", getCookieOptions(req, true));
-    res.clearCookie("oauth_state", getCookieOptions(req, true));
-    console.log("\u2705 OAuth ba\u015Far\u0131l\u0131 \u2014 frontend'e y\xF6nlendiriliyor");
-    res.redirect(`${FRONTEND_URL}/auth/callback`);
-  } catch (error) {
-    console.error("\u274C OAuth callback hatas\u0131:", error?.message || error);
-    res.redirect(`${FRONTEND_URL}/auth?error=oauth_failed`);
+    const frontendUrl = process.env.FRONTEND_URL || "/";
+    console.log("\u2705 Google OAuth success! Redirecting to:", frontendUrl);
+    console.log("\u2705 User:", user.email);
+    return res.redirect(frontendUrl);
+  } catch (err) {
+    console.error("\u274C Google OAuth callback error:", err.message || err);
+    if (err.response?.data) {
+      console.error("\u{1F50D} Google API Error Details:", {
+        error: err.response.data.error,
+        error_description: err.response.data.error_description,
+        status: err.response.status
+      });
+    }
+    if (err.code) {
+      console.error("\u{1F50D} Error Code:", err.code);
+    }
+    return res.redirect("/auth?error=oauth_failed");
   }
 });
 var oauth_default = router;
@@ -1492,7 +1465,7 @@ var seekerUpload = multer({
   },
   limits: { fileSize: 5 * 1024 * 1024 }
 });
-function getCookieOptions2(req) {
+function getCookieOptions(req) {
   const isProductionDomain = req.get("host")?.includes("odanet.com.tr");
   return {
     httpOnly: true,
@@ -1526,7 +1499,7 @@ async function registerRoutes(app2) {
       const hashed = await hashPassword(userData.password);
       const user = await storage.createUser({ ...userData, password: hashed });
       const token = generateToken(user.id, user.email);
-      res.cookie("auth_token", token, getCookieOptions2(req));
+      res.cookie("auth_token", token, getCookieOptions(req));
       const { password, ...safeUser } = user;
       res.status(201).json({ user: safeUser, token });
     } catch (err) {
@@ -1545,7 +1518,7 @@ async function registerRoutes(app2) {
       const match = await comparePassword(password, user.password);
       if (!match) return res.status(401).json({ message: "Ge\xE7ersiz bilgiler" });
       const token = generateToken(user.id, user.email);
-      res.cookie("auth_token", token, getCookieOptions2(req));
+      res.cookie("auth_token", token, getCookieOptions(req));
       const { password: _, ...safeUser } = user;
       res.json({ user: safeUser, token });
     } catch (err) {
@@ -1554,7 +1527,7 @@ async function registerRoutes(app2) {
     }
   });
   app2.post("/api/auth/logout", (req, res) => {
-    const options = getCookieOptions2(req);
+    const options = getCookieOptions(req);
     res.clearCookie("auth_token", { ...options, path: "/" });
     console.log("\u{1F6AA} Kullan\u0131c\u0131 \xE7\u0131k\u0131\u015F yapt\u0131, \xE7erez silindi");
     res.json({ message: "\xC7\u0131k\u0131\u015F yap\u0131ld\u0131" });
@@ -1854,7 +1827,7 @@ app.get("/api/health", (_req, res) => {
 });
 app.use(express4.json());
 app.use(express4.urlencoded({ extended: false }));
-app.use(cookieParser2());
+app.use(cookieParser());
 app.use(
   cors({
     origin: [
