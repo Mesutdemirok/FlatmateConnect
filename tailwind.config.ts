@@ -10,79 +10,90 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        // === FOUNDATION ===
+        background: "var(--background)", // #F8FAFC
+        foreground: "var(--foreground)", // #0F172A
+
         card: {
-          DEFAULT: "var(--card)",
-          foreground: "var(--card-foreground)",
+          DEFAULT: "var(--card)", // #FFFFFF
+          foreground: "var(--card-foreground)", // #0F172A
         },
+
         popover: {
-          DEFAULT: "var(--popover)",
-          foreground: "var(--popover-foreground)",
+          DEFAULT: "var(--popover)", // #FFFFFF
+          foreground: "var(--popover-foreground)", // #0F172A
         },
+
+        // === CORE COLORS ===
         primary: {
-          DEFAULT: "var(--primary)",
-          foreground: "var(--primary-foreground)",
+          DEFAULT: "var(--primary)", // #0EA5A7
+          foreground: "var(--primary-foreground)", // #FFFFFF
         },
+
         secondary: {
-          DEFAULT: "var(--secondary)",
-          foreground: "var(--secondary-foreground)",
+          DEFAULT: "var(--secondary)", // #0F172A
+          foreground: "var(--secondary-foreground)", // #F8FAFC
         },
-        muted: {
-          DEFAULT: "var(--muted)",
-          foreground: "var(--muted-foreground)",
-        },
+
         accent: {
-          DEFAULT: "var(--accent)",
-          foreground: "var(--accent-foreground)",
+          DEFAULT: "var(--accent)", // #F97316
+          foreground: "var(--accent-foreground)", // #FFFFFF
         },
+
+        muted: {
+          DEFAULT: "var(--muted)", // #F1F5F9
+          foreground: "var(--muted-foreground)", // #64748B
+        },
+
         destructive: {
-          DEFAULT: "var(--destructive)",
-          foreground: "var(--destructive-foreground)",
+          DEFAULT: "var(--destructive)", // #DC2626
+          foreground: "var(--destructive-foreground)", // #FFFFFF
         },
-        border: "var(--border)",
-        input: "var(--input)",
-        ring: "var(--ring)",
+
+        border: "var(--border)", // #D1D5DB
+        input: "var(--input)", // #FFFFFF
+        ring: "var(--ring)", // #0EA5A7
+
+        // === CHART COLORS ===
         chart: {
-          "1": "var(--chart-1)",
-          "2": "var(--chart-2)",
-          "3": "var(--chart-3)",
-          "4": "var(--chart-4)",
-          "5": "var(--chart-5)",
+          "1": "var(--chart-1)", // #0EA5A7 (Turkuaz)
+          "2": "var(--chart-2)", // #F59E0B (Amber)
+          "3": "var(--chart-3)", // #3B82F6 (Blue)
+          "4": "var(--chart-4)", // #22C55E (Green)
+          "5": "var(--chart-5)", // #E11D48 (Rose)
         },
+
+        // === SIDEBAR (OPTIONAL) ===
         sidebar: {
-          DEFAULT: "var(--sidebar)",
-          foreground: "var(--sidebar-foreground)",
-          primary: "var(--sidebar-primary)",
-          "primary-foreground": "var(--sidebar-primary-foreground)",
-          accent: "var(--sidebar-accent)",
-          "accent-foreground": "var(--sidebar-accent-foreground)",
-          border: "var(--sidebar-border)",
-          ring: "var(--sidebar-ring)",
+          DEFAULT: "var(--sidebar, #F8FAFC)",
+          foreground: "var(--sidebar-foreground, #0F172A)",
+          primary: "var(--sidebar-primary, #0EA5A7)",
+          "primary-foreground": "var(--sidebar-primary-foreground, #FFFFFF)",
+          accent: "var(--sidebar-accent, #F97316)",
+          "accent-foreground": "var(--sidebar-accent-foreground, #FFFFFF)",
+          border: "var(--sidebar-border, #D1D5DB)",
+          ring: "var(--sidebar-ring, #0EA5A7)",
         },
       },
+
+      // === TYPOGRAPHY ===
       fontFamily: {
         sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
         serif: ["var(--font-serif)", "Georgia", "serif"],
         mono: ["var(--font-mono)", "Menlo", "monospace"],
       },
+
+      // === ANIMATIONS ===
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
@@ -91,5 +102,6 @@ export default {
       },
     },
   },
+
   plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;
