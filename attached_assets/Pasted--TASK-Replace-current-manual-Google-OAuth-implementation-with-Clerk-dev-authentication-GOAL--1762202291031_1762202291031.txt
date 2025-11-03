@@ -1,0 +1,97 @@
+⚙️ TASK: Replace current manual Google OAuth implementation with Clerk.dev authentication
+
+🪄 GOAL:
+Use Clerk.dev to handle Google login and session management for www.odanet.com.tr
+
+---
+
+### 1️⃣ INSTALL REQUIRED PACKAGES
+Run:
+npm install @clerk/clerk-react
+
+---
+
+### 2️⃣ CREATE CLERK ACCOUNT & PROJECT
+Go to https://clerk.com → Sign up → Create project "Odanet"
+Enable **Google** under:
+Dashboard → User & Authentication → Social Connections → Google
+
+---
+
+### 3️⃣ ADD REPLIT SECRETS
+In Replit → Tools → Secrets, add these keys:
+
+CLERK_PUBLISHABLE_KEY = pk_live_xxxxxxxxxxxxxxxxxxx
+CLERK_SECRET_KEY = sk_live_xxxxxxxxxxxxxxxxxxx
+
+FRONTEND_URL = https://www.odanet.com.tr
+
+---
+
+### 4️⃣ UPDATE MAIN ENTRY FILE
+In `client/src/main.tsx`, wrap your app with the Clerk provider:
+
+import { ClerkProvider } from "@clerk/clerk-react";
+import App from "./App";
+
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY;
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <ClerkProvider publishableKey={clerkPubKey}>
+    <App />
+  </ClerkProvider>
+);
+
+---
+
+### 5️⃣ UPDATE AUTH PAGE (client/src/pages/Auth.tsx)
+Replace your current Google button handler with:
+
+import { useClerk } from "@clerk/clerk-react";
+
+const { openSignIn } = useClerk();
+
+<Button
+  onClick={() => openSignIn({})}
+  className="w-full h-11 md:h-12 rounded-xl border border-slate-300 dark:border-slate-700 flex items-center justify-center gap-2 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+>
+  <svg className="w-5 h-5" viewBox="0 0 24 24">
+    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92..." />
+  </svg>
+  Google ile devam et
+</Button>
+
+---
+
+### 6️⃣ REMOVE OLD OAUTH ROUTES
+In `server/routes/oauth.ts`:
+- Comment out or delete the entire Google OAuth flow
+- Keep your `/api/auth` local login and registration endpoints as they are
+
+---
+
+### 7️⃣ REDEPLOY PROJECT
+After changes:
+npm run build
+npm start
+or click **Republish**
+
+---
+
+### ✅ AFTER DEPLOYMENT TEST
+Go to https://www.odanet.com.tr/giris  
+Click **"Google ile devam et"**  
+You should see a Clerk-hosted popup, log in via Google, and then be redirected back to `/profil`.
+
+---
+
+### 🔒 RESULT
+- No need for Google Cloud Console anymore  
+- No redirect mismatch  
+- Fully managed sessions & user data by Clerk  
+- Optional: you can fetch current user with Clerk’s React hook:
+  const { user } = useUser();
+
+---
+
+TASK END
