@@ -54,8 +54,12 @@ router.get("/oauth/google/callback", async (req, res) => {
     
     console.log("✅ Received authorization code (length:", code.length, ")");
 
-    // Exchange code for tokens - explicitly use HTTPS redirect URI
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || "https://www.odanet.com.tr/api/oauth/google/callback";
+    // ✅ Force HTTPS redirect URI for production
+    let redirectUri = process.env.GOOGLE_REDIRECT_URI || "https://www.odanet.com.tr/api/oauth/google/callback";
+    if (redirectUri.startsWith("http://")) {
+      redirectUri = redirectUri.replace("http://", "https://");
+      console.log("⚠️ Converted HTTP to HTTPS for redirect URI");
+    }
     console.log("🔐 Using redirect URI for token exchange:", redirectUri);
     console.log("🔄 Exchanging authorization code for tokens...");
     
