@@ -4,3 +4,10 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Database backups and sensitive data
+*.sql
+!scripts/*.sql
+!migrations/*.sql
+server/backups/
+uploads/
