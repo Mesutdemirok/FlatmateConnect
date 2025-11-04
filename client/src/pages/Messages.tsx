@@ -96,11 +96,23 @@ export default function Messages() {
   const {
     data: recipientUser,
     isLoading: recipientLoading,
+    error: recipientError,
   } = useQuery({
     queryKey: ["/api/users", selectedUserId],
     enabled: isAuthenticated && !!selectedUserId,
     refetchInterval: false,
   });
+
+  // Show error toast if recipient fetch fails
+  useEffect(() => {
+    if (recipientError && selectedUserId) {
+      toast({
+        title: t("errors.user_not_found"),
+        description: t("errors.recipient_load_failed"),
+        variant: "destructive",
+      });
+    }
+  }, [recipientError, selectedUserId, toast, t]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -320,7 +332,14 @@ export default function Messages() {
           } flex-col flex-1 bg-background`}
           data-testid="chat-window"
         >
-          {selectedUserId && activeUser ? (
+          {selectedUserId && !activeUser && recipientLoading ? (
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="text-center">
+                <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto mb-4" />
+                <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+              </div>
+            </div>
+          ) : selectedUserId && activeUser ? (
             <>
               {/* Chat Header */}
               <div className="sticky top-0 z-10 bg-card border-b border-border">
