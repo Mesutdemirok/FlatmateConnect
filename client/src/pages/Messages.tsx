@@ -92,6 +92,16 @@ export default function Messages() {
     refetchInterval: 5_000,
   });
 
+  // Fetch recipient user info (for new conversations)
+  const {
+    data: recipientUser,
+    isLoading: recipientLoading,
+  } = useQuery({
+    queryKey: ["/api/users", selectedUserId],
+    enabled: isAuthenticated && !!selectedUserId,
+    refetchInterval: false,
+  });
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (Array.isArray(messages) && messages.length > 0) {
@@ -162,9 +172,10 @@ export default function Messages() {
     });
   };
 
-  const activeUser = Array.isArray(conversations)
+  // Determine active user - prioritize directly fetched recipient over conversation list
+  const activeUser = recipientUser || (Array.isArray(conversations)
     ? conversations.find((c: any) => c.user.id === selectedUserId)?.user
-    : undefined;
+    : undefined);
 
   const handleSelectConversation = (userId: string) => {
     setSelectedUserId(userId);

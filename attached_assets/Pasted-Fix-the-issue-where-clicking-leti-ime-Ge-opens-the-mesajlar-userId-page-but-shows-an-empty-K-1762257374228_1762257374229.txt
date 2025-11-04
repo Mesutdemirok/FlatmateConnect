@@ -1,0 +1,83 @@
+Fix the issue where clicking “İletişime Geç” opens the /mesajlar/[userId] page but shows an empty “Konuşma Başlat” placeholder instead of the chat window.
+The page must automatically load the recipient info and enable message sending.
+
+✅ Required Fixes
+1. Backend (Laravel API)
+
+Endpoint: POST /api/messages
+
+When user clicks “İletişime Geç”, check if a conversation between sender_id and receiver_id exists.
+
+If not, create a new conversation object (or simply allow the first message to auto-create it).
+
+Return the full user object of the recipient + conversation ID.
+
+Example:
+
+// MessageController.php
+public function startConversation(Request $request) {
+    $sender = auth()->user();
+    $receiverId = $request->input('receiver_id');
+
+    $conversation = Conversation::firstOrCreate([
+        'sender_id' => $sender->id,
+        'receiver_id' => $receiverId
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'conversation' => $conversation,
+        'receiver' => User::find($receiverId)
+    ]);
+}
+
+2. Frontend (Next.js)
+
+File: src/app/messages/[userId]/page.tsx
+
+Use the dynamic param (params.userId) to fetch conversation data immediately when the page loads.
+
+useEffect(() => {
+  if (userId) {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages/conversation/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => res.json())
+      .then(data => {
+        setConversation(data.conversation);
+        setReceiver(data.receiver);
+        setMessages(data.messages);
+      });
+  }
+}, [userId]);
+
+
+Once receiver is fetched:
+
+Show profile photo, name, and “typing…” indicator.
+
+Display chat input at the bottom (<MessageInput />).
+
+3. UI State Fix
+
+When no previous messages exist:
+
+Display "Henüz mesaj yok, ilk mesajınızı gönderin."
+
+Input bar must still be visible and usable.
+
+The message input should not be hidden based on conversation state.
+
+🧠 Expected Outcome
+
+✅ Clicking “İletişime Geç” immediately opens a chat window with:
+
+The correct recipient’s name/photo
+
+A visible text input
+
+Ability to send the first message
+
+✅ If there’s no previous chat, it still allows creating one.
+✅ Works both from listing pages and seeker cards.
+✅ Mobile and desktop responsive.

@@ -171,6 +171,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user by ID (for messaging)
+  app.get("/api/users/:userId", jwtAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.userId);
+      if (!user)
+        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (err) {
+      res.status(500).json({ message: "Kullanıcı bilgisi alınamadı" });
+    }
+  });
+
   // Update user profile
   app.patch("/api/users/profile", jwtAuth, async (req, res) => {
     try {
