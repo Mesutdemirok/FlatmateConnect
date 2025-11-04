@@ -1,0 +1,53 @@
+
+
+🎯 Goal
+Fix and enhance the Odanet messaging and navigation system:
+* Make the “İletişime geç” (Start Chat) button actually open an active conversation window.
+* Prevent pages from opening scrolled to the bottom.
+* Ensure smooth navigation between message list and chat windows.
+* Improve the overall user experience to match Instagram-style direct messaging.
+
+✅ Tasks
+1. Messaging Activation Fix
+* When user clicks “İletişime geç”, route to /messages/[userId] and automatically:
+    * Check login state.
+        * If not logged in → redirect to login, then return to the same conversation.
+    * Fetch messages via GET /api/messages/conversation/{userId}.
+    * If conversation exists → display messages.
+    * If no messages → show placeholder text: "Henüz mesaj yok, ilk mesajı gönderin."
+    * Always display a working MessageInput component for immediate sending.
+2. UI / UX Update
+Rebuild the chat interface like Instagram Direct:
+* Header shows profile photo, name, last active.
+* Message bubbles aligned left/right with rounded corners.
+* Gray timestamp text under each message.
+* Seen/read indicator (✔ or double-check).
+* Sticky bottom input bar with emoji + send icon.
+* Typing indicator (“yazıyor...”) animation.
+* Full-width chat view on mobile, auto-scroll to newest message.
+3. Navigation & State Handling
+* Fix routing between:
+    * /messages (conversation list)
+    * /messages/[userId] (chat window)
+* Persist state with AuthContext and useMessages() hook.
+* Don’t reset the entire app state when navigating.
+* On login redirect back to /messages/[userId] automatically.
+4. Page Scroll Behavior
+* Currently pages open from the bottom — fix by adding: useEffect(() => {
+*   window.scrollTo({ top: 0, behavior: "smooth" });
+* }, []);
+*  inside layout.tsx or globally after route changes (router.events.on('routeChangeComplete', ...)).
+5. Component Organization
+* Update or create:
+    * MessagesList.tsx → show all conversations.
+    * ChatWindow.tsx → handle a single conversation.
+    * MessageInput.tsx → for sending new messages.
+* Ensure responsive design (Tailwind + mobile-first).
+6. Testing & Validation
+* Test login → conversation start → message send flow.
+* Confirm navigation back to message list.
+* Ensure scroll position starts at top on every new page load.
+
+🧩 Expected Outcome
+✅ “İletişime geç” opens an active chat window. ✅ Messages load correctly or show a “no messages yet” state. ✅ Input field is active and sends instantly. ✅ Pages open from the top (no bottom scroll). ✅ Messaging layout is modern, mobile-optimized, and seamless.
+

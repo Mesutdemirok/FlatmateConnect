@@ -1,13 +1,19 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 import { MessageCircle, MapPin } from "lucide-react";
 
 type Seeker = {
   id: string;
+  userId?: string;
   slug?: string | null;
   fullName?: string | null;
-  user?: { firstName?: string | null; lastName?: string | null } | null;
+  user?: { 
+    id?: string;
+    firstName?: string | null; 
+    lastName?: string | null;
+  } | null;
   profilePhotoUrl?: string | null;
   photos?: Array<{ imagePath?: string; sortOrder?: number | null }>;
   preferredLocation?: string | null;
@@ -63,6 +69,9 @@ interface SeekerCardProps {
 }
 
 export default function SeekerCard({ seeker }: SeekerCardProps) {
+  const [, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
+  
   const seekerUrl = seeker.slug
     ? `/oda-arayan/${seeker.slug}`
     : `/oda-arayan/${seeker.id}`;
@@ -71,6 +80,21 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
   const budget = formatBudget(seeker.budgetMonthly);
   const occupation = formatOccupation(seeker.occupation);
   const location = seeker.preferredLocation?.trim() || "";
+
+  const handleContact = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent card link navigation
+    e.stopPropagation();
+    
+    const targetUserId = seeker.user?.id || seeker.userId;
+    if (!targetUserId) return;
+    
+    if (!isAuthenticated) {
+      // Redirect to login, then return to this conversation
+      setLocation(`/giris?next=/mesajlar/${targetUserId}`);
+    } else {
+      setLocation(`/mesajlar/${targetUserId}`);
+    }
+  };
 
   return (
     <Link href={seekerUrl}>
@@ -133,13 +157,12 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
           {/* CTA */}
           <div className="mt-auto pt-2">
             <Button
-              asChild
+              onClick={handleContact}
               className="w-full h-9 md:h-10 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-2"
+              data-testid="button-contact-seeker"
             >
-              <span>
-                <MessageCircle className="w-4 h-4" />
-                <span className="ml-1.5">İletişime Geç</span>
-              </span>
+              <MessageCircle className="w-4 h-4" />
+              <span className="ml-1.5">İletişime Geç</span>
             </Button>
           </div>
         </div>

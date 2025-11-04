@@ -61,6 +61,11 @@ function Router() {
     trackPageView(location);
   }, [location]);
 
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [location]);
+
   return (
     <Switch>
       {/* Auth routes - Turkish URLs - Unified auth page */}

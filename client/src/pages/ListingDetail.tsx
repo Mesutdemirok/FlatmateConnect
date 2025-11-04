@@ -107,7 +107,8 @@ export default function ListingDetail() {
       setLocation(`/giris?next=/oda-ilani/${slug}`);
       return;
     }
-    setLocation(`/mesajlar?user=${listing.user.id}&listing=${listing.id}`);
+    // Navigate to direct message conversation with the listing owner
+    setLocation(`/mesajlar/${listing.user.id}`);
   };
 
   // Loading skeleton
