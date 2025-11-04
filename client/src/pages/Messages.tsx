@@ -378,11 +378,20 @@ export default function Messages() {
                       </div>
                     ))}
                   </div>
+                ) : !Array.isArray(messages) || messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-muted-foreground">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                      <p className="text-sm font-medium">Henüz mesaj yok</p>
+                      <p className="text-xs mt-1">İlk mesajı gönderin</p>
+                    </div>
+                    <div ref={messagesEndRef} />
+                  </div>
                 ) : (
                   <div className="space-y-0.5">
-                    {Array.isArray(messages) && messages.map((m: any, index: number) => {
+                    {messages.map((m: any, index: number) => {
                       const isMine = m.senderId === user?.id;
-                      const prevMessage = index > 0 && Array.isArray(messages) ? messages[index - 1] : null;
+                      const prevMessage = index > 0 ? messages[index - 1] : null;
                       const showAvatar = !prevMessage || prevMessage.senderId !== m.senderId;
 
                       return (

@@ -103,10 +103,14 @@ export default function ListingDetail() {
   };
 
   const handleContactOwner = () => {
-    if (!isAuthenticated || !listing) {
-      setLocation(`/giris?next=/oda-ilani/${slug}`);
+    if (!listing) return;
+    
+    if (!isAuthenticated) {
+      // After login, redirect directly to the conversation with the owner
+      setLocation(`/giris?next=/mesajlar/${listing.user.id}`);
       return;
     }
+    
     // Navigate to direct message conversation with the listing owner
     setLocation(`/mesajlar/${listing.user.id}`);
   };
