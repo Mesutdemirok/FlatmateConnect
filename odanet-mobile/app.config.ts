@@ -1,12 +1,12 @@
-  export default {
-    expo: {
-      name: "Odanet",
-      slug: "odanet",
-      scheme: "odanet",
-      newArchEnabled: true,
-      plugins: ["expo-router"],
-      extra: {
-        apiUrl: "https://replit.com/@mesudemirok/FlatmateConnect-1",
-      },
+export default {
+  expo: {
+    name: "Odanet",
+    slug: "odanet",
+    scheme: "odanet",
+    newArchEnabled: true,
+    plugins: ["expo-router"],
+    extra: {
+      apiUrl: "https://www.odanet.com.tr/api",
     },
-  } as const;
+  },
+} as const;
