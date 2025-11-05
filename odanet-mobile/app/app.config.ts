@@ -1,13 +1,9 @@
+// odanet-mobile/app.config.ts
 export default {
   expo: {
-    name: "Odanet",
-    slug: "odanet",
-    scheme: "odanet",
-    newArchEnabled: true,
-    plugins: ["expo-router"],
+    // ...other config
     extra: {
-      // BURAYA kendi Laravel API adresinizi yazın
-      apiUrl: "https://YOUR-LARAVEL-API-BASE",
+      apiUrl: "https://flatmate-connect-1-mesudemirok.replit.app/api",
     },
   },
-} as const;
+};

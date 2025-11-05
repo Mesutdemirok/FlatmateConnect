@@ -1,3 +1,7 @@
+import { testApiConnection } from "../../hooks/testApiConnection";
+useEffect(() => {
+  testApiConnection(); // logs ✅ or ❌ in Metro console
+}, []);
 import { useState } from "react";
 import {
   View,
@@ -22,7 +26,9 @@ interface Listing {
 
 export default function Listings() {
   const [searchQuery, setSearchQuery] = useState("");
-  const { data, isLoading, isFetching, error, refetch } = useListings({ q: searchQuery });
+  const { data, isLoading, isFetching, error, refetch } = useListings({
+    q: searchQuery,
+  });
 
   const listings = data?.data || data || [];
 
@@ -31,20 +37,26 @@ export default function Listings() {
       className="bg-white p-4 mb-3 mx-4 rounded-lg shadow-sm border border-gray-200"
       data-testid={`listing-card-${item.id}`}
     >
-      <Text className="text-lg font-semibold text-gray-900 mb-1" numberOfLines={2}>
+      <Text
+        className="text-lg font-semibold text-gray-900 mb-1"
+        numberOfLines={2}
+      >
         {item.title}
       </Text>
-      
+
       {(item.suburb || item.city) && (
         <Text className="text-sm text-gray-600 mb-2">
-          📍 {item.suburb ? `${item.suburb}, ` : ""}{item.city || ""}
+          📍 {item.suburb ? `${item.suburb}, ` : ""}
+          {item.city || ""}
         </Text>
       )}
-      
+
       <Text className="text-base font-bold text-orange-600 mb-2">
-        {item.monthlyRent ? `${item.monthlyRent.toLocaleString('tr-TR')} ₺/ay` : "Fiyat belirtilmemiş"}
+        {item.monthlyRent
+          ? `${item.monthlyRent.toLocaleString("tr-TR")} ₺/ay`
+          : "Fiyat belirtilmemiş"}
       </Text>
-      
+
       {item.description && (
         <Text className="text-sm text-gray-700" numberOfLines={3}>
           {item.description}
@@ -55,7 +67,7 @@ export default function Listings() {
 
   const ListEmptyComponent = () => {
     if (isLoading) return null;
-    
+
     return (
       <View className="flex-1 items-center justify-center px-6 py-12">
         <Text className="text-6xl mb-4">🏠</Text>
