@@ -121,7 +121,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json({ user: safeUser, token });
     } catch (err: any) {
       console.error("❌ Register Error:", err);
-      res.status(500).json({ message: "Kayıt başarısız" });
+      res.status(500).json({
+        message: "Kayıt başarısız",
+        error: err.message || JSON.stringify(err),
+        stack: err.stack || null
+      });
     }
   });
 
