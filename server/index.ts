@@ -6,6 +6,7 @@ import { registerRoutes } from "./routes";
 import uploadsRouter from "./routes/uploads";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -14,12 +15,16 @@ const app = express();
 /* ---------------------------------------------------------
    🩺 Health Checks (for Replit Autoscale + Manual Check)
 --------------------------------------------------------- */
-// Replit uses this for readiness probes
+// Used by Replit autoscaler
 app.get("/health", (_req, res) => res.status(200).send("ok"));
 
 // Manual / internal API check
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, message: "Backend running fine ✅" });
+  res.json({
+    ok: true,
+    message: "Backend running fine ✅",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 /* ---------------------------------------------------------
@@ -35,6 +40,7 @@ app.use(
       "https://www.odanet.com.tr",
       "https://odanet.com.tr",
       "https://flatmate-connect-1-mesudemirok.replit.app",
+      "http://localhost:3000",
     ],
     credentials: true,
   }),
@@ -43,16 +49,16 @@ app.use(
 /* ---------------------------------------------------------
    📁 Static Uploads Directory
 --------------------------------------------------------- */
-// Serve files from the local /uploads folder (so uploaded images are visible)
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 /* ---------------------------------------------------------
    🧩 API Routes
 --------------------------------------------------------- */
-// Register uploads endpoints under /api/uploads
 app.use("/api/uploads", uploadsRouter);
 
-// Register all other routes (seekers, listings, etc.)
+/* ---------------------------------------------------------
+   🧰 Initialize Routes + Start Server
+--------------------------------------------------------- */
 (async () => {
   try {
     const server = await registerRoutes(app);
@@ -61,8 +67,11 @@ app.use("/api/uploads", uploadsRouter);
     const host = "0.0.0.0";
 
     server.listen(port, host, () => {
-      console.log(`✅ Odanet backend running on port ${port}`);
-      console.log(`🌐 Accessible at: http://localhost:${port}`);
+      console.log("==========================================");
+      console.log("✅ Odanet backend is now running!");
+      console.log(`🌐 Listening at: http://localhost:${port}`);
+      console.log("🔒 HTTPS Production Domain: https://www.odanet.com.tr");
+      console.log("==========================================");
     });
   } catch (err) {
     console.error("❌ Server startup error:", err);
@@ -71,15 +80,25 @@ app.use("/api/uploads", uploadsRouter);
 })();
 
 /* ---------------------------------------------------------
-   🛑 Global Error Handler
+   🛑 Global Error Handler (Last Resort)
 --------------------------------------------------------- */
 app.use(
-  (err: any, _req: express.Request, res: express.Response, _next: any) => {
-    console.error("Unhandled error:", err);
+  (
+    err: any,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    console.error("🔥 Unhandled error caught globally:");
+    console.error(err);
+
     res.status(500).json({
       success: false,
       message: "Beklenmeyen sunucu hatası.",
-      error: err?.message || err,
+      error: err?.message || JSON.stringify(err),
+      stack: process.env.NODE_ENV !== "production" ? err?.stack : undefined,
     });
   },
 );
+
+export default app;
