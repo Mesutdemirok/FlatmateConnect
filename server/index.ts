@@ -4,6 +4,7 @@ import cors from "cors";
 import path from "path";
 import { registerRoutes } from "./routes";
 import uploadsRouter from "./routes/uploads";
+import proxyRouter from "./routes/proxy";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
@@ -55,6 +56,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
    🧩 API Routes
 --------------------------------------------------------- */
 app.use("/api/uploads", uploadsRouter);
+app.use("/api", proxyRouter);
 
 /* ---------------------------------------------------------
    🧰 Initialize Routes + Start Server

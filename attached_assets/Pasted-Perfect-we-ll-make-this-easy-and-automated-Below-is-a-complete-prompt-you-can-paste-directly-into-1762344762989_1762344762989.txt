@@ -1,0 +1,143 @@
+Perfect — we’ll make this easy and automated.
+Below is a complete prompt you can paste directly into your Replit Agent’s chat window.
+It tells the Agent to:
+
+✅ Create and connect the /api/proxy route (for iOS image loading)
+✅ Verify the listings show images correctly
+✅ Then finish the rest of the mobile app MVP setup (Profile, Messages, Tabs)
+✅ Test all endpoints automatically
+✅ Push everything to production domain (https://www.odanet.com.tr/api)
+
+⸻
+
+🧠 Full Replit Agent Prompt
+
+Copy–paste this into your Replit Agent exactly as-is 👇
+
+⸻
+
+
+🧩 TASK: Finalize and optimize Odanet full-stack integration
+
+I need you to complete the following backend + mobile tasks step by step:
+
+---
+
+## 1️⃣ BACKEND – IMAGE PROXY FIX
+Goal: Make iOS devices display CDN-hosted images.
+
+- Create a new route file: `server/routes/proxy.ts`
+- Add a secure image proxy that fetches any CDN image (from https://cdn.odanet.com.tr) and streams it securely from our main domain (`https://www.odanet.com.tr/api/proxy/...`).
+- Include this code (use node-fetch):
+
+```ts
+import express from "express";
+import fetch from "node-fetch";
+
+const router = express.Router();
+
+router.get("/proxy/*", async (req, res) => {
+  try {
+    const targetPath = req.params[0];
+    if (!targetPath) return res.status(400).json({ error: "No image path provided" });
+
+    const cdnUrl = `https://cdn.odanet.com.tr/${targetPath}`;
+    console.log("🔁 Proxying image:", cdnUrl);
+
+    const response = await fetch(cdnUrl);
+    if (!response.ok) {
+      console.error("❌ CDN fetch failed:", response.status);
+      return res.status(response.status).json({ error: "Failed to load image" });
+    }
+
+    res.set("Content-Type", response.headers.get("content-type") || "image/jpeg");
+    response.body.pipe(res);
+  } catch (err) {
+    console.error("❌ Proxy error:", err);
+    res.status(500).json({ error: "Proxy server error", details: err.message });
+  }
+});
+
+export default router;
+
+Then import and register it in server/index.ts:
+
+import proxyRouter from "./routes/proxy";
+app.use("/api", proxyRouter);
+
+✅ Test it manually:
+
+curl https://www.odanet.com.tr/api/proxy/listings/1762204009085-em2hy1.jpg
+
+→ Should return the same image as the CDN.
+
+⸻
+
+2️⃣ MOBILE APP – VERIFY IMAGE LOADING
+	•	Ensure Expo app (odanet-mobile/app/(tabs)/index.tsx) uses this fallback:
+
+const fallbackUri = uri.replace(
+  "https://cdn.odanet.com.tr",
+  "https://www.odanet.com.tr/api/proxy"
+);
+
+	•	Reload Expo (npx expo start -c)
+	•	Verify that iOS now shows listing images.
+
+⸻
+
+3️⃣ BACKEND – ENABLE BASIC PROFILE & MESSAGING
+	•	Make sure /api/auth/me returns current user with safe fields.
+	•	Make sure /api/messages/:userId and /api/messages endpoints work with authentication token.
+	•	Add sample test logs for these endpoints.
+
+⸻
+
+4️⃣ MOBILE APP – CONNECT PROFILE & MESSAGES SCREENS
+	•	For app/(tabs)/profile.tsx → show current user info from /api/auth/me.
+	•	For app/(tabs)/messages.tsx → show conversation list from /api/conversations.
+	•	Use SecureStore to load the saved JWT token from login and attach it in axios headers.
+
+Add simple placeholders if real data unavailable.
+
+⸻
+
+5️⃣ FINAL CHECKS & DEPLOYMENT
+	•	Verify /api/health → ✅ returns JSON
+	•	Verify /api/listings → returns JSON with image paths
+	•	Verify /api/proxy/... → streams actual image
+	•	Ensure all routes are working on https://www.odanet.com.tr/api/...
+	•	Run Expo app on iOS/Android and confirm images, profile, messages, listings all render.
+
+⸻
+
+🎯 Success Criteria
+
+✅ Listings show images (via proxy fallback)
+✅ Profile + Messages tabs connected
+✅ All API endpoints return valid JSON
+✅ Deployed to production domain (https://www.odanet.com.tr/api)
+✅ No hook or CORS errors
+✅ Mobile app starts via Expo Go without issues
+
+⸻
+
+If anything fails (especially images), show logs and fix automatically.
+When done, summarize with:
+	•	Changes made
+	•	Tests run
+	•	Verification results
+	•	Next improvement suggestions
+
+---
+
+### 🧩 Optional Add-on
+
+After it finishes, you can ask:
+> “Now add caching headers (ETag + 7d max-age) to the proxy route for faster image load.”
+
+That will make the app load images much faster next time.
+
+---
+
+Would you like me to include a **follow-up Agent prompt** for improving the UI (cards with shadows, image aspect ratio, profile picture, etc.) once the proxy and connections work?
