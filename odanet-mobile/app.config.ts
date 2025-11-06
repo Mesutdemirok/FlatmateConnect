@@ -17,6 +17,8 @@ export default {
     assetBundlePatterns: ["**/*"],
     ios: {
       supportsTablet: true,
+      bundleIdentifier: "com.odanet.app",
+      buildNumber: "1",
     },
     android: {
       adaptiveIcon: {
@@ -24,6 +26,11 @@ export default {
         backgroundColor: "#00A6A6",
       },
       package: "com.odanet.app",
+      versionCode: 1,
+      permissions: [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+      ],
     },
     web: {
       favicon: "./assets/favicon.png",
@@ -33,5 +40,8 @@ export default {
         projectId: "a21f0bc7-a5a4-417c-9eea-3e7ad1915192",
       },
     },
+    plugins: [
+      "expo-router",
+    ],
   },
 };
