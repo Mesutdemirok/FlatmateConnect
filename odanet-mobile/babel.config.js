@@ -3,9 +3,9 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      'expo-router/babel',        // Handles routing transpile
-      'nativewind/babel',         // Tailwind support
-      'react-native-reanimated/plugin', // Must be last
+      'expo-router/babel',
+      'nativewind/babel',
+      'react-native-reanimated/plugin',
     ],
   };
 };
