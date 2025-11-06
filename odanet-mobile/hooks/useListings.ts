@@ -23,13 +23,14 @@ export function useListings() {
   });
 }
 
-export function useListing(id: string) {
+export function useListing(id: string | undefined) {
   return useQuery({
     queryKey: ["listing", id],
     queryFn: async () => {
+      if (!id) throw new Error("Listing ID is required");
       const { data } = await api.get<Listing>(`/listings/${id}`);
       return data;
     },
-    enabled: !!id,
+    enabled: !!id && id !== "",
   });
 }
