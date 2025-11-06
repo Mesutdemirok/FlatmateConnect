@@ -12,11 +12,13 @@ Preferred communication style: Simple, everyday language.
 The platform features a mobile-first design with consistent branding, utilizing orange accents, gradient backgrounds, rounded cards, and icon-based feature chips. It includes responsive card layouts with dynamic aspect ratios, address overlays, and optimized mobile-first grids.
 
 ### Technical Implementations
-- **Frontend**: React with TypeScript (Vite), Tailwind CSS, shadcn/ui, Radix UI for accessibility. State management uses React Query for server state and React hooks for local state. Wouter handles client-side routing, and i18next provides internationalization (Turkish primary locale).
+- **Frontend (Web)**: React with TypeScript (Vite), Tailwind CSS, shadcn/ui, Radix UI for accessibility. State management uses React Query for server state and React hooks for local state. Wouter handles client-side routing, and i18next provides internationalization (Turkish primary locale).
+- **Frontend (Mobile)**: Expo SDK 51 + React Native 0.74, Expo Router for file-based navigation, NativeWind v4 for Tailwind styling, TanStack Query for data fetching, SecureStore for JWT token management. Production-ready with EAS build configuration for Android and iOS deployment.
 - **Backend**: Express.js with TypeScript. PostgreSQL is used as the database with Drizzle ORM. The API is RESTful with standardized error handling.
-- **Authentication**: Unified JWT-based authentication supporting both Google OAuth and email/password. All auth flows set identical secure cookies (`auth_token`) with SameSite=None, Secure flags, and domain `.odanet.com.tr` for production. OAuth callback: `https://www.odanet.com.tr/api/oauth/google/callback`.
+- **Authentication**: Unified JWT-based authentication supporting both Google OAuth and email/password. All auth flows set identical secure cookies (`auth_token`) with SameSite=None, Secure flags, and domain `.odanet.com.tr` for production. OAuth callback: `https://www.odanet.com.tr/api/oauth/google/callback`. Mobile app uses SecureStore for token persistence with automatic header attachment.
 - **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing using Sharp and Busboy. Cloudflare R2 serves as the CDN for production image delivery. All upload endpoints require JWT authentication with ownership verification.
 - **SEO**: Implemented with React Helmet for dynamic meta tags, Open Graph, and Twitter card generation for social media sharing. Slugs are generated for listings and seeker profiles for SEO-friendly URLs.
+- **Mobile Build System**: EAS (Expo Application Services) configured with development, preview, and production profiles. Android builds use APK format for preview (easy sharing) and AAB for production (Play Store). iOS builds configured with bundle identifier and resource classes. All dependencies aligned with Expo SDK 51 (16/16 expo-doctor checks passed).
 
 ### Feature Specifications
 - **User Management**: Profile creation, verification, and image uploads.
@@ -65,3 +67,11 @@ The system employs a modular schema with foreign key relationships for robust da
 
 ### Analytics
 - **Google Analytics 4**: Event tracking (ID: G-ME5ES9KLDE) with automatic pageview tracking via Wouter routing and custom event tracking.
+
+### Mobile Development
+- **Expo SDK 51**: Complete mobile framework with EAS build support.
+- **React Native 0.74.5**: Native iOS and Android components.
+- **Expo Router 3.5.24**: File-based routing matching web patterns.
+- **NativeWind 4.2.1**: Tailwind CSS for React Native with Reanimated 3.x.
+- **EAS CLI 16.26.0**: Production build system for app store deployment.
+- **EAS Project**: Configured with ID a21f0bc7-a5a4-417c-9eea-3e7ad1915192, ready for preview and production builds.
