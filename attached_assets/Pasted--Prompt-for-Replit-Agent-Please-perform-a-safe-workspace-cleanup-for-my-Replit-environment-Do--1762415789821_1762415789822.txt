@@ -1,0 +1,162 @@
+
+Prompt for Replit Agent:
+
+Please perform a safe workspace cleanup for my Replit environment.
+⚠️ Do not delete any files or folders related to the production Odanet / FlatmateConnect web app.
+That includes:
+
+client/
+server/
+app/
+routes/
+drizzle/
+migrations/
+components/
+constants/
+hooks/
+lib/
+public/
+vite.config.ts
+drizzle.config.ts
+app.config.ts
+package.json
+tsconfig.json
+tailwind.config.ts
+
+These must remain untouched.
+
+⸻
+
+🧹 1️⃣ Delete Only These (Mobile + Temporary Files)
+
+Remove entirely:
+
+odanet-mobile/
+odanet-clean/
+FlatmateConnect/
+FlatmateConnect-1/
+mobile-test/
+mobile/
+
+Remove all temporary, duplicate, and auto-generated files created by repair scripts or agents:
+
+*.md
+*.log
+*.tmp
+*.bak
+*.report
+
+❗️Except for the official documentation files:
+
+README.md
+PROJECT_OVERVIEW.md
+TECHNICAL_SPECS.md
+DEVELOPMENT_GUIDE.md
+FEATURE_REQUIREMENTS.md
+
+Delete also any known unnecessary markdowns:
+
+BABEL_ERROR_FIXED.md
+BABEL_FIX_COMPLETE.md
+VALIDATION_COMPLETE.md
+IMPLEMENTATION_SUMMARY.md
+DEPLOYMENT_READY.md
+DEPLOYMENT_SAFETY.md
+SETUP.md
+QUICK_START.sh
+RUN_EXPO.sh
+ERROR_LOGS.md
+
+Remove all build and cache directories:
+
+.expo/
+.cache/
+dist/
+build/
+tmp/
+node_modules/ (inside deleted mobile projects only)
+
+
+⸻
+
+⚙️ 2️⃣ Verify and Preserve Web App Setup
+
+After cleanup, confirm the following remain intact and unchanged:
+
+client/
+server/
+routes/
+drizzle/
+migrations/
+lib/
+public/
+vite.config.ts
+package.json
+app.config.ts
+tsconfig.json
+tailwind.config.ts
+
+These are critical for the Odanet/FlatmateConnect website running at www.odanet.com.tr — they must not be deleted or altered.
+
+⸻
+
+🧱 3️⃣ Rebuild Workspace Cache
+
+Once cleanup is complete:
+
+npm cache clean --force
+npm install
+
+Do not reinitialize a new project or overwrite the existing package.json — just reinstall dependencies to refresh the workspace.
+
+⸻
+
+🧾 4️⃣ Output Summary
+
+After cleanup, provide:
+	•	List of all deleted mobile-related and temporary files
+	•	Confirmation that web app structure remains intact
+	•	Message:
+
+✅ Cleanup complete.
+Odanet Mobile project and redundant files removed.
+Web app configuration preserved and verified safe.
+Workspace ready for new mobile app setup.
+
+
+
+⸻
+
+✅ Expected Result After Cleanup
+
+Kept:
+
+client/
+server/
+routes/
+drizzle/
+migrations/
+components/
+constants/
+hooks/
+lib/
+public/
+vite.config.ts
+package.json
+app.config.ts
+tsconfig.json
+tailwind.config.ts
+README.md
+
+Removed:
+
+odanet-mobile/
+odanet-clean/
+FlatmateConnect/
+FlatmateConnect-1/
+mobile-test/
+QUICK_START.sh
+RUN_EXPO.sh
+*.log, *.tmp, *.bak
+.expo/, .cache/, dist/, build/
+
