@@ -17,6 +17,8 @@ STATUS.md
 node_modules
 .expo
 .expo-shared
+android/
+ios/
 
 # IDE
 .vscode

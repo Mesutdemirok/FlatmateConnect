@@ -4,22 +4,29 @@ export default {
     slug: "odanet-mobile",
     version: "1.0.0",
     orientation: "portrait",
+    scheme: "odanet",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
+
     splash: {
       image: "./assets/splash.png",
       resizeMode: "contain",
       backgroundColor: "#00A6A6",
     },
+
     updates: {
+      url: "https://u.expo.dev/a21f0bc7-a5a4-417c-9eea-3e7ad1915192",
       fallbackToCacheTimeout: 0,
     },
+
     assetBundlePatterns: ["**/*"],
+
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.odanet.app",
       buildNumber: "1",
     },
+
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
@@ -27,21 +34,41 @@ export default {
       },
       package: "com.odanet.app",
       versionCode: 1,
-      permissions: [
-        "INTERNET",
-        "ACCESS_NETWORK_STATE",
-      ],
+      permissions: ["INTERNET", "ACCESS_NETWORK_STATE"],
+      softwareKeyboardLayoutMode: "pan",
     },
+
     web: {
       favicon: "./assets/favicon.png",
+      bundler: "metro",
     },
+
     extra: {
       eas: {
         projectId: "a21f0bc7-a5a4-417c-9eea-3e7ad1915192",
       },
+      apiBaseUrl: "https://www.odanet.com.tr/api",
     },
+
     plugins: [
       "expo-router",
+      [
+        "expo-build-properties",
+        {
+          android: {
+            compileSdkVersion: 34,
+            targetSdkVersion: 34,
+            minSdkVersion: 24,
+          },
+          ios: {
+            deploymentTarget: "15.1",
+          },
+        },
+      ],
     ],
+
+    runtimeVersion: {
+      policy: "sdkVersion",
+    },
   },
 };
