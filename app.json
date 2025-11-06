@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "a6d0f91c-e344-4f21-b497-2f8801c2bc33"
+      }
+    },
+    "android": {
+      "package": "com.odanet.app"
+    }
+  }
+}

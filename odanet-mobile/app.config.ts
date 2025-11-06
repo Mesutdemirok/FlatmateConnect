@@ -1,47 +1,37 @@
-import { ExpoConfig, ConfigContext } from 'expo/config';
-
-export default ({ config }: ConfigContext): ExpoConfig => ({
-  ...config,
-  name: "Odanet Mobile",
-  slug: "odanet-mobile",
-  version: "1.0.0",
-  orientation: "portrait",
-  icon: "./assets/icon.png",
-  userInterfaceStyle: "light",
-  scheme: "odanet",
-  platforms: ["ios", "android"],
-  splash: {
-    image: "./assets/splash.png",
-    resizeMode: "contain",
-    backgroundColor: "#008080"
-  },
-  assetBundlePatterns: ["**/*"],
-  ios: {
-    supportsTablet: true,
-    bundleIdentifier: "com.odanet.mobile"
-  },
-  android: {
-    adaptiveIcon: {
-      foregroundImage: "./assets/adaptive-icon.png",
-      backgroundColor: "#008080"
+export default {
+  expo: {
+    name: "Odanet",
+    slug: "odanet-mobile",
+    version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/icon.png",
+    userInterfaceStyle: "light",
+    splash: {
+      image: "./assets/splash.png",
+      resizeMode: "contain",
+      backgroundColor: "#00A6A6",
     },
-    package: "com.odanet.mobile"
+    updates: {
+      fallbackToCacheTimeout: 0,
+    },
+    assetBundlePatterns: ["**/*"],
+    ios: {
+      supportsTablet: true,
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: "./assets/adaptive-icon.png",
+        backgroundColor: "#00A6A6",
+      },
+      package: "com.odanet.app",
+    },
+    web: {
+      favicon: "./assets/favicon.png",
+    },
+    extra: {
+      eas: {
+        projectId: "a21f0bc7-a5a4-417c-9eea-3e7ad1915192",
+      },
+    },
   },
-  web: {
-    bundler: "metro",
-    output: "static",
-    favicon: "./assets/favicon.png"
-  },
-  plugins: [
-    "expo-router",
-    [
-      "expo-secure-store"
-    ]
-  ],
-  experiments: {
-    typedRoutes: true
-  },
-  extra: {
-    apiUrl: process.env.EXPO_PUBLIC_API_URL || "https://www.odanet.com.tr/api"
-  }
-});
+};
