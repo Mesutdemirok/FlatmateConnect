@@ -1,0 +1,157 @@
+
+
+🩺 REPLIT AGENT – FULL HEALTH & INTEGRITY CHECK PROMPT
+
+Objective:
+Run a full-stack health check and structural cleanup for my Odanet / FlatmateConnect web app hosted on Replit.
+Diagnose all potential build, routing, dependency, and configuration issues.
+Automatically repair safe-to-fix inconsistencies and produce a final report.
+
+⸻
+
+🧩 1️⃣ Scope of Inspection
+
+Perform a complete analysis of these key folders and files (only these):
+
+client/
+server/
+app/
+routes/
+drizzle/
+migrations/
+components/
+constants/
+hooks/
+lib/
+public/
+vite.config.ts
+drizzle.config.ts
+app.config.ts
+tailwind.config.ts
+package.json
+tsconfig.json
+
+Do not touch or delete production data, .env values, or live database credentials.
+Just read and verify their existence and correct linkage.
+
+⸻
+
+🔍 2️⃣ Codebase & Dependency Integrity
+	•	Verify that all imports resolve successfully (no missing modules).
+	•	Identify unused or broken imports across /client, /server, and /components.
+	•	Detect deprecated or conflicting dependencies in package.json.
+	•	Ensure all core packages are compatible with:
+
+Node 20.x
+npm 10+
+Vite 5.x
+React 19.x
+Tailwind 3.x
+
+
+	•	Flag outdated or insecure dependencies.
+	•	Suggest dependency upgrades only when safe and compatible with Expo/Vite/Next builds.
+
+⸻
+
+🧱 3️⃣ Structural Validation
+	•	Validate folder hierarchy:
+	•	client → contains front-end entry points
+	•	server → has proper route handlers under routes/
+	•	drizzle → schema & migrations valid
+	•	Detect redundant duplicate folders (e.g. scripts/, testApiConnection.ts outside intended structure).
+	•	Flag large unused media in /assets or /public.
+
+⸻
+
+🔗 4️⃣ Routing & API Endpoint Verification
+	•	Identify all /api/* routes from server/routes.ts and verify they:
+	•	Return valid JSON or HTML
+	•	Do not reference missing imports
+	•	Use the correct environment variables (API base, DB URL, etc.)
+	•	Test internal links between:
+	•	/api/auth/*
+	•	/api/listings/*
+	•	/api/seekers/*
+	•	/api/uploads/*
+	•	Report any 404, CORS, or unhandled exception risks.
+
+⸻
+
+🧠 5️⃣ Build & Config Sanity Check
+	•	Validate vite.config.ts for correct alias setup (@/* resolution).
+	•	Ensure tailwind.config.ts references the right paths (e.g., ./app/**/*.{ts,tsx}).
+	•	Confirm tsconfig.json paths align with imports.
+	•	Detect and remove redundant build files or stale .d.ts declarations.
+	•	Check package.json build scripts for missing commands or incorrect paths.
+
+⸻
+
+🌐 6️⃣ Link & Asset Health
+	•	Scan all HTML and component files for:
+	•	Broken image or script URLs
+	•	Dead internal links
+	•	Missing favicons or manifest references
+	•	Validate canonical, meta, and SEO tags for www.odanet.com.tr.
+
+⸻
+
+🔐 7️⃣ Authentication & Security Basics
+	•	Confirm that OAuth / Clerk / Google Login endpoints exist and respond (if active).
+	•	Check HTTPS redirect handling.
+	•	Ensure no plaintext secrets or tokens in source.
+	•	Confirm cookie/session management is secure (SameSite, HttpOnly, Secure).
+
+⸻
+
+🧹 8️⃣ Safe Auto-Fix Actions
+	•	Remove empty folders and leftover files (e.g. .old, .tmp, .log, .backup).
+	•	Update outdated imports to the correct alias if vite.config.ts defines them.
+	•	Normalize inconsistent TypeScript imports (e.g., .ts vs .tsx).
+	•	Re-link static assets if missing.
+	•	Ensure all export default statements match the file name and component type.
+
+⸻
+
+📊 9️⃣ Final Output Report
+
+After completion, produce a single summarized report:
+
+✅ Codebase Health: [Excellent / Good / Needs Attention]
+✅ Build Scripts: [OK / Broken / Missing commands]
+✅ Routing & API: [OK / Broken endpoints found]
+✅ Dependencies: [Up to date / Needs minor updates]
+✅ Security: [Secure / Risk found in X]
+✅ Performance: [Optimized / Unused assets in public/]
+✅ SEO & Links: [Valid / Broken links found: n]
+✅ Cleanup: [Completed / Remaining manual review required]
+
+📁 Files cleaned: 34
+📦 Dependencies checked: 117
+🧠 Issues auto-fixed: 12
+⚠️ Issues requiring review: 2 (listed below)
+
+Then provide a human-readable summary of the most critical issues and suggest next actions.
+
+⸻
+
+⚙️ 10️⃣ Final Verification Command (optional)
+
+After fixes, execute and confirm:
+
+npm install
+npm run build
+npm run dev
+
+If build succeeds with no errors — mark project health as ✅ READY.
+
+⸻
+
+✅ Expected Result
+
+“Full-stack audit completed.
+Web app files preserved.
+Mobile artifacts removed.
+All configuration, dependencies, and routes validated.
+Workspace optimized and healthy for deployment.”
+
