@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { users, listings, listingImages, seekerProfiles, seekerPhotos, favorites, conversations, messages } from '../../shared/schema';
+import { users, listings, listingImages, seekerProfiles, seekerPhotos, favorites, messages } from '../../shared/schema';
 import { eq, sql, inArray } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
