@@ -1,15 +1,11 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: [require.resolve("babel-preset-expo")],
+    presets: ['babel-preset-expo'],
     plugins: [
-      require.resolve("nativewind/babel"),
-      require.resolve("react-native-reanimated/plugin"),
+      'expo-router/babel',        // Handles routing transpile
+      'nativewind/babel',         // Tailwind support
+      'react-native-reanimated/plugin', // Must be last
     ],
-    env: {
-      production: {
-        compact: true,
-      },
-    },
   };
 };
