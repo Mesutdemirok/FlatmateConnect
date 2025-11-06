@@ -1,0 +1,239 @@
+🚀 REPLIT AGENT PROMPT – CREATE CONNECTED ODANET MOBILE APP
+
+Objective:
+Create a clean, fully functional Expo React Native mobile app (odanet-mobile/) inside the current Replit workspace.
+Connect it to the existing Odanet backend and reuse the same design system, color theme, and structure from the web app.
+The project must be Expo-compatible and ready to scan in Expo Go.
+
+⸻
+
+🧩 1️⃣ CREATE MOBILE APP PROJECT STRUCTURE
+
+Inside the workspace, create a new folder:
+
+/workspace/odanet-mobile/
+
+Initialize a new Expo React Native project (SDK 54):
+
+cd /workspace
+npx create-expo-app odanet-mobile --template blank
+cd odanet-mobile
+
+Remove unnecessary sample files:
+
+App.js
+assets/*
+
+
+⸻
+
+⚙️ 2️⃣ INSTALL REQUIRED PACKAGES
+
+Install all dependencies for the Odanet design system and data integration:
+
+npm install expo@^54.0.0 react-native@0.81.5 react-native-web@~0.21.0 react-dom@19.1.0
+npm install expo-router@^6.0.14 nativewind@^4.2.1 tailwindcss@^3.4.18
+npm install react-native-safe-area-context react-native-screens react-native-gesture-handler react-native-reanimated
+npm install @expo/vector-icons axios @tanstack/react-query date-fns
+
+Add dev tools:
+
+npm install --save-dev typescript eslint eslint-config-expo
+
+
+⸻
+
+🧠 3️⃣ CONFIGURE PROJECT FILES
+
+🗂 package.json
+Ensure the following fields exist:
+
+{
+  "name": "odanet-mobile",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  }
+}
+
+📘 babel.config.js
+
+module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: ['babel-preset-expo'],
+    plugins: [
+      'expo-router/babel',
+      'nativewind/babel',
+      'react-native-reanimated/plugin',
+    ],
+  };
+};
+
+🧾 app.config.ts
+Make sure it uses your existing backend:
+
+export default {
+  expo: {
+    name: "Odanet Mobile",
+    slug: "odanet-mobile",
+    version: "1.0.0",
+    orientation: "portrait",
+    scheme: "odanet",
+    platforms: ["ios", "android", "web"],
+    extra: {
+      apiUrl: "https://www.odanet.com.tr/api"
+    },
+    experiments: {
+      typedRoutes: true
+    }
+  }
+};
+
+
+⸻
+
+🎨 4️⃣ COPY DESIGN SYSTEM FROM WEB APP
+
+From your main app (/client, /constants, /hooks):
+	•	Copy Tailwind colors and theme variables from tailwind.config.ts
+	•	Copy fonts, logo, and UI component folder (like /components/Button.tsx, /components/Card.tsx)
+	•	Copy constants/colors.ts or similar theme definitions
+
+Ensure the new mobile app’s tailwind.config.js matches your brand theme:
+
+module.exports = {
+  content: [
+    "./app/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: "#008080",
+        background: "#F9FAFB",
+      },
+    },
+  },
+  plugins: [],
+};
+
+
+⸻
+
+🔌 5️⃣ CONNECT BACKEND & QUERY SYSTEM
+
+In /lib/api.ts create:
+
+import axios from "axios";
+
+export const api = axios.create({
+  baseURL: process.env.EXPO_PUBLIC_API_URL || "https://www.odanet.com.tr/api",
+  timeout: 10000,
+});
+
+In /hooks/useListings.ts:
+
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../lib/api";
+
+export function useListings() {
+  return useQuery({
+    queryKey: ["listings"],
+    queryFn: async () => {
+      const { data } = await api.get("/listings");
+      return data;
+    },
+  });
+}
+
+
+⸻
+
+🏠 6️⃣ CREATE INITIAL SCREENS
+
+Under /app/ create:
+
+/app/index.tsx
+/app/listings.tsx
+/app/profile.tsx
+/app/login.tsx
+
+Example home screen (index.tsx):
+
+import { View, Text, FlatList } from "react-native";
+import { useListings } from "../hooks/useListings";
+
+export default function Home() {
+  const { data, isLoading, error } = useListings();
+
+  if (isLoading) return <Text>Loading...</Text>;
+  if (error) return <Text>Error loading listings</Text>;
+
+  return (
+    <View className="p-4">
+      <Text className="text-xl font-bold mb-4">Available Rooms</Text>
+      <FlatList
+        data={data}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View className="bg-white rounded-xl p-4 mb-3 shadow">
+            <Text className="text-lg font-semibold">{item.title}</Text>
+            <Text className="text-gray-500">{item.location}</Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
+
+⸻
+
+🧩 7️⃣ VERIFY CONNECTION
+
+In /app/_layout.tsx:
+
+import { Stack } from "expo-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const client = new QueryClient();
+
+export default function Layout() {
+  return (
+    <QueryClientProvider client={client}>
+      <Stack screenOptions={{ headerShown: false }} />
+    </QueryClientProvider>
+  );
+}
+
+
+⸻
+
+🧠 8️⃣ FINALIZE + TEST
+
+Run this inside Replit’s Shell:
+
+cd odanet-mobile
+npx expo start --tunnel --clear
+
+Then scan the QR code with Expo Go on your phone.
+
+Expected:
+✅ Bundler starts successfully
+✅ App loads your listings via https://www.odanet.com.tr/api/listings
+✅ Same color theme as your website
+✅ No Babel errors
+
+⸻
+
+📊 Final Agent Report Expected
+
+✅ Odanet Mobile created successfully
+✅ Backend connected to www.odanet.com.tr/api
+✅ Tailwind and NativeWind themed identical to website
+✅ QR code ready for Expo Go testing
+✅ Build passes lint and cache checks
