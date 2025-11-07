@@ -224,7 +224,8 @@ const resources = {
         type_message: "Mesajınızı yazın...",
         send: "Gönder",
         no_messages: "Henüz mesajınız yok",
-        start_conversation: "Konuşma başlat"
+        start_conversation: "Konuşma başlat",
+        search_emoji: "Emoji ara..."
       },
       
       // Authentication

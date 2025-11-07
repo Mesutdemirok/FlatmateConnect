@@ -1,8 +1,10 @@
 import { useState, KeyboardEvent } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Send, Loader2, Smile } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import EmojiPicker, { Theme } from "emoji-picker-react";
 
 interface MessageInputProps {
   onSend: (message: string) => void;
@@ -19,6 +21,7 @@ export default function MessageInput({
 }: MessageInputProps) {
   const { t } = useTranslation();
   const [message, setMessage] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
@@ -40,20 +43,46 @@ export default function MessageInput({
     }
   };
 
+  const handleEmojiClick = (emojiData: any) => {
+    setMessage((prev) => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+    if (onTyping) {
+      onTyping();
+    }
+  };
+
   return (
     <div className="sticky bottom-0 left-0 right-0 bg-background border-t border-border">
       <div className="p-3 sm:p-4">
         <div className="flex items-end gap-2">
-          {/* Emoji button (placeholder for future emoji picker) */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="flex-shrink-0 mb-0.5 text-muted-foreground"
-            data-testid="emoji-button"
-          >
-            <Smile className="h-5 w-5" />
-          </Button>
+          {/* Emoji picker */}
+          <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="flex-shrink-0 mb-0.5 text-muted-foreground hover:text-primary"
+                data-testid="emoji-button"
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent 
+              className="w-full p-0 border-0" 
+              side="top" 
+              align="start"
+            >
+              <EmojiPicker
+                onEmojiClick={handleEmojiClick}
+                theme={Theme.AUTO}
+                width="100%"
+                height={400}
+                searchPlaceholder={t("messages.search_emoji") || "Ara..."}
+                previewConfig={{ showPreview: false }}
+              />
+            </PopoverContent>
+          </Popover>
 
           {/* Text input */}
           <Textarea

@@ -24,24 +24,24 @@
   /* === CORE COLORS === */
   --primary: hsl(180.78deg 84.53% 35.49%);
   /* Turkuaz #0EA5A7 */
-  --primary-foreground: hsl(0deg 0% 100%);
+  --primary-foreground: hsl(0deg 0% 0%);
 
   --secondary: hsl(222.22deg 47.37% 11.18%);
   /* Ink #0F172A */
-  --secondary-foreground: hsl(210deg 40% 98.04%);
+  --secondary-foreground: hsl(240deg 11.11% 1.76%);
 
-  --muted: hsl(210deg 40% 96.08%);
+  --muted: hsl(202.5deg 15.53% 59.61%);
   /* #F1F5F9 */
-  --muted-foreground: hsl(215.38deg 16.32% 46.86%);
+  --muted-foreground: hsl(0deg 0% 5.88%);
   /* #64748B */
 
   --accent: hsl(24.58deg 94.98% 53.14%);
   /* Dark Orange #F97316 */
-  --accent-foreground: hsl(0deg 0% 100%);
+  --accent-foreground: hsl(0deg 20% 0.98%);
 
   --destructive: hsl(0deg 72.22% 50.59%);
   /* #DC2626 */
-  --destructive-foreground: hsl(0deg 0% 100%);
+  --destructive-foreground: hsl(0deg 0% 0%);
 
   /* === COMPONENT ELEMENTS === */
   --border: hsl(0deg 6.35% 75.29%);
@@ -95,6 +95,9 @@
   --shadow-lg: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 4px 6px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
   --shadow-xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
   --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
+  --transition: background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 /* =======================

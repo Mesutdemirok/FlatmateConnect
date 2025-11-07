@@ -1,4 +1,4 @@
-package com.odanet.app
+package com.odanet
 
 import android.os.Build
 import android.os.Bundle

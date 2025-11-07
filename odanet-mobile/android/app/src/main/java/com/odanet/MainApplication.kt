@@ -1,4 +1,4 @@
-package com.odanet.app
+package com.odanet
 
 import android.app.Application
 import android.content.res.Configuration
