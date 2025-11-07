@@ -3,7 +3,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["lsof", "yakut", "jq", "vlang"]
+packages = ["lsof", "yakut", "jq", "vlang", "file"]
 
 [deployment]
 deploymentTarget = "autoscale"

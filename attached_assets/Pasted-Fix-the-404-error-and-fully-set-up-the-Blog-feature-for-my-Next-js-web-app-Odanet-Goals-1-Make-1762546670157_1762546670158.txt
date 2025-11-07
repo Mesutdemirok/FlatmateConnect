@@ -1,0 +1,42 @@
+Fix the 404 error and fully set up the Blog feature for my Next.js web app (Odanet).
+
+Goals:
+1. Make the /blog route work correctly and display the blog list.
+2. Add dynamic routes for each blog post (e.g., /blog/oda-kiralamada-guvenlik).
+3. Create a consistent layout with title, description, date, and SEO tags.
+4. Style the blog list and post pages with Tailwind (clean, card-like, responsive).
+5. Add sample posts and make it easy for me to add more later.
+6. Ensure metadata is set up for each post (title, description, date, slug).
+7. Add automatic canonical links and open graph tags (og:title, og:description).
+8. Fix folder structure if needed — move blog under src/pages/blog (not client/src/).
+9. Add a not-found fallback for missing blog posts.
+10. Connect the blog page to the main site navigation (“Blog” link in header/footer).
+
+Technical Details:
+- Stack: Next.js + TypeScript + Tailwind CSS
+- Current file structure: src/pages/index.tsx, src/pages/blog/index.tsx exists
+- The /blog route returns “404 Sayfa Bulunamadı” right now
+- Replit environment with Vite/Next hybrid build
+
+Tasks:
+1. Detect and fix the routing issue so /blog works.
+2. Create /src/pages/blog/[slug].tsx for dynamic post details.
+3. Add SEO-friendly metadata (title, description, date).
+4. Update index.tsx (homepage) to include a “Blog” button linking to /blog.
+5. Add responsive grid design for blog cards with hover effects.
+6. Add markdown support using next-mdx or react-markdown for rich post content.
+7. Add 3 sample blog posts with Turkish titles:
+   - “Türkiye’de Oda Kiralamada Güvenlik Rehberi”
+   - “Ev Arkadaşıyla Yaşamda Dikkat Edilmesi Gerekenler”
+   - “Oda İlanı Yayınlarken Dolandırıcılıktan Korunma İpuçları”
+8. Each post should have title, date, and meta description.
+9. Verify navigation works between list and post pages.
+10. Deploy and confirm that /blog and /blog/[slug] pages are live.
+
+After completion:
+✅ /blog → Blog list
+✅ /blog/oda-kiralamada-guvenlik → Blog detail page
+✅ All pages styled and SEO meta added
+✅ No 404 errors
+
+Finally, provide a summary of what was created (files + routes) and confirm that navigation and SEO metadata are working.

@@ -1,3 +1,5 @@
+import path from "path";
+
 export default {
   expo: {
     name: "Odanet",
@@ -5,11 +7,11 @@ export default {
     version: "1.0.0",
     orientation: "portrait",
     scheme: "odanet",
-    icon: "./assets/icon.png",
+    icon: path.resolve(__dirname, "assets/icon.png"),
     userInterfaceStyle: "light",
 
     splash: {
-      image: "./assets/splash.png",
+      image: path.resolve(__dirname, "assets/splash.png"),
       resizeMode: "contain",
       backgroundColor: "#00A6A6",
     },
@@ -29,7 +31,7 @@ export default {
 
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
+        foregroundImage: path.resolve(__dirname, "assets/adaptive-icon.png"),
         backgroundColor: "#00A6A6",
       },
       package: "com.odanet.app",
@@ -39,7 +41,7 @@ export default {
     },
 
     web: {
-      favicon: "./assets/favicon.png",
+      favicon: path.resolve(__dirname, "assets/favicon.png"),
       bundler: "metro",
     },
 
