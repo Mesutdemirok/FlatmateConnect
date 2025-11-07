@@ -1,5 +1,4 @@
 import matter from 'gray-matter';
-import readingTime from 'reading-time';
 
 export interface BlogPost {
   slug: string;
@@ -10,6 +9,18 @@ export interface BlogPost {
   image?: string;
   content: string;
   readingTime: string;
+}
+
+// Calculate reading time (browser-friendly version)
+function calculateReadingTime(text: string): string {
+  const wordsPerMinute = 200;
+  const words = text.trim().split(/\s+/).length;
+  const minutes = Math.ceil(words / wordsPerMinute);
+  
+  if (minutes === 1) {
+    return '1 dakika okuma';
+  }
+  return `${minutes} dakika okuma`;
 }
 
 // Import all markdown files from the content directory
@@ -35,7 +46,7 @@ export function getAllBlogPosts(): BlogPost[] {
         author: data.author,
         image: data.image || '/public/blog/generated/default.jpg',
         content: markdown,
-        readingTime: readingTime(markdown).text,
+        readingTime: calculateReadingTime(markdown),
       };
 
       posts.push(post);

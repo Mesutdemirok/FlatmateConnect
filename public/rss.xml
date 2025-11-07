@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title><![CDATA[Odanet Blog]]></title>
+        <description><![CDATA[Oda kiralama, ev arkadaşı bulma ve güvenli yaşam alanı oluşturma hakkında faydalı bilgiler ve ipuçları]]></description>
+        <link>https://www.odanet.com.tr</link>
+        <generator>RSS for Node</generator>
+        <lastBuildDate>Fri, 07 Nov 2025 20:42:47 GMT</lastBuildDate>
+        <atom:link href="https://www.odanet.com.tr/rss.xml" rel="self" type="application/rss+xml"/>
+        <pubDate>Fri, 07 Nov 2025 20:42:47 GMT</pubDate>
+        <language><![CDATA[tr]]></language>
+        <ttl>60</ttl>
+        <item>
+            <title><![CDATA[Türkiye'de Oda Kiralamada Güvenlik Rehberi]]></title>
+            <description><![CDATA[Kimlik doğrulama, dolandırıcılıktan korunma ve güvenli oda kiralama süreçleri hakkında kapsamlı rehber.]]></description>
+            <link>https://www.odanet.com.tr/blog/oda-kiralamada-guvenlik</link>
+            <guid isPermaLink="true">https://www.odanet.com.tr/blog/oda-kiralamada-guvenlik</guid>
+            <dc:creator><![CDATA[Odanet Ekibi]]></dc:creator>
+            <pubDate>Fri, 07 Nov 2025 00:00:00 GMT</pubDate>
+            <enclosure url="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&amp;h=675&amp;fit=crop" length="0" type="false"/>
+        </item>
+        <item>
+            <title><![CDATA[Ev Arkadaşıyla Uyumlu Yaşam Rehberi]]></title>
+            <description><![CDATA[Ortak yaşam kuralları, iletişim stratejileri ve ev arkadaşlığında başarılı olmanın ipuçları.]]></description>
+            <link>https://www.odanet.com.tr/blog/ev-arkadasi-ile-yasam</link>
+            <guid isPermaLink="true">https://www.odanet.com.tr/blog/ev-arkadasi-ile-yasam</guid>
+            <dc:creator><![CDATA[Odanet Ekibi]]></dc:creator>
+            <pubDate>Thu, 06 Nov 2025 00:00:00 GMT</pubDate>
+            <enclosure url="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&amp;h=675&amp;fit=crop" length="0" type="false"/>
+        </item>
+        <item>
+            <title><![CDATA[Oda Kiralama Dolandırıcılıklarından Korunma Kılavuzu]]></title>
+            <description><![CDATA[Online oda kiralama platformlarında karşılaşabileceğiniz dolandırıcılık türleri ve korunma yöntemleri.]]></description>
+            <link>https://www.odanet.com.tr/blog/dolandiriciliktan-korunma</link>
+            <guid isPermaLink="true">https://www.odanet.com.tr/blog/dolandiriciliktan-korunma</guid>
+            <dc:creator><![CDATA[Odanet Ekibi]]></dc:creator>
+            <pubDate>Wed, 05 Nov 2025 00:00:00 GMT</pubDate>
+            <enclosure url="https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&amp;h=675&amp;fit=crop" length="0" type="false"/>
+        </item>
+    </channel>
+</rss>
