@@ -18,6 +18,7 @@ The platform features a mobile-first design with consistent branding, utilizing 
 - **Authentication**: Unified JWT-based authentication supporting both Google OAuth and email/password. All auth flows set identical secure cookies (`auth_token`) with SameSite=None, Secure flags, and domain `.odanet.com.tr` for production. OAuth callback: `https://www.odanet.com.tr/api/oauth/google/callback`. Mobile app uses SecureStore for token persistence with automatic header attachment.
 - **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing using Sharp and Busboy. Cloudflare R2 serves as the CDN for production image delivery. All upload endpoints require JWT authentication with ownership verification.
 - **SEO**: Implemented with React Helmet for dynamic meta tags, Open Graph, and Twitter card generation for social media sharing. Slugs are generated for listings and seeker profiles for SEO-friendly URLs.
+- **Blog System**: Markdown-based content management using gray-matter for frontmatter parsing and react-markdown with remark-gfm for rendering. Blog posts stored as .md files in src/content/blog/ with YAML frontmatter (slug, title, description, date, author, image). Automated sitemap.xml and rss.xml generation via scripts/generateSitemap.js for SEO and RSS feed support. Vite configured with vite-plugin-node-polyfills to provide Buffer/global/process polyfills for Node.js libraries in browser environment.
 - **Mobile Build System**: EAS (Expo Application Services) configured with development, preview, and production profiles. Android builds use APK format for preview (easy sharing) and AAB for production (Play Store). iOS builds configured with bundle identifier and resource classes. All dependencies aligned with Expo SDK 51 (16/16 expo-doctor checks passed).
 
 ### Feature Specifications
@@ -59,6 +60,10 @@ The system employs a modular schema with foreign key relationships for robust da
 - **Sharp & Busboy**: Image processing for uploads.
 - **nanoid**: Compact, URL-safe unique ID generation.
 - **slugify**: Turkish-locale URL slug generation.
+- **gray-matter**: YAML frontmatter parsing for Markdown blog posts.
+- **react-markdown**: Markdown rendering in React components.
+- **remark-gfm**: GitHub-flavored Markdown syntax support.
+- **vite-plugin-node-polyfills**: Browser polyfills for Node.js modules (Buffer, process, global).
 
 ### Cloud Services
 - **Cloudflare R2**: Object storage for images (`odanet-uploads` bucket).
