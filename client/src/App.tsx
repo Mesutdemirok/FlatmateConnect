@@ -20,6 +20,8 @@ import Profile from "@/pages/Profile";
 import Messages from "@/pages/Messages";
 import Auth from "@/pages/Auth";
 import AuthCallback from "@/pages/AuthCallback";
+import BlogList from "@/pages/BlogList";
+import BlogPost from "@/pages/BlogPost";
 import Hakkimizda from "@/pages/hakkimizda";
 import Iletisim from "@/pages/iletisim";
 import KullanimKosullari from "@/pages/kullanim-kosullari";
@@ -103,6 +105,10 @@ function Router() {
       <Route path="/oda-aramalari" component={SeekerList} />
       <Route path="/oda-ilani/:slug" component={ListingDetail} />
       <Route path="/oda-arayan/:slug" component={SeekerDetail} />
+      
+      {/* Blog routes */}
+      <Route path="/blog" component={BlogList} />
+      <Route path="/blog/:slug" component={BlogPost} />
       
       {/* Footer pages - Static content */}
       <Route path="/hakkimizda" component={Hakkimizda} />

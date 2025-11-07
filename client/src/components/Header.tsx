@@ -106,6 +106,19 @@ export default function Header() {
                   Oda Arama İlanı Ver
                 </span>
               </Link>
+
+              <Link href="/blog">
+                <span
+                  className={`
+                    cursor-pointer transition-colors hover:text-white
+                    ${isActive("/blog") ? "text-white" : "text-white/90"}
+                    ${isActive("/blog") ? "underline underline-offset-4 decoration-white/50" : ""}
+                  `}
+                  data-testid="nav-blog"
+                >
+                  Blog
+                </span>
+              </Link>
             </nav>
           </div>
 
@@ -256,6 +269,13 @@ export default function Header() {
             <Link href={createSeekerHref}>
               <div className="block rounded-lg px-3 py-2.5 hover:bg-fuchsia-100/50 transition-colors cursor-pointer font-medium">
                 Oda Arama İlanı Ver
+              </div>
+            </Link>
+
+            {/* Blog */}
+            <Link href="/blog">
+              <div className="block rounded-lg px-3 py-2.5 hover:bg-indigo-100/50 transition-colors cursor-pointer font-medium">
+                Blog
               </div>
             </Link>
 
