@@ -1,0 +1,106 @@
+Excellent — since you’ve confirmed ✅ **Option 1 (React + Wouter + Express)**, here’s your **ready-to-paste Replit Agent prompt**.
+This will **build the entire blog system end-to-end** inside your existing Odanet app — no migration, no 404s, SEO-ready, Turkish content included.
+
+---
+
+### 🧠 **Replit Agent Prompt — Full Blog Setup (React + Wouter + Express)**
+
+````
+Implement a complete Blog system in my current React + Wouter + Express stack for Odanet.
+
+🎯 GOALS
+1. Create a functioning /blog route showing a grid of posts.
+2. Create dynamic routes /blog/:slug for individual posts.
+3. Use react-helmet for SEO metadata (title, description, open-graph tags).
+4. Use TailwindCSS for clean, mobile-responsive layout matching the site theme.
+5. Add Turkish sample content.
+6. Link “Blog” in the site header and footer.
+7. Ensure no 404 occurs when visiting /blog or /blog/:slug directly.
+
+⚙️ IMPLEMENTATION STEPS
+1. Under `src/pages/`, create `BlogList.tsx` and `BlogPost.tsx`.
+2. In `App.tsx`, register routes with Wouter:
+   - `/blog` → `BlogList`
+   - `/blog/:slug` → `BlogPost`
+3. Store posts in a static array (JSON) inside `src/lib/blogPosts.ts`:
+
+```ts
+export const blogPosts = [
+  {
+    slug: "oda-kiralamada-guvenlik",
+    title: "Türkiye’de Oda Kiralamada Güvenlik Rehberi",
+    description: "Kimlik doğrulama ve dolandırıcılıktan korunma ipuçları.",
+    date: "2025-11-07",
+    content: `
+      <p>Oda kiralama sürecinde güvenliğinizi korumak için kimlik doğrulaması yapın,
+      platform dışında ödeme göndermeyin ve kontrat imzalamadan önce evi mutlaka görün.</p>
+    `
+  },
+  {
+    slug: "ev-arkadasiyla-yasam",
+    title: "Ev Arkadaşıyla Yaşamda Dikkat Edilmesi Gerekenler",
+    description: "Uyumlu bir ev paylaşımı için pratik öneriler.",
+    date: "2025-11-08",
+    content: `
+      <p>Ev arkadaşıyla açık iletişim kurun, temizlik ve gider paylaşımı kurallarını
+      baştan belirleyin. Empati kurmak uzun vadeli uyum sağlar.</p>
+    `
+  },
+  {
+    slug: "dolandiricilik-ipuclari",
+    title: "Oda İlanı Yayınlarken Dolandırıcılıktan Korunma İpuçları",
+    description: "Güvenli ilan oluşturmak için dikkat edilmesi gerekenler.",
+    date: "2025-11-09",
+    content: `
+      <p>Gerçek fotoğraflar kullanın, sahte tekliflere dikkat edin ve şüpheli mesajları
+      bildirin. Odanet’in güvenli ödeme altyapısını tercih edin.</p>
+    `
+  }
+];
+````
+
+4. **BlogList.tsx**
+
+   * Map over `blogPosts` and render cards with title, description, date, and link to `/blog/${slug}`.
+   * Add `<Helmet>` with a general blog meta title and description.
+
+5. **BlogPost.tsx**
+
+   * Use `useParams` from Wouter to get the slug.
+   * Find the post from `blogPosts`.
+   * Display full HTML content with `dangerouslySetInnerHTML={{__html: post.content}}`.
+   * Include SEO tags dynamically with react-helmet.
+
+6. Style each card:
+
+   * White background, soft shadow, rounded corners.
+   * Hover scale/translate-y animation.
+   * Responsive grid (1 col mobile → 3 col desktop).
+
+7. Add link to the main navigation:
+
+   * In header/footer components, insert a “Blog” link pointing to `/blog`.
+
+8. Verify direct navigation (refreshing on `/blog/:slug`) works under Express by adding:
+
+```js
+app.get('/blog/*', (req, res) => res.sendFile(path.join(__dirname, 'dist/index.html')));
+```
+
+so client-side routes resolve.
+
+✅ After completion:
+
+* /blog → Blog list with 3 Turkish articles
+* /blog/oda-kiralamada-guvenlik → full post view
+* SEO metadata works
+* Styling matches Tailwind theme
+* No 404 errors anywhere
+
+```
+
+---
+
+Would you like me to add one more step so you can **write future posts easily from `.md` Markdown files** (it would auto-convert and render)?  
+That would make ongoing content management much simpler without touching the code.
+```
