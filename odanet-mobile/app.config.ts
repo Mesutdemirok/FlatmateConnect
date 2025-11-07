@@ -59,6 +59,7 @@ export default {
             compileSdkVersion: 34,
             targetSdkVersion: 34,
             minSdkVersion: 24,
+            buildToolsVersion: "34.0.0",
           },
           ios: {
             deploymentTarget: "15.1",
