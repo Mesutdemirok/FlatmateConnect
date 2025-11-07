@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet";
 import { Link } from "wouter";
-import { Calendar, ArrowRight, BookOpen } from "lucide-react";
-import { getAllBlogPosts } from "@/lib/blogPosts";
+import { Calendar, ArrowRight, BookOpen, Clock } from "lucide-react";
+import { getAllBlogPosts } from "@/lib/loadBlogPosts";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { format } from "date-fns";
@@ -63,10 +63,10 @@ export default function BlogList() {
                   >
                     <article className="group bg-card rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-border h-full flex flex-col hover:-translate-y-1">
                       {/* Image */}
-                      {post.imageUrl && (
+                      {post.image && (
                         <div className="aspect-video overflow-hidden bg-muted">
                           <img 
-                            src={post.imageUrl} 
+                            src={post.image} 
                             alt={post.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             loading="lazy"
@@ -76,8 +76,8 @@ export default function BlogList() {
 
                       {/* Content */}
                       <div className="p-6 flex-1 flex flex-col">
-                        {/* Date & Author */}
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                        {/* Date, Author & Reading Time */}
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3 flex-wrap">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             <time dateTime={post.date}>
@@ -86,6 +86,12 @@ export default function BlogList() {
                           </div>
                           {post.author && (
                             <span className="text-xs">• {post.author}</span>
+                          )}
+                          {post.readingTime && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              <span className="text-xs">{post.readingTime}</span>
+                            </div>
                           )}
                         </div>
 
