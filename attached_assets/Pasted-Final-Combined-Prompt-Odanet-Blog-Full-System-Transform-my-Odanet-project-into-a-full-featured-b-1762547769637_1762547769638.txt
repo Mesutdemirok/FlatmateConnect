@@ -1,0 +1,157 @@
+Final Combined Prompt — “Odanet Blog Full System”
+Transform my Odanet project into a full-featured blog and content system inside my current React + Wouter + Express stack.
+
+🎯 GOALS
+1. Create a complete /blog route with post grid and /blog/:slug pages.
+2. Add Markdown (.md) support for all posts.
+3. Include thumbnails, reading time, and SEO metadata.
+4. Auto-generate sitemap.xml + rss.xml for search engines.
+5. Provide optional fallback thumbnail generation.
+6. Maintain fully responsive Tailwind styling.
+7. Prepare structure for a future admin editor (Markdown upload UI).
+
+---
+
+## ⚙️ STEP 1 — Blog Routing
+1. Under `src/pages/`, create:
+   - `BlogList.tsx` → Blog list grid
+   - `BlogPost.tsx` → Individual post view
+2. In `App.tsx`, register routes using Wouter:
+
+
+/blog → BlogList
+/blog/:slug → BlogPost
+
+3. Add “Blog” link to both desktop and mobile navigation menus.
+
+---
+
+## ⚙️ STEP 2 — Markdown Content System
+1. Install dependencies:
+
+
+npm install gray-matter react-markdown reading-time sharp sitemap rss
+
+2. Create folder:
+
+
+src/content/blog/
+
+3. Example Markdown file:
+
+slug: oda-kiralamada-guvenlik
+title: Türkiye’de Oda Kiralamada Güvenlik Rehberi
+description: Kimlik doğrulama ve dolandırıcılıktan korunma ipuçları.
+date: 2025-11-07
+image: /public/blog/oda-kiralamada-guvenlik.jpg
+
+Oda kiralama sürecinde güvenliğinizi korumak için kimlik doğrulaması yapın,
+platform dışında ödeme göndermeyin ve kontrat imzalamadan önce evi mutlaka görün.
+
+4. Create utility: `src/lib/loadBlogPosts.ts`
+- Use `fs`, `gray-matter`, and `reading-time` to parse all `.md` files.
+- Return: `{ slug, title, description, date, image, content, readingTime }`.
+
+---
+
+## ⚙️ STEP 3 — Blog Components
+### BlogList.tsx
+- Import posts via `loadBlogPosts()`.
+- Display card grid with:
+- Image thumbnail (or fallback if missing).
+- Title, short description, date, reading time.
+- “Devamını Oku →” link to `/blog/:slug`.
+
+### BlogPost.tsx
+- Use `useParams` from Wouter.
+- Fetch post by slug.
+- Render Markdown with:
+
+
+<ReactMarkdown className="prose max-w-none">{post.content}</ReactMarkdown>
+
+- Show reading time and featured image.
+- Add SEO meta tags via `react-helmet`:
+
+<Helmet> <title>{post.title}</title> <meta name="description" content={post.description} /> <meta property="og:title" content={post.title} /> <meta property="og:description" content={post.description} /> <meta property="og:image" content={post.image} /> <link rel="canonical" href={`https://odanet.com.tr/blog/${post.slug}`} /> </Helmet> ```
+⚙️ STEP 4 — Auto Thumbnail + Reading Time
+
+If no image found in Markdown frontmatter, generate a fallback image using sharp.
+
+Place fallback images under /public/blog/generated/.
+
+Overlay post title text over background color (Odanet theme).
+
+Reading time = readingTime(post.content).text.
+
+⚙️ STEP 5 — SEO Automation
+
+Create script: /scripts/generateSitemap.js
+
+Use the posts array to generate:
+
+/public/sitemap.xml
+
+/public/rss.xml
+
+Include URLs:
+
+https://odanet.com.tr/blog
+
+https://odanet.com.tr/blog/:slug
+
+Add npm script:
+
+"generate:sitemap": "node scripts/generateSitemap.js"
+
+
+Ensure it runs automatically after build or deployment.
+
+⚙️ STEP 6 — Design & UX
+
+Tailwind responsive grid (1 col mobile, 2 tablet, 3 desktop).
+
+Rounded cards, shadows, hover scale effect.
+
+Date formatted as “7 Kasım 2025” (Turkish locale).
+
+Typography: prose + Odanet primary color accent.
+
+“Blog” highlighted in header nav when active.
+
+⚙️ STEP 7 — Future Enhancement (Optional)
+
+Create a minimal Markdown upload admin page:
+
+/admin/blog
+
+
+Secure with a simple password from .env.local (ADMIN_KEY).
+
+Allow adding .md content and image upload directly.
+
+Save to /src/content/blog/.
+
+✅ EXPECTED RESULT
+
+/blog → dynamic grid of Markdown posts.
+
+/blog/:slug → full post view with SEO meta and OpenGraph.
+
+/public/sitemap.xml + /public/rss.xml auto-generated.
+
+Each post displays reading time and image.
+
+Clean, fast, and fully responsive.
+
+Easily add posts by dropping .md files (or via admin upload later).
+
+💡 NOTES
+
+Keep static generation for now (no DB).
+
+Use Turkish UI text (“Devamını Oku”, “3 dakika okuma”).
+
+Ensure /blog and /blog/:slug work when refreshed (no 404).
+
+All new files follow Odanet design and Tailwind palette.
