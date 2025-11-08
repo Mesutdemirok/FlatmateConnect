@@ -1,8 +1,10 @@
-# EAS Build Ignore File
+# =====================================================================
+# 🚀 EAS Build Ignore File
 # Files and directories to exclude from EAS builds
+# =====================================================================
 
 # -----------------------------------
-# 📄 Documentation
+# 📄 Documentation & Markdown Files
 # -----------------------------------
 *.md
 README.md
@@ -17,6 +19,10 @@ PLUGIN_FIX.md
 READY_TO_BUILD.md
 EAS_BUILD_GUIDE.md
 EAS_SETUP_STATUS.md
+CLEANUP_SUMMARY.md
+HEALTH_CHECK_REPORT.md
+ODANET_COMPLETE_STATUS.md
+EMOJI_AND_EASIGNORE_FIXES.md
 
 # -----------------------------------
 # 🧰 Development / Local Folders
@@ -26,23 +32,33 @@ EAS_SETUP_STATUS.md
 node_modules
 .expo
 .expo-shared
-/android
-/ios
+
+# Ignore native project folders (CNG / Prebuild managed)
+android/
+ios/
+
+# Build output / temp folders
+dist/
+build/
 test-results/
 uploads/
-dist/
 scripts/
 server/
 shared/
 docs/
+tmp/
+.env.local
+.env.example
+.env (copy).example
 
 # -----------------------------------
-# 🧠 IDE / Editor
+# 🧠 IDE / Editor Configs
 # -----------------------------------
 .vscode/
 .idea/
 *.swp
 *.swo
+*.iml
 
 # -----------------------------------
 # 💾 Logs / Cache / Temporary
@@ -53,3 +69,37 @@ yarn-debug.log*
 yarn-error.log*
 .tmp/
 .cache/
+.expo-dev-cache/
+expo-packager-cache/
+metro-cache/
+babel-cache/
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+# -----------------------------------
+# 📦 Build Artifacts & Lockfiles
+# -----------------------------------
+*.tar.gz
+*.zip
+*.tgz
+*.bak
+*.orig
+*.rej
+
+# -----------------------------------
+# 🔐 Credentials (never include in builds)
+# -----------------------------------
+*.keystore
+*.p12
+*.key
+*.pem
+*.jks
+
+# =====================================================================
+# ✅ NOTES
+# - Keep /assets for icons, splash, and adaptive icons.
+# - Keep app.config.ts, eas.json, and package.json for EAS configuration.
+# - /android and /ios will be auto-regenerated via expo prebuild.
+# =====================================================================
