@@ -1,14 +1,31 @@
 import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
-import { Text, Card, Avatar, Divider, Button } from "react-native-paper";
+import { Text, Card, Avatar, Divider, Button, ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useCurrentUser, useLogout } from "../../hooks/useAuth";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const isLoggedIn = false;
+  const { data: user, isLoading } = useCurrentUser();
+  const logout = useLogout();
 
-  if (!isLoggedIn) {
+  const handleLogout = async () => {
+    await logout.mutateAsync();
+    router.replace("/(tabs)");
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00A6A6" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!user) {
     return (
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         <View style={styles.loginPrompt}>
@@ -50,13 +67,19 @@ export default function ProfileScreen() {
     );
   }
 
+  const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
-          <Avatar.Text size={80} label="K" style={styles.avatar} color="#FFFFFF" />
-          <Text style={styles.userName}>Kullanıcı Adı</Text>
-          <Text style={styles.userEmail}>kullanici@email.com</Text>
+          {user.profileImageUrl ? (
+            <Avatar.Image size={80} source={{ uri: user.profileImageUrl }} />
+          ) : (
+            <Avatar.Text size={80} label={initials} style={styles.avatar} color="#FFFFFF" />
+          )}
+          <Text style={styles.userName}>{user.firstName} {user.lastName}</Text>
+          <Text style={styles.userEmail}>{user.email}</Text>
         </View>
 
         <View style={styles.menuContainer}>
@@ -94,7 +117,9 @@ export default function ProfileScreen() {
 
           <Button
             mode="outlined"
-            onPress={() => {}}
+            onPress={handleLogout}
+            loading={logout.isPending}
+            disabled={logout.isPending}
             style={styles.logoutButton}
             textColor="#DC2626"
             icon="logout"
@@ -114,6 +139,11 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   loginPrompt: {
     flex: 1,

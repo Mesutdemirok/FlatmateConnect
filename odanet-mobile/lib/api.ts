@@ -2,7 +2,7 @@ import axios from "axios";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 
-const apiUrl = Constants.expoConfig?.extra?.apiUrl || "https://www.odanet.com.tr/api";
+const apiUrl = Constants.expoConfig?.extra?.apiBaseUrl || "https://www.odanet.com.tr/api";
 
 export const api = axios.create({
   baseURL: apiUrl,

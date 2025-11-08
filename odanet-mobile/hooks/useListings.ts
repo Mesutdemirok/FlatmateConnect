@@ -1,16 +1,35 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
+export interface ListingImage {
+  id: string;
+  listingId: string;
+  imageUrl: string;
+  order: number;
+}
+
 export interface Listing {
   id: string;
+  userId: string;
+  slug?: string;
   title: string;
   address: string;
   rentAmount: string;
-  propertyType: string;
-  totalRooms: number;
-  furnishingStatus: string;
+  billsIncluded?: boolean;
+  excludedBills?: string[];
+  propertyType?: string;
+  internetIncluded?: boolean;
+  totalRooms?: number;
+  bathroomType?: string;
+  furnishingStatus?: string;
+  amenities?: string[];
+  totalOccupants?: number;
+  roommatePreference?: string;
+  smokingPolicy?: string;
+  status?: string;
   createdAt: string;
-  userId: string;
+  updatedAt?: string;
+  images?: ListingImage[];
 }
 
 export function useListings() {

@@ -9,7 +9,9 @@ interface ListingCardProps {
 }
 
 export function ListingCard({ listing }: ListingCardProps) {
-  const placeholderImage = "https://via.placeholder.com/400x250/00A6A6/FFFFFF?text=Odanet";
+  const firstImage = listing.images?.[0]?.imageUrl;
+  const placeholderImage = "https://via.placeholder.com/400x250/00A6A6/FFFFFF?text=No+Image";
+  const imageUrl = firstImage || placeholderImage;
 
   return (
     <Card
@@ -18,7 +20,7 @@ export function ListingCard({ listing }: ListingCardProps) {
       mode="elevated"
     >
       <Card.Cover
-        source={{ uri: placeholderImage }}
+        source={{ uri: imageUrl }}
         style={styles.cardCover}
       />
       <Card.Content style={styles.cardContent}>
