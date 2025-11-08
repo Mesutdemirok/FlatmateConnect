@@ -107,7 +107,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd odanet-mobile && npx expo start --tunnel"
+args = "cd odanet-mobile && npx expo start --tunnel --clear"
 
 [workflows.workflow.metadata]
 outputType = "console"
