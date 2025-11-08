@@ -1,0 +1,257 @@
+✅ Final Script — With Automatic Sitemap Regeneration
+
+Create (or update)
+
+/scripts/seoMonitor.js
+
+Paste this final version in full:
+
+import fetch from "node-fetch";
+import nodemailer from "nodemailer";
+import { JSDOM } from "jsdom";
+import fs from "fs";
+
+const baseDomain = "https://odanet.com.tr";
+const sitemapPath = "./public/sitemap.xml";
+
+const urls = [
+  `${baseDomain}/`,
+  `${baseDomain}/sitemap.xml`,
+  `${baseDomain}/robots.txt`,
+  `${baseDomain}/oda-ilani/5a2eba2f-97ac-472c-8097-bd6dc13daf03`, // test redirect
+];
+
+// ───────────────────────────────────────────────
+// 1️⃣ Health + Canonical Check
+// ───────────────────────────────────────────────
+async function checkUrl(url) {
+  try {
+    const res = await fetch(url);
+    const status = res.status;
+    let canonicalOk = true;
+    let canonical = null;
+    let internalLinks = [];
+
+    if (res.headers.get("content-type")?.includes("text/html")) {
+      const text = await res.text();
+      const dom = new JSDOM(text);
+      const doc = dom.window.document;
+
+      const link = doc.querySelector("link[rel='canonical']");
+      if (link) {
+        canonical = link.href;
+        canonicalOk = canonical.startsWith(baseDomain);
+      }
+
+      const anchors = [...doc.querySelectorAll("a[href]")];
+      internalLinks = anchors
+        .map((a) => a.getAttribute("href"))
+        .filter((href) => href && href.startsWith("/") && !href.startsWith("//"))
+        .map((href) => baseDomain + href);
+    }
+
+    console.log(
+      `${status === 200 || status === 301 ? "✅" : "❌"} ${url} → ${status}${
+        canonical ? ` | Canonical: ${canonical}` : ""
+      }`
+    );
+
+    return { url, status, canonical, canonicalOk, internalLinks };
+  } catch (err) {
+    console.error(`❌ ${url} failed: ${err.message}`);
+    return { url, status: 0, canonical: null, canonicalOk: false, internalLinks: [] };
+  }
+}
+
+// ───────────────────────────────────────────────
+// 2️⃣ Internal Link Validation
+// ───────────────────────────────────────────────
+async function checkInternalLinks(links) {
+  const unique = [...new Set(links)];
+  const results = [];
+
+  for (const link of unique) {
+    try {
+      const res = await fetch(link, { method: "HEAD" });
+      if (res.status !== 200 && res.status !== 301) {
+        results.push({ link, status: res.status });
+      }
+    } catch (err) {
+      results.push({ link, status: 0 });
+    }
+  }
+
+  return results;
+}
+
+// ───────────────────────────────────────────────
+// 3️⃣ Sitemap Auto-Generator
+// ───────────────────────────────────────────────
+async function regenerateSitemap() {
+  console.log("🧩 Regenerating sitemap...");
+  try {
+    const listings = await fetch(`${baseDomain}/api/listings`).then((r) => r.json());
+    const seekers = await fetch(`${baseDomain}/api/seekers/public?isActive=true`).then((r) => r.json());
+
+    const allUrls = [
+      "",
+      "/ilanlar",
+      "/oda-arayanlar",
+      "/giris",
+      "/uye-ol",
+      ...listings.map((l) => `/oda-ilani/${l.slug || l.id}`),
+      ...seekers.map((s) => `/oda-arayan/${s.slug || s.id}`),
+    ];
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${allUrls
+  .map(
+    (path) => `
+  <url>
+    <loc>${baseDomain}${path}</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>${path === "" ? "1.0" : "0.7"}</priority>
+  </url>`
+  )
+  .join("")}
+</urlset>`;
+
+    fs.writeFileSync(sitemapPath, xml, "utf8");
+    console.log("✅ Sitemap regenerated and saved to:", sitemapPath);
+  } catch (err) {
+    console.error("❌ Sitemap regeneration failed:", err.message);
+  }
+}
+
+// ───────────────────────────────────────────────
+// 4️⃣ Ping Google to refresh sitemap
+// ───────────────────────────────────────────────
+async function pingGoogle() {
+  const sitemapUrl = `${baseDomain}/sitemap.xml`;
+  const res = await fetch(`https://www.google.com/ping?sitemap=${sitemapUrl}`);
+  console.log(`🔁 Google reindex ping sent: ${res.status}`);
+}
+
+// ───────────────────────────────────────────────
+// 5️⃣ Email Notification
+// ───────────────────────────────────────────────
+async function sendAlertEmail(failed, brokenInternal) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.ALERT_EMAIL_USER,
+      pass: process.env.ALERT_EMAIL_PASS,
+    },
+  });
+
+  const lines = [];
+  if (failed.length > 0) {
+    lines.push("🚨 Canonical or status issues:");
+    for (const f of failed) {
+      lines.push(
+        `• ${f.url} → ${f.status}${
+          f.canonical
+            ? ` | Canonical: ${f.canonical}${
+                f.canonicalOk ? "" : " ❌ Wrong domain"
+              }`
+            : ""
+        }`
+      );
+    }
+  }
+  if (brokenInternal.length > 0) {
+    lines.push("\n🚧 Broken internal links:");
+    for (const b of brokenInternal) {
+      lines.push(`• ${b.link} → ${b.status}`);
+    }
+  }
+
+  const message = {
+    from: `"Odanet SEO Monitor" <${process.env.ALERT_EMAIL_USER}>`,
+    to: "admin@odanet.com.tr",
+    subject: "🚨 Odanet SEO Alert — Sitemap or link issue detected",
+    text: lines.join("\n"),
+  };
+
+  await transporter.sendMail(message);
+  console.log("📧 Alert email sent.");
+}
+
+// ───────────────────────────────────────────────
+// 6️⃣ Orchestrator
+// ───────────────────────────────────────────────
+async function runChecks() {
+  console.log("🚀 SEO Monitor started at", new Date().toISOString());
+  await regenerateSitemap();
+
+  const results = await Promise.all(urls.map(checkUrl));
+  const failed = results.filter(
+    (r) => (r.status !== 200 && r.status !== 301) || r.canonicalOk === false
+  );
+
+  const internalLinks = results.flatMap((r) => r.internalLinks);
+  const brokenInternal = await checkInternalLinks(internalLinks);
+
+  if (failed.length > 0 || brokenInternal.length > 0) {
+    await sendAlertEmail(failed, brokenInternal);
+  } else {
+    console.log("✅ Site is fully healthy and sitemap updated.");
+  }
+
+  await pingGoogle();
+}
+
+runChecks();
+
+
+⸻
+
+⚙️ Install dependencies
+
+npm install node-fetch nodemailer jsdom
+
+
+⸻
+
+🔒 Add Replit secrets
+
+ALERT_EMAIL_USER = yourgmail@gmail.com
+ALERT_EMAIL_PASS = your_app_password
+
+
+⸻
+
+🧭 Run manually
+
+node scripts/seoMonitor.js
+
+You should see:
+
+🧩 Regenerating sitemap...
+✅ Sitemap regenerated and saved
+🔁 Google reindex ping sent: 200
+✅ Site is fully healthy and sitemap updated.
+
+
+⸻
+
+🔁 Automate (every 6 hours)
+
+In Replit → Tools → Cron jobs:
+
+*/360 * * * * node scripts/seoMonitor.js
+
+
+⸻
+
+🧩 What It Does Now
+
+Function	Description
+🌍 URL Check	Ensures all key endpoints return 200/301
+🧭 Canonical	Confirms canonical tags point to https://odanet.com.tr
+🔗 Internal Links	Finds and flags 404s/redirects inside site
+🧱 Sitemap	Auto-builds sitemap from listings + seekers
+📤 Google Ping	Re-notifies Google every 6 h
+📧 Alert Email	Sends instant alerts if anything fails
