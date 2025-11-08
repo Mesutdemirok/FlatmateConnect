@@ -1,0 +1,215 @@
+Perfect. Here’s your final, production-ready master prompt, fully expanded.
+This version gives the agent end-to-end control — it not only fixes the problems, but also validates them automatically after deployment.
+
+⸻
+
+🧠 MASTER PROMPT: “Full Redirect, SEO, Sitemap & Auto-Validation for Odanet.com.tr”
+
+Goal: Make Odanet.com.tr fully indexable, SEO-optimized, and verified in Google Search Console.
+The system must automatically fix, rebuild, and confirm all changes with live validation.
+
+⸻
+
+🔍 Context Summary
+	•	Platform: Next.js app hosted on Replit
+	•	Database: Neon PostgreSQL (verified connected, 24 listings)
+	•	Issue Summary:
+	•	Only 9 pages indexed / 36 not indexed
+	•	Legacy URLs (UUID-only) now return 200 or 404 instead of redirect
+	•	Canonical mismatches, “crawled – currently not indexed” warnings
+	•	Sitemap outdated; internal linking minimal
+	•	HTTPS, Breadcrumbs, and Core Web Vitals ✅ fine
+
+⸻
+
+🧱 Tasks to Perform
+
+1️⃣ Redirect Fix (critical)
+Ensure redirects are live via next.config.js at project root:
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  async redirects() {
+    return [
+      {
+        source: '/oda-ilani/:id([0-9a-fA-F\\-]{36})',
+        destination: '/oda-ilani/:slug-:id',
+        permanent: true,
+      },
+      {
+        source: '/oda-arayan/:id([0-9a-fA-F\\-]{36})',
+        destination: '/oda-arayan/:slug-:id',
+        permanent: true,
+      },
+    ];
+  },
+};
+
+module.exports = nextConfig;
+
+Then rebuild cleanly:
+
+rm -rf .next && npm run build
+
+✅ Expected:
+curl -I https://odanet.com.tr/oda-ilani/5a2eba2f-97ac-472c-8097-bd6dc13daf03
+→ returns HTTP/2 301 and correct slug URL.
+
+⸻
+
+2️⃣ Sitemap & Robots
+/public/sitemap.xml.js
+
+import { db } from "@/server/db";
+
+export async function GET() {
+  const listings = await db.query.listings.findMany();
+  const seekers = await db.query.seeker_profiles.findMany();
+  const baseUrl = "https://odanet.com.tr";
+
+  const urls = [
+    ...listings.map(l => `${baseUrl}/oda-ilani/${l.slug}-${l.id}`),
+    ...seekers.map(s => `${baseUrl}/oda-arayan/${s.slug}-${s.id}`),
+    `${baseUrl}/`,
+    `${baseUrl}/oda-ilani-ver`,
+    `${baseUrl}/oda-arayan-ver`,
+    `${baseUrl}/blog`
+  ];
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    ${urls.map(u => `<url><loc>${u}</loc></url>`).join("")}
+  </urlset>`;
+
+  return new Response(xml, { headers: { "Content-Type": "application/xml" } });
+}
+
+/public/robots.txt
+
+User-agent: *
+Allow: /
+Sitemap: https://odanet.com.tr/sitemap.xml
+
+
+⸻
+
+3️⃣ Internal Linking
+Add persistent links to:
+	•	/oda-ilanlari
+	•	/oda-arayanlar
+	•	/oda-ilani-ver
+	•	/oda-arayan-ver
+	•	/blog
+
+Ensure listings link back to their city or category pages.
+→ Goal: better crawl depth and link equity distribution.
+
+⸻
+
+4️⃣ SEO Hygiene
+In _app.tsx or layout.tsx:
+
+<Head>
+  <title>{title ? `${title} | Odanet` : "Odanet – Oda Paylaş ve Ev Arkadaşı Bul"}</title>
+  <link rel="canonical" href={`https://odanet.com.tr${router.asPath}`} />
+  <meta name="description" content={description || "Türkiye’de oda kiralamak veya ev arkadaşı bulmak için güvenli platform."} />
+  <meta property="og:title" content={title} />
+  <meta property="og:url" content={`https://odanet.com.tr${router.asPath}`} />
+  <meta property="og:image" content={imageUrl || "https://odanet.com.tr/og-image.png"} />
+  <meta name="twitter:card" content="summary_large_image" />
+</Head>
+
+
+⸻
+
+5️⃣ Google Auto-Reindex Ping
+Create /scripts/pingGoogle.js:
+
+import fetch from "node-fetch";
+
+async function pingGoogle() {
+  const sitemapUrl = "https://odanet.com.tr/sitemap.xml";
+  const res = await fetch(`https://www.google.com/ping?sitemap=${sitemapUrl}`);
+  console.log("✅ Google reindex ping sent:", res.status);
+}
+
+pingGoogle();
+
+Run after each deploy:
+
+node scripts/pingGoogle.js
+
+
+⸻
+
+6️⃣ Cache Invalidation
+If CDN or Replit edge cache is used, purge cache after build:
+
+await fetch("https://api.cloudflare.com/client/v4/zones/YOUR_ZONE_ID/purge_cache", {
+  method: "POST",
+  headers: {
+    "Authorization": "Bearer YOUR_API_TOKEN",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ purge_everything: true })
+});
+
+If Cloudflare not used:
+
+rm -rf .next && npm run build
+
+
+⸻
+
+🔎 7️⃣ Automated Validation (Post-Deploy)
+
+After deployment, automatically validate all critical endpoints:
+
+# Redirect check
+curl -I https://odanet.com.tr/oda-ilani/5a2eba2f-97ac-472c-8097-bd6dc13daf03
+
+# Sitemap reachable
+curl -I https://odanet.com.tr/sitemap.xml
+
+# Robots accessible
+curl -I https://odanet.com.tr/robots.txt
+
+# Canonical header validation (ensure correct domain)
+curl -s https://odanet.com.tr | grep canonical
+
+✅ Expected:
+	•	HTTP/2 301 for redirects
+	•	HTTP/2 200 for sitemap & robots
+	•	Canonical tag: <link rel="canonical" href="https://odanet.com.tr/...">
+
+Once these validations pass, trigger:
+
+node scripts/pingGoogle.js
+
+
+⸻
+
+🧾 Deliverables
+	1.	Redirects work (verified 301).
+	2.	Sitemap & robots regenerated correctly.
+	3.	Canonical + OG meta added.
+	4.	Internal linking strengthened.
+	5.	Cache invalidated after deployment.
+	6.	Google reindex ping executed automatically.
+	7.	All validations pass with expected HTTP codes.
+
+⸻
+
+✅ Final Goal
+
+Google Search Console starts showing:
+	•	Increasing indexed pages
+	•	No “Crawled – not indexed” or “404” issues
+	•	Correct redirects from old UUID URLs
+	•	Sitemap and canonical consistency
+
+⸻
+
+Would you like me to include a short “post-deployment monitoring script” in this same prompt (that automatically checks every 6 hours and alerts if the sitemap or redirects break)?
+It’s a lightweight 15-line cron job that can be integrated in Replit.
