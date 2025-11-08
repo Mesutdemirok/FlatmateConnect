@@ -5,8 +5,10 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build": "vite build && node scripts/generateSitemap.js && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "cross-env NODE_ENV=production node dist/index.js",
+    "deploy": "npm run build && node server.js",
+    "sitemap": "node scripts/generateSitemap.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "cleanup:dry": "tsx server/scripts/cleanup-dry-run.ts",
@@ -137,7 +139,7 @@
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.5",
     "typescript": "5.6.3",
-    "vite": "^5.4.20"
+    "vite": "^5.4.21"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"

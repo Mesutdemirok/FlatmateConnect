@@ -5,11 +5,14 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 channel = "stable-24_05"
 packages = ["lsof", "yakut", "jq", "vlang", "file"]
 
+# ✅ Deployment Configuration (Autoscale Production)
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
+# Build now runs your sitemap + RSS generation automatically
+build = ["npm", "run", "build", "&&", "npm", "run", "sitemap"]
 run = ["npm", "start"]
 
+# ✅ Port Mappings
 [[ports]]
 localPort = 5000
 externalPort = 80
@@ -58,9 +61,11 @@ externalPort = 5000
 localPort = 46639
 externalPort = 6000
 
+# ✅ Environment Variables
 [env]
 PORT = "5000"
 
+# ✅ Replit Agent Config
 [agent]
 integrations = [
   "javascript_database:1.0.0",
@@ -68,6 +73,7 @@ integrations = [
 ]
 expertMode = true
 
+# ✅ Workflows (Run button)
 [workflows]
 runButton = "Project"
 

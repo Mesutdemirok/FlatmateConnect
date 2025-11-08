@@ -1,134 +1,222 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { SitemapStream, streamToPromise } from 'sitemap';
-import RSS from 'rss';
-import matter from 'gray-matter';
+/**
+ * generateSitemap.js — Odanet SEO automation
+ * Generates sitemap.xml + rss.xml for production builds
+ * Supports blog posts (Markdown), listings, and seekers (from DB)
+ */
 
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { SitemapStream, streamToPromise } from "sitemap";
+import RSS from "rss";
+import matter from "gray-matter";
+
+// ------------------------------
+// ✅ Dynamic Drizzle Import (TS-safe)
+// ------------------------------
+let db = null;
+try {
+  const { drizzle } = await import("drizzle-orm/neon-http");
+  let schemaModule = null;
+
+  try {
+    // Prefer schema.ts if schema.js not compiled
+    schemaModule = await import("../drizzle/schema.ts").catch(
+      () => import("../drizzle/schema.js"),
+    );
+  } catch {
+    console.warn("⚠️ No drizzle schema found. DB URLs will be skipped.");
+  }
+
+  if (process.env.DATABASE_URL && schemaModule) {
+    db = drizzle(process.env.DATABASE_URL, { schema: schemaModule });
+  } else {
+    console.warn("⚠️ DATABASE_URL not found or schema missing — DB skipped.");
+  }
+} catch (e) {
+  console.warn(
+    "⚠️ Drizzle ORM not available. Only blog sitemap will be generated.",
+  );
+}
+
+// ------------------------------
+// ✅ Core Directories + Paths
+// ------------------------------
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SITE_URL = 'https://www.odanet.com.tr';
-const BLOG_DIR = path.join(__dirname, '../src/content/blog');
-const PUBLIC_DIR = path.join(__dirname, '../public');
+const SITE_URL = "https://www.odanet.com.tr";
+const BLOG_DIR = path.join(__dirname, "../src/content/blog");
+const PUBLIC_DIR = path.join(__dirname, "../public");
 
-// Read all blog posts
+// ------------------------------
+// 🧩 BLOG POSTS (Markdown)
+// ------------------------------
 function getAllBlogPosts() {
-  const files = fs.readdirSync(BLOG_DIR).filter(file => file.endsWith('.md'));
+  if (!fs.existsSync(BLOG_DIR)) return [];
+
+  const files = fs.readdirSync(BLOG_DIR).filter((f) => f.endsWith(".md"));
   const posts = [];
 
   for (const file of files) {
-    const filePath = path.join(BLOG_DIR, file);
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-    const { data } = matter(fileContent);
+    try {
+      const filePath = path.join(BLOG_DIR, file);
+      const fileContent = fs.readFileSync(filePath, "utf-8");
+      const { data } = matter(fileContent);
+      if (!data.slug || !data.title) continue;
 
-    posts.push({
-      slug: data.slug,
-      title: data.title,
-      description: data.description,
-      date: data.date,
-      author: data.author,
-      image: data.image
-    });
+      posts.push({
+        slug: data.slug,
+        title: data.title,
+        description: data.description || "",
+        date: data.date || new Date().toISOString(),
+        author: data.author || "Odanet Ekibi",
+        image: data.image || `${SITE_URL}/default-thumbnail.jpg`,
+      });
+    } catch (err) {
+      console.warn(`⚠️ Could not parse ${file}:`, err.message);
+    }
   }
 
-  // Sort by date, newest first
   return posts.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
-// Generate sitemap.xml
-async function generateSitemap() {
-  console.log('🗺️  Generating sitemap.xml...');
-  
-  const posts = getAllBlogPosts();
-  const smStream = new SitemapStream({ hostname: SITE_URL });
+// ------------------------------
+// 🧩 DATABASE LISTINGS + SEEKERS
+// ------------------------------
+async function getListingsAndSeekers() {
+  if (!db) return { listings: [], seekers: [] };
 
-  // Static pages
-  const staticPages = [
-    { url: '/', changefreq: 'daily', priority: 1.0 },
-    { url: '/blog', changefreq: 'daily', priority: 0.9 },
-    { url: '/oda-ilanlari', changefreq: 'hourly', priority: 0.9 },
-    { url: '/oda-aramalari', changefreq: 'hourly', priority: 0.9 },
-    { url: '/hakkimizda', changefreq: 'monthly', priority: 0.6 },
-    { url: '/iletisim', changefreq: 'monthly', priority: 0.6 },
-    { url: '/kullanim-kosullari', changefreq: 'yearly', priority: 0.4 },
-    { url: '/gizlilik-politikasi', changefreq: 'yearly', priority: 0.4 },
-  ];
-
-  // Add static pages
-  staticPages.forEach(page => {
-    smStream.write(page);
-  });
-
-  // Add blog posts
-  posts.forEach(post => {
-    smStream.write({
-      url: `/blog/${post.slug}`,
-      changefreq: 'monthly',
-      priority: 0.7,
-      lastmod: post.date
-    });
-  });
-
-  smStream.end();
-
-  const sitemapXML = await streamToPromise(smStream);
-  fs.writeFileSync(path.join(PUBLIC_DIR, 'sitemap.xml'), sitemapXML.toString());
-  
-  console.log('✅ sitemap.xml generated successfully!');
+  console.log("📦 Fetching listings and seekers from database...");
+  try {
+    const [listings, seekers] = await Promise.all([
+      db.query.listings.findMany({ columns: ["slug", "updatedAt"] }),
+      db.query.seeker_profiles.findMany({ columns: ["slug", "updatedAt"] }),
+    ]);
+    return {
+      listings: listings.filter((x) => !!x.slug),
+      seekers: seekers.filter((x) => !!x.slug),
+    };
+  } catch (err) {
+    console.warn("⚠️ Could not fetch DB content:", err.message);
+    return { listings: [], seekers: [] };
+  }
 }
 
-// Generate RSS feed
+// ------------------------------
+// 🧭 SITEMAP GENERATION
+// ------------------------------
+async function generateSitemap() {
+  console.log("🗺️ Generating sitemap.xml...");
+
+  const posts = getAllBlogPosts();
+  const { listings, seekers } = await getListingsAndSeekers();
+
+  const smStream = new SitemapStream({ hostname: SITE_URL });
+
+  // ✅ Static pages
+  const staticPages = [
+    { url: "/", changefreq: "daily", priority: 1.0 },
+    { url: "/blog", changefreq: "daily", priority: 0.9 },
+    { url: "/oda-ilan-ver", changefreq: "monthly", priority: 0.8 },
+    { url: "/oda-arama-ver", changefreq: "monthly", priority: 0.8 },
+    { url: "/hakkimizda", changefreq: "monthly", priority: 0.6 },
+    { url: "/iletisim", changefreq: "monthly", priority: 0.6 },
+    { url: "/guvenli-ilan-rehberi", changefreq: "yearly", priority: 0.5 },
+  ];
+  staticPages.forEach((p) => smStream.write(p));
+
+  // ✅ Blog posts
+  for (const post of posts) {
+    smStream.write({
+      url: `/blog/${post.slug}`,
+      lastmod: post.date,
+      changefreq: "monthly",
+      priority: 0.7,
+    });
+  }
+
+  // ✅ Listings
+  for (const item of listings) {
+    smStream.write({
+      url: `/oda-ilani/${item.slug}`,
+      lastmod: item.updatedAt || new Date().toISOString(),
+      changefreq: "daily",
+      priority: 0.9,
+    });
+  }
+
+  // ✅ Seekers
+  for (const item of seekers) {
+    smStream.write({
+      url: `/oda-arayan/${item.slug}`,
+      lastmod: item.updatedAt || new Date().toISOString(),
+      changefreq: "daily",
+      priority: 0.8,
+    });
+  }
+
+  smStream.end();
+  const sitemapXML = await streamToPromise(smStream);
+
+  fs.writeFileSync(path.join(PUBLIC_DIR, "sitemap.xml"), sitemapXML.toString());
+  console.log(
+    `✅ Sitemap created successfully with: ${posts.length} blog posts, ${listings.length} listings, ${seekers.length} seekers.`,
+  );
+}
+
+// ------------------------------
+// 📡 RSS GENERATION (Blog Only)
+// ------------------------------
 function generateRSS() {
-  console.log('📡 Generating rss.xml...');
-  
+  console.log("📡 Generating rss.xml...");
   const posts = getAllBlogPosts();
 
   const feed = new RSS({
-    title: 'Odanet Blog',
-    description: 'Oda kiralama, ev arkadaşı bulma ve güvenli yaşam alanı oluşturma hakkında faydalı bilgiler ve ipuçları',
+    title: "Odanet Blog",
+    description:
+      "Oda kiralama, ev arkadaşı bulma ve güvenli yaşam rehberleri hakkında güncel bilgiler.",
     feed_url: `${SITE_URL}/rss.xml`,
     site_url: SITE_URL,
-    language: 'tr',
+    language: "tr",
     pubDate: new Date().toUTCString(),
     ttl: 60,
   });
 
-  posts.forEach(post => {
+  for (const post of posts) {
     feed.item({
       title: post.title,
       description: post.description,
       url: `${SITE_URL}/blog/${post.slug}`,
       date: post.date,
-      author: post.author || 'Odanet Ekibi',
+      author: post.author,
       enclosure: post.image ? { url: post.image } : undefined,
     });
-  });
+  }
 
-  const rssXML = feed.xml({ indent: true });
-  fs.writeFileSync(path.join(PUBLIC_DIR, 'rss.xml'), rssXML);
-  
-  console.log('✅ rss.xml generated successfully!');
+  fs.writeFileSync(
+    path.join(PUBLIC_DIR, "rss.xml"),
+    feed.xml({ indent: true }),
+  );
+  console.log(`✅ RSS feed created successfully with ${posts.length} posts.`);
 }
 
-// Main execution
+// ------------------------------
+// 🚀 MAIN EXECUTION
+// ------------------------------
 async function main() {
-  console.log('🚀 Starting sitemap and RSS generation...\n');
-  
-  // Ensure public directory exists
-  if (!fs.existsSync(PUBLIC_DIR)) {
-    fs.mkdirSync(PUBLIC_DIR, { recursive: true });
-  }
+  console.log("🚀 Starting sitemap + RSS generation...\n");
+
+  if (!fs.existsSync(PUBLIC_DIR)) fs.mkdirSync(PUBLIC_DIR, { recursive: true });
 
   try {
     await generateSitemap();
     generateRSS();
-    
-    console.log('\n✨ All done! Sitemap and RSS feed generated successfully.');
-    console.log(`📍 Sitemap: ${SITE_URL}/sitemap.xml`);
-    console.log(`📍 RSS Feed: ${SITE_URL}/rss.xml`);
-  } catch (error) {
-    console.error('❌ Error generating files:', error);
+    console.log("\n✨ All done! SEO files generated successfully.");
+    console.log(`📍 ${SITE_URL}/sitemap.xml`);
+    console.log(`📍 ${SITE_URL}/rss.xml`);
+  } catch (err) {
+    console.error("❌ Error generating SEO files:", err);
     process.exit(1);
   }
 }
