@@ -1,11 +1,11 @@
 # SEO Automation Scripts
 
 ## Overview
-This directory contains scripts for automating SEO tasks including sitemap generation and RSS feed creation for Odanet.
+This directory contains scripts for automating SEO tasks including sitemap generation, RSS feeds, and health monitoring for Odanet.
 
 ## Scripts
 
-### generateSitemap.js
+### 1. generateSitemap.js
 Generates comprehensive sitemap.xml and rss.xml files for the entire Odanet platform.
 
 **What it does:**
@@ -68,21 +68,92 @@ RSS feed for blog content with:
 - Featured image
 - Full post URL
 
+### 2. seoMonitor.js
+Monitors site health, validates SEO elements, and sends optional email alerts.
+
+**What it does:**
+- Checks critical URLs return proper status codes (200/304)
+- Validates canonical tags point to correct domain
+- Checks sitemap.xml accessibility and URL count
+- Validates robots.txt format
+- Optionally sends email alerts when issues are detected
+- Can auto-regenerate sitemap before monitoring
+
+**Usage:**
+```bash
+# Run basic health check
+node scripts/seoMonitor.js
+
+# Regenerate sitemap, then monitor
+node scripts/seoMonitor.js --regenerate
+```
+
+**Exit codes:**
+- `0` - All checks passed
+- `1` - Issues found (useful for CI/CD pipelines)
+
+**Email alerts:**
+See `scripts/EMAIL_SETUP.md` for configuration instructions.
+
+**What it checks:**
+- ✅ Homepage, blog, and form pages accessible
+- ✅ Sitemap.xml has 40+ URLs
+- ✅ Robots.txt properly formatted
+- ✅ Canonical tags use production domain
+- ✅ Meta tags present on key pages
+
 ## Automation
 
-For production, consider adding to your deployment pipeline:
+### Option 1: Manual Workflow
 
+Run before each deployment:
 ```bash
-# In your build/deploy script
+# Regenerate sitemap
 node scripts/generateSitemap.js
+
+# Monitor site health
+node scripts/seoMonitor.js
 ```
 
-Or set up a scheduled task to regenerate periodically:
+### Option 2: Deployment Pipeline
+
+Add to your build/deploy script:
+```bash
+#!/bin/bash
+# Build app
+npm run build
+
+# Regenerate SEO files
+node scripts/generateSitemap.js
+
+# Monitor and alert
+node scripts/seoMonitor.js --regenerate || echo "SEO issues detected"
+
+# Deploy...
+```
+
+### Option 3: Scheduled Monitoring (Recommended)
+
+Set up periodic health checks:
 
 ```bash
-# Example cron job (daily at 2 AM)
-0 2 * * * cd /path/to/project && node scripts/generateSitemap.js
+# Example cron jobs
+
+# Regenerate sitemap daily at 2 AM
+0 2 * * * cd /path/to/odanet && node scripts/generateSitemap.js
+
+# Monitor site health every 6 hours
+0 */6 * * * cd /path/to/odanet && node scripts/seoMonitor.js
+
+# Combined: regenerate + monitor weekly
+0 3 * * 0 cd /path/to/odanet && node scripts/seoMonitor.js --regenerate
 ```
+
+**For Replit:**
+Replit doesn't support traditional cron, but you can use:
+1. **Replit Cron** (if available in your plan)
+2. **External services** like cron-job.org or EasyCron
+3. **GitHub Actions** for scheduled workflows
 
 ## Google Search Console
 
