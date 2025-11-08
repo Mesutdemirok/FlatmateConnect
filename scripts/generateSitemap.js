@@ -1,7 +1,7 @@
 /**
  * generateSitemap.js — Odanet SEO automation
  * Generates sitemap.xml + rss.xml for production builds
- * Supports blog posts (Markdown), listings, and seekers (from DB)
+ * Supports blog posts (Markdown), listings, and seekers (from API)
  */
 
 import fs from "fs";
@@ -10,34 +10,7 @@ import { fileURLToPath } from "url";
 import { SitemapStream, streamToPromise } from "sitemap";
 import RSS from "rss";
 import matter from "gray-matter";
-
-// ------------------------------
-// ✅ Dynamic Drizzle Import (TS-safe)
-// ------------------------------
-let db = null;
-try {
-  const { drizzle } = await import("drizzle-orm/neon-http");
-  let schemaModule = null;
-
-  try {
-    // Prefer schema.ts if schema.js not compiled
-    schemaModule = await import("../drizzle/schema.ts").catch(
-      () => import("../drizzle/schema.js"),
-    );
-  } catch {
-    console.warn("⚠️ No drizzle schema found. DB URLs will be skipped.");
-  }
-
-  if (process.env.DATABASE_URL && schemaModule) {
-    db = drizzle(process.env.DATABASE_URL, { schema: schemaModule });
-  } else {
-    console.warn("⚠️ DATABASE_URL not found or schema missing — DB skipped.");
-  }
-} catch (e) {
-  console.warn(
-    "⚠️ Drizzle ORM not available. Only blog sitemap will be generated.",
-  );
-}
+import fetch from "node-fetch";
 
 // ------------------------------
 // ✅ Core Directories + Paths
@@ -82,23 +55,41 @@ function getAllBlogPosts() {
 }
 
 // ------------------------------
-// 🧩 DATABASE LISTINGS + SEEKERS
+// 🧩 API LISTINGS + SEEKERS
 // ------------------------------
 async function getListingsAndSeekers() {
-  if (!db) return { listings: [], seekers: [] };
-
-  console.log("📦 Fetching listings and seekers from database...");
+  console.log("📦 Fetching listings and seekers from API...");
+  
+  // Use localhost in development, production domain otherwise
+  const API_BASE = process.env.NODE_ENV === "production" 
+    ? "https://www.odanet.com.tr" 
+    : "http://localhost:5000";
+  
   try {
-    const [listings, seekers] = await Promise.all([
-      db.query.listings.findMany({ columns: ["slug", "updatedAt"] }),
-      db.query.seeker_profiles.findMany({ columns: ["slug", "updatedAt"] }),
+    const [listingsRes, seekersRes] = await Promise.all([
+      fetch(`${API_BASE}/api/listings?isActive=true`).catch(err => {
+        console.warn("⚠️ Could not fetch listings:", err.message);
+        return { ok: false };
+      }),
+      fetch(`${API_BASE}/api/seekers/public?isActive=true&isPublished=true`).catch(err => {
+        console.warn("⚠️ Could not fetch seekers:", err.message);
+        return { ok: false };
+      })
     ]);
+
+    const listings = listingsRes.ok ? await listingsRes.json() : [];
+    const seekers = seekersRes.ok ? await seekersRes.json() : [];
+
     return {
-      listings: listings.filter((x) => !!x.slug),
-      seekers: seekers.filter((x) => !!x.slug),
+      listings: (Array.isArray(listings) ? listings : [])
+        .filter((x) => x.slug)
+        .map((x) => ({ slug: x.slug, updatedAt: x.updatedAt })),
+      seekers: (Array.isArray(seekers) ? seekers : [])
+        .filter((x) => x.slug)
+        .map((x) => ({ slug: x.slug, updatedAt: x.updatedAt })),
     };
   } catch (err) {
-    console.warn("⚠️ Could not fetch DB content:", err.message);
+    console.warn("⚠️ Could not fetch API content:", err.message);
     return { listings: [], seekers: [] };
   }
 }
