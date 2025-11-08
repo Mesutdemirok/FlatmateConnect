@@ -40,7 +40,7 @@ node scripts/generateSitemap.js
 - 3 blog posts
 - **Total: 46 URLs**
 
-## SEO Files
+## SEO Files & Features
 
 ### sitemap.xml
 Located at: `https://www.odanet.com.tr/sitemap.xml`
@@ -67,6 +67,32 @@ RSS feed for blog content with:
 - Publication date
 - Featured image
 - Full post URL
+
+### 301 Redirects (Legacy URL Support)
+Automatic server-side redirects preserve SEO value from old URLs.
+
+**What it does:**
+- Detects legacy UUID-only URLs (e.g., `/oda-ilani/abc123-uuid`)
+- Looks up the listing/seeker to get the current slug
+- Redirects with 301 status to slug-based URL (e.g., `/oda-ilani/kadin-ev-arkadasi-ariyorum-ankara-b2ep1n`)
+- Preserves link equity and search engine rankings
+
+**Examples:**
+```
+Old: /oda-ilani/c9b2dc9c-a2cd-4b80-8234-6c670ed60fb7
+New: /oda-ilani/kadin-ev-arkadasi-ariyorum-kecioren-ankara-b2ep1n
+Status: 301 Moved Permanently
+
+Old: /oda-arayan/1e2da542-1b31-4d36-b7e9-e388e5af7442
+New: /oda-arayan/burcu-ertas-ankara-zh64hk
+Status: 301 Moved Permanently
+```
+
+**Implementation:**
+- Express middleware in `server/routes.ts`
+- UUID detection via regex pattern
+- Graceful fallback for missing slugs
+- No impact on slug-based URLs (200 OK)
 
 ### 2. seoMonitor.js
 Monitors site health, validates SEO elements, and sends optional email alerts.
