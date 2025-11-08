@@ -9,12 +9,12 @@
    ======================= */
 :root {
   /* === FOUNDATION === */
-  --background: hsl(210deg 40% 98.04%);
+  --background: hsl(269.09deg 100% 93.53%);
   /* #F8FAFC */
-  --foreground: hsl(222.22deg 47.37% 11.18%);
+  --foreground: hsl(0deg 0% 0%);
   /* #0F172A */
 
-  --card: hsl(232.89deg 60.32% 75.29%);
+  --card: hsl(230.77deg 56.52% 86.47%);
   /* #FFFFFF */
   --card-foreground: hsl(222.22deg 47.37% 11.18%);
 
@@ -22,31 +22,31 @@
   --popover-foreground: hsl(222.22deg 47.37% 11.18%);
 
   /* === CORE COLORS === */
-  --primary: hsl(0deg 0% 100%);
+  --primary: hsl(238.02deg 98.38% 48.43%);
   /* Turkuaz #0EA5A7 */
-  --primary-foreground: hsl(0deg 0% 0%);
+  --primary-foreground: hsl(0deg 0% 100%);
 
   --secondary: hsl(222.22deg 47.37% 11.18%);
   /* Ink #0F172A */
-  --secondary-foreground: hsl(240deg 11.11% 1.76%);
+  --secondary-foreground: hsl(0deg 0% 100%);
 
-  --muted: hsl(202.5deg 15.53% 59.61%);
+  --muted: hsl(0deg 0% 90.98%);
   /* #F1F5F9 */
-  --muted-foreground: hsl(0deg 0% 5.88%);
+  --muted-foreground: hsl(0deg 0% 0%);
   /* #64748B */
 
   --accent: hsl(24.58deg 94.98% 53.14%);
   /* Dark Orange #F97316 */
   --accent-foreground: hsl(0deg 20% 0.98%);
 
-  --destructive: hsl(0deg 72.22% 50.59%);
+  --destructive: hsl(0deg 87.1% 48.63%);
   /* #DC2626 */
   --destructive-foreground: hsl(0deg 0% 0%);
 
   /* === COMPONENT ELEMENTS === */
-  --border: hsl(0deg 6.35% 75.29%);
+  --border: hsl(62.7deg 91.75% 61.96%);
   /* #D1D5DB */
-  --input: hsl(208.42deg 52.29% 78.63%);
+  --input: hsl(207.23deg 67.71% 62.35%);
   --ring: hsl(180.78deg 84.53% 35.49%);
   /* #0EA5A7 */
 
