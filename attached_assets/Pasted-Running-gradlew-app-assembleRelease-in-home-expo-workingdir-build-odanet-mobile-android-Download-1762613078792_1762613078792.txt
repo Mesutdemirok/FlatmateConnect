@@ -1,0 +1,142 @@
+Running 'gradlew :app:assembleRelease' in /home/expo/workingdir/build/odanet-mobile/android
+Downloading https://services.gradle.org/distributions/gradle-8.8-all.zip
+10%
+20%.
+30%.
+40%.
+50%.
+60%.
+70%.
+80%
+90%
+100%
+Welcome to Gradle 8.8!
+Here are the highlights of this release:
+- Running Gradle on Java 22
+- Configurable Gradle daemon JVM
+- Improved IDE performance for large projects
+For more details see https://docs.gradle.org/8.8/release-notes.html
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.8/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors
+> Task :gradle-plugin:settings-plugin:pluginDescriptors
+> Task :gradle-plugin:settings-plugin:processResources
+> Task :gradle-plugin:settings-plugin:compileKotlin
+> Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:settings-plugin:classes
+> Task :gradle-plugin:settings-plugin:jar
+> Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors
+> Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors
+> Task :gradle-plugin:react-native-gradle-plugin:processResources
+> Task :gradle-plugin:react-native-gradle-plugin:compileKotlin
+> Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:react-native-gradle-plugin:classes
+> Task :gradle-plugin:react-native-gradle-plugin:jar
+> Configure project :expo
+Using expo modules
+  - expo-asset (10.0.10)
+  - expo-constants (16.0.2)
+  - expo-file-system (17.0.1)
+  - expo-font (12.0.10)
+  - expo-keep-awake (13.0.2)
+  - expo-modules-core (1.12.26)
+  - expo-secure-store (13.0.2)
+  - expo-splash-screen (0.27.7)
+> Configure project :react-native-reanimated
+Android gradle plugin: 8.2.1
+Gradle: 8.8
+> Task :expo-asset:preBuild UP-TO-DATE
+> Task :expo-asset:preReleaseBuild
+UP-TO-DATE
+> Task :expo-asset:writeReleaseAarMetadata
+> Task :app:buildKotlinToolingMetadata
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :expo-file-system:preBuild UP-TO-DATE
+> Task :expo-file-system:preReleaseBuild UP-TO-DATE
+> Task :expo-file-system:writeReleaseAarMetadata
+> Task :expo-font:preBuild UP-TO-DATE
+> Task :expo-font:preReleaseBuild UP-TO-DATE
+> Task :app:generateCodegenSchemaFromJavaScript SKIPPED
+> Task :app:generateCodegenArtifactsFromSchema SKIPPED
+> Task :expo-font:writeReleaseAarMetadata
+> Task :expo-keep-awake:preBuild UP-TO-DATE
+> Task :expo-keep-awake:preReleaseBuild UP-TO-DATE
+> Task :expo-keep-awake:writeReleaseAarMetadata
+> Task :expo-modules-core:preBuild UP-TO-DATE
+> Task :expo-modules-core:preReleaseBuild UP-TO-DATE
+> Task :app:generatePackageList
+> Task :app:preBuild
+> Task :app:preReleaseBuild
+> Task :expo-modules-core:writeReleaseAarMetadata
+> Task :expo-secure-store:preBuild UP-TO-DATE
+> Task :expo-secure-store:preReleaseBuild UP-TO-DATE
+> Task :expo-secure-store:writeReleaseAarMetadata
+> Task :expo-splash-screen:preBuild UP-TO-DATE
+> Task :expo-splash-screen:preReleaseBuild UP-TO-DATE
+> Task :expo-splash-screen:writeReleaseAarMetadata
+> Task :react-native-gesture-handler:preBuild UP-TO-DATE
+> Task :react-native-gesture-handler:preReleaseBuild UP-TO-DATE
+> Task :app:generateReleaseBuildConfig
+> Task :react-native-reanimated:assertLatestReactNativeWithNewArchitectureTask SKIPPED
+> Task :react-native-reanimated:assertMinimalReactNativeVersionTask SKIPPED
+> Task :react-native-gesture-handler:writeReleaseAarMetadata
+> Task :react-native-safe-area-context:preBuild UP-TO-DATE
+> Task :react-native-safe-area-context:preReleaseBuild UP-TO-DATE
+> Task :react-native-safe-area-context:writeReleaseAarMetadata
+> Task :react-native-screens:preBuild UP-TO-DATE
+> Task :react-native-screens:preReleaseBuild
+UP-TO-DATE
+> Task :react-native-screens:writeReleaseAarMetadata
+> Task :react-native-svg:preBuild UP-TO-DATE
+> Task :react-native-svg:preReleaseBuild UP-TO-DATE
+> Task :react-native-svg:writeReleaseAarMetadata
+> Task :react-native-reanimated:prepareHeadersForPrefab
+> Task :react-native-reanimated:preBuild
+> Task :react-native-reanimated:preReleaseBuild
+> Task :react-native-reanimated:writeReleaseAarMetadata
+> Task :react-native-worklets:assertMinimalReactNativeVersionTask
+FAILED
+> Task :expo-constants:createExpoConfig
+> Task :expo:generateExpoModulesPackageListTask
+> Task :app:createBundleReleaseJsAndAssets
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Android Bundling failed 177ms node_modules/expo-router/entry.js (1 module)
+> Task :app:createBundleReleaseJsAndAssets FAILED
+SyntaxError: node_modules/expo-router/entry.js: [BABEL]: expo-router/babel is deprecated in favor of babel-preset-expo in SDK 50. To fix the issue, remove "expo-router/babel" from "plugins" in your babel.config.js file. (While processing: /home/expo/workingdir/build/odanet-mobile/node_modules/expo-router/babel.js)
+Error: [BABEL]: expo-router/babel is deprecated in favor of babel-preset-expo in SDK 50. To fix the issue, remove "expo-router/babel" from "plugins" in your babel.config.js file. (While processing: /home/expo/workingdir/build/odanet-mobile/node_modules/expo-router/babel.js)
+    at Object.<anonymous> (/home/expo/workingdir/build/odanet-mobile/node_modules/expo-router/babel.js:1:7)
+    at Module._compile (node:internal/modules/cjs/loader:1469:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1548:10)
+    at Module.load (node:internal/modules/cjs/loader:1288:32)
+    at Module._load (node:internal/modules/cjs/loader:1104:12)
+    at Module.require (node:internal/modules/cjs/loader:1311:19)
+FAILURE: Build completed with 2 failures.
+1: Task failed with an exception.
+-----------
+* Where:
+Build file '/home/expo/workingdir/build/odanet-mobile/node_modules/react-native-worklets/android/build.gradle' line: 304
+* What went wrong:
+Execution failed for task ':react-native-worklets:assertMinimalReactNativeVersionTask'.
+> [Worklets] React Native 0.74.5 version is not compatible with Worklets 0.5.2
+* Try:
+> Run with --stacktrace
+option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+2: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':app:createBundleReleaseJsAndAssets'.
+> Process 'command 'node'' finished with non-zero exit value 1
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+BUILD FAILED in 1m 46s
+31 actionable tasks: 31 executed
+Error: Gradle build failed with unknown error. See logs for the "Run gradlew" phase for more information.
