@@ -1,0 +1,24 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  images: {
+    domains: ['odanet.com.tr', 'localhost', 'res.cloudinary.com'],
+  },
+  async redirects() {
+    return [
+      // 🔁 Redirect old-style IDs to new SEO slugs
+      {
+        source: '/oda-ilani/:id([0-9a-fA-F-]{36})',
+        destination: '/oda-ilani/:slug-:id',
+        permanent: true,
+      },
+      {
+        source: '/oda-arayan/:id([0-9a-fA-F-]{36})',
+        destination: '/oda-arayan/:slug-:id',
+        permanent: true,
+      },
+    ];
+  },
+};
+
+module.exports = nextConfig;
