@@ -28,7 +28,7 @@ export function ListingCard({ listing }: ListingCardProps) {
         <Text className="text-sm text-odanet-textLight">{listing.address}</Text>
       )}
       <Text className="text-sm text-odanet-textLight">
-        {listing.rentAmount?.toLocaleString('tr-TR') || 0} TL / ay
+        {(listing.rentAmount || 0).toLocaleString()} TL / ay
       </Text>
     </TouchableOpacity>
   );

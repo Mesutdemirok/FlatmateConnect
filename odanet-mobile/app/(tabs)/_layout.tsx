@@ -1,19 +1,14 @@
 import { Tabs } from "expo-router";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTheme } from "react-native-paper";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function TabLayout() {
-  const theme = useTheme();
-  
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: "#00A6A6",
-        tabBarInactiveTintColor: "#999999",
+        tabBarInactiveTintColor: "#666",
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
-          borderTopWidth: 1,
-          borderTopColor: "#E5E5E5",
+          backgroundColor: "#fff",
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,
@@ -28,7 +23,6 @@ export default function TabLayout() {
         headerTintColor: "#FFFFFF",
         headerTitleStyle: {
           fontWeight: "bold",
-          fontSize: 20,
         },
       }}
     >
@@ -36,9 +30,9 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Ana Sayfa",
-          tabBarLabel: "Ana Sayfa",
+          tabBarLabel: "Home",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="home" size={size} color={color} />
+            <Ionicons name="home" size={22} color={color} />
           ),
           headerTitle: "Odanet",
         }}
@@ -47,9 +41,9 @@ export default function TabLayout() {
         name="messages"
         options={{
           title: "Mesajlar",
-          tabBarLabel: "Mesajlar",
+          tabBarLabel: "Messages",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="message-text" size={size} color={color} />
+            <Ionicons name="chatbubble" size={22} color={color} />
           ),
         }}
       />
@@ -57,9 +51,9 @@ export default function TabLayout() {
         name="favorites"
         options={{
           title: "Favoriler",
-          tabBarLabel: "Favoriler",
+          tabBarLabel: "Favorites",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="heart" size={size} color={color} />
+            <Ionicons name="heart" size={22} color={color} />
           ),
         }}
       />
@@ -67,9 +61,9 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profil",
-          tabBarLabel: "Profil",
+          tabBarLabel: "Profile",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="account" size={size} color={color} />
+            <Ionicons name="person" size={22} color={color} />
           ),
         }}
       />
