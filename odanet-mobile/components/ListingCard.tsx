@@ -1,5 +1,7 @@
-import { View, Text, TouchableOpacity } from "react-native";
-import { Link } from "expo-router";
+import { View, StyleSheet, Image } from "react-native";
+import { Card, Text, Chip } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { Listing } from "../hooks/useListings";
 
 interface ListingCardProps {
@@ -7,46 +9,138 @@ interface ListingCardProps {
 }
 
 export function ListingCard({ listing }: ListingCardProps) {
+  const placeholderImage = "https://via.placeholder.com/400x250/00A6A6/FFFFFF?text=Odanet";
+
   return (
-    <Link href={`/listing/${listing.id}`} asChild>
-      <TouchableOpacity className="bg-white rounded-2xl p-4 mb-3 shadow-sm border border-gray-200">
-        <View className="flex-row justify-between items-start mb-2">
-          <Text className="text-lg font-bold text-foreground flex-1" numberOfLines={1}>
+    <Card
+      style={styles.card}
+      onPress={() => router.push(`/listing/${listing.id}`)}
+      mode="elevated"
+    >
+      <Card.Cover
+        source={{ uri: placeholderImage }}
+        style={styles.cardCover}
+      />
+      <Card.Content style={styles.cardContent}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title} numberOfLines={1}>
             {listing.title}
           </Text>
-          <Text className="text-xl font-bold text-primary ml-2">
-            ₺{listing.rentAmount}
+          <View style={styles.priceContainer}>
+            <Text style={styles.price}>₺{listing.rentAmount}</Text>
+            <Text style={styles.priceLabel}>/ay</Text>
+          </View>
+        </View>
+
+        <View style={styles.locationRow}>
+          <MaterialCommunityIcons name="map-marker" size={16} color="#666666" />
+          <Text style={styles.location} numberOfLines={1}>
+            {listing.address}
           </Text>
         </View>
-        
-        <Text className="text-sm text-muted-foreground mb-1" numberOfLines={1}>
-          📍 {listing.address}
-        </Text>
-        
-        <View className="flex-row gap-2 mt-2">
+
+        <View style={styles.chipsRow}>
           {listing.propertyType && (
-            <View className="bg-muted px-2 py-1 rounded-md">
-              <Text className="text-xs text-muted-foreground">
-                {listing.propertyType}
-              </Text>
-            </View>
+            <Chip
+              icon="home-city"
+              style={styles.chip}
+              textStyle={styles.chipText}
+              compact
+            >
+              {listing.propertyType}
+            </Chip>
           )}
           {listing.totalRooms && (
-            <View className="bg-muted px-2 py-1 rounded-md">
-              <Text className="text-xs text-muted-foreground">
-                {listing.totalRooms} oda
-              </Text>
-            </View>
+            <Chip
+              icon="bed"
+              style={styles.chip}
+              textStyle={styles.chipText}
+              compact
+            >
+              {listing.totalRooms} oda
+            </Chip>
           )}
           {listing.furnishingStatus && (
-            <View className="bg-muted px-2 py-1 rounded-md">
-              <Text className="text-xs text-muted-foreground">
-                {listing.furnishingStatus}
-              </Text>
-            </View>
+            <Chip
+              icon="sofa"
+              style={styles.chip}
+              textStyle={styles.chipText}
+              compact
+            >
+              {listing.furnishingStatus}
+            </Chip>
           )}
         </View>
-      </TouchableOpacity>
-    </Link>
+      </Card.Content>
+    </Card>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    marginBottom: 12,
+    elevation: 3,
+    overflow: "hidden",
+  },
+  cardCover: {
+    backgroundColor: "#E5E5E5",
+  },
+  cardContent: {
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#222222",
+    flex: 1,
+    marginRight: 8,
+  },
+  priceContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+  },
+  price: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#00A6A6",
+  },
+  priceLabel: {
+    fontSize: 12,
+    color: "#666666",
+    marginLeft: 2,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  location: {
+    fontSize: 13,
+    color: "#666666",
+    marginLeft: 4,
+    flex: 1,
+  },
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  chip: {
+    backgroundColor: "#F2F2F2",
+    borderRadius: 8,
+    height: 28,
+  },
+  chipText: {
+    fontSize: 11,
+    color: "#666666",
+  },
+});
