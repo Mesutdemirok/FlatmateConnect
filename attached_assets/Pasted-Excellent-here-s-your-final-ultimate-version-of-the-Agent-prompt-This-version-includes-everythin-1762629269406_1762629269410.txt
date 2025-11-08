@@ -1,0 +1,231 @@
+Excellent — here’s your final, ultimate version of the Agent prompt.
+This version includes everything:
+✅ Full UI rebuild instructions
+✅ Brand design + Tailwind theme
+✅ Visual layout wireframes
+✅ Store readiness
+✅ And now — ready-to-use Tailwind component class definitions for buttons, cards, and input boxes
+
+You can copy-paste this entire prompt into Replit Agent, and it will rebuild the Odanet mobile app perfectly.
+
+⸻
+
+🔧 Agent Prompt: Rebuild and Polish Odanet Mobile App (Full UI + Tailwind + Components + Store Ready)
+
+Rebuild and polish the Odanet Mobile App so it visually and functionally matches https://odanet.com.tr￼ — clean, bright, modern, and fully responsive for mobile.
+Use Expo SDK 54, React Native 0.81.5, and nativewind for styling.
+
+⸻
+
+🎨 Brand Colors and Typography
+
+Element	Color
+Primary	#00A6A6
+Accent	#007878
+Background	#F8F8F8
+Text (Primary)	#333333
+Text (Secondary)	#666666
+
+Typography: modern rounded sans-serif (same feel as website).
+Use consistent padding, bright visuals, and wide spacing.
+
+⸻
+
+🧱 APP STRUCTURE (Wireframe Overview)
+
+🏠 Home Screen
+
+╭────────────────────────────╮
+│       [ Odanet Logo ]      │
+│ Türkiye’nin güvenilir oda  │
+│ ve ev arkadaşı platformu.  │
+├────────────────────────────┤
+│ 🔍 [ Şehir veya semt ara… ]│
+├────────────────────────────┤
+│ [ Oda arıyorum ]           │
+│ [ Oda veriyorum ]          │
+├────────────────────────────┤
+│ 🏡 Listing Cards (3–5)     │
+│ Kadıköy, 12.000 TL / ay    │
+│ Beşiktaş, 9.500 TL / ay    │
+╰────────────────────────────╯
+
+💬 Messages Screen
+
+╭────────────────────────────╮
+│ 💬 Henüz mesajınız yok     │
+│ [ Yeni Sohbet Başlat ]     │
+╰────────────────────────────╯
+
+👤 Profile Screen
+
+╭────────────────────────────╮
+│ [ Avatar ] Name            │
+│ mesut@odanet.com           │
+│ [ Profili Düzenle ]        │
+│ [ Çıkış Yap ]              │
+╰────────────────────────────╯
+
+If not logged in:
+
+╭────────────────────────────╮
+│  Giriş yap veya üye ol     │
+│ [ Giriş Yap ] [ Kayıt Ol ] │
+╰────────────────────────────╯
+
+📲 Bottom Navigation Bar
+
+╭────────────────────────────╮
+│ 🏠 Home  💬 Msgs  👤 Prof  │
+╰────────────────────────────╯
+
+
+⸻
+
+🧭 Navigation Setup
+	•	/ → Home
+	•	/messages → Messages
+	•	/profile → Profile
+	•	/auth/login, /auth/register
+Use Expo Router for screen management.
+Ensure Android back button doesn’t close the app.
+
+⸻
+
+🎨 Tailwind Theme (Add to tailwind.config.ts)
+
+theme: {
+  extend: {
+    colors: {
+      odanet: {
+        primary: '#00A6A6',
+        accent: '#007878',
+        background: '#F8F8F8',
+        text: '#333333',
+        textLight: '#666666',
+      },
+    },
+  },
+},
+
+
+⸻
+
+💎 COMPONENT STYLES (Reusable Tailwind Classes)
+
+🔘 Primary Button
+
+<TouchableOpacity className="bg-gradient-to-r from-odanet-primary to-odanet-accent py-3 rounded-xl shadow-md active:opacity-80">
+  <Text className="text-white text-center font-semibold text-base tracking-wide">
+    Oda arıyorum
+  </Text>
+</TouchableOpacity>
+
+⚪ Secondary Button
+
+<TouchableOpacity className="border border-odanet-primary py-3 rounded-xl active:bg-odanet-primary/10">
+  <Text className="text-odanet-primary text-center font-semibold text-base">
+    Oda veriyorum
+  </Text>
+</TouchableOpacity>
+
+🔍 Search Input
+
+<View className="flex-row items-center bg-white rounded-xl shadow-sm px-3 py-2 border border-gray-200">
+  <Ionicons name="search" size={18} color="#666" />
+  <TextInput
+    className="ml-2 flex-1 text-base text-odanet-text"
+    placeholder="Şehir veya semt ara..."
+    placeholderTextColor="#999"
+  />
+</View>
+
+🏡 Listing Card
+
+<View className="bg-white rounded-2xl shadow-md p-3 mb-4">
+  <Image
+    source={{ uri: 'https://odanet.com.tr/sample-room.jpg' }}
+    className="w-full h-40 rounded-xl mb-2"
+    resizeMode="cover"
+  />
+  <Text className="text-lg font-semibold text-odanet-text">Kadıköy</Text>
+  <Text className="text-sm text-odanet-textLight">12.000 TL / ay</Text>
+</View>
+
+📱 Bottom Tab Bar
+Use icons from react-native-vector-icons/Ionicons:
+
+<Tab.Navigator
+  screenOptions={{
+    tabBarActiveTintColor: '#00A6A6',
+    tabBarInactiveTintColor: '#666',
+    tabBarStyle: { backgroundColor: '#fff', height: 60 },
+  }}
+>
+  <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarIcon: ({ color }) => <Ionicons name="home" size={22} color={color} /> }} />
+  <Tab.Screen name="Messages" component={MessagesScreen} options={{ tabBarIcon: ({ color }) => <Ionicons name="chatbubble" size={22} color={color} /> }} />
+  <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarIcon: ({ color }) => <Ionicons name="person" size={22} color={color} /> }} />
+</Tab.Navigator>
+
+
+⸻
+
+⚙️ Technical Configuration
+	•	Expo SDK: 54
+	•	React Native: 0.81.5
+	•	Use nativewind + TailwindCSS
+	•	Bundle all assets (icon, adaptive-icon, splash, favicon)
+	•	Fix asset paths in app.config.ts
+	•	Splash background color: #00A6A6
+
+⸻
+
+🧩 AFTER AGENT FINISHES CHANGES
+
+Run these in shell:
+
+# 1️⃣ Clean dependencies
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps
+
+# 2️⃣ Rebuild native folders
+rm -rf android ios
+npx expo prebuild --clean
+
+# 3️⃣ Run on your phone
+npx expo start --tunnel
+
+# 4️⃣ Once verified visually, build for Android
+eas build -p android --profile preview --clear-cache
+
+
+⸻
+
+📱 App Store & Play Store Readiness
+
+Asset	Path	Size
+App Icon	/assets/icon.png	1024×1024
+Splash	/assets/splash.png	1284×2778
+Adaptive Icon	/assets/adaptive-icon.png	512×512
+Favicon	/assets/favicon.png	512×512
+
+Metadata
+	•	Name: Odanet
+	•	Package ID: com.odanet.app
+	•	Version: 1.0.0
+	•	Description: “Türkiye’nin güvenilir oda kiralama ve ev arkadaşı bulma platformu.”
+	•	Language: tr
+	•	Android Build: app-bundle
+
+⸻
+
+🌟 Final Goal
+	•	Matches Odanet.com visually and emotionally
+	•	Fully functional navigation
+	•	Clean UI with Tailwind consistency
+	•	Production-ready and deployable on EAS
+
+⸻
+
+Would you like me to now add a small dark mode variant (same branding, darker tones for AMOLED screens)?
+It’s optional but gives a premium app-store feel.

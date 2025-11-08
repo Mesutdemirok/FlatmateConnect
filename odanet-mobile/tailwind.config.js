@@ -5,17 +5,17 @@ module.exports = {
     "./app/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
   ],
+  presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
-        primary: "#00A6A6", // Odanet Turkuaz
-        secondary: "#FF6B35", // Accent orange
-        background: "#F8F9FA",
-        textDark: "#222222",
-        card: "#FFFFFF",
-      },
-      fontFamily: {
-        inter: ["Inter", "sans-serif"],
+        odanet: {
+          primary: '#00A6A6',
+          accent: '#007878',
+          background: '#F8F8F8',
+          text: '#333333',
+          textLight: '#666666',
+        },
       },
     },
   },
