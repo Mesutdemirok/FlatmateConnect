@@ -7,6 +7,6 @@ Allow: /
 # Sitemap location
 Sitemap: https://www.odanet.com.tr/sitemap.xml
 
-# Disallow admin and API routes  
+# Disallow admin and API routes
 Disallow: /api/
 Disallow: /admin/
