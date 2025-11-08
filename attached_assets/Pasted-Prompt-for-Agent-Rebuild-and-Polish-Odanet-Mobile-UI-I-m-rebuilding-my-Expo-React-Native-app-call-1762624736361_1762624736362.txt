@@ -1,0 +1,91 @@
+Prompt for Agent — Rebuild and Polish Odanet Mobile UI
+
+I’m rebuilding my Expo React Native app called Odanet, a modern roommate and room rental platform (similar to SpareRoom or Flatmate).
+The current app already connects to my backend and shows real listing data, but the UI is raw and unstyled.
+I want you to redesign and structure the mobile UI professionally, keeping the data logic exactly as is.
+
+Goals:
+
+Create a new clean layout using React Native Paper, expo-router, and expo-linear-gradient.
+
+Add a Bottom Tab Navigator with four tabs:
+
+🏠 Home (listings feed)
+
+💬 Messages (chat placeholder for now)
+
+❤️ Favorites (saved listings placeholder)
+
+👤 Profile (login/account info)
+
+Implement a Header with the app title “Odanet” and use the brand colors:
+
+Primary: #00A6A6
+
+Accent: #F2F2F2
+
+Text: #222222
+
+Convert listing cards into modern components with:
+
+rounded corners
+
+shadow and elevation
+
+bold title + price line
+
+location row with icon
+
+and listing image (use a placeholder if none exists)
+
+Apply consistent spacing and SafeArea handling for all screens.
+
+Keep all API calls, logic, and backend endpoints intact — only improve UI/UX.
+
+Prepare the structure for future login integration with SecureStore and Google OAuth.
+
+Tech details:
+
+Expo SDK 51
+
+React Native 0.74+
+
+React Native Paper for UI
+
+Expo Router for navigation
+
+The existing API base URL is: https://www.odanet.com.tr/api
+
+Output:
+
+Update the project under odanet-mobile/app/
+
+Create these files if missing:
+
+app/(tabs)/_layout.tsx (bottom tab layout)
+
+app/(tabs)/index.tsx (home)
+
+app/(tabs)/messages.tsx
+
+app/(tabs)/favorites.tsx
+
+app/(tabs)/profile.tsx
+
+components/ListingCard.tsx
+
+Import icons from @expo/vector-icons
+
+Ensure everything builds and runs on Android Expo Go with proper styling.
+
+💡 After You Paste It:
+
+Wait for Agent to complete setup and UI generation.
+
+Run:
+
+npm install react-native-paper @expo/vector-icons expo-linear-gradient
+npm start
+
+
+Test the app in Expo Go — you should now see a modern tabbed layout with proper design.
