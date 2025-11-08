@@ -1,0 +1,341 @@
+Excellent. Here’s the final full Agent prompt — fully expanded and ready for your next rebuild session.
+Once the new QR code is generated in Replit, simply paste this prompt into the Agent chat.
+
+It contains:
+✅ Complete rebuild instructions
+✅ Design and brand rules
+✅ Functional tab navigation
+✅ Code templates for all screens (index.tsx, favorites.tsx, messages.tsx, profile.tsx)
+✅ Image fixes and Android adjustments
+
+⸻
+
+🧠 Agent Prompt: Full Rebuild and Polish for Odanet Mobile App
+
+Objective: Rebuild the Odanet mobile app to look and function identically to Odanet.com mobile version — matching its style, images, colors, and logic — and ensure all screens (Home, Messages, Favorites, Profile) are working perfectly on Android.
+
+⸻
+
+🎨 1. Brand Design & Color System
+
+Apply Odanet’s exact color palette:
+
+Element	Hex Code	Usage
+Primary	#00A6A6	Buttons, highlights, icons
+Background	#FAFAFA	Main background
+White	#FFFFFF	Cards, header
+Text Dark	#111111	Headings
+Text Muted	#666666	Subtext
+Border	#E5E5E5	Card borders & separators
+
+UI rules:
+	•	Soft card radius (12–16px)
+	•	Subtle drop shadows on cards
+	•	Rounded buttons with padding 12–14px
+	•	Use simple font system consistent with website typography
+	•	Centered logo at top with tagline:
+Türkiye’nin güvenilir oda ve ev arkadaşı platformu
+
+⸻
+
+🖼️ 2. Image Fixes (Critical)
+
+Fix all Android image loading issues:
+	•	Always use resizeMode="cover"
+	•	Use valid remote URL or local fallback:
+
+const imageUri = listing.image || listing.cover || listing.images?.[0]?.url || require("../assets/default-room.jpg");
+
+
+	•	Place fallback files in /assets/:
+
+logo.png
+default-room.jpg
+adaptive-icon.png
+splash.png
+favicon.png
+
+
+	•	No gray backgrounds or missing images — always show either a valid or fallback image.
+	•	Eliminate all “Could not find MIME for Buffer” errors during build.
+
+⸻
+
+🧭 3. Bottom Navigation (New Implementation)
+
+Create proper navigation using expo-router bottom tabs that do not overlap Android phone buttons.
+
+Tabs:
+	•	🏠 Home (/app/index.tsx)
+	•	💬 Messages (/app/messages.tsx)
+	•	❤️ Favorites (/app/favorites.tsx)
+	•	👤 Profile (/app/profile.tsx)
+
+Use:
+	•	White background
+	•	Shadow or border on top
+	•	Active tab highlighted in teal #00A6A6
+	•	Vector icons (Ionicons or MaterialIcons)
+	•	Always visible and fixed above the system bar.
+
+⸻
+
+🔐 4. Profile & Authentication
+	•	If user logged out → show login form:
+	•	Email & password fields
+	•	Button: “Giriş Yap” (primary teal color)
+	•	Text link: “Hesabın yok mu? Kayıt Ol”
+	•	On successful login:
+	•	Show user info (name, email, optional profile photo)
+	•	Buttons:
+	•	“Favorilerime Git”
+	•	“Mesajlarım”
+	•	“Çıkış Yap”
+	•	Connect this to apiBaseUrl already set in app.config.ts.
+
+⸻
+
+❤️ 5. Favorites Screen
+	•	Fetch favorites from /api/favorites
+	•	If logged out:
+Lütfen favorilerinizi görmek için giriş yapınız.
+	•	If logged in:
+	•	Display cards similar to home listings
+	•	Show image, title, location, and price
+	•	Include a filled or outlined heart icon toggle to remove from favorites.
+
+⸻
+
+💬 6. Messages Screen
+
+Display a placeholder for now:
+
+💬 Mesajlar yakında burada olacak.
+Odanet mesajlaşma sistemi geliştiriliyor.
+
+Use teal accent color for the icon and centered alignment.
+
+⸻
+
+🏡 7. Home Screen Updates
+	•	Include:
+	•	Search bar (“Şehir veya semt ara…”)
+	•	“Oda arıyorum” (Primary teal button)
+	•	“Oda veriyorum” (Secondary white button)
+	•	“🏡 Güncel İlanlar” section
+	•	“Tüm İlanları Gör” button at bottom
+	•	Enable pull-to-refresh
+	•	Design layout spacing and typography exactly like Odanet.com mobile
+	•	Listings load from backend via useListings
+
+⸻
+
+⚙️ 8. Technical Setup
+
+Ensure:
+
+"android": {
+  "compileSdkVersion": 34,
+  "targetSdkVersion": 34,
+  "minSdkVersion": 24
+}
+
+Install dependencies:
+
+npx expo install react-native-worklets
+npx expo install react-native-svg react-native-reanimated react-native-gesture-handler react-native-screens
+
+
+⸻
+
+🧩 9. File Structure
+
+app/
+  index.tsx        // Home
+  favorites.tsx    // Favorites
+  messages.tsx     // Messages
+  profile.tsx      // Profile/Login
+assets/
+  logo.png
+  default-room.jpg
+  splash.png
+  favicon.png
+  adaptive-icon.png
+
+
+⸻
+
+💻 10. Code Templates
+
+/app/index.tsx
+
+import { View, ScrollView, Text, RefreshControl, StyleSheet, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useState } from "react";
+import { useListings } from "../../hooks/useListings";
+import { ListingCard } from "../../components/ListingCard";
+import { PrimaryButton } from "../../components/PrimaryButton";
+import { SecondaryButton } from "../../components/SecondaryButton";
+import { SearchInput } from "../../components/SearchInput";
+
+export default function HomeScreen() {
+  const { data: listings, isLoading, error, refetch } = useListings();
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#00A6A6"]} />}
+      >
+        <View style={styles.header}>
+          <Image source={require("../../assets/logo.png")} style={styles.logoImage} />
+          <Text style={styles.tagline}>Türkiye'nin güvenilir oda ve ev arkadaşı platformu</Text>
+        </View>
+
+        <View style={styles.content}>
+          <SearchInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Şehir veya semt ara..." />
+          <PrimaryButton title="Oda arıyorum" onPress={() => {}} style={styles.buttonSpacing} />
+          <SecondaryButton title="Oda veriyorum" onPress={() => {}} />
+
+          <Text style={styles.sectionTitle}>🏡 Güncel İlanlar</Text>
+
+          {listings?.length ? (
+            listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)
+          ) : (
+            <Text style={styles.emptyText}>Henüz ilan bulunmamaktadır</Text>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#FAFAFA" },
+  header: { alignItems: "center", padding: 20 },
+  logoImage: { width: 150, height: 60, resizeMode: "contain", marginBottom: 8 },
+  tagline: { color: "#666", fontSize: 14, textAlign: "center" },
+  content: { paddingHorizontal: 16, paddingVertical: 12 },
+  sectionTitle: { fontWeight: "bold", fontSize: 18, marginVertical: 16, color: "#111" },
+  buttonSpacing: { marginVertical: 10 },
+  emptyText: { textAlign: "center", color: "#666" },
+});
+
+
+⸻
+
+/app/favorites.tsx
+
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export default function FavoritesScreen() {
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
+        <Text style={styles.title}>❤️ Favorilerim</Text>
+        <Text style={styles.text}>Favori ilanlarınızı burada görebilirsiniz.</Text>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#FAFAFA" },
+  title: { fontSize: 22, fontWeight: "bold", margin: 20, color: "#00A6A6" },
+  text: { color: "#666", textAlign: "center", marginTop: 20 },
+});
+
+
+⸻
+
+/app/messages.tsx
+
+import { View, Text, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export default function MessagesScreen() {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.center}>
+        <Text style={styles.emoji}>💬</Text>
+        <Text style={styles.text}>Mesajlar yakında burada olacak.</Text>
+        <Text style={styles.subText}>Odanet mesajlaşma sistemi geliştiriliyor.</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: "center", backgroundColor: "#FAFAFA" },
+  center: { alignItems: "center" },
+  emoji: { fontSize: 50 },
+  text: { fontSize: 16, color: "#111", marginTop: 10 },
+  subText: { fontSize: 14, color: "#666", marginTop: 6 },
+});
+
+
+⸻
+
+/app/profile.tsx
+
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import { useState } from "react";
+
+export default function ProfileScreen() {
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  if (!loggedIn) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Giriş Yap</Text>
+        <TextInput placeholder="E-posta" style={styles.input} />
+        <TextInput placeholder="Şifre" secureTextEntry style={styles.input} />
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>Giriş Yap</Text>
+        </TouchableOpacity>
+        <Text style={styles.link}>Hesabın yok mu? Kayıt Ol</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Profilim</Text>
+      <TouchableOpacity style={styles.button}>
+        <Text style={styles.buttonText}>Çıkış Yap</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#FAFAFA", padding: 20 },
+  title: { fontSize: 22, fontWeight: "bold", color: "#00A6A6", marginBottom: 20 },
+  input: { backgroundColor: "#fff", borderRadius: 8, padding: 12, marginBottom: 12, borderColor: "#E5E5E5", borderWidth: 1 },
+  button: { backgroundColor: "#00A6A6", padding: 12, borderRadius: 8, alignItems: "center" },
+  buttonText: { color: "#fff", fontWeight: "bold" },
+  link: { color: "#00A6A6", textAlign: "center", marginTop: 12 },
+});
+
+
+⸻
+
+✅ Final Agent Task
+
+Rebuild the Odanet mobile app using all specifications above.
+Implement navigation, image fixes, brand colors, and create all four main screens.
+Ensure perfect compatibility on Android.
+Then generate a new QR code for testing in Expo Go.
+
+⸻
+
+Would you like me to tailor this for Replit Agent’s internal file system structure (so paths like ../../assets/ or /app/ resolve perfectly there)?
+That ensures it’ll execute in your environment without any “Cannot find module” errors.
