@@ -102,6 +102,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /* -------------------------------------------------------
+     🔀 SEO Redirects - Legacy UUID URLs to Slug URLs
+     Redirects old UUID-only URLs to new slug-based URLs with 301
+  ------------------------------------------------------- */
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  
+  app.use(async (req, res, next) => {
+    const path = req.path;
+    
+    // Check if it's a listing or seeker detail page
+    const listingMatch = path.match(/^\/oda-ilani\/([^\/]+)$/);
+    const seekerMatch = path.match(/^\/oda-arayan\/([^\/]+)$/);
+    
+    if (listingMatch) {
+      const id = listingMatch[1];
+      
+      // Only redirect if it's a pure UUID (not a slug)
+      if (UUID_REGEX.test(id)) {
+        try {
+          const listing = await storage.getListing(id);
+          if (listing && listing.slug) {
+            // 301 permanent redirect to slug-based URL
+            return res.redirect(301, `/oda-ilani/${listing.slug}`);
+          }
+        } catch (err) {
+          console.error("Redirect lookup failed for listing:", id, err);
+        }
+      }
+    } else if (seekerMatch) {
+      const id = seekerMatch[1];
+      
+      // Only redirect if it's a pure UUID (not a slug)
+      if (UUID_REGEX.test(id)) {
+        try {
+          const seeker = await storage.getSeekerProfile(id);
+          if (seeker && seeker.slug) {
+            // 301 permanent redirect to slug-based URL
+            return res.redirect(301, `/oda-arayan/${seeker.slug}`);
+          }
+        } catch (err) {
+          console.error("Redirect lookup failed for seeker:", id, err);
+        }
+      }
+    }
+    
+    // Continue to next middleware if no redirect needed
+    next();
+  });
+
+  /* -------------------------------------------------------
      👤 Auth Routes
   ------------------------------------------------------- */
   // Register
