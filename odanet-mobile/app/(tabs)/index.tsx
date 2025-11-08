@@ -1,4 +1,4 @@
-import { View, ScrollView, Text, RefreshControl } from "react-native";
+import { View, ScrollView, Text, RefreshControl, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useListings } from "../../hooks/useListings";
@@ -19,9 +19,9 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-odanet-background" edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
-        className="flex-1"
+        style={styles.scrollView}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -31,18 +31,16 @@ export default function HomeScreen() {
         }
       >
         {/* Logo and Tagline */}
-        <View className="bg-white pt-6 pb-4 px-4 items-center border-b border-gray-200">
-          <Text className="text-2xl font-bold text-odanet-primary mb-2">
-            Odanet
-          </Text>
-          <Text className="text-sm text-odanet-textLight text-center">
+        <View style={styles.header}>
+          <Text style={styles.logo}>Odanet</Text>
+          <Text style={styles.tagline}>
             Türkiye'nin güvenilir oda ve ev arkadaşı platformu
           </Text>
         </View>
 
-        <View className="px-4 py-4">
+        <View style={styles.content}>
           {/* Search */}
-          <View className="mb-4">
+          <View style={styles.searchContainer}>
             <SearchInput
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -51,11 +49,11 @@ export default function HomeScreen() {
           </View>
 
           {/* Action Buttons */}
-          <View className="mb-6">
+          <View style={styles.buttonsContainer}>
             <PrimaryButton
               title="Oda arıyorum"
               onPress={() => {}}
-              className="mb-3"
+              style={styles.buttonSpacing}
             />
             <SecondaryButton
               title="Oda veriyorum"
@@ -64,21 +62,19 @@ export default function HomeScreen() {
           </View>
 
           {/* Listings Section */}
-          <View className="mb-4">
-            <Text className="text-lg font-bold text-odanet-text mb-3">
-              🏡 Güncel İlanlar
-            </Text>
+          <View style={styles.listingsSection}>
+            <Text style={styles.sectionTitle}>🏡 Güncel İlanlar</Text>
 
             {isLoading && !refreshing && (
-              <View className="items-center justify-center py-12">
-                <Text className="text-odanet-textLight">Yükleniyor...</Text>
+              <View style={styles.centerContainer}>
+                <Text style={styles.loadingText}>Yükleniyor...</Text>
               </View>
             )}
 
             {error && (
-              <View className="bg-white rounded-xl p-6 items-center">
-                <Text className="text-red-500 text-center mb-2">Hata Oluştu</Text>
-                <Text className="text-odanet-textLight text-center text-sm">
+              <View style={styles.errorCard}>
+                <Text style={styles.errorTitle}>Hata Oluştu</Text>
+                <Text style={styles.errorText}>
                   İlanlar yüklenirken bir hata oluştu
                 </Text>
               </View>
@@ -90,8 +86,8 @@ export default function HomeScreen() {
               ))
             ) : (
               !isLoading && (
-                <View className="bg-white rounded-xl p-6 items-center">
-                  <Text className="text-odanet-textLight text-center">
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>
                     Henüz ilan bulunmamaktadır
                   </Text>
                 </View>
@@ -103,3 +99,90 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F8F8",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    backgroundColor: "#FFFFFF",
+    paddingTop: 24,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+  },
+  logo: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#00A6A6",
+    marginBottom: 8,
+  },
+  tagline: {
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  buttonsContainer: {
+    marginBottom: 24,
+  },
+  buttonSpacing: {
+    marginBottom: 12,
+  },
+  listingsSection: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333333",
+    marginBottom: 12,
+  },
+  centerContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+  },
+  loadingText: {
+    color: "#666666",
+  },
+  errorCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 24,
+    alignItems: "center",
+  },
+  errorTitle: {
+    color: "#DC2626",
+    textAlign: "center",
+    marginBottom: 8,
+    fontWeight: "600",
+  },
+  errorText: {
+    color: "#666666",
+    textAlign: "center",
+    fontSize: 14,
+  },
+  emptyCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 24,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: "#666666",
+    textAlign: "center",
+  },
+});

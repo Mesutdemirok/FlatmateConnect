@@ -1,4 +1,4 @@
-import { View, ScrollView, Text, TouchableOpacity } from "react-native";
+import { View, ScrollView, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -18,9 +18,9 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-odanet-background" edges={["top"]}>
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-odanet-textLight">Yükleniyor...</Text>
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.centerContainer}>
+          <Text style={styles.loadingText}>Yükleniyor...</Text>
         </View>
       </SafeAreaView>
     );
@@ -28,26 +28,24 @@ export default function ProfileScreen() {
 
   if (!user) {
     return (
-      <SafeAreaView className="flex-1 bg-odanet-background" edges={["top"]}>
-        <ScrollView className="flex-1">
-          <View className="px-4 py-20">
-            <View className="bg-white rounded-2xl p-8 items-center shadow-md">
-              <Ionicons name="person-circle-outline" size={80} color="#00A6A6" className="mb-4" />
-              <Text className="text-xl font-bold text-odanet-text mb-2 text-center">
-                Giriş Yap veya Üye Ol
-              </Text>
-              <Text className="text-sm text-odanet-textLight text-center mb-6">
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.contentContainer}>
+            <View style={styles.card}>
+              <Ionicons name="person-circle-outline" size={80} color="#00A6A6" style={styles.icon} />
+              <Text style={styles.title}>Giriş Yap veya Üye Ol</Text>
+              <Text style={styles.subtitle}>
                 İlan vermek, mesajlaşmak ve favorilere eklemek için giriş yapın
               </Text>
               <PrimaryButton
                 title="Giriş Yap"
                 onPress={() => router.push("/login")}
-                className="w-full mb-3"
+                style={styles.fullWidthButton}
               />
               <SecondaryButton
                 title="Kayıt Ol"
                 onPress={() => router.push("/login")}
-                className="w-full"
+                style={styles.buttonSpacing}
               />
             </View>
           </View>
@@ -59,60 +57,203 @@ export default function ProfileScreen() {
   const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
 
   return (
-    <SafeAreaView className="flex-1 bg-odanet-background" edges={["top"]}>
-      <ScrollView className="flex-1">
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <ScrollView style={styles.scrollView}>
         {/* Profile Header */}
-        <View className="bg-white pt-8 pb-6 px-4 items-center border-b border-gray-200">
-          <View className="w-20 h-20 rounded-full bg-odanet-primary items-center justify-center mb-3">
-            <Text className="text-white text-2xl font-bold">{initials}</Text>
+        <View style={styles.header}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
           </View>
-          <Text className="text-xl font-bold text-odanet-text mb-1">
+          <Text style={styles.userName}>
             {user.firstName} {user.lastName}
           </Text>
-          <Text className="text-sm text-odanet-textLight">{user.email}</Text>
+          <Text style={styles.userEmail}>{user.email}</Text>
         </View>
 
-        <View className="px-4 py-6">
+        <View style={styles.content}>
           {/* Profile Actions */}
-          <View className="bg-white rounded-2xl shadow-md mb-4 overflow-hidden">
+          <View style={styles.menuCard}>
             <TouchableOpacity
-              className="flex-row items-center p-4 border-b border-gray-100 active:bg-gray-50"
+              style={[styles.menuItem, styles.menuItemBorder]}
               onPress={() => {}}
+              activeOpacity={0.7}
             >
               <Ionicons name="person-outline" size={22} color="#00A6A6" />
-              <Text className="ml-3 flex-1 text-base text-odanet-text">Profili Düzenle</Text>
+              <Text style={styles.menuText}>Profili Düzenle</Text>
               <Ionicons name="chevron-forward" size={20} color="#999" />
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-row items-center p-4 border-b border-gray-100 active:bg-gray-50"
+              style={[styles.menuItem, styles.menuItemBorder]}
               onPress={() => {}}
+              activeOpacity={0.7}
             >
               <Ionicons name="home-outline" size={22} color="#00A6A6" />
-              <Text className="ml-3 flex-1 text-base text-odanet-text">İlanlarım</Text>
+              <Text style={styles.menuText}>İlanlarım</Text>
               <Ionicons name="chevron-forward" size={20} color="#999" />
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-row items-center p-4 active:bg-gray-50"
+              style={styles.menuItem}
               onPress={() => {}}
+              activeOpacity={0.7}
             >
               <Ionicons name="settings-outline" size={22} color="#00A6A6" />
-              <Text className="ml-3 flex-1 text-base text-odanet-text">Ayarlar</Text>
+              <Text style={styles.menuText}>Ayarlar</Text>
               <Ionicons name="chevron-forward" size={20} color="#999" />
             </TouchableOpacity>
           </View>
 
           {/* Logout Button */}
           <TouchableOpacity
-            className="bg-white rounded-2xl shadow-md p-4 flex-row items-center justify-center active:bg-gray-50"
+            style={styles.logoutButton}
             onPress={handleLogout}
+            activeOpacity={0.7}
           >
             <Ionicons name="log-out-outline" size={22} color="#DC2626" />
-            <Text className="ml-2 text-base font-semibold text-red-600">Çıkış Yap</Text>
+            <Text style={styles.logoutText}>Çıkış Yap</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F8F8",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contentContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 80,
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 32,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  header: {
+    backgroundColor: "#FFFFFF",
+    paddingTop: 32,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#00A6A6",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  avatarText: {
+    color: "#FFFFFF",
+    fontSize: 32,
+    fontWeight: "bold",
+  },
+  userName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333333",
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: "#666666",
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+  },
+  menuCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    marginBottom: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+  },
+  menuItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5F5F5",
+  },
+  menuText: {
+    marginLeft: 12,
+    flex: 1,
+    fontSize: 16,
+    color: "#333333",
+  },
+  logoutButton: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  logoutText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#DC2626",
+  },
+  icon: {
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333333",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  fullWidthButton: {
+    width: "100%",
+    marginBottom: 12,
+  },
+  buttonSpacing: {
+    width: "100%",
+  },
+  loadingText: {
+    color: "#666666",
+  },
+});

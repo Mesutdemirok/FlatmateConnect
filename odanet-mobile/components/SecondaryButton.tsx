@@ -5,15 +5,26 @@ interface SecondaryButtonProps extends TouchableOpacityProps {
   onPress: () => void;
 }
 
-export function SecondaryButton({ title, onPress, ...props }: SecondaryButtonProps) {
+export function SecondaryButton({ title, onPress, className, ...props }: SecondaryButtonProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      className="border border-odanet-primary py-3 rounded-xl active:bg-odanet-primary/10"
+      style={{
+        borderColor: "#00A6A6",
+        borderWidth: 1,
+        paddingVertical: 12,
+        borderRadius: 12,
+      }}
+      className={className}
       {...props}
     >
-      <Text className="text-odanet-primary text-center font-semibold text-base">
+      <Text style={{
+        color: "#00A6A6",
+        textAlign: "center",
+        fontWeight: "600",
+        fontSize: 16,
+      }}>
         {title}
       </Text>
     </TouchableOpacity>

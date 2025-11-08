@@ -1,4 +1,4 @@
-import { TouchableOpacity, Text, TouchableOpacityProps } from "react-native";
+import { TouchableOpacity, Text, TouchableOpacityProps, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 interface PrimaryButtonProps extends TouchableOpacityProps {
@@ -6,16 +6,30 @@ interface PrimaryButtonProps extends TouchableOpacityProps {
   onPress: () => void;
 }
 
-export function PrimaryButton({ title, onPress, ...props }: PrimaryButtonProps) {
+export function PrimaryButton({ title, onPress, className, ...props }: PrimaryButtonProps) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8} {...props}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} className={className} {...props}>
       <LinearGradient
         colors={["#00A6A6", "#007878"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        className="py-3 rounded-xl shadow-md"
+        style={{
+          paddingVertical: 12,
+          borderRadius: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
+          elevation: 3,
+        }}
       >
-        <Text className="text-white text-center font-semibold text-base tracking-wide">
+        <Text style={{
+          color: "#FFFFFF",
+          textAlign: "center",
+          fontWeight: "600",
+          fontSize: 16,
+          letterSpacing: 0.5,
+        }}>
           {title}
         </Text>
       </LinearGradient>

@@ -15,19 +15,50 @@ export function ListingCard({ listing }: ListingCardProps) {
   return (
     <TouchableOpacity
       onPress={() => router.push(`/listing/${listing.id}`)}
-      className="bg-white rounded-2xl shadow-md p-3 mb-4"
       activeOpacity={0.7}
+      style={{
+        backgroundColor: "#FFFFFF",
+        borderRadius: 16,
+        padding: 12,
+        marginBottom: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}
     >
       <Image
         source={{ uri: imageUrl }}
-        className="w-full h-40 rounded-xl mb-2"
+        style={{
+          width: "100%",
+          height: 160,
+          borderRadius: 12,
+          marginBottom: 8,
+        }}
         resizeMode="cover"
       />
-      <Text className="text-lg font-semibold text-odanet-text">{listing.title}</Text>
+      <Text style={{
+        fontSize: 18,
+        fontWeight: "600",
+        color: "#333333",
+        marginBottom: 4,
+      }}>
+        {listing.title}
+      </Text>
       {listing.address && (
-        <Text className="text-sm text-odanet-textLight">{listing.address}</Text>
+        <Text style={{
+          fontSize: 14,
+          color: "#666666",
+          marginBottom: 4,
+        }}>
+          {listing.address}
+        </Text>
       )}
-      <Text className="text-sm text-odanet-textLight">
+      <Text style={{
+        fontSize: 14,
+        color: "#666666",
+      }}>
         {(listing.rentAmount || 0).toLocaleString()} TL / ay
       </Text>
     </TouchableOpacity>

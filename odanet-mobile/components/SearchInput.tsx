@@ -7,10 +7,29 @@ interface SearchInputProps extends TextInputProps {
 
 export function SearchInput({ placeholder = "Şehir veya semt ara...", ...props }: SearchInputProps) {
   return (
-    <View className="flex-row items-center bg-white rounded-xl shadow-sm px-3 py-2 border border-gray-200">
+    <View style={{
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#FFFFFF",
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderWidth: 1,
+      borderColor: "#E5E5E5",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 2,
+    }}>
       <Ionicons name="search" size={18} color="#666" />
       <TextInput
-        className="ml-2 flex-1 text-base text-odanet-text"
+        style={{
+          marginLeft: 8,
+          flex: 1,
+          fontSize: 16,
+          color: "#333333",
+        }}
         placeholder={placeholder}
         placeholderTextColor="#999"
         {...props}
