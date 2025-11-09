@@ -1,0 +1,190 @@
+
+🧠 Odanet Mobile + Web Unified Rebuild Prompt
+
+Prompt Title:
+🎨 Rebuild Odanet Mobile App to Match Website + Integrate Web Version (Unified Design System)
+
+⸻
+
+🔹 Objective
+
+Rebuild the Odanet mobile app so it looks exactly like the website (https://odanet.com.tr) — color, gradients, text, layout, icons, buttons, shadows — and then configure the web version using React Native Web inside Expo so both web and mobile share the same design system.
+
+⸻
+
+🔹 Design Synchronization Goals
+	•	Match every single visual detail from Odanet.com.tr
+	•	Use same gradients, typography, spacing, rounded cards, and colors
+	•	Web and mobile must use the same component code, no visual drift
+
+⸻
+
+🎨 Global Theme Setup
+
+Create /theme/colors.ts and /theme/fonts.ts with:
+
+export const colors = {
+  gradientStart: "#7F00FF",
+  gradientEnd: "#E100FF",
+  background: "#F7F5FB",
+  text: "#222222",
+  accent: "#7F00FF",
+  accentAlt: "#E100FF",
+  card: "#FFFFFF",
+  shadow: "rgba(127, 0, 255, 0.15)",
+};
+
+export const fonts = {
+  family: "Inter",
+  weight: {
+    regular: "400",
+    medium: "500",
+    bold: "700",
+  },
+};
+
+All UI components (buttons, cards, text, tabs) must use these theme tokens.
+
+⸻
+
+🧩 Screens to Rebuild (Pixel-Perfect Match)
+
+🏠 Home Screen
+	•	Header: website gradient (#7F00FF → #E100FF)
+	•	“Odanet” logo in white, centered
+	•	Subtitle: “Güvenilir ve şeffaf oda arama deneyimi”
+	•	Toggle buttons: Oda Ara / Oda Arkadaşı Ara, pill-shaped, gradient border
+	•	Search bar identical to web (rounded input with location icon and placeholder)
+	•	Two main CTA buttons:
+	•	Oda arıyorum → Gradient background
+	•	Oda veriyorum → Gradient outline
+	•	Listings section:
+	•	White cards with gradient shadow
+	•	Rounded corners (16)
+	•	Display image, title, location, rent
+	•	Fallback image → https://www.odanet.com.tr/uploads/default-room.jpg
+
+⸻
+
+💬 Messages / ❤️ Favorites Tabs
+	•	Icons match website header icons (chat bubble + heart)
+	•	Active tab = gradient highlight
+	•	Use safe area view to prevent Android bottom button overlap
+	•	Ensure functional tab navigation
+
+⸻
+
+👤 Profile Page
+	•	Gradient header (same as website)
+	•	Center avatar with initials
+	•	Add white cards:
+	•	“Profili Düzenle”
+	•	“İlanlarım”
+	•	“Ayarlar”
+	•	Add “Çıkış Yap” button (red text with shadow)
+	•	Match spacing, alignment, and background from website
+
+⸻
+
+🔐 Login / Register
+	•	Copy website login/register layout exactly:
+	•	Purple gradient header with “Odanet’e Hoş Geldiniz”
+	•	Violet background container
+	•	Google login button with logo
+	•	Tab buttons: “Giriş Yap” / “Üye Ol”
+	•	Rounded input fields
+	•	Gradient “Giriş Yap” button
+	•	Use same padding, corner radius, shadows, and spacing.
+
+⸻
+
+🔹 Functional Fixes
+	1.	🖼 Images
+	•	Load first available image for each listing
+	•	If missing, use default fallback
+	2.	🧭 Navigation
+	•	Fix bottom bar overlap on Android
+	•	All tabs must be clickable and persistent
+	3.	🔑 Auth Flow
+	•	Login → Redirect to Profile
+	•	Logout → Redirect to Login
+	4.	🧱 Components to Polish
+
+Component	Update
+ListingCard.tsx	Gradient card, proper shadow, same layout as web
+PrimaryButton.tsx	Gradient background with white text
+SearchInput.tsx	Rounded input with inner shadow
+TabNavigator.tsx	Custom gradient active icon
+ProfileHeader.tsx	Gradient background, user avatar circle
+LoginScreen.tsx	Rebuild layout and styling identical to website
+
+
+
+⸻
+
+🌐 Web Integration Setup (React Native Web)
+
+After rebuilding design, integrate the web version of this app using Expo’s built-in web support.
+	1.	Add react-native-web and @expo/webpack-config
+
+npm install react-native-web @expo/webpack-config
+
+
+	2.	Update app.json:
+
+{
+  "expo": {
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
+
+
+	3.	Add the web entry point in package.json:
+
+"main": "expo/AppEntry.js",
+"scripts": {
+  "start:web": "expo start --web"
+}
+
+
+	4.	Ensure all components use only React Native primitives (View, Text, Image, etc.) so they render properly on web.
+	5.	Run web preview after rebuild:
+
+npx expo start --web
+
+
+
+This must display the same interface as the website (including gradients, search box, and cards).
+
+⸻
+
+⚙️ Deployment & Testing
+	1.	Start app fresh:
+
+pkill -f node || true && npx expo start -c --tunnel
+
+
+	2.	Scan QR with Expo Go on Android/iPhone.
+	3.	Open the same project in browser with:
+
+npx expo start --web
+
+
+	4.	Verify both mobile and web versions are visually identical.
+
+⸻
+
+🧭 Final Output Requirements
+	•	Visual design identical to Odanet.com.tr
+	•	Same colors, buttons, gradients, icons, and shadows
+	•	Unified design system for both platforms
+	•	All images load correctly
+	•	Bottom tabs fully functional
+	•	Login → Profile navigation works
+	•	Web version live and visually identical to website
+
+⸻
+
+End of Prompt
