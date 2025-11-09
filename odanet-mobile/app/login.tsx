@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, ScrollView, Alert, StyleSheet, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, ScrollView, Alert, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
-import { useLogin, useRegister } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { colors, fonts, borderRadius, spacing } from "../theme";
 
@@ -20,23 +20,28 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
-  const login = useLogin();
-  const register = useRegister();
+  const { login, register } = useAuth();
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+    
     if (isLogin) {
       if (!email || !password) {
         Alert.alert("Hata", "Lütfen email ve şifre girin");
         return;
       }
 
+      setIsSubmitting(true);
       try {
-        await login.mutateAsync({ email, password });
+        await login({ email, password });
         router.replace("/(tabs)");
       } catch (error: any) {
         Alert.alert("Giriş Başarısız", error.response?.data?.message || "Bir hata oluştu");
+      } finally {
+        setIsSubmitting(false);
       }
     } else {
       if (!email || !password || !firstName || !lastName) {
@@ -44,11 +49,14 @@ export default function Login() {
         return;
       }
 
+      setIsSubmitting(true);
       try {
-        await register.mutateAsync({ email, password, firstName, lastName });
+        await register({ email, password, firstName, lastName });
         router.replace("/(tabs)");
       } catch (error: any) {
         Alert.alert("Kayıt Başarısız", error.response?.data?.message || "Bir hata oluştu");
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -205,9 +213,9 @@ export default function Login() {
             </View>
 
             <PrimaryButton
-              title={login.isPending || register.isPending ? "Yükleniyor..." : (isLogin ? "Giriş Yap" : "Kayıt Ol")}
+              title={isSubmitting ? "Yükleniyor..." : (isLogin ? "Giriş Yap" : "Kayıt Ol")}
               onPress={handleSubmit}
-              disabled={login.isPending || register.isPending}
+              disabled={isSubmitting}
               style={styles.submitButton}
             />
 
