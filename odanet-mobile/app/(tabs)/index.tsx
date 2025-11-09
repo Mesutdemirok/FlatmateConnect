@@ -1,6 +1,7 @@
 import { View, ScrollView, Text, RefreshControl, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
+import { useRouter } from "expo-router";
 import { useListings } from "../../hooks/useListings";
 import { ListingCard } from "../../components/ListingCard";
 import { PrimaryButton } from "../../components/PrimaryButton";
@@ -8,6 +9,7 @@ import { SecondaryButton } from "../../components/SecondaryButton";
 import { SearchInput } from "../../components/SearchInput";
 
 export default function HomeScreen() {
+  const router = useRouter();
   const { data: listings, isLoading, error, refetch } = useListings();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -87,7 +89,7 @@ export default function HomeScreen() {
                 ))}
                 <SecondaryButton
                   title="Tüm İlanları Gör"
-                  onPress={() => {}}
+                  onPress={() => router.push("/listings")}
                   style={styles.viewAllButton}
                 />
               </>
