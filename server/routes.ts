@@ -224,6 +224,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all published seeker profiles (for mobile app)
+  // MUST come before /api/users/:userId to avoid route conflict
+  app.get("/api/users/seekers", jwtAuth, async (req, res) => {
+    try {
+      const seekers = await storage.getSeekerProfiles({
+        isPublished: true,
+        isActive: true,
+      });
+      // Wrap in object to match mobile app expectations (checks json.seekers, json.data, etc.)
+      res.json({ seekers });
+    } catch (err: any) {
+      console.error("❌ /api/users/seekers error:", err);
+      res.status(500).json({ message: "Veritabanı hatası" });
+    }
+  });
+
   // Get user by ID (for messaging)
   app.get("/api/users/:userId", jwtAuth, async (req, res) => {
     try {
