@@ -61,19 +61,39 @@ export default function HomeScreen() {
       ? seekers.data
       : [];
 
-  // Filter logic remains the same
+  // Filter logic for both listings and seekers
   const filteredData = useMemo(() => {
     const list = activeToggle === "room" ? listingList : seekerList;
     if (!searchQuery) return list;
 
     const lowerCaseQuery = searchQuery.toLowerCase();
 
-    return list.filter(
-      (item) =>
-        item.title?.toLowerCase().includes(lowerCaseQuery) ||
-        item.address?.toLowerCase().includes(lowerCaseQuery) ||
-        item.city?.toLowerCase().includes(lowerCaseQuery),
-    );
+    if (activeToggle === "room") {
+      // Search listings by title, address, city
+      return list.filter(
+        (item: any) =>
+          item.title?.toLowerCase().includes(lowerCaseQuery) ||
+          item.address?.toLowerCase().includes(lowerCaseQuery) ||
+          item.city?.toLowerCase().includes(lowerCaseQuery),
+      );
+    } else {
+      // Search seekers by name, age, preferred areas
+      return list.filter((item: any) => {
+        const fullName = item.user
+          ? `${item.user.firstName || ""} ${item.user.lastName || ""}`.toLowerCase()
+          : "";
+        const age = item.age?.toString() || "";
+        const preferredAreas = (item.preferredAreas ?? []).join(" ").toLowerCase();
+        const occupation = (item.occupation || "").toLowerCase();
+
+        return (
+          fullName.includes(lowerCaseQuery) ||
+          age.includes(lowerCaseQuery) ||
+          preferredAreas.includes(lowerCaseQuery) ||
+          occupation.includes(lowerCaseQuery)
+        );
+      });
+    }
   }, [activeToggle, listingList, seekerList, searchQuery]);
 
   const isLoading =
