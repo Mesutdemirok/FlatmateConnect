@@ -18,13 +18,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <Stack
           screenOptions={{
-            headerStyle: {
-              backgroundColor: "#00A6A6",
-            },
-            headerTintColor: "#FFFFFF",
-            headerTitleStyle: {
-              fontWeight: "bold",
-            },
+            headerShown: false,
           }}
         >
           <Stack.Screen
@@ -36,15 +30,19 @@ export default function RootLayout() {
           <Stack.Screen
             name="listing/[id]"
             options={{
-              title: "İlan Detayı",
-              headerBackTitle: "Geri",
+              headerShown: false,
             }}
           />
           <Stack.Screen
             name="login"
             options={{
-              title: "Giriş Yap",
-              headerBackTitle: "Geri",
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="listings"
+            options={{
+              headerShown: false,
             }}
           />
         </Stack>

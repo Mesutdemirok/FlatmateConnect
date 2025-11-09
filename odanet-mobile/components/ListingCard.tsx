@@ -1,7 +1,9 @@
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { Listing } from "../hooks/useListings";
+import { colors, fonts, borderRadius, spacing } from "../theme";
 
 interface ListingCardProps {
   listing: Listing;
@@ -18,79 +20,92 @@ export function ListingCard({ listing }: ListingCardProps) {
     <TouchableOpacity
       onPress={() => router.push(`/listing/${listing.id}`)}
       activeOpacity={0.7}
-      style={{
-        backgroundColor: "#FFFFFF",
-        borderRadius: 16,
-        padding: 12,
-        marginBottom: 16,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-      }}
+      style={styles.container}
     >
       {showPlaceholder ? (
-        <View
-          style={{
-            width: "100%",
-            height: 160,
-            borderRadius: 12,
-            marginBottom: 8,
-            backgroundColor: "#00A6A6",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+        <LinearGradient
+          colors={[colors.gradientStart, colors.gradientEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.placeholderContainer}
         >
-          <Text style={{ color: "#FFFFFF", fontSize: 48 }}>🏠</Text>
-          <Text style={{ color: "#FFFFFF", fontSize: 14, marginTop: 8 }}>
-            Fotoğraf Yok
-          </Text>
-        </View>
+          <Text style={styles.placeholderIcon}>🏠</Text>
+          <Text style={styles.placeholderText}>Fotoğraf Yok</Text>
+        </LinearGradient>
       ) : (
         <Image
           source={{ uri: firstImage }}
-          style={{
-            width: "100%",
-            height: 160,
-            borderRadius: 12,
-            marginBottom: 8,
-            backgroundColor: "#E5E5E5",
-          }}
+          style={styles.image}
           resizeMode="cover"
           onError={() => setImageError(true)}
         />
       )}
-      <Text
-        style={{
-          fontSize: 18,
-          fontWeight: "600",
-          color: "#111111",
-          marginBottom: 4,
-        }}
-      >
-        {listing.title}
-      </Text>
-      {listing.address && (
-        <Text
-          style={{
-            fontSize: 14,
-            color: "#666666",
-            marginBottom: 4,
-          }}
-        >
-          {listing.address}
+      <View style={styles.content}>
+        <Text style={styles.title}>{listing.title}</Text>
+        {listing.address && (
+          <Text style={styles.address}>{listing.address}</Text>
+        )}
+        <Text style={styles.price}>
+          {parseFloat(listing.rentAmount || "0").toLocaleString("tr-TR")} TL / ay
         </Text>
-      )}
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "600",
-          color: "#00A6A6",
-        }}
-      >
-        {parseFloat(listing.rentAmount || "0").toLocaleString("tr-TR")} TL / ay
-      </Text>
+      </View>
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.base,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  image: {
+    width: "100%",
+    height: 160,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.border,
+  },
+  placeholderContainer: {
+    width: "100%",
+    height: 160,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  placeholderIcon: {
+    color: colors.textWhite,
+    fontSize: 48,
+  },
+  placeholderText: {
+    color: colors.textWhite,
+    fontSize: fonts.size.sm,
+    marginTop: spacing.sm,
+  },
+  content: {
+    gap: 4,
+  },
+  title: {
+    fontSize: fonts.size.lg,
+    fontWeight: fonts.weight.semibold,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  address: {
+    fontSize: fonts.size.sm,
+    color: colors.textLight,
+    marginBottom: 4,
+  },
+  price: {
+    fontSize: fonts.size.base,
+    fontWeight: fonts.weight.semibold,
+    color: colors.accent,
+  },
+});

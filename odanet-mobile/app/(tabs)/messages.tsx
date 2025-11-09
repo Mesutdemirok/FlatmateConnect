@@ -1,13 +1,13 @@
-import { View, ScrollView, Text, StyleSheet } from "react-native";
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useCurrentUser } from "../../hooks/useAuth";
-import { PrimaryButton } from "../../components/PrimaryButton";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../../hooks/useAuth";
+import { colors, fonts, borderRadius, spacing } from "../../theme";
 
 export default function MessagesScreen() {
   const router = useRouter();
-  const { data: user, isLoading } = useCurrentUser();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -22,38 +22,41 @@ export default function MessagesScreen() {
   if (!user) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <ScrollView style={styles.scrollView}>
-          <View style={styles.contentContainer}>
-            <View style={styles.card}>
-              <Ionicons name="chatbubbles-outline" size={64} color="#CCCCCC" style={styles.icon} />
-              <Text style={styles.title}>Giriş Yap veya Üye Ol</Text>
-              <Text style={styles.subtitle}>
-                Mesajlaşmak için lütfen giriş yapın
-              </Text>
-              <PrimaryButton
-                title="Giriş Yap"
-                onPress={() => router.push("/login")}
-                style={styles.button}
-              />
-            </View>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Mesajlar</Text>
+        </View>
+        <View style={styles.content}>
+          <View style={styles.emptyCard}>
+            <Ionicons name="chatbubbles-outline" size={64} color={colors.accent} />
+            <Text style={styles.emptyTitle}>Giriş Yapın</Text>
+            <Text style={styles.emptyText}>
+              Mesajlarınızı görmek için giriş yapmalısınız
+            </Text>
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={() => router.push("/login")}
+            >
+              <Text style={styles.loginButtonText}>Giriş Yap</Text>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.contentContainer}>
-          <View style={styles.featureCard}>
-            <Ionicons name="chatbubbles" size={64} color="#00A6A6" style={styles.icon} />
-            <Text style={styles.featureTitle}>💬 Henüz mesajınız yok</Text>
-            <Text style={styles.subtitle}>
-              İlan sahipleriyle mesajlaşmaya başladığınızda burada görünecek
-            </Text>
-            <Text style={styles.note}>
-              Mesajlaşma özelliği yakında aktif olacak
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Mesajlar</Text>
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <View style={styles.emptyCard}>
+            <Ionicons name="chatbubbles-outline" size={64} color={colors.accent} />
+            <Text style={styles.emptyTitle}>Henüz Mesaj Yok</Text>
+            <Text style={styles.emptyText}>
+              Mesajlarınız burada görünecektir
             </Text>
           </View>
         </View>
@@ -65,78 +68,112 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: colors.background,
+  },
+  header: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: fonts.size.xl,
+    fontWeight: fonts.weight.bold,
+    color: colors.text,
   },
   scrollView: {
     flex: 1,
+  },
+  content: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.xxxl,
+  },
+  emptyCard: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xxxl,
+    alignItems: "center",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  emptyTitle: {
+    fontSize: fonts.size.lg,
+    fontWeight: fonts.weight.semibold,
+    color: colors.text,
+    marginTop: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  emptyText: {
+    fontSize: fonts.size.base,
+    color: colors.textLight,
+    textAlign: "center",
+    marginBottom: spacing.base,
+  },
+  loginButton: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.base,
+  },
+  loginButtonText: {
+    color: colors.textWhite,
+    fontSize: fonts.size.base,
+    fontWeight: fonts.weight.semibold,
   },
   centerContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  contentContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 80,
+  headerTitle: {
+    fontSize: fonts.size.xl,
+    fontWeight: fonts.weight.bold,
+    color: colors.text,
   },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 32,
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.xxxl,
+  },
+  emptyCard: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xxxl,
+    alignItems: "center",
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
-  featureCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 32,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#00A6A6",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  emptyTitle: {
+    fontSize: fonts.size.lg,
+    fontWeight: fonts.weight.semibold,
+    color: colors.text,
+    marginTop: spacing.base,
+    marginBottom: spacing.sm,
   },
-  icon: {
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333333",
-    marginBottom: 8,
+  emptyText: {
+    fontSize: fonts.size.base,
+    color: colors.textLight,
     textAlign: "center",
-  },
-  featureTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#00A6A6",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#666666",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  note: {
-    fontSize: 12,
-    color: "#666666",
-    textAlign: "center",
-    fontStyle: "italic",
-  },
-  loadingText: {
-    color: "#666666",
-  },
-  button: {
-    width: "100%",
   },
 });

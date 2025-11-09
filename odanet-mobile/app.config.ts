@@ -13,7 +13,7 @@ export default {
     splash: {
       image: path.resolve(__dirname, "assets/splash.png"),
       resizeMode: "contain",
-      backgroundColor: "#00A6A6",
+      backgroundColor: "#7F00FF",
     },
 
     updates: {
@@ -32,7 +32,7 @@ export default {
     android: {
       adaptiveIcon: {
         foregroundImage: path.resolve(__dirname, "assets/adaptive-icon.png"),
-        backgroundColor: "#00A6A6",
+        backgroundColor: "#7F00FF",
       },
       package: "com.odanet.app",
       versionCode: 1,

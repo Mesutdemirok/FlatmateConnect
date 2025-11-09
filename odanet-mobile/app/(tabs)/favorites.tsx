@@ -1,33 +1,25 @@
 import { View, ScrollView, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { colors, fonts, borderRadius, spacing } from "../../theme";
 
 export default function FavoritesScreen() {
-  const favorites: any[] = [];
-
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView style={styles.scrollView}>
-        {favorites.length > 0 ? (
-          <View style={styles.favoritesList}>
-            {/* Favorites will be displayed here when implemented */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Favorilerim</Text>
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <View style={styles.emptyCard}>
+            <Ionicons name="heart-outline" size={64} color={colors.accent} />
+            <Text style={styles.emptyTitle}>Henüz Favori Yok</Text>
+            <Text style={styles.emptyText}>
+              Beğendiğiniz ilanları favorilere ekleyebilirsiniz
+            </Text>
           </View>
-        ) : (
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyCard}>
-              <Ionicons
-                name="heart-outline"
-                size={80}
-                color="#CCCCCC"
-                style={styles.emptyIcon}
-              />
-              <Text style={styles.emptyTitle}>❤️ Favori ilanınız yok</Text>
-              <Text style={styles.emptySubtitle}>
-                Beğendiğiniz ilanları favorilere ekleyerek buradan kolayca ulaşabilirsiniz
-              </Text>
-            </View>
-          </View>
-        )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -36,43 +28,51 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: colors.background,
+  },
+  header: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: fonts.size.xl,
+    fontWeight: fonts.weight.bold,
+    color: colors.text,
   },
   scrollView: {
     flex: 1,
   },
-  favoritesList: {
-    padding: 16,
-  },
-  emptyContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 80,
+  content: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.xxxl,
   },
   emptyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 40,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xxxl,
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
-  },
-  emptyIcon: {
-    marginBottom: 24,
+    elevation: 2,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#00A6A6",
-    textAlign: "center",
-    marginBottom: 12,
+    fontSize: fonts.size.lg,
+    fontWeight: fonts.weight.semibold,
+    color: colors.text,
+    marginTop: spacing.base,
+    marginBottom: spacing.sm,
   },
-  emptySubtitle: {
-    fontSize: 14,
-    color: "#666666",
+  emptyText: {
+    fontSize: fonts.size.base,
+    color: colors.textLight,
     textAlign: "center",
-    lineHeight: 20,
   },
 });

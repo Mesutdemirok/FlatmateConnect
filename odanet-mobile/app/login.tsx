@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { View, ScrollView, Alert, StyleSheet, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useLogin, useRegister } from "../hooks/useAuth";
+import { PrimaryButton } from "../components/PrimaryButton";
+import { colors, fonts, borderRadius, spacing } from "../theme";
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -45,164 +47,219 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
-          <Ionicons name="home-outline" size={64} color="#00A6A6" />
-          <Text style={styles.appTitle}>Odanet</Text>
-          <Text style={styles.headerSubtitle}>
-            {isLogin ? "Hesabınıza giriş yapın" : "Yeni hesap oluşturun"}
-          </Text>
-        </View>
-
-        <View style={styles.formCard}>
-          {!isLogin && (
-            <>
-              <Text style={styles.label}>Ad</Text>
-              <TextInput
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="Adınız"
-                style={styles.input}
-                placeholderTextColor="#999"
-              />
-
-              <Text style={styles.label}>Soyad</Text>
-              <TextInput
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Soyadınız"
-                style={styles.input}
-                placeholderTextColor="#999"
-              />
-            </>
-          )}
-
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="ornek@email.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={styles.input}
-            placeholderTextColor="#999"
-          />
-
-          <Text style={styles.label}>Şifre</Text>
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="••••••••"
-            secureTextEntry
-            style={styles.input}
-            placeholderTextColor="#999"
-          />
-
-          <TouchableOpacity
-            style={[styles.button, (login.isPending || register.isPending) && styles.buttonDisabled]}
-            onPress={handleSubmit}
-            disabled={login.isPending || register.isPending}
-          >
-            {login.isPending || register.isPending ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.buttonText}>
-                {isLogin ? "Giriş Yap" : "Kayıt Ol"}
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.switchButton}
-            onPress={() => setIsLogin(!isLogin)}
-          >
-            <Text style={styles.switchButtonText}>
-              {isLogin
-                ? "Hesabınız yok mu? Kayıt olun"
-                : "Zaten hesabınız var mı? Giriş yapın"}
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[colors.gradientStart, colors.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.header}
+      >
+        <SafeAreaView edges={["top"]}>
+          <View style={styles.headerContent}>
+            <Text style={styles.logo}>Odanet</Text>
+            <Text style={styles.welcomeText}>
+              Odanet'e Hoş Geldiniz
             </Text>
-          </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* Tab Buttons */}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              onPress={() => setIsLogin(true)}
+              style={[
+                styles.tab,
+                isLogin && styles.tabActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  isLogin && styles.tabTextActive,
+                ]}
+              >
+                Giriş Yap
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setIsLogin(false)}
+              style={[
+                styles.tab,
+                !isLogin && styles.tabActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  !isLogin && styles.tabTextActive,
+                ]}
+              >
+                Üye Ol
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Form */}
+          <View style={styles.formCard}>
+            {!isLogin && (
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Ad</Text>
+                  <TextInput
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    placeholder="Adınız"
+                    style={styles.input}
+                    placeholderTextColor={colors.textLight}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Soyad</Text>
+                  <TextInput
+                    value={lastName}
+                    onChangeText={setLastName}
+                    placeholder="Soyadınız"
+                    style={styles.input}
+                    placeholderTextColor={colors.textLight}
+                  />
+                </View>
+              </>
+            )}
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="ornek@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={styles.input}
+                placeholderTextColor={colors.textLight}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Şifre</Text>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                secureTextEntry
+                style={styles.input}
+                placeholderTextColor={colors.textLight}
+              />
+            </View>
+
+            <PrimaryButton
+              title={login.isPending || register.isPending ? "Yükleniyor..." : (isLogin ? "Giriş Yap" : "Kayıt Ol")}
+              onPress={handleSubmit}
+              disabled={login.isPending || register.isPending}
+              style={styles.submitButton}
+            />
+          </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: colors.background,
+  },
+  header: {
+    paddingBottom: spacing.xxxl,
+  },
+  headerContent: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.xl,
+    alignItems: "center",
+  },
+  logo: {
+    fontSize: fonts.size.xxxl,
+    fontWeight: fonts.weight.bold,
+    color: colors.textWhite,
+    marginBottom: spacing.sm,
+  },
+  welcomeText: {
+    fontSize: fonts.size.lg,
+    color: colors.textWhite,
+    textAlign: "center",
   },
   scrollView: {
     flex: 1,
   },
-  header: {
-    backgroundColor: "#FFFFFF",
-    padding: 40,
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
+  content: {
+    paddingHorizontal: spacing.base,
+    marginTop: -spacing.xl,
   },
-  appTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#00A6A6",
-    marginTop: 16,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 8,
-  },
-  formCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    margin: 16,
-    padding: 20,
-    shadowColor: "#000",
+  tabContainer: {
+    flexDirection: "row",
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: 4,
+    marginBottom: spacing.lg,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: borderRadius.md,
+  },
+  tabActive: {
+    backgroundColor: colors.accent,
+  },
+  tabText: {
+    fontSize: fonts.size.base,
+    fontWeight: fonts.weight.semibold,
+    color: colors.textLight,
+  },
+  tabTextActive: {
+    color: colors.textWhite,
+  },
+  formCard: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: spacing.xl,
+  },
+  inputGroup: {
+    marginBottom: spacing.base,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
-    marginTop: 12,
+    fontSize: fonts.size.sm,
+    fontWeight: fonts.weight.medium,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   input: {
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: "#E5E5E5",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#FFFFFF",
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    fontSize: fonts.size.base,
+    color: colors.text,
   },
-  button: {
-    backgroundColor: "#00A6A6",
-    borderRadius: 8,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 24,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  switchButton: {
-    marginTop: 16,
-    padding: 12,
-    alignItems: "center",
-  },
-  switchButtonText: {
-    color: "#00A6A6",
-    fontSize: 14,
+  submitButton: {
+    marginTop: spacing.lg,
   },
 });

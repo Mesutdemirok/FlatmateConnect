@@ -1,38 +1,46 @@
-import { TouchableOpacity, Text, TouchableOpacityProps, View } from "react-native";
+import { TouchableOpacity, Text, TouchableOpacityProps, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { colors, fonts, borderRadius, spacing } from "../theme";
 
 interface PrimaryButtonProps extends TouchableOpacityProps {
   title: string;
   onPress: () => void;
 }
 
-export function PrimaryButton({ title, onPress, className, ...props }: PrimaryButtonProps) {
+export function PrimaryButton({ title, onPress, style, ...props }: PrimaryButtonProps) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8} className={className} {...props}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[styles.container, style]} {...props}>
       <LinearGradient
-        colors={["#00A6A6", "#007878"]}
+        colors={[colors.gradientStart, colors.gradientEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={{
-          paddingVertical: 12,
-          borderRadius: 12,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 3,
-          elevation: 3,
-        }}
+        style={styles.gradient}
       >
-        <Text style={{
-          color: "#FFFFFF",
-          textAlign: "center",
-          fontWeight: "600",
-          fontSize: 16,
-          letterSpacing: 0.5,
-        }}>
-          {title}
-        </Text>
+        <Text style={styles.text}>{title}</Text>
       </LinearGradient>
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    borderRadius: borderRadius.md,
+    overflow: "hidden",
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  gradient: {
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  text: {
+    color: colors.textWhite,
+    fontSize: fonts.size.base,
+    fontWeight: fonts.weight.semibold,
+  },
+});

@@ -1,11 +1,11 @@
-import { View, ScrollView, Text, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, Text, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native";
 import { useListings } from "../hooks/useListings";
 import { ListingCard } from "../components/ListingCard";
+import { colors, fonts, borderRadius, spacing } from "../theme";
 
 export default function ListingsScreen() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function ListingsScreen() {
           onPress={() => router.back()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#111111" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tüm İlanlar</Text>
         <View style={styles.placeholder} />
@@ -37,7 +37,7 @@ export default function ListingsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#00A6A6"]}
+            colors={[colors.accent]}
           />
         }
       >
@@ -84,25 +84,25 @@ export default function ListingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
+    borderBottomColor: colors.border,
   },
   backButton: {
-    padding: 8,
+    padding: spacing.sm,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111111",
+    fontSize: fonts.size.lg,
+    fontWeight: fonts.weight.semibold,
+    color: colors.text,
   },
   placeholder: {
     width: 40,
@@ -111,47 +111,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.base,
   },
   countText: {
-    fontSize: 14,
-    color: "#666666",
-    marginBottom: 12,
+    fontSize: fonts.size.sm,
+    color: colors.textLight,
+    marginBottom: spacing.md,
   },
   centerContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 48,
+    paddingVertical: spacing.xxxl,
   },
   loadingText: {
-    color: "#666666",
+    color: colors.textLight,
   },
   errorCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 24,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
     alignItems: "center",
   },
   errorTitle: {
-    color: "#DC2626",
+    color: colors.error,
     textAlign: "center",
-    marginBottom: 8,
-    fontWeight: "600",
+    marginBottom: spacing.sm,
+    fontWeight: fonts.weight.semibold,
   },
   errorText: {
-    color: "#666666",
+    color: colors.textLight,
     textAlign: "center",
-    fontSize: 14,
+    fontSize: fonts.size.sm,
   },
   emptyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 24,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
     alignItems: "center",
   },
   emptyText: {
-    color: "#666666",
+    color: colors.textLight,
     textAlign: "center",
   },
 });

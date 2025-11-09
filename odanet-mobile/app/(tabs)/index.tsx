@@ -1,5 +1,6 @@
-import { View, ScrollView, Text, RefreshControl, StyleSheet } from "react-native";
+import { View, ScrollView, Text, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { useListings } from "../../hooks/useListings";
@@ -7,12 +8,14 @@ import { ListingCard } from "../../components/ListingCard";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { SecondaryButton } from "../../components/SecondaryButton";
 import { SearchInput } from "../../components/SearchInput";
+import { colors, fonts, borderRadius, spacing } from "../../theme";
 
 export default function HomeScreen() {
   const router = useRouter();
   const { data: listings, isLoading, error, refetch } = useListings();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeToggle, setActiveToggle] = useState<"room" | "roommate">("room");
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -21,34 +24,74 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[colors.gradientStart, colors.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.header}
+      >
+        <SafeAreaView edges={["top"]}>
+          <View style={styles.headerContent}>
+            <Text style={styles.logo}>Odanet</Text>
+            <Text style={styles.tagline}>Güvenilir ve şeffaf oda arama deneyimi</Text>
+
+            {/* Toggle Buttons */}
+            <View style={styles.toggleContainer}>
+              <TouchableOpacity
+                onPress={() => setActiveToggle("room")}
+                style={[
+                  styles.toggleButton,
+                  activeToggle === "room" && styles.toggleButtonActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    activeToggle === "room" && styles.toggleTextActive,
+                  ]}
+                >
+                  Oda Ara
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setActiveToggle("roommate")}
+                style={[
+                  styles.toggleButton,
+                  activeToggle === "roommate" && styles.toggleButtonActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    activeToggle === "roommate" && styles.toggleTextActive,
+                  ]}
+                >
+                  Oda Arkadaşı Ara
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+
       <ScrollView
         style={styles.scrollView}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#00A6A6"]}
+            colors={[colors.accent]}
           />
         }
       >
-        {/* Logo and Tagline */}
-        <View style={styles.header}>
-          <Text style={styles.logo}>Odanet</Text>
-          <Text style={styles.tagline}>
-            Türkiye'nin güvenilir oda ve ev arkadaşı platformu
-          </Text>
-        </View>
-
         <View style={styles.content}>
           {/* Search */}
-          <View style={styles.searchContainer}>
-            <SearchInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Şehir veya semt ara..."
-            />
-          </View>
+          <SearchInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Şehir veya semt ara..."
+          />
 
           {/* Action Buttons */}
           <View style={styles.buttonsContainer}>
@@ -105,96 +148,121 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: colors.background,
+  },
+  header: {
+    paddingBottom: spacing.xl,
+  },
+  headerContent: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    alignItems: "center",
+  },
+  logo: {
+    fontSize: fonts.size.xxxl,
+    fontWeight: fonts.weight.bold,
+    color: colors.textWhite,
+    marginBottom: spacing.sm,
+  },
+  tagline: {
+    fontSize: fonts.size.sm,
+    color: colors.textWhite,
+    textAlign: "center",
+    marginBottom: spacing.lg,
+    opacity: 0.9,
+  },
+  toggleContainer: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: borderRadius.pill,
+    padding: 4,
+    gap: 8,
+  },
+  toggleButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.pill,
+  },
+  toggleButtonActive: {
+    backgroundColor: colors.textWhite,
+  },
+  toggleText: {
+    fontSize: fonts.size.sm,
+    fontWeight: fonts.weight.medium,
+    color: colors.textWhite,
+  },
+  toggleTextActive: {
+    color: colors.accent,
   },
   scrollView: {
     flex: 1,
   },
-  header: {
-    backgroundColor: "#FFFFFF",
-    paddingTop: 24,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
-  },
-  logo: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#00A6A6",
-    marginBottom: 8,
-  },
-  tagline: {
-    fontSize: 14,
-    color: "#666666",
-    textAlign: "center",
-  },
   content: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  searchContainer: {
-    marginBottom: 16,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xl,
+    gap: spacing.lg,
   },
   buttonsContainer: {
-    marginBottom: 24,
+    gap: spacing.md,
   },
   buttonSpacing: {
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   listingsSection: {
-    marginBottom: 16,
+    gap: spacing.sm,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333333",
-    marginBottom: 12,
+    fontSize: fonts.size.lg,
+    fontWeight: fonts.weight.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   centerContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 48,
+    paddingVertical: spacing.xxxl,
   },
   loadingText: {
-    color: "#666666",
+    color: colors.textLight,
+    fontSize: fonts.size.base,
   },
   errorCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 24,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
     alignItems: "center",
   },
   errorTitle: {
-    color: "#DC2626",
+    color: colors.error,
     textAlign: "center",
-    marginBottom: 8,
-    fontWeight: "600",
+    marginBottom: spacing.sm,
+    fontWeight: fonts.weight.semibold,
+    fontSize: fonts.size.base,
   },
   errorText: {
-    color: "#666666",
+    color: colors.textLight,
     textAlign: "center",
-    fontSize: 14,
+    fontSize: fonts.size.sm,
   },
   emptyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 24,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
     alignItems: "center",
   },
   emptyText: {
-    color: "#666666",
+    color: colors.textLight,
     textAlign: "center",
+    fontSize: fonts.size.base,
   },
   viewAllButton: {
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
 });
