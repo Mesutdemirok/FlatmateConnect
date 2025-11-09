@@ -1,0 +1,57 @@
+Here’s a clean, direct agent prompt you can paste straight into Replit to make sure the agent understands the full context and finally fixes the issue correctly:
+
+⸻
+
+🧠 Agent Prompt – Fix “Room Seeker (Arkadaş Arayanlar)” Data Issue
+
+We’ve investigated and confirmed the problem:
+	•	The mobile app’s “Room Seeker / Arkadaş Arayanlar” tab shows empty data.
+	•	The console shows ⚠️ Invalid seekers data format or empty array or 404 Kullanıcı bulunamadı.
+	•	That means the backend does not currently have a working /api/seekers endpoint returning public seeker profiles.
+	•	We need a public endpoint that returns all seeker profiles (with related user info) so the mobile app can fetch and display them in real time.
+
+What you need to do:
+	1.	In the backend (/server folder):
+	•	Create a new route file at /server/routes/seekers.ts
+	•	Add a GET /api/seekers route that returns all seekerProfiles from the database.
+	•	Include related user fields like firstName, lastName, email.
+	•	Return a 200 with an empty array [] instead of 404 when there’s no data.
+Example reference:
+
+router.get("/", async (req, res) => {
+  try {
+    const seekers = await db.query.seekerProfiles.findMany({
+      with: { user: true },
+      orderBy: (seekers, { desc }) => [desc(seekers.createdAt)],
+    });
+    return res.status(200).json(seekers);
+  } catch (err) {
+    console.error("❌ Error fetching seekers:", err);
+    return res.status(500).json({ message: "Sunucu hatası", error: err.message });
+  }
+});
+
+
+	2.	Register this route in the main server file:
+
+import seekersRouter from "./routes/seekers";
+app.use("/api/seekers", seekersRouter);
+
+
+	3.	Restart the backend and verify that this URL works in a browser:
+
+https://www.odanet.com.tr/api/seekers
+
+✅ It should return JSON data (not 404).
+
+	4.	In the mobile app (odanet-mobile/hooks/useSeekers.ts), make sure it fetches from this endpoint:
+
+const url = `${base}/seekers`;
+
+
+
+Once this is done, the mobile “Room Seeker / Arkadaş Arayanlar” section should display all real profiles.
+
+⸻
+
+Would you like me to translate this agent prompt into Turkish (clear technical Turkish, ready to paste into Replit) for your next step?

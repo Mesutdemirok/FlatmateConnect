@@ -77,7 +77,7 @@ integrations = [
 expertMode = true
 
 [workflows]
-runButton = "Mobile App (Expo)"
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"

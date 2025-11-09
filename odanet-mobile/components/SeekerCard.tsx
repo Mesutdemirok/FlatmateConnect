@@ -1,200 +1,121 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Seeker } from "../hooks/useSeekers";
-import { colors, fonts, borderRadius, spacing } from "../theme";
+import { useQuery } from "@tanstack/react-query";
 
-interface SeekerCardProps {
-  seeker: Seeker;
+// Unified Seeker type that matches SeekerCard
+export type Seeker = {
+  id: string;
+  user: {
+    firstName: string;
+    lastName: string;
+  };
+  gender?: string;
+  age?: number | string;
+  budget?: number | string;
+  preferredAreas?: string[];
+  smokingPreference?: string;
+  petPreference?: string;
+  bio?: string;
+};
+
+function normalizeSeekers(raw: any): Seeker[] {
+  try {
+    // 1️⃣ Handle arrays or common wrappers
+    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw?.seekers)) return raw.seekers;
+    if (Array.isArray(raw?.data)) return raw.data;
+    if (Array.isArray(raw?.items)) return raw.items;
+
+    // 2️⃣ Handle object maps (keyed by id)
+    if (raw && typeof raw === "object") {
+      const values = Object.values(raw);
+      if (Array.isArray(values) && values.length > 0) return values;
+    }
+  } catch (_) {
+    /* ignore */
+  }
+  return [];
 }
 
-export function SeekerCard({ seeker }: SeekerCardProps) {
-  const router = useRouter();
-  
-  // Get user initials for avatar
-  const initials = seeker.user
-    ? `${seeker.user.firstName?.[0] || ""}${seeker.user.lastName?.[0] || ""}`.toUpperCase()
-    : "?";
-  
-  // Format name
-  const name = seeker.user
-    ? `${seeker.user.firstName} ${seeker.user.lastName}`
-    : "İsimsiz";
-  
-  // Gender display
-  const genderDisplay = seeker.gender === "erkek" ? "Erkek" : seeker.gender === "kadin" ? "Kadın" : "Diğer";
-  
-  // Format budget
-  const budgetDisplay = seeker.budget
-    ? `₺${parseFloat(seeker.budget).toLocaleString("tr-TR")}`
-    : "Belirtilmemiş";
-  
-  // Get primary city (first preferred area)
-  const primaryCity = seeker.preferredAreas && seeker.preferredAreas.length > 0
-    ? seeker.preferredAreas[0]
-    : null;
-  
-  // Roommate preference
-  const roommatePreference = seeker.smokingPreference || seeker.petPreference
-    ? `${seeker.smokingPreference === "evet" ? "Sigara içiyor" : seeker.smokingPreference === "hayir" ? "Sigara içmiyor" : ""} ${seeker.petPreference === "evet" ? "• Evcil hayvan var" : seeker.petPreference === "hayir" ? "• Evcil hayvan yok" : ""}`.trim()
-    : null;
-  
-  return (
-    <TouchableOpacity
-      onPress={() => router.push(`/seeker/${seeker.id}`)}
-      style={styles.card}
-      activeOpacity={0.9}
-    >
-      <View style={styles.cardContent}>
-        {/* Avatar and Name */}
-        <View style={styles.header}>
-          <LinearGradient
-            colors={[colors.gradientStart, colors.gradientEnd]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.avatar}
-          >
-            <Text style={styles.avatarText}>{initials}</Text>
-          </LinearGradient>
-          
-          <View style={styles.headerInfo}>
-            <Text style={styles.name} numberOfLines={1}>
-              {name}
-            </Text>
-            <View style={styles.detailsRow}>
-              {seeker.age && <Text style={styles.detailText}>{seeker.age} yaş</Text>}
-              {seeker.age && seeker.gender && <Text style={styles.separator}>•</Text>}
-              {seeker.gender && <Text style={styles.detailText}>{genderDisplay}</Text>}
-            </View>
-            {/* City display */}
-            {primaryCity && (
-              <View style={styles.cityRow}>
-                <Ionicons name="location-outline" size={14} color="#666666" />
-                <Text style={styles.cityText}>{primaryCity}</Text>
-              </View>
-            )}
-          </View>
-        </View>
+async function fetchSeekers(): Promise<Seeker[]> {
+  const base =
+    process.env.EXPO_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://www.odanet.com.tr/api";
 
-        {/* Budget */}
-        <View style={styles.budgetContainer}>
-          <Ionicons name="wallet-outline" size={18} color={colors.accent} />
-          <Text style={styles.budget}>{budgetDisplay}</Text>
-        </View>
+  const url = `${base}/seekers`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
 
-        {/* Bio */}
-        {seeker.bio && (
-          <Text style={styles.bio} numberOfLines={2}>
-            {seeker.bio}
-          </Text>
-        )}
+  if (!res.ok) {
+    const text = await res.text();
+    console.log("❌ /seekers failed:", res.status, text);
+    throw new Error(`Seekers request failed: ${res.status}`);
+  }
 
-        {/* Roommate Preference */}
-        {roommatePreference && (
-          <View style={styles.preferenceContainer}>
-            <Ionicons name="people-outline" size={16} color={colors.textLight} />
-            <Text style={styles.preferenceText} numberOfLines={1}>
-              {roommatePreference}
-            </Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+  const json = await res.json();
+  const rawSeekers = normalizeSeekers(json);
+
+  // 3️⃣ Normalize to match SeekerCard fields
+  const safe: Seeker[] = rawSeekers.map((s: any, idx: number) => {
+    const fullName =
+      s.fullName ||
+      s.name ||
+      s.displayName ||
+      `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim() ||
+      "Kullanıcı";
+
+    const [firstName, ...rest] = fullName.split(" ");
+    const lastName = rest.join(" ");
+
+    return {
+      id: String(s.id ?? s._id ?? `seeker-${idx}`),
+      user: {
+        firstName: firstName || "Kullanıcı",
+        lastName: lastName || "",
+      },
+      gender: s.gender || s.genderPreference || "",
+      age:
+        s.age ||
+        s.agePreference ||
+        s.agePreferenceMin ||
+        s.agePreferenceMax ||
+        "",
+      budget: s.budgetMonthly || s.budget || s.price || "",
+      preferredAreas:
+        s.preferredAreas || (s.preferredLocation ? [s.preferredLocation] : []),
+      smokingPreference:
+        s.smokingPreference === true || s.smokingPreference === "evet"
+          ? "evet"
+          : s.smokingPreference === false || s.smokingPreference === "hayir"
+            ? "hayir"
+            : "",
+      petPreference:
+        s.petPreference === true || s.petPreference === "evet"
+          ? "evet"
+          : s.petPreference === false || s.petPreference === "hayir"
+            ? "hayir"
+            : "",
+      bio: s.bio || s.description || "",
+    };
+  });
+
+  console.log(`✅ Seekers normalized: ${safe.length}`);
+  if (safe.length > 0) console.log("🧩 First seeker:", safe[0]);
+  else console.log("⚠️ No valid seekers found. Raw payload:", json);
+
+  return safe;
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
-    marginHorizontal: spacing.base,
-    padding: spacing.md,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  cardContent: {
-    gap: 8,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.sm,
-  },
-  avatarText: {
-    fontSize: fonts.size.lg,
-    fontWeight: fonts.weight.bold,
-    color: colors.textWhite,
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-    lineHeight: 24,
-    marginBottom: 2,
-  },
-  detailsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 2,
-  },
-  detailText: {
-    fontSize: 14,
-    color: "#666666",
-  },
-  separator: {
-    fontSize: 14,
-    color: "#666666",
-    marginHorizontal: 6,
-  },
-  cityRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-    gap: 4,
-  },
-  cityText: {
-    fontSize: 14,
-    color: "#666666",
-  },
-  budgetContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  budget: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#7F00FF",
-  },
-  bio: {
-    fontSize: 14,
-    color: colors.text,
-    lineHeight: 20,
-  },
-  preferenceContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingTop: 4,
-  },
-  preferenceText: {
-    fontSize: 13,
-    color: colors.textLight,
-    flex: 1,
-  },
-});
+export function useSeekers() {
+  const q = useQuery({
+    queryKey: ["seekers"],
+    queryFn: fetchSeekers,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    data: Array.isArray(q.data) ? q.data : [],
+    isLoading: q.isLoading,
+    error: q.error,
+    refetch: q.refetch,
+  };
+}

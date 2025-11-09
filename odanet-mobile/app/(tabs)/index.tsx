@@ -8,17 +8,15 @@ import {
   Dimensions,
   StatusBar,
 } from "react-native";
-// Changed to just use 'top' edge for SafeAreaView inside the fixedHeader
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useMemo } from "react";
 import { useRouter } from "expo-router";
-import { MaterialIcons, FontAwesome } from "@expo/vector-icons"; // Added FontAwesome for better icons
+import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { useListings } from "../../hooks/useListings";
 import { useSeekers } from "../../hooks/useSeekers";
 import { ListingCard } from "../../components/ListingCard";
 import { SeekerCard } from "../../components/SeekerCard";
 import { SearchInput } from "../../components/SearchInput";
-// Assuming theme constants are available
 import { colors, fonts, borderRadius, spacing } from "../../theme";
 
 const { width } = Dimensions.get("window");
@@ -30,14 +28,15 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
-  // Data fetching hooks remain
+  // ✅ Default arrays to prevent undefined crashes
   const {
-    data: listings,
+    data: listings = [],
     refetch: refetchListings,
     isLoading: isLoadingListings,
   } = useListings();
+
   const {
-    data: seekers,
+    data: seekers = [],
     refetch: refetchSeekers,
     isLoading: isLoadingSeekers,
   } = useSeekers();
@@ -49,27 +48,14 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  // Data extraction logic remains
-  const listingList = Array.isArray(listings)
-    ? listings
-    : Array.isArray(listings?.data)
-      ? listings.data
-      : [];
-  const seekerList = Array.isArray(seekers)
-    ? seekers
-    : Array.isArray(seekers?.data)
-      ? seekers.data
-      : [];
-
-  // Filter logic for both listings and seekers
+  // ✅ Filter logic (unchanged but simplified with guaranteed arrays)
   const filteredData = useMemo(() => {
-    const list = activeToggle === "room" ? listingList : seekerList;
+    const list = activeToggle === "room" ? listings : seekers;
     if (!searchQuery) return list;
 
     const lowerCaseQuery = searchQuery.toLowerCase();
 
     if (activeToggle === "room") {
-      // Search listings by title, address, city
       return list.filter(
         (item: any) =>
           item.title?.toLowerCase().includes(lowerCaseQuery) ||
@@ -77,13 +63,14 @@ export default function HomeScreen() {
           item.city?.toLowerCase().includes(lowerCaseQuery),
       );
     } else {
-      // Search seekers by name, age, preferred areas
       return list.filter((item: any) => {
         const fullName = item.user
           ? `${item.user.firstName || ""} ${item.user.lastName || ""}`.toLowerCase()
           : "";
         const age = item.age?.toString() || "";
-        const preferredAreas = (item.preferredAreas ?? []).join(" ").toLowerCase();
+        const preferredAreas = (item.preferredAreas ?? [])
+          .join(" ")
+          .toLowerCase();
         const occupation = (item.occupation || "").toLowerCase();
 
         return (
@@ -94,53 +81,20 @@ export default function HomeScreen() {
         );
       });
     }
-  }, [activeToggle, listingList, seekerList, searchQuery]);
+  }, [activeToggle, listings, seekers, searchQuery]);
 
   const isLoading =
     activeToggle === "room" ? isLoadingListings : isLoadingSeekers;
 
-  // Function to render the list items with Empty State
-  const renderListItems = () => {
-    if (filteredData.length === 0 && searchQuery.length > 0) {
-      return (
-        <View style={styles.emptyContainer}>
-          <MaterialIcons name="search-off" size={60} color={colors.textLight} />
-          <Text style={styles.emptyText}>
-            '**{searchQuery}**' için sonuç bulunamadı.
-          </Text>
-          <TouchableOpacity
-            onPress={() => setSearchQuery("")}
-            style={styles.resetButton}
-          >
-            <Text style={styles.resetButtonText}>Aramayı Temizle</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    return filteredData.map((item) =>
-      activeToggle === "room" ? (
-        // Added variant prop for potential different card styling
-        <ListingCard key={item.id} listing={item} variant="default" />
-      ) : (
-        <SeekerCard key={item.id} seeker={item} />
-      ),
-    );
-  };
-
   return (
     <View style={styles.container}>
-      {/* 1. STATUS BAR: Dark content for visibility against light background */}
       <StatusBar barStyle="dark-content" backgroundColor={colors.card} />
 
-      {/* --- FIXED HEADER/SEARCH BLOCK --- */}
+      {/* --- FIXED HEADER --- */}
       <View style={styles.fixedHeader}>
-        {/* TOP BAR - Logo and Profile/Settings */}
         <SafeAreaView edges={["top"]} style={styles.topBarSafeArea}>
           <View style={styles.topBar}>
-            {/* Logo remains prominent */}
             <Text style={styles.logo}>Odanet</Text>
-            {/* Profile icon */}
             <TouchableOpacity
               onPress={() => router.push("/profile")}
               style={styles.profileButton}
@@ -154,7 +108,7 @@ export default function HomeScreen() {
           </View>
         </SafeAreaView>
 
-        {/* 2. SEGMENTED CONTROL / TOGGLE BAR: Moved above the search */}
+        {/* --- TOGGLE BAR --- */}
         <View style={styles.toggleContainerWrapper}>
           <View style={styles.toggleContainer}>
             <TouchableOpacity
@@ -164,7 +118,6 @@ export default function HomeScreen() {
                 activeToggle === "room" && styles.toggleButtonActive,
               ]}
             >
-              {/* Used FontAwesome for cleaner icons */}
               <FontAwesome
                 name="home"
                 size={16}
@@ -181,6 +134,7 @@ export default function HomeScreen() {
                 Oda İlanları
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => setActiveToggle("roommate")}
               style={[
@@ -209,7 +163,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* 3. SEARCH BOX: Prominent and polished */}
+        {/* --- SEARCH BOX --- */}
         <View style={styles.searchBoxWrapper}>
           <SearchInput
             value={searchQuery}
@@ -241,10 +195,32 @@ export default function HomeScreen() {
             ? "Tavsiye Edilen Odalar"
             : "Popüler Oda Arkadaşları"}
         </Text>
-        {renderListItems()}
+
+        {/* --- FIXED SEEKERS & LISTINGS SECTION --- */}
+        {(activeToggle === "room" ? listings : seekers).length > 0 ? (
+          (activeToggle === "room" ? listings : seekers)
+            .slice(0, 6)
+            .map((item) =>
+              activeToggle === "room" ? (
+                <ListingCard key={item.id} listing={item} />
+              ) : (
+                <SeekerCard key={item.id} seeker={item} />
+              ),
+            )
+        ) : (
+          <View style={{ alignItems: "center", marginTop: 40 }}>
+            <Text
+              style={{ color: colors.textLight, fontSize: fonts.size.base }}
+            >
+              {activeToggle === "room"
+                ? "Henüz oda ilanı bulunamadı."
+                : "Henüz oda arayan bulunamadı."}
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
-      {/* --- CUSTOM BOTTOM TAB BAR (Hidden Text) --- */}
+      {/* --- BOTTOM BAR --- */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.bottomBarButton}>
           <MaterialIcons name="home" size={24} color={colors.accent} />
@@ -274,15 +250,12 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background, // Main background is light/off-white
+    backgroundColor: colors.background,
   },
-
-  // --- FIXED HEADER STYLES ---
   fixedHeader: {
-    backgroundColor: colors.card, // White background for the fixed header
+    backgroundColor: colors.card,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
-    // Add shadow for depth, similar to Airbnb's fixed header
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -290,32 +263,24 @@ const styles = StyleSheet.create({
     elevation: 5,
     zIndex: 10,
   },
-
-  // Fixes the empty line above the logo
   topBarSafeArea: {
     backgroundColor: colors.card,
     paddingHorizontal: spacing.base,
   },
-
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: spacing.xs,
   },
-
   logo: {
     fontSize: fonts.size.xxl,
     fontWeight: fonts.weight.bold,
-    background: `linear-gradient(90deg, ${colors.gradientStart}, ${colors.gradientEnd})`,
     color: colors.accent,
   },
-
   profileButton: {
     padding: spacing.xs,
   },
-
-  // SEGMENTED CONTROL WRAPPER
   toggleContainerWrapper: {
     paddingHorizontal: spacing.base,
     marginBottom: spacing.sm,
@@ -324,22 +289,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: colors.background,
     borderRadius: borderRadius.pill,
-    padding: 2, // Thinner padding
+    padding: 2,
     gap: 2,
   },
-
-  // TOGGLE BUTTONS - ALL IN ONE LINE
   toggleButton: {
     flex: 1,
-    flexDirection: "row", // Align icon and text
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm, // Increased vertical padding for a taller button
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.pill,
   },
   toggleButtonActive: {
-    backgroundColor: colors.accent, // Accent color for active state
+    backgroundColor: colors.accent,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
@@ -350,13 +313,11 @@ const styles = StyleSheet.create({
     fontSize: fonts.size.sm,
     fontWeight: fonts.weight.semibold,
     color: colors.textLight,
-    marginLeft: spacing.xs, // Space between icon and text
+    marginLeft: spacing.xs,
   },
   toggleTextActive: {
     color: colors.textWhite,
   },
-
-  // SEARCH BOX
   searchBoxWrapper: {
     paddingHorizontal: spacing.base,
     marginBottom: spacing.sm,
@@ -375,33 +336,27 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-
-  // --- SCROLLABLE CONTENT ---
   scrollView: {
     flex: 1,
   },
-
   contentContainer: {
     paddingHorizontal: spacing.base,
     paddingTop: spacing.md,
-    paddingBottom: spacing.xxl * 3, // More padding to avoid overlap with bottom bar
+    paddingBottom: spacing.xxl * 3,
     gap: spacing.md,
   },
-
   sectionTitle: {
     fontSize: fonts.size.xl,
     fontWeight: fonts.weight.bold,
     color: colors.text,
     marginBottom: spacing.sm,
-    paddingHorizontal: spacing.xs, // Slight padding to align with cards
+    paddingHorizontal: spacing.xs,
   },
-
-  // --- BOTTOM BAR (NO TEXT) ---
   bottomBar: {
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    height: 60, // Standard tab bar height
+    height: 60,
     backgroundColor: colors.card,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
@@ -410,15 +365,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 20,
-    paddingBottom: 5, // Account for bottom safe area
+    paddingBottom: 5,
   },
   bottomBarButton: {
     flex: 1,
     alignItems: "center",
     paddingVertical: spacing.xs,
   },
-
-  // --- EMPTY STATE ---
   emptyContainer: {
     padding: spacing.xxl,
     alignItems: "center",

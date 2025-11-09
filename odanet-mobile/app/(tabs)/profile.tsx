@@ -261,8 +261,14 @@ export default function MobileProfileScreen() {
                 <CardPlaceholder />
               ) : popularSeekers.length === 0 ? (
                 <View style={[styles.card, { alignItems: "center" }]}>
-                  <Ionicons name="people-outline" size={40} color={colors.textLight} />
-                  <Text style={[styles.sectionTitle, { marginTop: spacing.sm }]}>
+                  <Ionicons
+                    name="people-outline"
+                    size={40}
+                    color={colors.textLight}
+                  />
+                  <Text
+                    style={[styles.sectionTitle, { marginTop: spacing.sm }]}
+                  >
                     Henüz oda arkadaşı yok
                   </Text>
                   <Text
