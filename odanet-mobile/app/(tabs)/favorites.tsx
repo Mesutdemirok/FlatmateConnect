@@ -1,13 +1,12 @@
-import { View, ScrollView, StyleSheet } from "react-native";
-import { Text, Card } from "react-native-paper";
+import { View, ScrollView, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function FavoritesScreen() {
   const favorites: any[] = [];
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView style={styles.scrollView}>
         {favorites.length > 0 ? (
           <View style={styles.favoritesList}>
@@ -15,20 +14,18 @@ export default function FavoritesScreen() {
           </View>
         ) : (
           <View style={styles.emptyContainer}>
-            <Card style={styles.emptyCard}>
-              <Card.Content>
-                <MaterialCommunityIcons
-                  name="heart-outline"
-                  size={80}
-                  color="#CCCCCC"
-                  style={styles.emptyIcon}
-                />
-                <Text style={styles.emptyTitle}>Favori ilanınız yok</Text>
-                <Text style={styles.emptySubtitle}>
-                  Beğendiğiniz ilanları favorilere ekleyerek buradan kolayca ulaşabilirsiniz
-                </Text>
-              </Card.Content>
-            </Card>
+            <View style={styles.emptyCard}>
+              <Ionicons
+                name="heart-outline"
+                size={80}
+                color="#CCCCCC"
+                style={styles.emptyIcon}
+              />
+              <Text style={styles.emptyTitle}>❤️ Favori ilanınız yok</Text>
+              <Text style={styles.emptySubtitle}>
+                Beğendiğiniz ilanları favorilere ekleyerek buradan kolayca ulaşabilirsiniz
+              </Text>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -39,40 +36,43 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F2",
+    backgroundColor: "#F8F8F8",
   },
   scrollView: {
     flex: 1,
   },
   favoritesList: {
     padding: 16,
-    gap: 12,
   },
   emptyContainer: {
-    padding: 16,
-    marginTop: 80,
+    paddingHorizontal: 16,
+    paddingVertical: 80,
   },
   emptyCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 40,
+    borderRadius: 16,
+    padding: 40,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   emptyIcon: {
-    alignSelf: "center",
     marginBottom: 24,
   },
   emptyTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#222222",
+    color: "#00A6A6",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   emptySubtitle: {
     fontSize: 14,
     color: "#666666",
     textAlign: "center",
     lineHeight: 20,
-    paddingHorizontal: 16,
   },
 });
