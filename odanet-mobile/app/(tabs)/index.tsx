@@ -14,7 +14,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useListings } from "../../hooks/useListings";
 import { useSeekers } from "../../hooks/useSeekers";
 import { ListingCard } from "../../components/ListingCard";
-import { SeekerCard } from "../../components/SeekerCard";
+import { SeekerCard } from "../../components/SeekerCard"; // ✅ FIXED named import
 import { colors, fonts, borderRadius, spacing } from "../../theme";
 
 export default function HomeScreen() {
@@ -32,23 +32,23 @@ export default function HomeScreen() {
     data: seekersData = [],
     refetch: refetchSeekers,
     isLoading: isLoadingSeekers,
+    error: seekersError,
   } = useSeekers();
 
-  // Extract seekers from response (handles both array and {seekers: []} format)
+  // Safely normalize both data sources
   const listings = Array.isArray(listingsData) ? listingsData : [];
-  const seekers = Array.isArray(seekersData) 
-    ? seekersData 
+  const seekers = Array.isArray(seekersData)
+    ? seekersData
     : seekersData?.seekers || [];
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchListings(), refetchSeekers()]);
+    await Promise.allSettled([refetchListings(), refetchSeekers()]);
     setRefreshing(false);
   };
 
-  // Create unified feed sorted by createdAt (newest first)
+  // Combine and sort chronologically (newest first)
   const combinedFeed = useMemo(() => {
-    // Add type to each item for rendering
     const listingsWithType = listings.map((item: any) => ({
       ...item,
       type: "listing",
@@ -59,9 +59,7 @@ export default function HomeScreen() {
       type: "seeker",
     }));
 
-    // Combine and sort by createdAt descending (newest first)
     const combined = [...listingsWithType, ...seekersWithType];
-    
     return combined.sort((a: any, b: any) => {
       const dateA = new Date(a.createdAt || 0).getTime();
       const dateB = new Date(b.createdAt || 0).getTime();
@@ -70,12 +68,13 @@ export default function HomeScreen() {
   }, [listings, seekers]);
 
   const isLoading = isLoadingListings || isLoadingSeekers;
+  const showEmpty = !isLoading && (combinedFeed.length === 0 || seekersError);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.card} />
 
-      {/* --- FIXED HEADER --- */}
+      {/* HEADER */}
       <View style={styles.fixedHeader}>
         <SafeAreaView edges={["top"]} style={styles.topBarSafeArea}>
           <View style={styles.topBar}>
@@ -99,7 +98,7 @@ export default function HomeScreen() {
         </SafeAreaView>
       </View>
 
-      {/* --- UNIFIED FEED --- */}
+      {/* UNIFIED FEED */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
@@ -111,19 +110,19 @@ export default function HomeScreen() {
           />
         }
       >
-        <Text style={styles.sectionTitle}>
-          Tüm İlanlar
-        </Text>
+        <Text style={styles.sectionTitle}>Tüm İlanlar</Text>
 
-        {combinedFeed.length > 0 ? (
-          combinedFeed.map((item: any) =>
-            item.type === "listing" ? (
-              <ListingCard key={`listing-${item.id}`} listing={item} />
-            ) : (
-              <SeekerCard key={`seeker-${item.id}`} seeker={item} />
-            ),
-          )
-        ) : (
+        {isLoading ? (
+          <View style={styles.emptyContainer}>
+            <MaterialIcons
+              name="hourglass-empty"
+              size={48}
+              color={colors.textLight}
+              style={{ marginBottom: spacing.md }}
+            />
+            <Text style={styles.emptyText}>Yükleniyor...</Text>
+          </View>
+        ) : showEmpty ? (
           <View style={styles.emptyContainer}>
             <MaterialIcons
               name="inbox"
@@ -132,20 +131,26 @@ export default function HomeScreen() {
               style={{ marginBottom: spacing.md }}
             />
             <Text style={styles.emptyText}>
-              {isLoading
-                ? "Yükleniyor..."
-                : "Henüz ilan bulunamadı."}
+              Henüz ilan bulunamadı veya sunucuya erişilemiyor.
             </Text>
           </View>
+        ) : (
+          combinedFeed.map((item: any) =>
+            item.type === "listing" ? (
+              <ListingCard key={`listing-${item.id}`} listing={item} />
+            ) : (
+              <SeekerCard key={`seeker-${item.id}`} seeker={item} />
+            ),
+          )
         )}
       </ScrollView>
 
-      {/* --- BOTTOM BAR --- */}
+      {/* BOTTOM BAR */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.bottomBarButton}>
           <MaterialIcons name="home" size={24} color={colors.accent} />
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.bottomBarButton}
           onPress={() => router.push("/messages")}
         >
@@ -158,7 +163,7 @@ export default function HomeScreen() {
             color={colors.inactive}
           />
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.bottomBarButton}
           onPress={() => router.push("/profile")}
         >
@@ -173,6 +178,7 @@ export default function HomeScreen() {
   );
 }
 
+// --- STYLES ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,

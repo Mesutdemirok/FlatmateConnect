@@ -6,219 +6,162 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { useState, useCallback } from "react";
-import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { MaterialIcons } from "@expo/vector-icons"; // Added for better icons
-import { Listing } from "../hooks/useListings";
+import { useRouter } from "expo-router";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { colors, fonts, borderRadius, spacing } from "../theme";
 
-// --- Custom Hook for robust image handling ---
-// This centralizes image state logic and handles both loading and error states.
-const useListingImage = (imagePath: string | undefined) => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+// Type guard helpers
+const isListing = (item: any) => !!item?.rentAmount;
+const isSeeker = (item: any) => !!item?.budget || !!item?.bio;
 
-  // Memoized callbacks for efficient state updates
-  const handleLoad = useCallback(() => setLoading(false), []);
-  const handleError = useCallback(() => {
-    setLoading(false);
-    setError(true);
-  }, []);
-
-  const firstImageUri = imagePath;
-  const showPlaceholder = !firstImageUri || error;
-
-  return { firstImageUri, loading, showPlaceholder, handleLoad, handleError };
-};
-
-// --- Component Interface ---
-interface ListingCardProps {
-  listing: Listing;
-  // Optional prop for different card styles (e.g., featured, compact)
-  variant?: "default" | "featured";
-}
-
-// --- Main Component ---
-export function ListingCard({
-  listing,
-  variant = "default",
-}: ListingCardProps) {
+export function UnifiedCard({ item }: { item: any }) {
   const router = useRouter();
 
-  // 1. Robust Image Handling: Use the custom hook
-  const firstImage = listing.images?.[0]?.imagePath;
-  const { firstImageUri, loading, showPlaceholder, handleLoad, handleError } =
-    useListingImage(firstImage);
-
-  // Memoized navigation handler for performance
-  const navigateToDetails = useCallback(() => {
-    // Safely navigate using optional chaining and boundary checks
-    if (listing.id) {
-      router.push(`/listing/${listing.id}`);
-    } else {
-      console.warn("Attempted to navigate to a listing without an ID.");
-      // Optional: Show a toast notification to the user
-    }
-  }, [router, listing.id]);
-
-  // 2. Dynamic Styling: Handle variants
-  const cardStyle =
-    variant === "featured" ? styles.containerFeatured : styles.containerDefault;
-
-  // Function to safely format the price (Improved Number Formatting)
-  const formatPrice = (amount: string | number | undefined) => {
-    const rent = parseFloat((amount || "0").toString());
-    if (isNaN(rent) || rent <= 0) {
-      return "Fiyat Belirtilmemiş"; // Handle invalid/missing price gracefully
-    }
-    // Improved: Uses a compact currency display for better readability (optional)
-    return `${rent.toLocaleString("tr-TR", {
-      style: "currency",
-      currency: "TRY",
-      maximumFractionDigits: 0, // No cents for rent prices
-    })} / ay`;
+  // Decide navigation route
+  const handlePress = () => {
+    if (isListing(item)) router.push(`/listing/${item.id}`);
+    else if (isSeeker(item)) router.push(`/seeker/${item.id}`);
   };
+
+  // Decide image source
+  const imageUri = isListing(item)
+    ? item.images?.[0]?.imagePath
+    : item.profilePhotoUrl || undefined;
+
+  const title = isListing(item)
+    ? item.title
+    : `${item.user?.firstName || "İsimsiz"} ${item.user?.lastName || ""}`;
+
+  const subtitle = isListing(item)
+    ? item.address
+    : item.preferredAreas?.[0] || item.city || "";
+
+  const price = isListing(item)
+    ? `₺${parseFloat(item.rentAmount || 0).toLocaleString("tr-TR")}/ay`
+    : `₺${parseFloat(item.budget || 0).toLocaleString("tr-TR")}/ay bütçe`;
+
+  const label = isListing(item) ? "Oda İlanı" : "Oda Arkadaşı Arıyor";
 
   return (
     <TouchableOpacity
-      onPress={navigateToDetails}
+      onPress={handlePress}
+      style={styles.card}
       activeOpacity={0.9}
-      style={[styles.containerBase, cardStyle]}
-      accessibilityRole="button"
-      accessibilityLabel={`İlan detaylarına git: ${listing.title}`}
     >
-      {/* --- Image/Placeholder Section --- */}
       <View style={styles.imageWrapper}>
-        {showPlaceholder ? (
-          // 4. Enhanced Placeholder: Better icon and clearer messaging
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        ) : (
           <LinearGradient
             colors={[colors.gradientStart, colors.gradientEnd]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
             style={styles.placeholderContainer}
           >
             <MaterialIcons
               name="image-not-supported"
-              size={48}
+              size={40}
               color={colors.textWhite}
             />
             <Text style={styles.placeholderText}>Görsel Yok</Text>
           </LinearGradient>
-        ) : (
-          <>
-            <Image
-              source={{ uri: firstImageUri }}
-              style={styles.image}
-              resizeMode="cover"
-              // 5. Loading State: Show indicator while image is fetching
-              onLoad={handleLoad}
-              onError={handleError}
-            />
-            {/* Show an activity indicator on top of the image container while loading */}
-            {loading && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color={colors.accent} />
-              </View>
-            )}
-          </>
         )}
+
+        {/* Top-right badge */}
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{label}</Text>
+        </View>
       </View>
 
-      {/* --- Content Section --- */}
+      {/* Info */}
       <View style={styles.content}>
-        {/* 6. Truncation and Accessibility: Ensure long titles don't break layout */}
-        <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
-          {listing.title}
+        <Text style={styles.title} numberOfLines={2}>
+          {title}
         </Text>
 
-        {/* 7. Conditional Rendering: More concise logic */}
-        {listing.address && (
+        {subtitle ? (
           <View style={styles.detailRow}>
-            <MaterialIcons
-              name="location-pin"
+            <Ionicons
+              name="location-outline"
               size={14}
               color={colors.textLight}
             />
             <Text style={styles.address} numberOfLines={1}>
-              {listing.address}
+              {subtitle}
             </Text>
           </View>
-        )}
+        ) : null}
 
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>{formatPrice(listing.rentAmount)}</Text>
-        </View>
+        <Text style={styles.price}>{price}</Text>
+
+        {isSeeker(item) && item.bio ? (
+          <Text style={styles.bio} numberOfLines={2}>
+            {item.bio}
+          </Text>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
 }
 
-// --- Stylesheet Enhancements ---
 const styles = StyleSheet.create({
-  // Base style for all variants
-  containerBase: {
+  card: {
     backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.base,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+    marginHorizontal: spacing.base,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 6,
   },
-  // Default variant styling (can be empty if Base is enough)
-  containerDefault: {
-    // specific styles for default
-  },
-  // Featured variant styling (example: larger size, different shadow)
-  containerFeatured: {
-    backgroundColor: colors.card,
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: colors.accent + "33", // Subtle accent border
-  },
   imageWrapper: {
-    width: "100%",
-    aspectRatio: 16 / 9,
     borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
     overflow: "hidden",
-    backgroundColor: colors.border,
+    position: "relative",
   },
   image: {
     width: "100%",
-    height: "100%",
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
+    aspectRatio: 16 / 9,
   },
   placeholderContainer: {
     width: "100%",
-    height: "100%",
+    aspectRatio: 16 / 9,
     alignItems: "center",
     justifyContent: "center",
   },
   placeholderText: {
     color: colors.textWhite,
     fontSize: fonts.size.sm,
-    marginTop: spacing.sm,
+    marginTop: 4,
+  },
+  badge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: colors.accent,
+    borderRadius: borderRadius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  badgeText: {
+    color: "white",
+    fontSize: fonts.size.xs,
     fontWeight: fonts.weight.medium,
   },
   content: {
-    gap: 8,
+    marginTop: spacing.sm,
+    gap: 4,
   },
   title: {
     fontSize: fonts.size.lg,
-    fontWeight: "700",
+    fontWeight: fonts.weight.semibold,
     color: colors.text,
-    lineHeight: 24,
   },
   detailRow: {
     flexDirection: "row",
@@ -227,18 +170,17 @@ const styles = StyleSheet.create({
   },
   address: {
     fontSize: 14,
-    color: "#666666",
+    color: colors.textLight,
     flexShrink: 1,
   },
-  priceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: spacing.xs,
-  },
   price: {
-    fontSize: fonts.size.lg,
+    fontSize: fonts.size.base,
     fontWeight: "700",
-    color: "#7F00FF",
+    color: colors.accent,
+    marginTop: 2,
+  },
+  bio: {
+    fontSize: fonts.size.sm,
+    color: colors.textLight,
   },
 });

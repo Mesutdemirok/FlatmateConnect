@@ -2,11 +2,11 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import { registerRoutes } from "./routes";
 import uploadsRouter from "./routes/uploads";
 import proxyRouter from "./routes/proxy";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,12 +14,11 @@ const __dirname = dirname(__filename);
 const app = express();
 
 /* ---------------------------------------------------------
-   🩺 Health Checks (for Replit Autoscale + Manual Check)
+   🩺 Health Checks
+   Used by Replit autoscaler & manual browser testing
 --------------------------------------------------------- */
-// Used by Replit autoscaler
 app.get("/health", (_req, res) => res.status(200).send("ok"));
 
-// Manual / internal API check
 app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
@@ -29,7 +28,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 /* ---------------------------------------------------------
-   🌍 Middleware
+   ⚙️ Middleware Setup
 --------------------------------------------------------- */
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -42,24 +41,31 @@ app.use(
       "https://odanet.com.tr",
       "https://flatmate-connect-1-mesudemirok.replit.app",
       "http://localhost:3000",
+      "http://localhost:8081",
     ],
     credentials: true,
   }),
 );
 
 /* ---------------------------------------------------------
-   📁 Static Uploads Directory
+   📁 Static File Serving
 --------------------------------------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 /* ---------------------------------------------------------
-   🧩 API Routes
+   🧩 Core API Routes
 --------------------------------------------------------- */
 app.use("/api/uploads", uploadsRouter);
 app.use("/api", proxyRouter);
 
 /* ---------------------------------------------------------
-   🧰 Initialize Routes + Start Server
+   🚀 Initialize Core Backend Routes
+   Includes:
+   - /api/listings
+   - /api/seekers (public + authenticated)
+   - /api/users/*
+   - /api/messages
+   - /api/auth/*
 --------------------------------------------------------- */
 (async () => {
   try {
@@ -72,7 +78,7 @@ app.use("/api", proxyRouter);
       console.log("==========================================");
       console.log("✅ Odanet backend is now running!");
       console.log(`🌐 Listening at: http://localhost:${port}`);
-      console.log("🔒 HTTPS Production Domain: https://www.odanet.com.tr");
+      console.log("🔒 Production domain: https://www.odanet.com.tr");
       console.log("==========================================");
     });
   } catch (err) {
@@ -82,7 +88,7 @@ app.use("/api", proxyRouter);
 })();
 
 /* ---------------------------------------------------------
-   🛑 Global Error Handler (Last Resort)
+   🛑 Global Error Handler (Failsafe)
 --------------------------------------------------------- */
 app.use(
   (
@@ -91,7 +97,7 @@ app.use(
     res: express.Response,
     _next: express.NextFunction,
   ) => {
-    console.error("🔥 Unhandled error caught globally:");
+    console.error("🔥 Unhandled global error:");
     console.error(err);
 
     res.status(500).json({
