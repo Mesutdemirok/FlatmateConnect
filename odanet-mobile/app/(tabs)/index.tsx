@@ -5,86 +5,71 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
-  Dimensions,
   StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useMemo } from "react";
 import { useRouter } from "expo-router";
-import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useListings } from "../../hooks/useListings";
 import { useSeekers } from "../../hooks/useSeekers";
 import { ListingCard } from "../../components/ListingCard";
 import { SeekerCard } from "../../components/SeekerCard";
-import { SearchInput } from "../../components/SearchInput";
 import { colors, fonts, borderRadius, spacing } from "../../theme";
-
-const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const router = useRouter();
-
-  const [activeToggle, setActiveToggle] = useState<"room" | "roommate">("room");
-  const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
-  // ✅ Default arrays to prevent undefined crashes
+  // Fetch both listings and seekers
   const {
-    data: listings = [],
+    data: listingsData = [],
     refetch: refetchListings,
     isLoading: isLoadingListings,
   } = useListings();
 
   const {
-    data: seekers = [],
+    data: seekersData = [],
     refetch: refetchSeekers,
     isLoading: isLoadingSeekers,
   } = useSeekers();
 
+  // Extract seekers from response (handles both array and {seekers: []} format)
+  const listings = Array.isArray(listingsData) ? listingsData : [];
+  const seekers = Array.isArray(seekersData) 
+    ? seekersData 
+    : seekersData?.seekers || [];
+
   const onRefresh = async () => {
     setRefreshing(true);
-    if (activeToggle === "room") await refetchListings();
-    else await refetchSeekers();
+    await Promise.all([refetchListings(), refetchSeekers()]);
     setRefreshing(false);
   };
 
-  // ✅ Filter logic (unchanged but simplified with guaranteed arrays)
-  const filteredData = useMemo(() => {
-    const list = activeToggle === "room" ? listings : seekers;
-    if (!searchQuery) return list;
+  // Create unified feed sorted by createdAt (newest first)
+  const combinedFeed = useMemo(() => {
+    // Add type to each item for rendering
+    const listingsWithType = listings.map((item: any) => ({
+      ...item,
+      type: "listing",
+    }));
 
-    const lowerCaseQuery = searchQuery.toLowerCase();
+    const seekersWithType = seekers.map((item: any) => ({
+      ...item,
+      type: "seeker",
+    }));
 
-    if (activeToggle === "room") {
-      return list.filter(
-        (item: any) =>
-          item.title?.toLowerCase().includes(lowerCaseQuery) ||
-          item.address?.toLowerCase().includes(lowerCaseQuery) ||
-          item.city?.toLowerCase().includes(lowerCaseQuery),
-      );
-    } else {
-      return list.filter((item: any) => {
-        const fullName = item.user
-          ? `${item.user.firstName || ""} ${item.user.lastName || ""}`.toLowerCase()
-          : "";
-        const age = item.age?.toString() || "";
-        const preferredAreas = (item.preferredAreas ?? [])
-          .join(" ")
-          .toLowerCase();
-        const occupation = (item.occupation || "").toLowerCase();
+    // Combine and sort by createdAt descending (newest first)
+    const combined = [...listingsWithType, ...seekersWithType];
+    
+    return combined.sort((a: any, b: any) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA; // Newest first
+    });
+  }, [listings, seekers]);
 
-        return (
-          fullName.includes(lowerCaseQuery) ||
-          age.includes(lowerCaseQuery) ||
-          preferredAreas.includes(lowerCaseQuery) ||
-          occupation.includes(lowerCaseQuery)
-        );
-      });
-    }
-  }, [activeToggle, listings, seekers, searchQuery]);
-
-  const isLoading =
-    activeToggle === "room" ? isLoadingListings : isLoadingSeekers;
+  const isLoading = isLoadingListings || isLoadingSeekers;
 
   return (
     <View style={styles.container}>
@@ -94,7 +79,12 @@ export default function HomeScreen() {
       <View style={styles.fixedHeader}>
         <SafeAreaView edges={["top"]} style={styles.topBarSafeArea}>
           <View style={styles.topBar}>
-            <Text style={styles.logo}>Odanet</Text>
+            <View>
+              <Text style={styles.logo}>Odanet</Text>
+              <Text style={styles.tagline}>
+                Güvenilir ve şeffaf oda arama deneyimi
+              </Text>
+            </View>
             <TouchableOpacity
               onPress={() => router.push("/profile")}
               style={styles.profileButton}
@@ -107,78 +97,9 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-
-        {/* --- TOGGLE BAR --- */}
-        <View style={styles.toggleContainerWrapper}>
-          <View style={styles.toggleContainer}>
-            <TouchableOpacity
-              onPress={() => setActiveToggle("room")}
-              style={[
-                styles.toggleButton,
-                activeToggle === "room" && styles.toggleButtonActive,
-              ]}
-            >
-              <FontAwesome
-                name="home"
-                size={16}
-                color={
-                  activeToggle === "room" ? colors.textWhite : colors.textLight
-                }
-              />
-              <Text
-                style={[
-                  styles.toggleText,
-                  activeToggle === "room" && styles.toggleTextActive,
-                ]}
-              >
-                Oda İlanları
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setActiveToggle("roommate")}
-              style={[
-                styles.toggleButton,
-                activeToggle === "roommate" && styles.toggleButtonActive,
-              ]}
-            >
-              <MaterialIcons
-                name="people-outline"
-                size={18}
-                color={
-                  activeToggle === "roommate"
-                    ? colors.textWhite
-                    : colors.textLight
-                }
-              />
-              <Text
-                style={[
-                  styles.toggleText,
-                  activeToggle === "roommate" && styles.toggleTextActive,
-                ]}
-              >
-                Arkadaş Arayanlar
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* --- SEARCH BOX --- */}
-        <View style={styles.searchBoxWrapper}>
-          <SearchInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder={
-              activeToggle === "room"
-                ? "İlan, Şehir veya Semt Ara..."
-                : "İsim, Şehir veya Yaş Ara..."
-            }
-            style={styles.searchInputCustom}
-          />
-        </View>
       </View>
 
-      {/* --- SCROLLABLE CONTENT --- */}
+      {/* --- UNIFIED FEED --- */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
@@ -191,30 +112,29 @@ export default function HomeScreen() {
         }
       >
         <Text style={styles.sectionTitle}>
-          {activeToggle === "room"
-            ? "Tavsiye Edilen Odalar"
-            : "Popüler Oda Arkadaşları"}
+          Tüm İlanlar
         </Text>
 
-        {/* --- FIXED SEEKERS & LISTINGS SECTION --- */}
-        {(activeToggle === "room" ? listings : seekers).length > 0 ? (
-          (activeToggle === "room" ? listings : seekers)
-            .slice(0, 6)
-            .map((item) =>
-              activeToggle === "room" ? (
-                <ListingCard key={item.id} listing={item} />
-              ) : (
-                <SeekerCard key={item.id} seeker={item} />
-              ),
-            )
+        {combinedFeed.length > 0 ? (
+          combinedFeed.map((item: any) =>
+            item.type === "listing" ? (
+              <ListingCard key={`listing-${item.id}`} listing={item} />
+            ) : (
+              <SeekerCard key={`seeker-${item.id}`} seeker={item} />
+            ),
+          )
         ) : (
-          <View style={{ alignItems: "center", marginTop: 40 }}>
-            <Text
-              style={{ color: colors.textLight, fontSize: fonts.size.base }}
-            >
-              {activeToggle === "room"
-                ? "Henüz oda ilanı bulunamadı."
-                : "Henüz oda arayan bulunamadı."}
+          <View style={styles.emptyContainer}>
+            <MaterialIcons
+              name="inbox"
+              size={48}
+              color={colors.textLight}
+              style={{ marginBottom: spacing.md }}
+            />
+            <Text style={styles.emptyText}>
+              {isLoading
+                ? "Yükleniyor..."
+                : "Henüz ilan bulunamadı."}
             </Text>
           </View>
         )}
@@ -225,7 +145,10 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.bottomBarButton}>
           <MaterialIcons name="home" size={24} color={colors.accent} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomBarButton}>
+        <TouchableOpacity 
+          style={styles.bottomBarButton}
+          onPress={() => router.push("/messages")}
+        >
           <MaterialIcons name="message" size={24} color={colors.inactive} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomBarButton}>
@@ -235,7 +158,10 @@ export default function HomeScreen() {
             color={colors.inactive}
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomBarButton}>
+        <TouchableOpacity 
+          style={styles.bottomBarButton}
+          onPress={() => router.push("/profile")}
+        >
           <MaterialIcons
             name="person-outline"
             size={24}
@@ -271,70 +197,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.md,
   },
   logo: {
     fontSize: fonts.size.xxl,
     fontWeight: fonts.weight.bold,
     color: colors.accent,
   },
+  tagline: {
+    fontSize: fonts.size.xs,
+    color: colors.textLight,
+    marginTop: 2,
+  },
   profileButton: {
     padding: spacing.xs,
-  },
-  toggleContainerWrapper: {
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.sm,
-  },
-  toggleContainer: {
-    flexDirection: "row",
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.pill,
-    padding: 2,
-    gap: 2,
-  },
-  toggleButton: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.pill,
-  },
-  toggleButtonActive: {
-    backgroundColor: colors.accent,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  toggleText: {
-    fontSize: fonts.size.sm,
-    fontWeight: fonts.weight.semibold,
-    color: colors.textLight,
-    marginLeft: spacing.xs,
-  },
-  toggleTextActive: {
-    color: colors.textWhite,
-  },
-  searchBoxWrapper: {
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.sm,
-  },
-  searchInputCustom: {
-    height: 44,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.accent + "20",
-    fontSize: fonts.size.base,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
   scrollView: {
     flex: 1,
@@ -383,16 +259,5 @@ const styles = StyleSheet.create({
     fontSize: fonts.size.base,
     color: colors.textLight,
     textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  resetButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-  },
-  resetButtonText: {
-    color: colors.textWhite,
-    fontWeight: fonts.weight.semibold,
   },
 });

@@ -1,0 +1,57 @@
+
+
+🧠 Agent Prompt — Simplify Mobile Home Page Feed (Unified Listing Cards)
+
+We want to simplify the Odanet mobile app home screen to work exactly like the website homepage.
+Currently, the mobile home (/app/(tabs)/index.tsx) shows separate sections:
+	•	🏡 “Oda İlanları” (room listings)
+	•	👥 “Oda Arkadaşı Arayanlar” (room seekers)
+	•	🔍 Search bar at the top
+
+We want to merge and simplify everything into a single unified feed.
+
+✅ Here’s exactly what to do:
+	1.	Delete / disable:
+	•	The “Oda İlanları” section
+	•	The “Oda Arkadaşı Arayanlar” section
+	•	The search box component
+	2.	Create one combined feed, showing all listings and seekers together in a single vertical scroll (like the website homepage).
+	3.	Each card should:
+	•	Use the same design as our existing ListingCard and SeekerCard
+	•	Automatically detect the type (type: "listing" or "seeker")
+	•	Display a small label (e.g. “Oda İlanı” or “Oda Arkadaşı Arıyor”) inside the card for clarity
+	4.	Fetch both datasets from their APIs:
+
+const [listings, seekers] = await Promise.all([
+  fetch(`${base}/listings`).then(r => r.json()),
+  fetch(`${base}/users/seekers`).then(r => r.json()),
+]);
+
+Then merge them into one array sorted by createdAt descending.
+Example:
+
+const combinedFeed = [...listings, ...seekers].sort(
+  (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+);
+
+
+	5.	Display combinedFeed in one unified <ScrollView> or <FlatList>, mapping through each item:
+
+{combinedFeed.map((item) =>
+  item.type === "listing"
+    ? <ListingCard key={item.id} listing={item} />
+    : <SeekerCard key={item.id} seeker={item} />
+)}
+
+
+	6.	Result:
+	•	One clean continuous feed
+	•	No toggles, no search bar
+	•	The homepage feels like the website: all listings + seekers mixed chronologically
+	7.	Test that both data sources load correctly and display on Expo (verify with console logs).
+
+⸻
+
+💡 Goal summary:
+
+Make the Odanet mobile homepage mirror the website experience: one unified feed containing both room listings and seekers together — no separate sections, no search, just a modern continuous list.
