@@ -9,8 +9,9 @@ interface ListingCardProps {
 export function ListingCard({ listing }: ListingCardProps) {
   const router = useRouter();
   const firstImage = listing.images?.[0]?.imageUrl;
-  const placeholderImage = "https://via.placeholder.com/400x200/00A6A6/FFFFFF?text=No+Image";
-  const imageUrl = firstImage || placeholderImage;
+  
+  // Use a solid color placeholder if no image
+  const imageUrl = firstImage || "https://www.odanet.com.tr/uploads/default-room.jpg";
 
   return (
     <TouchableOpacity
@@ -28,16 +29,38 @@ export function ListingCard({ listing }: ListingCardProps) {
         elevation: 3,
       }}
     >
-      <Image
-        source={{ uri: imageUrl }}
-        style={{
-          width: "100%",
-          height: 160,
-          borderRadius: 12,
-          marginBottom: 8,
-        }}
-        resizeMode="cover"
-      />
+      {firstImage ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{
+            width: "100%",
+            height: 160,
+            borderRadius: 12,
+            marginBottom: 8,
+            backgroundColor: "#E5E5E5",
+          }}
+          resizeMode="cover"
+          onError={(e) => {
+            console.log("Image load error:", e.nativeEvent.error);
+          }}
+        />
+      ) : (
+        <View
+          style={{
+            width: "100%",
+            height: 160,
+            borderRadius: 12,
+            marginBottom: 8,
+            backgroundColor: "#00A6A6",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "600" }}>
+            🏠 Fotoğraf Yok
+          </Text>
+        </View>
+      )}
       <Text style={{
         fontSize: 18,
         fontWeight: "600",
