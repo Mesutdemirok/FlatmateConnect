@@ -4,13 +4,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useListingById } from "../../hooks/useListings";
+import { useListing } from "../../hooks/useListings";
 import { colors, fonts, borderRadius, spacing } from "../../theme";
 
 export default function ListingDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: listing, isLoading, error } = useListingById(id!);
+  const { data: listing, isLoading, error } = useListing(id!);
   const [imageError, setImageError] = useState(false);
 
   if (isLoading) {

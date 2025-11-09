@@ -42,52 +42,21 @@ export function useListings() {
   return useQuery<Listing[]>({
     queryKey: ["listings"],
     queryFn: async () => {
-      try {
-        const { data } = await api.get<Listing[]>("/listings");
-
-        // 🔄 Add fallback image if missing
-        return data.map((listing) => ({
-          ...listing,
-          images:
-            listing.images && listing.images.length > 0
-              ? listing.images
-              : [
-                  {
-                    id: "fallback-" + listing.id,
-                    listingId: listing.id,
-                    imageUrl:
-                      "https://www.odanet.com.tr/uploads/default-room.jpg",
-                    order: 0,
-                  },
-                ],
-        }));
-      } catch (err: any) {
-        console.error("❌ Failed to fetch listings:", err.message);
-
-        // 🧩 Offline or API-fail fallback (for testing in Expo)
-        return [
-          {
-            id: "demo-1",
-            userId: "demo",
-            title: "Kadın ev arkadaşı arıyorum",
-            address: "Keçiören, Ankara",
-            rentAmount: "5000",
-            furnishingStatus: "Eşyalı",
-            createdAt: new Date().toISOString(),
-            images: [
-              {
-                id: "demo-img-1",
-                listingId: "demo-1",
-                imageUrl: "https://www.odanet.com.tr/uploads/default-room.jpg",
-                order: 0,
-              },
-            ],
-          },
-        ];
-      }
+      const { data } = await api.get<Listing[]>("/listings");
+      
+      // Normalize image URLs
+      return data.map((listing) => ({
+        ...listing,
+        images: listing.images?.map((img) => ({
+          ...img,
+          imageUrl: img.imageUrl.startsWith("http")
+            ? img.imageUrl
+            : `https://www.odanet.com.tr${img.imageUrl}`,
+        })),
+      }));
     },
-    staleTime: 1000 * 60 * 3, // Cache for 3 minutes
-    retry: 1, // Only retry once if offline
+    staleTime: 1000 * 60 * 3,
+    retry: 1,
   });
 }
 
@@ -100,20 +69,16 @@ export function useListing(id: string | undefined) {
     queryFn: async () => {
       if (!id) throw new Error("Listing ID is required");
       const { data } = await api.get<Listing>(`/listings/${id}`);
-
-      // Add fallback image if missing
-      if (!data.images || data.images.length === 0) {
-        data.images = [
-          {
-            id: "fallback-" + id,
-            listingId: id,
-            imageUrl: "https://www.odanet.com.tr/uploads/default-room.jpg",
-            order: 0,
-          },
-        ];
-      }
-
-      return data;
+      
+      return {
+        ...data,
+        images: data.images?.map((img) => ({
+          ...img,
+          imageUrl: img.imageUrl.startsWith("http")
+            ? img.imageUrl
+            : `https://www.odanet.com.tr${img.imageUrl}`,
+        })),
+      };
     },
     enabled: !!id && id !== "",
     retry: false,

@@ -1,0 +1,278 @@
+
+🧠 Prompt for Agent
+
+Title: 🔗 Unify Odanet App with Website Backend + Fix Listings, Images, and Auth
+
+⸻
+
+🎯 Objective
+
+Bring the Odanet mobile app (Expo React Native) into full synchronization with the backend and website at https://www.odanet.com.tr, fixing all listing, seeker, image, and login issues.
+
+The app must:
+	•	Load all room listings and room seekers from the live API
+	•	Display real photos (not missing or broken)
+	•	Support Google login + registration shared with website
+	•	Use the same JWT tokens, user accounts, and database
+	•	Resolve navigation and API import issues (useListingById crash)
+
+⸻
+
+🔧 1. Fix Listing Detail Error
+
+The crash in app/listing/[id].tsx is caused by a missing hook.
+
+Fix:
+	•	In app/listing/[id].tsx, replace:
+
+const { data: listing, isLoading, error } = useListingById(id!);
+
+with:
+
+const { data: listing, isLoading, error } = useListing(id!);
+
+
+	•	Confirm the hook file is imported from ../../hooks/useListings.
+
+⸻
+
+🖼 2. Update hooks/useListings.ts
+
+Normalize image URLs and ensure listing data loads correctly:
+
+import { useQuery } from "@tanstack/react-query";
+import api from "../lib/api";
+
+export interface ListingImage {
+  id: string;
+  listingId: string;
+  imageUrl: string;
+  order: number;
+}
+
+export interface Listing {
+  id: string;
+  userId: string;
+  title: string;
+  address: string;
+  rentAmount: string;
+  billsIncluded?: boolean;
+  excludedBills?: string[];
+  propertyType?: string;
+  internetIncluded?: boolean;
+  totalRooms?: number;
+  bathroomType?: string;
+  furnishingStatus?: string;
+  amenities?: string[];
+  totalOccupants?: number;
+  roommatePreference?: string;
+  smokingPolicy?: string;
+  status?: string;
+  createdAt: string;
+  updatedAt?: string;
+  images?: ListingImage[];
+}
+
+export function useListings() {
+  return useQuery({
+    queryKey: ["listings"],
+    queryFn: async () => {
+      const { data } = await api.get<Listing[]>("/listings");
+      // Normalize image URLs
+      return data.map((listing) => ({
+        ...listing,
+        images: listing.images?.map((img) => ({
+          ...img,
+          imageUrl: img.imageUrl.startsWith("http")
+            ? img.imageUrl
+            : `https://www.odanet.com.tr${img.imageUrl}`,
+        })),
+      }));
+    },
+  });
+}
+
+export function useListing(id: string | undefined) {
+  return useQuery({
+    queryKey: ["listing", id],
+    queryFn: async () => {
+      if (!id) throw new Error("Listing ID is required");
+      const { data } = await api.get<Listing>(`/listings/${id}`);
+      return {
+        ...data,
+        images: data.images?.map((img) => ({
+          ...img,
+          imageUrl: img.imageUrl.startsWith("http")
+            ? img.imageUrl
+            : `https://www.odanet.com.tr${img.imageUrl}`,
+        })),
+      };
+    },
+    enabled: !!id,
+  });
+}
+
+
+⸻
+
+🧩 3. Create hooks/useSeekers.ts
+
+Add a hook to fetch room seekers from /api/seekers:
+
+import { useQuery } from "@tanstack/react-query";
+import api from "../lib/api";
+
+export interface Seeker {
+  id: string;
+  name: string;
+  age?: number;
+  budget?: number;
+  city?: string;
+  description?: string;
+  image?: string;
+}
+
+export function useSeekers() {
+  return useQuery({
+    queryKey: ["seekers"],
+    queryFn: async () => {
+      const { data } = await api.get<Seeker[]>("/seekers");
+      return data.map((s) => ({
+        ...s,
+        image: s.image?.startsWith("http")
+          ? s.image
+          : s.image
+          ? `https://www.odanet.com.tr${s.image}`
+          : "https://www.odanet.com.tr/uploads/default-user.jpg",
+      }));
+    },
+  });
+}
+
+
+⸻
+
+🔐 4. Update lib/api.ts
+
+Ensure the API is connected to the live Odanet backend and authentication is handled via SecureStore:
+
+import axios from "axios";
+import * as SecureStore from "expo-secure-store";
+
+const api = axios.create({
+  baseURL: "https://www.odanet.com.tr/api",
+  timeout: 15000,
+  headers: { "Content-Type": "application/json" },
+});
+
+// Add auth token automatically
+api.interceptors.request.use(
+  async (config) => {
+    const token = await SecureStore.getItemAsync("auth_token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Handle 401 Unauthorized
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    if (error.response?.status === 401) {
+      await SecureStore.deleteItemAsync("auth_token");
+      console.warn("Token expired — please log in again.");
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+
+
+⸻
+
+🧭 5. Add Unified Google Login (Shared with Website)
+
+Use expo-auth-session to authenticate with your website’s Google OAuth route.
+
+expo install expo-auth-session expo-web-browser
+
+In your screens/LoginScreen.tsx:
+
+import * as AuthSession from "expo-auth-session";
+import * as SecureStore from "expo-secure-store";
+import { api } from "../lib/api";
+
+async function handleGoogleLogin() {
+  const result = await AuthSession.startAsync({
+    authUrl: "https://www.odanet.com.tr/api/auth/google",
+  });
+
+  if (result?.type === "success" && result.params?.token) {
+    await SecureStore.setItemAsync("auth_token", result.params.token);
+    console.log("✅ Logged in via Google");
+  }
+}
+
+Now, both web and app users share the same backend account and token.
+
+⸻
+
+🏡 6. Correct Folder Imports
+
+Ensure your structure looks like this:
+
+/odanet-mobile
+ ├── app/
+ │   ├── (tabs)/
+ │   │   ├── index.tsx
+ │   │   ├── profile.tsx
+ │   │   ├── seekers.tsx
+ │   │   └── favorites.tsx
+ │   └── listing/[id].tsx
+ ├── hooks/
+ │   ├── useListings.ts
+ │   └── useSeekers.ts
+ ├── lib/
+ │   └── api.ts
+
+If ../lib/api fails to resolve again, double-check that imports are relative from where the file sits.
+
+⸻
+
+🧱 7. Full Integration Test Flow
+
+Once everything is in place, run:
+
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps
+npx expo start -c --tunnel
+
+Steps to verify:
+	1.	Open app → Listings load with real photos.
+	2.	Tap a listing → Details page loads without error.
+	3.	Switch to seekers tab → Room seekers appear.
+	4.	Log in with Google → Redirected to profile with your same account.
+	5.	Check “Favorites” → Shows same items as web version.
+
+⸻
+
+✅ Deliverables Summary
+
+After the Agent completes this prompt:
+
+Feature	Status
+Fix crash (useListingById)	✅ Fixed
+Load real listing images	✅ Done
+Fetch room seekers	✅ Added
+Connect to odanet.com.tr backend	✅ Done
+Google login shared with web	✅ Integrated
+JWT + SecureStore auth	✅ Active
+Unified API between web + mobile	✅ Complete
+
+
+⸻
+
+End of Prompt
+

@@ -3,9 +3,16 @@ import { View, ScrollView, Alert, StyleSheet, Text, TextInput, TouchableOpacity,
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
+import * as SecureStore from "expo-secure-store";
 import { useLogin, useRegister } from "../hooks/useAuth";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { colors, fonts, borderRadius, spacing } from "../theme";
+
+// Required for web browser to close properly after OAuth
+WebBrowser.maybeCompleteAuthSession();
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -43,6 +50,48 @@ export default function Login() {
       } catch (error: any) {
         Alert.alert("Kayıt Başarısız", error.response?.data?.message || "Bir hata oluştu");
       }
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: "odanet",
+        path: "auth",
+      });
+
+      console.log("Redirect URI:", redirectUri);
+
+      // Open browser for Google OAuth
+      const result = await WebBrowser.openAuthSessionAsync(
+        `https://www.odanet.com.tr/api/oauth/google?redirect_uri=${encodeURIComponent(redirectUri)}`,
+        redirectUri
+      );
+
+      console.log("OAuth result:", result);
+
+      if (result.type === "success" && result.url) {
+        // Parse the callback URL to extract token
+        const url = new URL(result.url);
+        const token = url.searchParams.get("token");
+
+        if (token) {
+          await SecureStore.setItemAsync("auth_token", token);
+          Alert.alert("Başarılı", "Google ile giriş yapıldı!");
+          router.replace("/(tabs)");
+        } else {
+          console.error("No token in URL:", result.url);
+          Alert.alert("Hata", "Token alınamadı. Lütfen tekrar deneyin.");
+        }
+      } else if (result.type === "cancel") {
+        Alert.alert("İptal", "Google girişi iptal edildi");
+      } else {
+        console.error("OAuth failed:", result);
+        Alert.alert("Hata", "Google ile giriş başarısız oldu");
+      }
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      Alert.alert("Hata", `Google ile giriş hatası: ${error.message}`);
     }
   };
 
@@ -161,6 +210,24 @@ export default function Login() {
               disabled={login.isPending || register.isPending}
               style={styles.submitButton}
             />
+
+            {isLogin && (
+              <>
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>veya</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                <TouchableOpacity
+                  style={styles.googleButton}
+                  onPress={handleGoogleLogin}
+                >
+                  <Ionicons name="logo-google" size={20} color={colors.error} />
+                  <Text style={styles.googleButtonText}>Google ile Giriş Yap</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -261,5 +328,38 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: spacing.lg,
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: spacing.lg,
+    marginBottom: spacing.base,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    paddingHorizontal: spacing.base,
+    fontSize: fonts.size.sm,
+    color: colors.textLight,
+  },
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    gap: spacing.sm,
+  },
+  googleButtonText: {
+    fontSize: fonts.size.base,
+    fontWeight: fonts.weight.semibold,
+    color: colors.text,
   },
 });
