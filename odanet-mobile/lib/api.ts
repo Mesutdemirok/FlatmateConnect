@@ -18,6 +18,8 @@ export const api = axios.create({
   },
 });
 
+console.log("🚀 Odanet API Connected:", api.defaults.baseURL);
+
 /**
  * 🛡️ Request Interceptor — Attaches Authorization header if token exists.
  */
