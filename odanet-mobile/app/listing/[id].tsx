@@ -39,7 +39,7 @@ export default function ListingDetailScreen() {
     );
   }
 
-  const firstImage = listing.images?.[0]?.imageUrl;
+  const firstImage = listing.images?.[0]?.imagePath;
   const showPlaceholder = !firstImage || imageError;
 
   return (

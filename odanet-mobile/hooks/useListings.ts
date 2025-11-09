@@ -7,8 +7,9 @@ import { api } from "../lib/api";
 export interface ListingImage {
   id: string;
   listingId: string;
-  imageUrl: string;
-  order: number;
+  imagePath: string;
+  isPrimary?: boolean;
+  createdAt?: string;
 }
 
 export interface Listing {
@@ -42,18 +43,24 @@ export function useListings() {
   return useQuery<Listing[]>({
     queryKey: ["listings"],
     queryFn: async () => {
-      const { data } = await api.get<Listing[]>("/listings");
-      
-      // Normalize image URLs
-      return data.map((listing) => ({
-        ...listing,
-        images: listing.images?.map((img) => ({
-          ...img,
-          imageUrl: img.imageUrl.startsWith("http")
-            ? img.imageUrl
-            : `https://www.odanet.com.tr${img.imageUrl}`,
-        })),
-      }));
+      try {
+        console.log("📡 Fetching listings from /listings...");
+        const { data } = await api.get<Listing[]>("/listings");
+        console.log("✅ Listings fetched:", data?.length || 0, "listings");
+        
+        if (!data || data.length === 0) {
+          console.log("⚠️ No listings returned from API");
+          return [];
+        }
+        
+        // Images already come with full CDN URLs from the API
+        console.log("✅ First listing:", data[0]?.title);
+        console.log("✅ First image:", data[0]?.images?.[0]?.imagePath);
+        return data;
+      } catch (error: any) {
+        console.error("❌ LISTING FETCH ERROR:", error.response?.data || error.message);
+        throw error;
+      }
     },
     staleTime: 1000 * 60 * 3,
     retry: 1,
@@ -70,15 +77,8 @@ export function useListing(id: string | undefined) {
       if (!id) throw new Error("Listing ID is required");
       const { data } = await api.get<Listing>(`/listings/${id}`);
       
-      return {
-        ...data,
-        images: data.images?.map((img) => ({
-          ...img,
-          imageUrl: img.imageUrl.startsWith("http")
-            ? img.imageUrl
-            : `https://www.odanet.com.tr${img.imageUrl}`,
-        })),
-      };
+      // Images already come with full CDN URLs from the API
+      return data;
     },
     enabled: !!id && id !== "",
     retry: false,

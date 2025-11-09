@@ -122,6 +122,9 @@ export default function HomeScreen() {
                 <Text style={styles.errorText}>
                   İlanlar yüklenirken bir hata oluştu
                 </Text>
+                <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
+                  <Text style={styles.retryText}>Tekrar Dene</Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -264,5 +267,17 @@ const styles = StyleSheet.create({
   },
   viewAllButton: {
     marginTop: spacing.sm,
+  },
+  retryButton: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.accent,
+    borderRadius: borderRadius.md,
+  },
+  retryText: {
+    color: colors.textWhite,
+    fontSize: fonts.size.sm,
+    fontWeight: fonts.weight.semibold,
   },
 });

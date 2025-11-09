@@ -11,7 +11,7 @@ interface ListingCardProps {
 
 export function ListingCard({ listing }: ListingCardProps) {
   const router = useRouter();
-  const firstImage = listing.images?.[0]?.imageUrl;
+  const firstImage = listing.images?.[0]?.imagePath;
   const [imageError, setImageError] = useState(false);
 
   const showPlaceholder = !firstImage || imageError;
