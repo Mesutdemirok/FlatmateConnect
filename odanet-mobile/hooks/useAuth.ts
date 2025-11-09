@@ -23,6 +23,7 @@ interface RegisterData extends LoginCredentials {
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const queryClient = useQueryClient();
 
@@ -30,9 +31,10 @@ export function useAuth() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const token = await SecureStore.getItemAsync("auth_token");
-        if (token) {
-          api.defaults.headers.Authorization = `Bearer ${token}`;
+        const storedToken = await SecureStore.getItemAsync("auth_token");
+        if (storedToken) {
+          setToken(storedToken);
+          api.defaults.headers.Authorization = `Bearer ${storedToken}`;
           const { data } = await api.get<User>("/auth/me");
           setUser(data);
         }
@@ -52,6 +54,7 @@ export function useAuth() {
       const { data } = await api.post("/auth/login", credentials);
       if (data.token) {
         await SecureStore.setItemAsync("auth_token", data.token);
+        setToken(data.token);
         api.defaults.headers.Authorization = `Bearer ${data.token}`;
         const me = await api.get<User>("/auth/me");
         setUser(me.data);
@@ -72,6 +75,7 @@ export function useAuth() {
       const { data } = await api.post("/auth/register", userData);
       if (data.token) {
         await SecureStore.setItemAsync("auth_token", data.token);
+        setToken(data.token);
         api.defaults.headers.Authorization = `Bearer ${data.token}`;
         const me = await api.get<User>("/auth/me");
         setUser(me.data);
@@ -94,8 +98,17 @@ export function useAuth() {
     }
     await SecureStore.deleteItemAsync("auth_token");
     setUser(null);
+    setToken(null);
     queryClient.clear();
   };
 
-  return { user, isLoading, login, register, logout };
+  return { 
+    user, 
+    token, 
+    isLoading, 
+    isAuthenticated: !!user, 
+    login, 
+    register, 
+    logout 
+  };
 }
