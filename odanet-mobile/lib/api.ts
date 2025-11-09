@@ -1,18 +1,26 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 
-const apiUrl = Constants.expoConfig?.extra?.apiBaseUrl || "https://www.odanet.com.tr/api";
+/**
+ * 🔧 Base API URL Configuration
+ * If no API URL is found in app.config.ts → fallback to production URL.
+ */
+const apiUrl =
+  Constants?.expoConfig?.extra?.apiBaseUrl || "https://www.odanet.com.tr/api";
 
 export const api = axios.create({
   baseURL: apiUrl,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
   },
 });
 
-// Add auth token to requests if available
+/**
+ * 🛡️ Request Interceptor — Attaches Authorization header if token exists.
+ */
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -21,30 +29,43 @@ api.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (error) {
-      console.error("Error retrieving auth token:", error);
+      console.warn("⚠️ Failed to retrieve auth token:", error);
     }
     return config;
   },
   (error) => {
+    console.error("❌ Request config error:", error);
     return Promise.reject(error);
-  }
+  },
 );
 
-// Handle response errors
+/**
+ * ⚙️ Response Interceptor — Handles expired sessions and network issues.
+ */
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
+  async (error: AxiosError) => {
+    // Handle unauthorized (401)
     if (error.response?.status === 401) {
-      // Handle unauthorized - clear token
       try {
         await SecureStore.deleteItemAsync("auth_token");
-        console.log("Unauthorized: Token cleared. Please login again.");
+        console.log("🚫 Token expired or invalid — cleared from storage.");
       } catch (e) {
-        console.error("Error clearing auth token:", e);
+        console.error("Error clearing token:", e);
       }
     }
+
+    // Handle timeouts or server unavailability
+    if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+      console.error("⏳ Request timed out. Check your network connection.");
+    }
+
+    if (!error.response) {
+      console.error("🌐 Network Error: Could not reach the API server.");
+    }
+
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
