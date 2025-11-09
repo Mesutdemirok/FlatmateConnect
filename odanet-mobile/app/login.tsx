@@ -63,8 +63,9 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     try {
+      // Use makeRedirectUri without params for Expo Go tunnel support
+      // This will generate: exp://fp9wn-w-odanet-8082.exp.direct/--/auth
       const redirectUri = AuthSession.makeRedirectUri({
-        scheme: "odanet",
         path: "auth",
       });
 
@@ -85,6 +86,9 @@ export default function Login() {
 
         if (token) {
           await SecureStore.setItemAsync("auth_token", token);
+          // Set auth header for future API calls
+          const { api } = await import("../lib/api");
+          api.defaults.headers.Authorization = `Bearer ${token}`;
           Alert.alert("Başarılı", "Google ile giriş yapıldı!");
           router.replace("/(tabs)");
         } else {

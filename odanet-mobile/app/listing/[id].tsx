@@ -13,7 +13,10 @@ export default function ListingDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: listing, isLoading, error } = useListing(id!);
+  
+  // ALL HOOKS MUST BE BEFORE ANY CONDITIONAL RETURNS
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const flatListRef = useRef<FlatList>(null);
   
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -55,8 +58,6 @@ export default function ListingDetailScreen() {
   const images = listing.images && listing.images.length > 0 
     ? listing.images 
     : [];
-
-  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   const renderImageItem = ({ item }: { item: any }) => {
     const hasError = imageErrors.has(item.id);

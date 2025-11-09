@@ -15,7 +15,7 @@ import { colors, fonts, borderRadius, spacing } from "../theme";
 
 // --- Custom Hook for robust image handling ---
 // This centralizes image state logic and handles both loading and error states.
-const useListingImage = (imagePath) => {
+const useListingImage = (imagePath: string | undefined) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -67,8 +67,8 @@ export function ListingCard({
     variant === "featured" ? styles.containerFeatured : styles.containerDefault;
 
   // Function to safely format the price (Improved Number Formatting)
-  const formatPrice = (amount) => {
-    const rent = parseFloat(amount || "0");
+  const formatPrice = (amount: string | number | undefined) => {
+    const rent = parseFloat((amount || "0").toString());
     if (isNaN(rent) || rent <= 0) {
       return "Fiyat Belirtilmemiş"; // Handle invalid/missing price gracefully
     }
@@ -149,12 +149,6 @@ export function ListingCard({
 
         <View style={styles.priceRow}>
           <Text style={styles.price}>{formatPrice(listing.rentAmount)}</Text>
-          {/* 8. Extra Info/Badge: Add an optional badge, e.g., 'New' */}
-          {listing.isNew && (
-            <View style={styles.newBadge}>
-              <Text style={styles.newBadgeText}>YENİ</Text>
-            </View>
-          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -244,19 +238,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   price: {
-    fontSize: fonts.size.md, // Slightly adjusted font size
-    fontWeight: fonts.weight.bold, // Bolder price for emphasis
-    color: colors.accent,
-  },
-  newBadge: {
-    backgroundColor: colors.success, // Use a success color for 'new'
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-  },
-  newBadgeText: {
-    color: colors.textWhite,
-    fontSize: fonts.size.xs,
+    fontSize: fonts.size.lg,
     fontWeight: fonts.weight.bold,
+    color: colors.accent,
   },
 });
