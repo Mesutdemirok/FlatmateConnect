@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   FlatList,
   Dimensions,
-  Linking,
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,41 +16,10 @@ import { useMemo, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useListing } from "../../hooks/useListings";
-// ASSUMPTION: Your theme 'colors.background' is now a light gray (e.g., #F4F6F8)
-// and 'colors.card' is white (e.g., #FFFFFF).
 import { colors, fonts, borderRadius, spacing } from "../../theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const STATUS_BAR_HEIGHT = Platform.OS === "ios" ? 44 : 0;
-
-// --- (Social Links constant remains the same) ---
-const SOCIAL_LINKS = [
-  {
-    name: "logo-tiktok",
-    href: "https://www.tiktok.com/@odanet.com.tr",
-    label: "TikTok",
-  },
-  {
-    name: "logo-facebook",
-    href: "https://www.facebook.com/odanet.com.tr/",
-    label: "Facebook",
-  },
-  {
-    name: "logo-instagram",
-    href: "https://www.instagram.com/odanet.com.tr/",
-    label: "Instagram",
-  },
-  {
-    name: "logo-pinterest",
-    href: "https://www.pinterest.com/odanet_/",
-    label: "Pinterest",
-  },
-  {
-    name: "logo-youtube",
-    href: "https://www.youtube.com/@odanet_com_tr",
-    label: "YouTube",
-  },
-];
 
 export default function ListingDetailScreen() {
   const router = useRouter();
@@ -118,7 +86,7 @@ export default function ListingDetailScreen() {
   // --- Main Content ---
   return (
     <View style={styles.container}>
-      {/* 1. Image Gallery with Integrated Header Buttons */}
+      {/* 1. Image Gallery */}
       <View style={styles.galleryWrapper}>
         {images.length > 0 ? (
           <>
@@ -143,11 +111,6 @@ export default function ListingDetailScreen() {
               colors={["rgba(0,0,0,0.4)", "transparent"]}
               style={styles.topGradient}
             />
-            <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.3)"]}
-              style={styles.bottomGradient}
-            />
-
             <SafeAreaView style={styles.floatingHeader}>
               <TouchableOpacity
                 onPress={handleGoBack}
@@ -159,30 +122,17 @@ export default function ListingDetailScreen() {
                   color={colors.textWhite}
                 />
               </TouchableOpacity>
-              <View style={styles.floatingActionGroup}>
-                <TouchableOpacity
-                  onPress={() => setIsFavorite((prev) => !prev)}
-                  style={styles.floatingButton}
-                >
-                  <Ionicons
-                    name={isFavorite ? "heart" : "heart-outline"}
-                    size={24}
-                    color={isFavorite ? colors.error : colors.textWhite}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => console.log("Share")}
-                  style={styles.floatingButton}
-                >
-                  <Ionicons
-                    name="share-outline"
-                    size={24}
-                    color={colors.textWhite}
-                  />
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                onPress={() => setIsFavorite((prev) => !prev)}
+                style={styles.floatingButton}
+              >
+                <Ionicons
+                  name={isFavorite ? "heart" : "heart-outline"}
+                  size={24}
+                  color={isFavorite ? colors.error : colors.textWhite}
+                />
+              </TouchableOpacity>
             </SafeAreaView>
-
             {images.length > 1 && (
               <View style={styles.pagination}>
                 {images.map((_, i) => (
@@ -205,12 +155,12 @@ export default function ListingDetailScreen() {
         )}
       </View>
 
-      {/* 2. Scrollable Content (Card-based Layout) */}
+      {/* 2. Scrollable Info */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title and Price Card */}
+        {/* Title and Price */}
         <View style={[styles.card, styles.titlePriceBlock]}>
           <Text style={styles.title}>{listing.title}</Text>
           {listing.rentAmount && (
@@ -231,14 +181,14 @@ export default function ListingDetailScreen() {
           )}
         </View>
 
-        {/* Features Card */}
+        {/* Features */}
         <View style={styles.card}>
           <Section title="Özellikler">
             <DetailGrid listing={listing} />
           </Section>
         </View>
 
-        {/* Description Card */}
+        {/* Description */}
         {listing.description && (
           <View style={styles.card}>
             <Section title="Açıklama">
@@ -247,7 +197,7 @@ export default function ListingDetailScreen() {
           </View>
         )}
 
-        {/* Amenities Card */}
+        {/* Amenities */}
         {listing.amenities?.length > 0 && (
           <View style={styles.card}>
             <Section title="Olanaklar">
@@ -268,36 +218,29 @@ export default function ListingDetailScreen() {
           </View>
         )}
 
-        {/* 3. Creative Footer: Host Contact Card */}
-        <View style={[styles.card, { marginBottom: 0 }]}>
-          <HostContactCard
-            ownerName={listing.ownerName || "İlan Sahibi"}
-            onContact={handleContact}
-          />
-        </View>
-
-        {/* Brand Assurance (No Card) */}
-        <View style={styles.footerWrapper}>
-          <View style={styles.brandAssurance}>
-            <Text style={styles.brandAssuranceTitle}>Odanet Güvencesi</Text>
-            <Text style={styles.brandAssuranceDesc}>
-              Şeffaf, güvenli, kolay. Türkiye’nin güvenilir oda kiralama ve ev
-              arkadaşı platformu.
-            </Text>
-            <SocialLinksSection />
+        {/* Contact Card (only clean one) */}
+        <View style={[styles.card, { marginBottom: 40 }]}>
+          <View style={contactCardStyles.infoRow}>
+            <View style={contactCardStyles.avatar}>
+              <Text style={contactCardStyles.avatarText}>
+                {listing.ownerName?.charAt(0) ?? "İ"}
+              </Text>
+            </View>
+            <View>
+              <Text style={contactCardStyles.title}>İlan Sahibi</Text>
+              <Text style={contactCardStyles.ownerName}>
+                {listing.ownerName || "Bilinmiyor"}
+              </Text>
+            </View>
           </View>
         </View>
-
-        {/* Spacer to prevent content overlap with sticky footer */}
-        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* 4. Sticky Action Footer (IMPROVED) */}
+      {/* 3. Sticky Contact Button */}
       <View style={styles.stickyActionFooter}>
         <TouchableOpacity style={styles.contactButton} onPress={handleContact}>
-          {/* Gradient background for the button */}
           <LinearGradient
-            colors={[colors.primary, colors.accent]} // Use your brand's gradient
+            colors={[colors.primary, colors.accent]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
@@ -307,17 +250,14 @@ export default function ListingDetailScreen() {
             size={20}
             color={colors.textWhite}
           />
-          <Text style={styles.contactButtonText}>
-            İlan Sahibiyle İletişime Geç
-          </Text>
+          <Text style={styles.contactButtonText}>İlan Sahibine Ulaş</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-/* -------------------- Sub-Components -------------------- */
-
+/* ---------- Subcomponents ---------- */
 function Section({ title, children }: any) {
   return (
     <View style={styles.section}>
@@ -372,68 +312,12 @@ function DetailGrid({ listing }: any) {
   );
 }
 
-function HostContactCard({
-  ownerName,
-  onContact,
-}: {
-  ownerName: string;
-  onContact: () => void;
-}) {
-  return (
-    <View style={contactCardStyles.card}>
-      <View style={contactCardStyles.infoRow}>
-        <View style={contactCardStyles.avatar}>
-          <Text style={contactCardStyles.avatarText}>
-            {ownerName.charAt(0)}
-          </Text>
-        </View>
-        <View>
-          <Text style={contactCardStyles.title}>İlan Sahibi</Text>
-          <Text style={contactCardStyles.ownerName}>{ownerName}</Text>
-        </View>
-      </View>
-      <TouchableOpacity onPress={onContact} style={contactCardStyles.ctaButton}>
-        <Ionicons name="chatbubble-outline" size={20} color={colors.primary} />
-        <Text style={contactCardStyles.ctaText}>Mesaj Gönder</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function SocialLinksSection() {
-  return (
-    <View style={socialLinksStyles.socialRow}>
-      {SOCIAL_LINKS.map((s) => (
-        <TouchableOpacity
-          key={s.href}
-          onPress={() => Linking.openURL(s.href)}
-          style={socialLinksStyles.socialBtn}
-        >
-          <Ionicons name={s.name as any} size={20} color={colors.accent} />
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
-
-/* -------------------- Styles -------------------- */
-
-// Host Contact Card Styles
+/* ---------- Styles ---------- */
 const contactCardStyles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.card, // White background
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    borderTopWidth: 1, // Separator
-    borderTopColor: colors.border,
-    marginHorizontal: -spacing.lg, // Expand to edges of parent card
-    paddingBottom: 0,
-    marginBottom: -spacing.lg, // Consume parent card padding
-  },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   avatar: {
     width: 50,
@@ -446,70 +330,23 @@ const contactCardStyles = StyleSheet.create({
   },
   avatarText: {
     fontSize: fonts.size.xl,
-    fontWeight: fonts.weight.semibold, // Reduced weight
+    fontWeight: fonts.weight.semibold,
     color: colors.primary,
   },
-  title: {
-    fontSize: fonts.size.sm,
-    color: colors.textLight,
-  },
+  title: { fontSize: fonts.size.sm, color: colors.textLight },
   ownerName: {
     fontSize: fonts.size.lg,
-    fontWeight: fonts.weight.semibold, // Reduced weight
+    fontWeight: fonts.weight.semibold,
     color: colors.text,
   },
-  ctaButton: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.background, // Light gray background
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    gap: 8,
-  },
-  ctaText: {
-    color: colors.primary, // Primary color text
-    fontWeight: fonts.weight.semibold, // Reduced weight
-    fontSize: fonts.size.base,
-  },
 });
 
-// Social Links Styles
-const socialLinksStyles = StyleSheet.create({
-  socialRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-    justifyContent: "center",
-    marginTop: spacing.md,
-    paddingTop: spacing.sm,
-  },
-  socialBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-});
-
-// Main Styles
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background, // Main background is light gray
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   muted: { color: colors.textLight },
 
-  // --- Image Gallery & Floating Header ---
-  galleryWrapper: {
-    height: 350,
-    backgroundColor: "#eee",
-    overflow: "hidden",
-  },
+  galleryWrapper: { height: 350, backgroundColor: "#eee", overflow: "hidden" },
   galleryImage: { width: SCREEN_WIDTH, height: 350 },
   floatingHeader: {
     position: "absolute",
@@ -517,36 +354,17 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
     paddingHorizontal: spacing.base,
-    paddingTop: Platform.OS === "ios" ? 0 : STATUS_BAR_HEIGHT + spacing.sm,
+    paddingTop: STATUS_BAR_HEIGHT + spacing.sm,
     zIndex: 15,
   },
   floatingButton: {
-    backgroundColor: "rgba(0,0,0,0.3)", // Lighter background
+    backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 20,
     width: 40,
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-  },
-  floatingActionGroup: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  topGradient: {
-    position: "absolute",
-    top: 0,
-    width: "100%",
-    height: 100,
-    zIndex: 10,
-  },
-  bottomGradient: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    height: 80,
-    zIndex: 10,
   },
   pagination: {
     position: "absolute",
@@ -556,7 +374,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 6,
-    zIndex: 12,
   },
   dot: {
     width: 8,
@@ -571,69 +388,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // --- Scrollable Content (NEW LAYOUT) ---
-  scrollContent: {
-    paddingVertical: spacing.lg, // Padding for top and bottom of scroll view
-    gap: spacing.base, // Gap between cards
-  },
-
-  // NEW Card Style
+  scrollContent: { paddingVertical: spacing.lg, gap: spacing.base },
   card: {
-    backgroundColor: colors.card, // White
-    borderRadius: borderRadius.lg, // Rounded corners for cards
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
     padding: spacing.lg,
-    marginHorizontal: spacing.base, // Horizontal margin
+    marginHorizontal: spacing.base,
   },
-
-  titlePriceBlock: {
-    marginTop: -spacing.lg, // Negative margin to "pull up" the first card
-    paddingTop: spacing.lg,
-  },
+  titlePriceBlock: { marginTop: -spacing.lg },
   title: {
-    fontSize: fonts.size.xxl, // Slightly smaller
-    fontWeight: fonts.weight.semibold, // Reduced weight
+    fontSize: fonts.size.xxl,
+    fontWeight: fonts.weight.semibold,
     color: colors.text,
-    marginBottom: spacing.xs,
   },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 4,
-  },
+  row: { flexDirection: "row", alignItems: "center", gap: 4 },
   address: { color: colors.textLight, fontSize: fonts.size.base },
   price: {
-    fontSize: fonts.size.xl, // Slightly smaller
-    fontWeight: fonts.weight.bold, // Price is still bold
+    fontSize: fonts.size.xl,
+    fontWeight: fonts.weight.bold,
     color: colors.accent,
-    marginVertical: spacing.md,
+    marginVertical: spacing.sm,
   },
-  priceSuffix: {
-    fontSize: fonts.size.lg,
-    fontWeight: fonts.weight.medium, // Reduced weight
-    color: colors.accent,
-  },
-
-  // Sections (content within a card)
-  section: {
-    marginBottom: 0, // Margin is handled by the card
-  },
+  priceSuffix: { fontSize: fonts.size.lg, color: colors.accent },
+  section: { marginBottom: 0 },
   sectionTitle: {
     fontSize: fonts.size.lg,
-    fontWeight: fonts.weight.semibold, // Reduced weight
+    fontWeight: fonts.weight.semibold,
     color: colors.text,
     marginBottom: spacing.md,
   },
-
-  // Detail Grid (Recessed Look)
-  detailGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
+  detailGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   detailCard: {
     width: "31%",
-    backgroundColor: colors.background, // Use light gray for "inset" look
+    backgroundColor: colors.background,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     alignItems: "center",
@@ -649,11 +436,9 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: fonts.size.sm,
     color: colors.text,
-    fontWeight: fonts.weight.medium, // Reduced weight
+    fontWeight: fonts.weight.medium,
     textAlign: "center",
   },
-
-  // Amenities Chips
   chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   chip: {
     flexDirection: "row",
@@ -663,71 +448,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  chipText: {
-    fontSize: fonts.size.sm,
-    color: colors.text,
-    fontWeight: fonts.weight.medium,
-  },
-
+  chipText: { fontSize: fonts.size.sm, color: colors.text },
   desc: {
     color: colors.text,
     lineHeight: 22,
     fontSize: fonts.size.base,
-    fontWeight: fonts.weight.regular,
-  }, // Regular weight
-
-  // --- Footer ---
-  footerWrapper: {
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.base,
   },
-  brandAssurance: {
-    paddingVertical: spacing.lg,
-    alignItems: "center",
-  },
-  brandAssuranceTitle: {
-    fontSize: fonts.size.base, // Smaller
-    fontWeight: fonts.weight.semibold, // Reduced weight
-    color: colors.primary,
-    marginBottom: spacing.xs,
-  },
-  brandAssuranceDesc: {
-    fontSize: fonts.size.sm,
-    color: colors.textLight,
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-
-  // --- Sticky Action Footer (IMPROVED) ---
   stickyActionFooter: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: colors.card,
-    padding: spacing.base, // Padding around the button
-    paddingBottom: spacing.lg, // Extra padding for safe area
+    padding: spacing.base,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    zIndex: 20,
   },
   contactButton: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center", // Center the content
+    justifyContent: "center",
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
     borderRadius: borderRadius.lg,
     gap: 8,
-    overflow: "hidden", // Important for gradient
+    overflow: "hidden",
   },
   contactButtonText: {
     color: colors.textWhite,
-    fontWeight: fonts.weight.semibold, // Semibold for button
+    fontWeight: fonts.weight.semibold,
     fontSize: fonts.size.base,
   },
-
-  // Error State Header
   errorHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -736,9 +486,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  errorBackBtn: {
-    padding: spacing.xs,
-  },
+  errorBackBtn: { padding: spacing.xs },
   errorText: {
     fontSize: fonts.size.lg,
     fontWeight: fonts.weight.semibold,

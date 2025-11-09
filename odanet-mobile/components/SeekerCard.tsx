@@ -30,11 +30,21 @@ export function SeekerCard({ seeker }: SeekerCardProps) {
     ? `₺${parseFloat(seeker.budget).toLocaleString("tr-TR")}`
     : "Belirtilmemiş";
   
+  // Get primary city (first preferred area)
+  const primaryCity = seeker.preferredAreas && seeker.preferredAreas.length > 0
+    ? seeker.preferredAreas[0]
+    : null;
+  
+  // Roommate preference
+  const roommatePreference = seeker.smokingPreference || seeker.petPreference
+    ? `${seeker.smokingPreference === "evet" ? "Sigara içiyor" : seeker.smokingPreference === "hayir" ? "Sigara içmiyor" : ""} ${seeker.petPreference === "evet" ? "• Evcil hayvan var" : seeker.petPreference === "hayir" ? "• Evcil hayvan yok" : ""}`.trim()
+    : null;
+  
   return (
     <TouchableOpacity
       onPress={() => router.push(`/seeker/${seeker.id}`)}
       style={styles.card}
-      activeOpacity={0.7}
+      activeOpacity={0.9}
     >
       <View style={styles.cardContent}>
         {/* Avatar and Name */}
@@ -54,28 +64,23 @@ export function SeekerCard({ seeker }: SeekerCardProps) {
             </Text>
             <View style={styles.detailsRow}>
               {seeker.age && <Text style={styles.detailText}>{seeker.age} yaş</Text>}
-              {seeker.gender && (
-                <>
-                  <Text style={styles.separator}>•</Text>
-                  <Text style={styles.detailText}>{genderDisplay}</Text>
-                </>
-              )}
-              {seeker.occupation && (
-                <>
-                  <Text style={styles.separator}>•</Text>
-                  <Text style={styles.detailText} numberOfLines={1}>
-                    {seeker.occupation}
-                  </Text>
-                </>
-              )}
+              {seeker.age && seeker.gender && <Text style={styles.separator}>•</Text>}
+              {seeker.gender && <Text style={styles.detailText}>{genderDisplay}</Text>}
             </View>
+            {/* City display */}
+            {primaryCity && (
+              <View style={styles.cityRow}>
+                <Ionicons name="location-outline" size={14} color="#666666" />
+                <Text style={styles.cityText}>{primaryCity}</Text>
+              </View>
+            )}
           </View>
         </View>
 
         {/* Budget */}
         <View style={styles.budgetContainer}>
-          <Ionicons name="wallet-outline" size={16} color={colors.accent} />
-          <Text style={styles.budget}>Bütçe: {budgetDisplay}</Text>
+          <Ionicons name="wallet-outline" size={18} color={colors.accent} />
+          <Text style={styles.budget}>{budgetDisplay}</Text>
         </View>
 
         {/* Bio */}
@@ -85,22 +90,13 @@ export function SeekerCard({ seeker }: SeekerCardProps) {
           </Text>
         )}
 
-        {/* Preferred Areas */}
-        {seeker.preferredAreas && seeker.preferredAreas.length > 0 && (
-          <View style={styles.areasContainer}>
-            <Ionicons name="location-outline" size={14} color={colors.textLight} />
-            <View style={styles.areaChips}>
-              {seeker.preferredAreas.slice(0, 3).map((area, index) => (
-                <View key={index} style={styles.chip}>
-                  <Text style={styles.chipText}>{area}</Text>
-                </View>
-              ))}
-              {seeker.preferredAreas.length > 3 && (
-                <View style={styles.chip}>
-                  <Text style={styles.chipText}>+{seeker.preferredAreas.length - 3}</Text>
-                </View>
-              )}
-            </View>
+        {/* Roommate Preference */}
+        {roommatePreference && (
+          <View style={styles.preferenceContainer}>
+            <Ionicons name="people-outline" size={16} color={colors.textLight} />
+            <Text style={styles.preferenceText} numberOfLines={1}>
+              {roommatePreference}
+            </Text>
           </View>
         )}
       </View>
@@ -113,24 +109,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
     marginBottom: spacing.md,
+    marginHorizontal: spacing.base,
+    padding: spacing.md,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
   cardContent: {
-    padding: spacing.base,
+    gap: 8,
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.sm,
+    alignItems: "flex-start",
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing.sm,
@@ -144,64 +141,60 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: fonts.size.base,
-    fontWeight: fonts.weight.semibold,
+    fontSize: 16,
+    fontWeight: "700",
     color: colors.text,
-    marginBottom: spacing.xs,
+    lineHeight: 24,
+    marginBottom: 2,
   },
   detailsRow: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
+    marginTop: 2,
   },
   detailText: {
-    fontSize: fonts.size.sm,
-    color: colors.textLight,
+    fontSize: 14,
+    color: "#666666",
   },
   separator: {
-    fontSize: fonts.size.sm,
-    color: colors.textLight,
-    marginHorizontal: spacing.xs,
+    fontSize: 14,
+    color: "#666666",
+    marginHorizontal: 6,
+  },
+  cityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: 4,
+  },
+  cityText: {
+    fontSize: 14,
+    color: "#666666",
   },
   budgetContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.sm,
+    gap: 6,
   },
   budget: {
-    fontSize: fonts.size.base,
-    fontWeight: fonts.weight.semibold,
-    color: colors.accent,
-    marginLeft: spacing.xs,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#7F00FF",
   },
   bio: {
-    fontSize: fonts.size.sm,
+    fontSize: 14,
     color: colors.text,
     lineHeight: 20,
-    marginBottom: spacing.sm,
   },
-  areasContainer: {
+  preferenceContainer: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    marginTop: spacing.xs,
+    alignItems: "center",
+    gap: 6,
+    paddingTop: 4,
   },
-  areaChips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  preferenceText: {
+    fontSize: 13,
+    color: colors.textLight,
     flex: 1,
-    marginLeft: spacing.xs,
-  },
-  chip: {
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    marginRight: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  chipText: {
-    fontSize: fonts.size.xs,
-    color: colors.text,
-    fontWeight: fonts.weight.medium,
   },
 });
