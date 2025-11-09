@@ -1,0 +1,136 @@
+Got it. Here’s a single, clean prompt you can paste to your Agent. It states the problems, the exact fixes, the design spec (to match your website), and how we’ll verify everything in Expo Go.
+
+⸻
+
+🔧 Odanet Mobile — Fix + Polish Brief (Android Expo Go)
+
+Context
+	•	I’m testing on Android (Expo Go). App connects but I can’t log in with an existing user and several UI/data issues persist.
+	•	The mobile app design must match odanet.com.tr (purple gradient look), including spacing, cards, and text.
+
+Core Problems to Fix
+	1.	Auth not connected for existing users
+	•	Logging in with a real existing user fails.
+	•	Ensure useLogin / useRegister / useLogout / useCurrentUser work with the live API.
+	•	Persist token using SecureStore; attach Authorization: Bearer <token> on all requests.
+	•	After login, the app should land on Home and Profile tab must show the real user (name/email/avatar).
+	•	On 401, clear token and redirect to /login with a friendly message.
+	2.	Bottom tabs: Messages/Profile not working
+	•	Do not route to any “Samsung/phone buttons” screens.
+	•	Use expo-router Tabs only. Each tab must open its React screen:
+	•	Home → app/(tabs)/index.tsx
+	•	Messages → app/(tabs)/messages.tsx (placeholder OK)
+	•	Favorites → app/(tabs)/favorites.tsx
+	•	Profile → app/(tabs)/profile.tsx (must read the current user)
+	3.	Listings missing (and no images)
+	•	Home should show room listings from the live backend:
+	•	Endpoint: GET /api/listings (array)
+	•	Each listing has images[] (URLs).
+	•	Show the first image or a fallback image if empty.
+	•	Ensure image URLs are absolute and load in RN (http→https if needed).
+	4.	Room-seeker cards not visible
+	•	Add the Room Seeker feed and search:
+	•	Endpoint: GET /api/seekers (array)
+	•	Keep the top segmented control: “Oda Ara / Oda Arkadaşı Ara”.
+	•	When “Oda Arkadaşı Ara” is active, show seeker cards with: avatar/initials, name, age/gender/occupation, budget, preferred areas, short bio.
+	5.	Listing details: too little info & only one image
+	•	On card tap → app/listing/[id].tsx must show:
+	•	Image gallery (swipeable, pagination dots) for images[].
+	•	Title, full address, monthly price.
+	•	Property facts: propertyType, furnishingStatus, totalRooms, bathroomType, internetIncluded, billsIncluded (or excludedBills), totalOccupants, roommatePreference, smokingPolicy, amenities (chips).
+	•	Contact/Message CTA (disabled for now if chat not ready).
+	6.	Design must match odanet.com.tr (purple theme)
+	•	Replace teal with purple gradient:
+	•	Header gradient: #7F00FF → #E100FF
+	•	Accent/button gradient: same pair
+	•	Light surfaces: #F5F0FF (page bg), #FFFFFF (cards)
+	•	Text: headings #1F2937, body #4B5563
+	•	Spacing & rhythm
+	•	Page padding: 16
+	•	Card radius: 16, shadow soft
+	•	Card spacing: 12–16 vertical
+	•	Search section at top (like website):
+	•	Segmented control (Oda Ara / Oda Arkadaşı Ara)
+	•	Search input with location icon + placeholder “Hangi şehir veya semtte oda arıyorsun?”
+	•	Primary “Ara” button (gradient)
+	•	Listing Card (Home)
+	•	Top: image 16:9 with rounded corners
+	•	Title (2 lines), price (₺xx.xxx / ay) bold in purple
+	•	Address (district / city)
+	•	Badges row (Bills included, Furnished, Internet, etc.)
+	•	Seeker Card
+	•	Avatar/initials, name
+	•	Row: age • gender • occupation
+	•	Budget (₺) prominent
+	•	Preferred areas (chips)
+
+Implementation Notes (files & structure)
+	•	Hooks
+	•	hooks/useAuth.ts
+	•	export: useCurrentUser, useLogin, useRegister, useLogout
+	•	After success, queryClient.invalidateQueries(['currentUser'])
+	•	hooks/useListings.ts
+	•	useListings() get /listings
+	•	useListing(id) get /listings/:id
+	•	hooks/useSeekers.ts
+	•	useSeekers() get /seekers
+	•	API
+	•	lib/api.ts uses axios with baseURL = https://www.odanet.com.tr/api
+	•	Request interceptor adds Authorization token when present
+	•	Response 401 → clear token + route to /login
+	•	Screens
+	•	Home: app/(tabs)/index.tsx
+	•	Messages: app/(tabs)/messages.tsx (placeholder screen with safe area)
+	•	Favorites: app/(tabs)/favorites.tsx (list from local state for now)
+	•	Profile: app/(tabs)/profile.tsx (shows real user; Logout clears token and returns to /login)
+	•	Listing detail: app/listing/[id].tsx with image carousel (react-native-reanimated-carousel or FlatList horizontal+pagingEnabled)
+	•	Components
+	•	components/ListingCard.tsx (props: listing)
+	•	components/SeekerCard.tsx (props: seeker)
+	•	components/SearchHeader.tsx (segmented control + input + button)
+	•	components/Badge.tsx, components/Chip.tsx, components/PrimaryButton.tsx
+	•	Theme
+	•	Create theme/colors.ts:
+
+export const colors = {
+  primaryStart: '#7F00FF',
+  primaryEnd: '#E100FF',
+  bg: '#F5F0FF',
+  card: '#FFFFFF',
+  text: '#1F2937',
+  textMuted: '#4B5563',
+  border: '#E5E7EB',
+};
+
+
+	•	Gradient header & buttons via expo-linear-gradient.
+
+	•	Bottom Tabs
+	•	Use expo-router Tabs; ensure the native Android system buttons are not captured; no deep links to phone settings.
+
+Error States
+	•	Home “Hata Oluştu” card: friendly message + “Tekrar Dene” button (refetch()).
+	•	Empty states for both feeds with icons.
+
+QA / Acceptance (Android Expo Go)
+	1.	Start dev server: cd odanet-mobile && npx expo start --tunnel.
+	2.	Scan QR in Expo Go.
+	3.	Login with an existing real user → lands on Home; Profile shows correct info.
+	4.	Home shows listings with images; tapping a card opens detail with swipeable gallery + all facts displayed.
+	5.	Switch to Oda Arkadaşı Ara → seeker cards appear with budget & areas.
+	6.	Messages & Favorites tabs open their React screens (no phone/system screens).
+	7.	Logout works and returns to login.
+	8.	Visual check: header gradient matches site; spacing & cards match the website’s style.
+
+If any API field is missing
+	•	Add temporary placeholders, but do not crash. Log a warning in console.
+
+When done
+	•	Reply with: files changed, a short changelog, and the new Expo tunnel URL.
+
+⸻
+
+If you need a quick re-run from my side after you push changes, say:
+“Run: cd odanet-mobile && npx expo start --tunnel and scan the new QR.”
+
+Thanks—please implement thoroughly and polish the details.

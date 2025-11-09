@@ -4,14 +4,28 @@ import { api } from "../lib/api";
 export interface Seeker {
   id: string;
   userId: string;
-  name: string;
+  slug?: string;
+  title: string;
   age?: number;
-  budget?: number;
-  city?: string;
-  description?: string;
-  image?: string;
-  status?: string;
+  gender?: "erkek" | "kadin" | "diger";
+  occupation?: string;
+  budget?: string;
+  preferredAreas?: string[];
+  bio?: string;
+  moveInDate?: string;
+  stayDuration?: string;
+  smokingPreference?: string;
+  petPreference?: string;
+  cleanlinessLevel?: string;
+  status: string;
   createdAt: string;
+  updatedAt?: string;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    profileImageUrl?: string;
+  };
 }
 
 /**
@@ -19,19 +33,23 @@ export interface Seeker {
  */
 export function useSeekers() {
   return useQuery<Seeker[]>({
-    queryKey: ["seekers"],
+    queryKey: ["/api/seekers"],
     queryFn: async () => {
-      const { data } = await api.get<Seeker[]>("/seekers");
-      
-      // Normalize image URLs
-      return data.map((seeker) => ({
-        ...seeker,
-        image: seeker.image?.startsWith("http")
-          ? seeker.image
-          : seeker.image
-          ? `https://www.odanet.com.tr${seeker.image}`
-          : "https://www.odanet.com.tr/uploads/default-user.jpg",
-      }));
+      try {
+        console.log("📡 Fetching seekers from /seekers...");
+        const { data } = await api.get<Seeker[]>("/seekers");
+        
+        if (!data || data.length === 0) {
+          console.log("⚠️ No seekers returned from API");
+          return [];
+        }
+        
+        console.log("✅ Seekers fetched:", data.length, "seekers");
+        return data;
+      } catch (error: any) {
+        console.error("❌ SEEKER FETCH ERROR:", error.response?.data || error.message);
+        return [];
+      }
     },
     staleTime: 1000 * 60 * 3,
     retry: 1,
@@ -43,19 +61,11 @@ export function useSeekers() {
  */
 export function useSeeker(id: string | undefined) {
   return useQuery<Seeker>({
-    queryKey: ["seeker", id],
+    queryKey: ["/api/seekers", id],
     queryFn: async () => {
       if (!id) throw new Error("Seeker ID is required");
       const { data } = await api.get<Seeker>(`/seekers/${id}`);
-      
-      return {
-        ...data,
-        image: data.image?.startsWith("http")
-          ? data.image
-          : data.image
-          ? `https://www.odanet.com.tr${data.image}`
-          : "https://www.odanet.com.tr/uploads/default-user.jpg",
-      };
+      return data;
     },
     enabled: !!id && id !== "",
     retry: false,

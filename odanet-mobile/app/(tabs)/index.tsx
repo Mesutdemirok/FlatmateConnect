@@ -4,7 +4,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { useListings } from "../../hooks/useListings";
+import { useSeekers } from "../../hooks/useSeekers";
 import { ListingCard } from "../../components/ListingCard";
+import { SeekerCard } from "../../components/SeekerCard";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { SecondaryButton } from "../../components/SecondaryButton";
 import { SearchInput } from "../../components/SearchInput";
@@ -12,14 +14,25 @@ import { colors, fonts, borderRadius, spacing } from "../../theme";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { data: listings, isLoading, error, refetch } = useListings();
-  const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeToggle, setActiveToggle] = useState<"room" | "roommate">("room");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Fetch listings and seekers
+  const { data: listings, isLoading: listingsLoading, error: listingsError, refetch: refetchListings } = useListings();
+  const { data: seekers, isLoading: seekersLoading, error: seekersError, refetch: refetchSeekers } = useSeekers();
+  
+  // Determine active data based on toggle
+  const isLoading = activeToggle === "room" ? listingsLoading : seekersLoading;
+  const error = activeToggle === "room" ? listingsError : seekersError;
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
+    if (activeToggle === "room") {
+      await refetchListings();
+    } else {
+      await refetchSeekers();
+    }
     setRefreshing(false);
   };
 
@@ -106,9 +119,11 @@ export default function HomeScreen() {
             />
           </View>
 
-          {/* Listings Section */}
+          {/* Content Section - Listings or Seekers */}
           <View style={styles.listingsSection}>
-            <Text style={styles.sectionTitle}>🏡 Güncel İlanlar</Text>
+            <Text style={styles.sectionTitle}>
+              {activeToggle === "room" ? "🏡 Güncel İlanlar" : "👥 Oda Arkadaşı Arayanlar"}
+            </Text>
 
             {isLoading && !refreshing && (
               <View style={styles.centerContainer}>
@@ -120,7 +135,9 @@ export default function HomeScreen() {
               <View style={styles.errorCard}>
                 <Text style={styles.errorTitle}>Hata Oluştu</Text>
                 <Text style={styles.errorText}>
-                  İlanlar yüklenirken bir hata oluştu
+                  {activeToggle === "room" 
+                    ? "İlanlar yüklenirken bir hata oluştu"
+                    : "Oda arkadaşı arayanlar yüklenirken bir hata oluştu"}
                 </Text>
                 <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
                   <Text style={styles.retryText}>Tekrar Dene</Text>
@@ -128,7 +145,8 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {listings && listings.length > 0 ? (
+            {/* Show Listings */}
+            {activeToggle === "room" && listings && listings.length > 0 ? (
               <>
                 {listings.slice(0, 5).map((listing) => (
                   <ListingCard key={listing.id} listing={listing} />
@@ -139,14 +157,34 @@ export default function HomeScreen() {
                   style={styles.viewAllButton}
                 />
               </>
-            ) : (
-              !isLoading && (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>
-                    Henüz ilan bulunmamaktadır
-                  </Text>
-                </View>
-              )
+            ) : activeToggle === "room" && !isLoading && (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>
+                  Henüz ilan bulunmamaktadır
+                </Text>
+              </View>
+            )}
+
+            {/* Show Seekers */}
+            {activeToggle === "roommate" && seekers && seekers.length > 0 ? (
+              <>
+                {seekers.slice(0, 5).map((seeker) => (
+                  <SeekerCard key={seeker.id} seeker={seeker} />
+                ))}
+                {seekers.length > 5 && (
+                  <SecondaryButton
+                    title="Tümünü Gör"
+                    onPress={() => router.push("/seekers")}
+                    style={styles.viewAllButton}
+                  />
+                )}
+              </>
+            ) : activeToggle === "roommate" && !isLoading && (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>
+                  Henüz oda arkadaşı arayan bulunmamaktadır
+                </Text>
+              </View>
             )}
           </View>
         </View>
