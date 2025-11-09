@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   /* -------------------------------------------------------
      🧍 Seeker Profiles
   ------------------------------------------------------- */
-  // ✅ PUBLIC route for mobile homepage (unified feed)
+  // ✅ PUBLIC route for homepage
   app.get("/api/seekers", async (req, res) => {
     try {
       const seekers = await storage.getSeekerProfiles({
@@ -177,8 +177,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Authenticated route (for dashboards)
-  app.get("/api/users/seekers", jwtAuth, async (req, res) => {
+  // ✅ ALSO PUBLIC (removed jwtAuth)
+  app.get("/api/users/seekers", async (req, res) => {
     try {
       const seekers = await storage.getSeekerProfiles({
         isPublished: true,
