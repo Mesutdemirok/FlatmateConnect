@@ -65,7 +65,7 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F8F8",
+    backgroundColor: "#FAFAFA",
   },
   scrollView: {
     flex: 1,

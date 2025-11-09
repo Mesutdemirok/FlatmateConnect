@@ -81,9 +81,16 @@ export default function HomeScreen() {
             )}
 
             {listings && listings.length > 0 ? (
-              listings.slice(0, 5).map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))
+              <>
+                {listings.slice(0, 5).map((listing) => (
+                  <ListingCard key={listing.id} listing={listing} />
+                ))}
+                <SecondaryButton
+                  title="Tüm İlanları Gör"
+                  onPress={() => {}}
+                  style={styles.viewAllButton}
+                />
+              </>
             ) : (
               !isLoading && (
                 <View style={styles.emptyCard}>
@@ -103,7 +110,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F8F8",
+    backgroundColor: "#FAFAFA",
   },
   scrollView: {
     flex: 1,
@@ -184,5 +191,8 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#666666",
     textAlign: "center",
+  },
+  viewAllButton: {
+    marginTop: 8,
   },
 });

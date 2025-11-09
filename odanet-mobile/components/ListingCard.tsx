@@ -1,4 +1,5 @@
 import { View, Text, Image, TouchableOpacity } from "react-native";
+import { useState } from "react";
 import { useRouter } from "expo-router";
 import { Listing } from "../hooks/useListings";
 
@@ -9,9 +10,9 @@ interface ListingCardProps {
 export function ListingCard({ listing }: ListingCardProps) {
   const router = useRouter();
   const firstImage = listing.images?.[0]?.imageUrl;
-  
-  // Use a solid color placeholder if no image
-  const imageUrl = firstImage || "https://www.odanet.com.tr/uploads/default-room.jpg";
+  const [imageError, setImageError] = useState(false);
+
+  const showPlaceholder = !firstImage || imageError;
 
   return (
     <TouchableOpacity
@@ -29,22 +30,7 @@ export function ListingCard({ listing }: ListingCardProps) {
         elevation: 3,
       }}
     >
-      {firstImage ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={{
-            width: "100%",
-            height: 160,
-            borderRadius: 12,
-            marginBottom: 8,
-            backgroundColor: "#E5E5E5",
-          }}
-          resizeMode="cover"
-          onError={(e) => {
-            console.log("Image load error:", e.nativeEvent.error);
-          }}
-        />
-      ) : (
+      {showPlaceholder ? (
         <View
           style={{
             width: "100%",
@@ -56,33 +42,54 @@ export function ListingCard({ listing }: ListingCardProps) {
             justifyContent: "center",
           }}
         >
-          <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "600" }}>
-            🏠 Fotoğraf Yok
+          <Text style={{ color: "#FFFFFF", fontSize: 48 }}>🏠</Text>
+          <Text style={{ color: "#FFFFFF", fontSize: 14, marginTop: 8 }}>
+            Fotoğraf Yok
           </Text>
         </View>
+      ) : (
+        <Image
+          source={{ uri: firstImage }}
+          style={{
+            width: "100%",
+            height: 160,
+            borderRadius: 12,
+            marginBottom: 8,
+            backgroundColor: "#E5E5E5",
+          }}
+          resizeMode="cover"
+          onError={() => setImageError(true)}
+        />
       )}
-      <Text style={{
-        fontSize: 18,
-        fontWeight: "600",
-        color: "#333333",
-        marginBottom: 4,
-      }}>
+      <Text
+        style={{
+          fontSize: 18,
+          fontWeight: "600",
+          color: "#111111",
+          marginBottom: 4,
+        }}
+      >
         {listing.title}
       </Text>
       {listing.address && (
-        <Text style={{
-          fontSize: 14,
-          color: "#666666",
-          marginBottom: 4,
-        }}>
+        <Text
+          style={{
+            fontSize: 14,
+            color: "#666666",
+            marginBottom: 4,
+          }}
+        >
           {listing.address}
         </Text>
       )}
-      <Text style={{
-        fontSize: 14,
-        color: "#666666",
-      }}>
-        {(listing.rentAmount || 0).toLocaleString()} TL / ay
+      <Text
+        style={{
+          fontSize: 16,
+          fontWeight: "600",
+          color: "#00A6A6",
+        }}
+      >
+        {parseFloat(listing.rentAmount || "0").toLocaleString("tr-TR")} TL / ay
       </Text>
     </TouchableOpacity>
   );
