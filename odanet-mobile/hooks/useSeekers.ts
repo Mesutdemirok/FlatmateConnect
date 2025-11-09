@@ -69,6 +69,11 @@ async function fetchSeekers(token?: string): Promise<Seeker[]> {
     smokingPreference: s.smokingPreference,
     petPreference: s.petPreference,
     bio: s.bio,
+    createdAt: s.createdAt, // ✅ Preserve createdAt for unified feed sorting
+    updatedAt: s.updatedAt,
+    slug: s.slug,
+    fullName: s.fullName,
+    profilePhotoUrl: s.profilePhotoUrl,
   }));
 }
 
