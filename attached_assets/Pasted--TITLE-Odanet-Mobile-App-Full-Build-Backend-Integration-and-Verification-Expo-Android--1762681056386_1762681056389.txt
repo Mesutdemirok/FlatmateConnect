@@ -1,0 +1,247 @@
+
+⸻
+
+
+🧩 TITLE:
+Odanet Mobile App — Full Build, Backend Integration, and Verification (Expo Android)
+
+🎯 GOAL:
+Ensure the Odanet Expo Mobile App connects perfectly to the live backend at https://www.odanet.com.tr/api, fix the Auth and Listings logic, repair layout for Android safe area, verify everything through live testing in Expo Go, and prepare for final EAS Android production build.
+
+---
+
+## 🔧 STEP 1 — CLEAN PROJECT STRUCTURE
+1. Use this directory: `/workspace/odanet-mobile/`
+2. Confirm folders exist:
+
+app/
+hooks/
+lib/
+theme/
+assets/
+
+3. Remove any duplicate nested “odanet-mobile/odanet-mobile” folder.
+4. Ensure all imports are **relative**, e.g.:
+```ts
+import { useAuth } from "../../hooks/useAuth";
+import { api } from "../../lib/api";
+
+
+⸻
+
+🧠 STEP 2 — REBUILD AUTH SYSTEM
+
+Replace /hooks/useAuth.ts with:
+
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { api } from "../lib/api";
+import * as SecureStore from "expo-secure-store";
+
+interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  profileImageUrl?: string;
+}
+
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+interface RegisterData extends LoginCredentials {
+  firstName: string;
+  lastName: string;
+}
+
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const token = await SecureStore.getItemAsync("auth_token");
+        if (token) {
+          api.defaults.headers.Authorization = `Bearer ${token}`;
+          const { data } = await api.get<User>("/auth/me");
+          setUser(data);
+        }
+      } catch (err) {
+        console.log("Error loading user:", err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadUser();
+  }, []);
+
+  const login = async (credentials: LoginCredentials) => {
+    setIsLoading(true);
+    try {
+      const { data } = await api.post("/auth/login", credentials);
+      if (data.token) {
+        await SecureStore.setItemAsync("auth_token", data.token);
+        api.defaults.headers.Authorization = `Bearer ${data.token}`;
+        const me = await api.get<User>("/auth/me");
+        setUser(me.data);
+      }
+      queryClient.invalidateQueries({ queryKey: ["listings"] });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (userData: RegisterData) => {
+    setIsLoading(true);
+    try {
+      const { data } = await api.post("/auth/register", userData);
+      if (data.token) {
+        await SecureStore.setItemAsync("auth_token", data.token);
+        api.defaults.headers.Authorization = `Bearer ${data.token}`;
+        const me = await api.get<User>("/auth/me");
+        setUser(me.data);
+      }
+      queryClient.invalidateQueries({ queryKey: ["listings"] });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {}
+    await SecureStore.deleteItemAsync("auth_token");
+    setUser(null);
+    queryClient.clear();
+  };
+
+  return { user, isLoading, login, register, logout };
+}
+
+✅ Fixes: “useAuth is not a function”
+✅ Loads /auth/me automatically
+✅ Restores full session flow
+
+⸻
+
+🧩 STEP 3 — FIX LAYOUT (BOTTOM TAB + SAFE AREA)
+
+Replace /app/(tabs)/_layout.tsx with:
+
+import { Tabs } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export default function TabLayout() {
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: "#7F00FF",
+          tabBarInactiveTintColor: "#666",
+          tabBarStyle: {
+            backgroundColor: "#fff",
+            paddingBottom: 8,
+            height: 65,
+          },
+        }}
+      />
+    </SafeAreaView>
+  );
+}
+
+✅ Prevents bottom bar hiding behind Android navigation
+✅ Matches the purple-gradient web design aesthetic
+
+⸻
+
+🌐 STEP 4 — VERIFY API CONNECTION
+
+Edit /lib/api.ts to include:
+
+console.log("🚀 Odanet API Connected:", api.defaults.baseURL);
+
+Then confirm in the terminal after running npx expo start:
+
+🚀 Odanet API Connected: https://www.odanet.com.tr/api
+
+
+⸻
+
+🧪 STEP 5 — AUTOMATIC VERIFICATION SEQUENCE
+
+Run the following tests automatically:
+
+1️⃣ Start Metro:
+
+npx expo start -c
+
+2️⃣ On Android (Expo Go):
+	•	Login with a valid account
+	•	Open “Profile” tab (should NOT crash)
+	•	Navigate to “Messages” (no error)
+	•	Check that “Güncel İlanlar” loads real data from /listings
+3️⃣ If “Hata oluştu” appears, print full JSON:
+
+console.log("LISTING FETCH ERROR:", err.response?.data || err.message);
+
+4️⃣ Verify:
+	•	✅ API Base: https://www.odanet.com.tr/api
+	•	✅ Auth Token Stored
+	•	✅ /auth/me returns valid user
+	•	✅ Listings load successfully
+	•	✅ Bottom tabs visible and clickable
+
+Print success summary:
+
+🎉 Odanet Mobile API Verified
+✅ Auth working
+✅ Listings loaded
+✅ SafeArea fixed
+✅ Ready for Android build
+
+
+⸻
+
+📦 STEP 6 — ANDROID PRODUCTION BUILD (SKIP iOS)
+
+Since Expo Android is active and iOS failed:
+
+Run:
+
+eas build -p android --profile production
+
+Then verify build success at:
+👉 https://expo.dev/accounts/mesudemirok/projects/odanet-mobile/builds
+
+⸻
+
+⚙️ AGENT TO ENSURE
+	•	All imports reference real hook locations (no _hooksUseAuth)
+	•	SecureStore is active and token is retrieved properly
+	•	Layout changes propagate to Android Expo Go
+	•	Console outputs match expected ✅ messages
+	•	Build process only targets Android (ignore iOS)
+
+⸻
+
+✅ SUCCESS CHECKLIST
+	•	“useAuth is not a function” → fixed
+	•	“Hata oluştu” → fixed
+	•	Profile & Messages → open cleanly
+	•	Android tabs visible → fixed
+	•	/listings data fetched → working
+	•	“🚀 Odanet API Connected” appears in console
+	•	Build → passes for Android production
+
+🎯 OUTPUT MESSAGE:
+
+🎉 Odanet Mobile App Fully Verified.
+Ready for Google Play Console Beta Upload.
+
+---

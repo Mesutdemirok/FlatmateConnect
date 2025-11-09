@@ -1,8 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import * as SecureStore from "expo-secure-store";
 
-export interface User {
+interface User {
   id: string;
   email: string;
   firstName: string;
@@ -20,69 +21,81 @@ interface RegisterData extends LoginCredentials {
   lastName: string;
 }
 
-// Get current user
-export function useCurrentUser() {
-  return useQuery({
-    queryKey: ["currentUser"],
-    queryFn: async () => {
-      const token = await SecureStore.getItemAsync("auth_token");
-      if (!token) return null;
-      
-      const { data } = await api.get<User>("/auth/me");
-      return data;
-    },
-    retry: false,
-  });
-}
-
-// Login mutation
-export function useLogin() {
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (credentials: LoginCredentials) => {
+
+  // Load user on mount
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const token = await SecureStore.getItemAsync("auth_token");
+        if (token) {
+          api.defaults.headers.Authorization = `Bearer ${token}`;
+          const { data } = await api.get<User>("/auth/me");
+          setUser(data);
+        }
+      } catch (err: any) {
+        console.log("Error loading user:", err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadUser();
+  }, []);
+
+  // Login
+  const login = async (credentials: LoginCredentials) => {
+    setIsLoading(true);
+    try {
       const { data } = await api.post("/auth/login", credentials);
       if (data.token) {
         await SecureStore.setItemAsync("auth_token", data.token);
+        api.defaults.headers.Authorization = `Bearer ${data.token}`;
+        const me = await api.get<User>("/auth/me");
+        setUser(me.data);
       }
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
-    },
-  });
-}
+      queryClient.invalidateQueries({ queryKey: ["listings"] });
+    } catch (err) {
+      console.error("Login failed:", err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-// Register mutation
-export function useRegister() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (userData: RegisterData) => {
+  // Register
+  const register = async (userData: RegisterData) => {
+    setIsLoading(true);
+    try {
       const { data } = await api.post("/auth/register", userData);
       if (data.token) {
         await SecureStore.setItemAsync("auth_token", data.token);
+        api.defaults.headers.Authorization = `Bearer ${data.token}`;
+        const me = await api.get<User>("/auth/me");
+        setUser(me.data);
       }
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
-    },
-  });
-}
+      queryClient.invalidateQueries({ queryKey: ["listings"] });
+    } catch (err) {
+      console.error("Registration failed:", err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-// Logout mutation
-export function useLogout() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async () => {
+  // Logout
+  const logout = async () => {
+    try {
       await api.post("/auth/logout");
-      await SecureStore.deleteItemAsync("auth_token");
-    },
-    onSuccess: () => {
-      queryClient.setQueryData(["currentUser"], null);
-      queryClient.clear();
-    },
-  });
+    } catch {
+      // ignore if API fails
+    }
+    await SecureStore.deleteItemAsync("auth_token");
+    setUser(null);
+    queryClient.clear();
+  };
+
+  return { user, isLoading, login, register, logout };
 }
