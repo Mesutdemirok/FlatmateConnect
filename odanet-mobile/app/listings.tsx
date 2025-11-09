@@ -1,9 +1,17 @@
-import { View, ScrollView, Text, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  RefreshControl,
+  FlatList,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useListings } from "../hooks/useListings";
+import { useRouter } from "expo-router";
+
+import { useListings, type Listing } from "../hooks/useListings";
 import { ListingCard } from "../components/ListingCard";
 import { colors, fonts, borderRadius, spacing } from "../theme";
 
@@ -12,14 +20,27 @@ export default function ListingsScreen() {
   const { data: listings, isLoading, error, refetch } = useListings();
   const [refreshing, setRefreshing] = useState(false);
 
+  // Normalize API response (array OR { data: array })
+  const items: Listing[] = useMemo(() => {
+    if (Array.isArray(listings)) return listings as Listing[];
+    if (listings && Array.isArray((listings as any).data)) {
+      return (listings as any).data as Listing[];
+    }
+    return [];
+  }, [listings]);
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -31,8 +52,24 @@ export default function ListingsScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
+      {/* Error banner (non-blocking) */}
+      {error ? (
+        <View style={styles.errorCard}>
+          <Text style={styles.errorTitle}>Hata Oluştu</Text>
+          <Text style={styles.errorText}>
+            İlanlar yüklenirken bir hata oluştu.
+          </Text>
+          <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
+            <Text style={styles.retryText}>Tekrar Dene</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <ListingCard listing={item} />}
+        contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -40,52 +77,30 @@ export default function ListingsScreen() {
             colors={[colors.accent]}
           />
         }
-      >
-        <View style={styles.content}>
-          {isLoading && !refreshing && (
+        ListHeaderComponent={
+          !isLoading && items.length > 0 ? (
+            <Text style={styles.countText}>{items.length} ilan bulundu</Text>
+          ) : null
+        }
+        ListEmptyComponent={
+          !isLoading ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Henüz ilan bulunmamaktadır</Text>
+            </View>
+          ) : (
             <View style={styles.centerContainer}>
               <Text style={styles.loadingText}>Yükleniyor...</Text>
             </View>
-          )}
-
-          {error && (
-            <View style={styles.errorCard}>
-              <Text style={styles.errorTitle}>Hata Oluştu</Text>
-              <Text style={styles.errorText}>
-                İlanlar yüklenirken bir hata oluştu
-              </Text>
-            </View>
-          )}
-
-          {listings && listings.length > 0 ? (
-            <>
-              <Text style={styles.countText}>
-                {listings.length} ilan bulundu
-              </Text>
-              {listings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </>
-          ) : (
-            !isLoading && (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>
-                  Henüz ilan bulunmamaktadır
-                </Text>
-              </View>
-            )
-          )}
-        </View>
-      </ScrollView>
+          )
+        }
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -96,47 +111,47 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  backButton: {
-    padding: spacing.sm,
-  },
+  backButton: { padding: spacing.sm },
   headerTitle: {
     fontSize: fonts.size.lg,
     fontWeight: fonts.weight.semibold,
     color: colors.text,
   },
-  placeholder: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
+  placeholder: { width: 40 },
+
   content: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.base,
+    gap: spacing.sm,
   },
+
   countText: {
     fontSize: fonts.size.sm,
     color: colors.textLight,
     marginBottom: spacing.md,
   },
+
   centerContainer: {
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: spacing.xxxl,
   },
-  loadingText: {
-    color: colors.textLight,
-  },
+  loadingText: { color: colors.textLight },
+
   errorCard: {
     backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
-    padding: spacing.xl,
+    padding: spacing.lg,
+    marginHorizontal: spacing.base,
+    marginTop: spacing.base,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   errorTitle: {
     color: colors.error,
     textAlign: "center",
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     fontWeight: fonts.weight.semibold,
   },
   errorText: {
@@ -144,14 +159,24 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: fonts.size.sm,
   },
+  retryButton: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.accent,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  retryText: { color: colors.textWhite, fontWeight: fonts.weight.semibold },
+
   emptyCard: {
     backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     alignItems: "center",
+    marginHorizontal: spacing.base,
+    marginTop: spacing.base,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  emptyText: {
-    color: colors.textLight,
-    textAlign: "center",
-  },
+  emptyText: { color: colors.textLight, textAlign: "center" },
 });

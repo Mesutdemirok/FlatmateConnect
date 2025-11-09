@@ -82,9 +82,8 @@ export function ListingCard({
 
   return (
     <TouchableOpacity
-      // 3. Performance & UX: Use memoized handler and proper accessibility props
       onPress={navigateToDetails}
-      activeOpacity={0.75} // Slightly softer active opacity
+      activeOpacity={0.9}
       style={[styles.containerBase, cardStyle]}
       accessibilityRole="button"
       accessibilityLabel={`İlan detaylarına git: ${listing.title}`}
@@ -161,13 +160,13 @@ const styles = StyleSheet.create({
   containerBase: {
     backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
-    padding: spacing.sm, // Slightly less padding globally
+    padding: spacing.md,
     marginBottom: spacing.base,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
   // Default variant styling (can be empty if Base is enough)
   containerDefault: {
@@ -184,10 +183,10 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     width: "100%",
-    height: 160,
+    aspectRatio: 16 / 9,
     borderRadius: borderRadius.md,
-    marginBottom: spacing.sm,
-    overflow: "hidden", // Ensures everything stays within bounds
+    marginBottom: spacing.md,
+    overflow: "hidden",
     backgroundColor: colors.border,
   },
   image: {
@@ -213,13 +212,13 @@ const styles = StyleSheet.create({
     fontWeight: fonts.weight.medium,
   },
   content: {
-    paddingHorizontal: spacing.xs, // Slight padding adjustment
-    gap: 6, // Increased gap for better spacing
+    gap: 8,
   },
   title: {
     fontSize: fonts.size.lg,
-    fontWeight: fonts.weight.bold, // Bolder title
+    fontWeight: "700",
     color: colors.text,
+    lineHeight: 24,
   },
   detailRow: {
     flexDirection: "row",
@@ -227,9 +226,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   address: {
-    fontSize: fonts.size.sm,
-    color: colors.textLight,
-    flexShrink: 1, // Allows text to shrink if needed
+    fontSize: 14,
+    color: "#666666",
+    flexShrink: 1,
   },
   priceRow: {
     flexDirection: "row",
@@ -239,7 +238,7 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: fonts.size.lg,
-    fontWeight: fonts.weight.bold,
-    color: colors.accent,
+    fontWeight: "700",
+    color: "#7F00FF",
   },
 });

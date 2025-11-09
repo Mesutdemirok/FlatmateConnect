@@ -1,194 +1,252 @@
-import { View, ScrollView, Text, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
+  Dimensions,
+  StatusBar,
+} from "react-native";
+// Changed to just use 'top' edge for SafeAreaView inside the fixedHeader
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "expo-router";
+import { MaterialIcons, FontAwesome } from "@expo/vector-icons"; // Added FontAwesome for better icons
 import { useListings } from "../../hooks/useListings";
 import { useSeekers } from "../../hooks/useSeekers";
 import { ListingCard } from "../../components/ListingCard";
 import { SeekerCard } from "../../components/SeekerCard";
-import { PrimaryButton } from "../../components/PrimaryButton";
-import { SecondaryButton } from "../../components/SecondaryButton";
 import { SearchInput } from "../../components/SearchInput";
+// Assuming theme constants are available
 import { colors, fonts, borderRadius, spacing } from "../../theme";
+
+const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const router = useRouter();
+
   const [activeToggle, setActiveToggle] = useState<"room" | "roommate">("room");
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
-  
-  // Fetch listings and seekers
-  const { data: listings, isLoading: listingsLoading, error: listingsError, refetch: refetchListings } = useListings();
-  const { data: seekers, isLoading: seekersLoading, error: seekersError, refetch: refetchSeekers } = useSeekers();
-  
-  // Determine active data based on toggle
-  const isLoading = activeToggle === "room" ? listingsLoading : seekersLoading;
-  const error = activeToggle === "room" ? listingsError : seekersError;
+
+  // Data fetching hooks remain
+  const {
+    data: listings,
+    refetch: refetchListings,
+    isLoading: isLoadingListings,
+  } = useListings();
+  const {
+    data: seekers,
+    refetch: refetchSeekers,
+    isLoading: isLoadingSeekers,
+  } = useSeekers();
 
   const onRefresh = async () => {
     setRefreshing(true);
-    if (activeToggle === "room") {
-      await refetchListings();
-    } else {
-      await refetchSeekers();
-    }
+    if (activeToggle === "room") await refetchListings();
+    else await refetchSeekers();
     setRefreshing(false);
+  };
+
+  // Data extraction logic remains
+  const listingList = Array.isArray(listings)
+    ? listings
+    : Array.isArray(listings?.data)
+      ? listings.data
+      : [];
+  const seekerList = Array.isArray(seekers)
+    ? seekers
+    : Array.isArray(seekers?.data)
+      ? seekers.data
+      : [];
+
+  // Filter logic remains the same
+  const filteredData = useMemo(() => {
+    const list = activeToggle === "room" ? listingList : seekerList;
+    if (!searchQuery) return list;
+
+    const lowerCaseQuery = searchQuery.toLowerCase();
+
+    return list.filter(
+      (item) =>
+        item.title?.toLowerCase().includes(lowerCaseQuery) ||
+        item.address?.toLowerCase().includes(lowerCaseQuery) ||
+        item.city?.toLowerCase().includes(lowerCaseQuery),
+    );
+  }, [activeToggle, listingList, seekerList, searchQuery]);
+
+  const isLoading =
+    activeToggle === "room" ? isLoadingListings : isLoadingSeekers;
+
+  // Function to render the list items with Empty State
+  const renderListItems = () => {
+    if (filteredData.length === 0 && searchQuery.length > 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <MaterialIcons name="search-off" size={60} color={colors.textLight} />
+          <Text style={styles.emptyText}>
+            '**{searchQuery}**' için sonuç bulunamadı.
+          </Text>
+          <TouchableOpacity
+            onPress={() => setSearchQuery("")}
+            style={styles.resetButton}
+          >
+            <Text style={styles.resetButtonText}>Aramayı Temizle</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return filteredData.map((item) =>
+      activeToggle === "room" ? (
+        // Added variant prop for potential different card styling
+        <ListingCard key={item.id} listing={item} variant="default" />
+      ) : (
+        <SeekerCard key={item.id} seeker={item} />
+      ),
+    );
   };
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.gradientStart, colors.gradientEnd]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.header}
-      >
-        <SafeAreaView edges={["top"]}>
-          <View style={styles.headerContent}>
-            <Text style={styles.logo}>Odanet</Text>
-            <Text style={styles.tagline}>Güvenilir ve şeffaf oda arama deneyimi</Text>
+      {/* 1. STATUS BAR: Dark content for visibility against light background */}
+      <StatusBar barStyle="dark-content" backgroundColor={colors.card} />
 
-            {/* Toggle Buttons */}
-            <View style={styles.toggleContainer}>
-              <TouchableOpacity
-                onPress={() => setActiveToggle("room")}
-                style={[
-                  styles.toggleButton,
-                  activeToggle === "room" && styles.toggleButtonActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.toggleText,
-                    activeToggle === "room" && styles.toggleTextActive,
-                  ]}
-                >
-                  Oda Ara
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setActiveToggle("roommate")}
-                style={[
-                  styles.toggleButton,
-                  activeToggle === "roommate" && styles.toggleButtonActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.toggleText,
-                    activeToggle === "roommate" && styles.toggleTextActive,
-                  ]}
-                >
-                  Oda Arkadaşı Ara
-                </Text>
-              </TouchableOpacity>
-            </View>
+      {/* --- FIXED HEADER/SEARCH BLOCK --- */}
+      <View style={styles.fixedHeader}>
+        {/* TOP BAR - Logo and Profile/Settings */}
+        <SafeAreaView edges={["top"]} style={styles.topBarSafeArea}>
+          <View style={styles.topBar}>
+            {/* Logo remains prominent */}
+            <Text style={styles.logo}>Odanet</Text>
+            {/* Profile icon */}
+            <TouchableOpacity
+              onPress={() => router.push("/profile")}
+              style={styles.profileButton}
+            >
+              <MaterialIcons
+                name="person-outline"
+                size={26}
+                color={colors.text}
+              />
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </LinearGradient>
 
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[colors.accent]}
-          />
-        }
-      >
-        <View style={styles.content}>
-          {/* Search */}
+        {/* 2. SEGMENTED CONTROL / TOGGLE BAR: Moved above the search */}
+        <View style={styles.toggleContainerWrapper}>
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity
+              onPress={() => setActiveToggle("room")}
+              style={[
+                styles.toggleButton,
+                activeToggle === "room" && styles.toggleButtonActive,
+              ]}
+            >
+              {/* Used FontAwesome for cleaner icons */}
+              <FontAwesome
+                name="home"
+                size={16}
+                color={
+                  activeToggle === "room" ? colors.textWhite : colors.textLight
+                }
+              />
+              <Text
+                style={[
+                  styles.toggleText,
+                  activeToggle === "room" && styles.toggleTextActive,
+                ]}
+              >
+                Oda İlanları
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setActiveToggle("roommate")}
+              style={[
+                styles.toggleButton,
+                activeToggle === "roommate" && styles.toggleButtonActive,
+              ]}
+            >
+              <MaterialIcons
+                name="people-outline"
+                size={18}
+                color={
+                  activeToggle === "roommate"
+                    ? colors.textWhite
+                    : colors.textLight
+                }
+              />
+              <Text
+                style={[
+                  styles.toggleText,
+                  activeToggle === "roommate" && styles.toggleTextActive,
+                ]}
+              >
+                Arkadaş Arayanlar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 3. SEARCH BOX: Prominent and polished */}
+        <View style={styles.searchBoxWrapper}>
           <SearchInput
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Şehir veya semt ara..."
+            placeholder={
+              activeToggle === "room"
+                ? "İlan, Şehir veya Semt Ara..."
+                : "İsim, Şehir veya Yaş Ara..."
+            }
+            style={styles.searchInputCustom}
           />
-
-          {/* Action Buttons */}
-          <View style={styles.buttonsContainer}>
-            <PrimaryButton
-              title="Oda arıyorum"
-              onPress={() => {}}
-              style={styles.buttonSpacing}
-            />
-            <SecondaryButton
-              title="Oda veriyorum"
-              onPress={() => {}}
-            />
-          </View>
-
-          {/* Content Section - Listings or Seekers */}
-          <View style={styles.listingsSection}>
-            <Text style={styles.sectionTitle}>
-              {activeToggle === "room" ? "🏡 Güncel İlanlar" : "👥 Oda Arkadaşı Arayanlar"}
-            </Text>
-
-            {isLoading && !refreshing && (
-              <View style={styles.centerContainer}>
-                <Text style={styles.loadingText}>Yükleniyor...</Text>
-              </View>
-            )}
-
-            {error && (
-              <View style={styles.errorCard}>
-                <Text style={styles.errorTitle}>Hata Oluştu</Text>
-                <Text style={styles.errorText}>
-                  {activeToggle === "room" 
-                    ? "İlanlar yüklenirken bir hata oluştu"
-                    : "Oda arkadaşı arayanlar yüklenirken bir hata oluştu"}
-                </Text>
-                <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
-                  <Text style={styles.retryText}>Tekrar Dene</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Show Listings */}
-            {activeToggle === "room" && listings && listings.length > 0 ? (
-              <>
-                {listings.slice(0, 5).map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} />
-                ))}
-                <SecondaryButton
-                  title="Tüm İlanları Gör"
-                  onPress={() => router.push("/listings")}
-                  style={styles.viewAllButton}
-                />
-              </>
-            ) : activeToggle === "room" && !isLoading && (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>
-                  Henüz ilan bulunmamaktadır
-                </Text>
-              </View>
-            )}
-
-            {/* Show Seekers */}
-            {activeToggle === "roommate" && seekers && seekers.length > 0 ? (
-              <>
-                {seekers.slice(0, 5).map((seeker) => (
-                  <SeekerCard key={seeker.id} seeker={seeker} />
-                ))}
-                {seekers.length > 5 && (
-                  <SecondaryButton
-                    title="Tümünü Gör"
-                    onPress={() => router.push("/seekers")}
-                    style={styles.viewAllButton}
-                  />
-                )}
-              </>
-            ) : activeToggle === "roommate" && !isLoading && (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>
-                  Henüz oda arkadaşı arayan bulunmamaktadır
-                </Text>
-              </View>
-            )}
-          </View>
         </View>
+      </View>
+
+      {/* --- SCROLLABLE CONTENT --- */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing || isLoading}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+          />
+        }
+      >
+        <Text style={styles.sectionTitle}>
+          {activeToggle === "room"
+            ? "Tavsiye Edilen Odalar"
+            : "Popüler Oda Arkadaşları"}
+        </Text>
+        {renderListItems()}
       </ScrollView>
+
+      {/* --- CUSTOM BOTTOM TAB BAR (Hidden Text) --- */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity style={styles.bottomBarButton}>
+          <MaterialIcons name="home" size={24} color={colors.accent} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.bottomBarButton}>
+          <MaterialIcons name="message" size={24} color={colors.inactive} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.bottomBarButton}>
+          <MaterialIcons
+            name="favorite-border"
+            size={24}
+            color={colors.inactive}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.bottomBarButton}>
+          <MaterialIcons
+            name="person-outline"
+            size={24}
+            color={colors.inactive}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -196,126 +254,172 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background, // Main background is light/off-white
   },
-  header: {
-    paddingBottom: spacing.xl,
+
+  // --- FIXED HEADER STYLES ---
+  fixedHeader: {
+    backgroundColor: colors.card, // White background for the fixed header
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    // Add shadow for depth, similar to Airbnb's fixed header
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
+    zIndex: 10,
   },
-  headerContent: {
+
+  // Fixes the empty line above the logo
+  topBarSafeArea: {
+    backgroundColor: colors.card,
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.md,
+  },
+
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    paddingVertical: spacing.xs,
   },
+
   logo: {
-    fontSize: fonts.size.xxxl,
+    fontSize: fonts.size.xxl,
     fontWeight: fonts.weight.bold,
-    color: colors.textWhite,
-    marginBottom: spacing.sm,
+    background: `linear-gradient(90deg, ${colors.gradientStart}, ${colors.gradientEnd})`,
+    color: colors.accent,
   },
-  tagline: {
-    fontSize: fonts.size.sm,
-    color: colors.textWhite,
-    textAlign: "center",
-    marginBottom: spacing.lg,
-    opacity: 0.9,
+
+  profileButton: {
+    padding: spacing.xs,
+  },
+
+  // SEGMENTED CONTROL WRAPPER
+  toggleContainerWrapper: {
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
   },
   toggleContainer: {
     flexDirection: "row",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: colors.background,
     borderRadius: borderRadius.pill,
-    padding: 4,
-    gap: 8,
+    padding: 2, // Thinner padding
+    gap: 2,
   },
+
+  // TOGGLE BUTTONS - ALL IN ONE LINE
   toggleButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    flex: 1,
+    flexDirection: "row", // Align icon and text
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm, // Increased vertical padding for a taller button
     borderRadius: borderRadius.pill,
   },
   toggleButtonActive: {
-    backgroundColor: colors.textWhite,
+    backgroundColor: colors.accent, // Accent color for active state
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   toggleText: {
     fontSize: fonts.size.sm,
-    fontWeight: fonts.weight.medium,
-    color: colors.textWhite,
+    fontWeight: fonts.weight.semibold,
+    color: colors.textLight,
+    marginLeft: spacing.xs, // Space between icon and text
   },
   toggleTextActive: {
-    color: colors.accent,
+    color: colors.textWhite,
   },
+
+  // SEARCH BOX
+  searchBoxWrapper: {
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  searchInputCustom: {
+    height: 44,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.accent + "20",
+    fontSize: fonts.size.base,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  // --- SCROLLABLE CONTENT ---
   scrollView: {
     flex: 1,
   },
-  content: {
+
+  contentContainer: {
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.xl,
-    gap: spacing.lg,
-  },
-  buttonsContainer: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxl * 3, // More padding to avoid overlap with bottom bar
     gap: spacing.md,
   },
-  buttonSpacing: {
-    marginBottom: spacing.sm,
-  },
-  listingsSection: {
-    gap: spacing.sm,
-  },
+
   sectionTitle: {
-    fontSize: fonts.size.lg,
+    fontSize: fonts.size.xl,
     fontWeight: fonts.weight.bold,
     color: colors.text,
     marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs, // Slight padding to align with cards
   },
-  centerContainer: {
+
+  // --- BOTTOM BAR (NO TEXT) ---
+  bottomBar: {
+    flexDirection: "row",
+    justifyContent: "space-around",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.xxxl,
+    height: 60, // Standard tab bar height
+    backgroundColor: colors.card,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    paddingBottom: 5, // Account for bottom safe area
   },
-  loadingText: {
-    color: colors.textLight,
-    fontSize: fonts.size.base,
+  bottomBarButton: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: spacing.xs,
   },
-  errorCard: {
+
+  // --- EMPTY STATE ---
+  emptyContainer: {
+    padding: spacing.xxl,
+    alignItems: "center",
     backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: "center",
-  },
-  errorTitle: {
-    color: colors.error,
-    textAlign: "center",
-    marginBottom: spacing.sm,
-    fontWeight: fonts.weight.semibold,
-    fontSize: fonts.size.base,
-  },
-  errorText: {
-    color: colors.textLight,
-    textAlign: "center",
-    fontSize: fonts.size.sm,
-  },
-  emptyCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: "center",
+    marginTop: spacing.lg,
   },
   emptyText: {
+    fontSize: fonts.size.base,
     color: colors.textLight,
     textAlign: "center",
-    fontSize: fonts.size.base,
+    marginBottom: spacing.md,
   },
-  viewAllButton: {
-    marginTop: spacing.sm,
-  },
-  retryButton: {
-    marginTop: spacing.md,
-    paddingVertical: spacing.sm,
+  resetButton: {
+    backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.accent,
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
   },
-  retryText: {
+  resetButtonText: {
     color: colors.textWhite,
-    fontSize: fonts.size.sm,
     fontWeight: fonts.weight.semibold,
   },
 });

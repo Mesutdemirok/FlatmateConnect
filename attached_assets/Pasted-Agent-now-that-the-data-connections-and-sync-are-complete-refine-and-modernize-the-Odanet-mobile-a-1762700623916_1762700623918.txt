@@ -1,0 +1,101 @@
+Agent, now that the data connections and sync are complete, refine and modernize the Odanet mobile app UI to fully align with the website’s brand identity and design system.
+
+────────────────────────────
+🎯 GOAL
+────────────────────────────
+Transform the mobile UI into a visually consistent, professional, and brand-faithful experience — same quality and clarity as the Odanet.com.tr website.
+
+────────────────────────────
+🔹 1. HOMEPAGE REFINEMENT
+────────────────────────────
+- Update the header area:
+  - Keep the “Odanet” logo centered with the gradient text (#7F00FF → #E100FF).
+  - Reduce vertical padding for a cleaner top space.
+- Make the search bar smaller in height, rounded (borderRadius: 14), and aligned with the gradient accent border.
+- Add subtle shadow under the search field for better hierarchy.
+- Rebalance spacing between the search bar, toggle buttons (“Oda İlanları / Arkadaş Arayanlar”), and listing cards.
+
+────────────────────────────
+🔹 2. LISTING CARDS
+────────────────────────────
+- Use the same rounded corner radius and shadow as the web version.
+- Ensure images load crisp (not blurred); `resizeMode="cover"` with fixed 16:9 ratio.
+- Include all data below each image: title, address, price, furnishing status, and roommate preference.
+- Use consistent typography:
+  - Title: `fontWeight: 700`
+  - Address: `fontSize: 14`, `color: #666`
+  - Price: `fontWeight: 700`, `color: #7F00FF`
+- Add a hover-like touch feedback (opacity 0.9) when tapped.
+
+────────────────────────────
+🔹 3. DETAIL PAGE POLISH
+────────────────────────────
+- Improve image carousel:
+  - Add light gradient overlay at bottom for text readability.
+  - Move the title and price over the image, just like the web listing page hero.
+  - Pagination dots centered and semi-transparent white.
+- Section layout:
+  - Add slight spacing between “Özellikler”, “Olanaklar”, “Açıklama” sections.
+  - Use rounded containers with soft shadows for each info block.
+  - Headings bold and consistent color `#1F1F1F`.
+- Include “İlan Sahibiyle İletişime Geç” button at the bottom, matching the Odanet gradient.
+  - When tapped, open or navigate to messaging thread for that listing.
+
+────────────────────────────
+🔹 4. PROFILE & TAB BAR
+────────────────────────────
+- Profile tab:
+  - Center user avatar with circular border and subtle gradient ring.
+  - Ensure all text aligns left with consistent spacing between listing cards.
+- Bottom tab bar:
+  - Keep one visible instance (remove any duplicates).
+  - Use subtle translucent background with shadow.
+  - Active icon color: `#7F00FF`; inactive: `#999`.
+  - Reduce label font size slightly for cleaner look.
+
+────────────────────────────
+🔹 5. BRAND COLOR & TYPOGRAPHY SYSTEM
+────────────────────────────
+Apply a unified color and font scheme matching Odanet web identity:
+- Primary gradient: `linear-gradient(90deg, #7F00FF, #E100FF)`
+- Secondary accent: `#9B5DE5`
+- Background: `#F9F8FC`
+- Font family: use system default or Inter/SF-Pro substitute
+- Headings: 18–22px bold
+- Body text: 14–16px regular
+- Caption: 12px muted
+
+────────────────────────────
+🔹 6. TRANSITIONS & EXPERIENCE
+────────────────────────────
+- Add smooth fade transitions between pages using Expo Router animation presets.
+- Apply press effects to cards and buttons (scale: 0.98, opacity: 0.9).
+- ScrollView and FlatList: consistent padding and safe area handling.
+- All screens should adapt cleanly on devices from iPhone SE → iPhone 15 Pro Max.
+
+────────────────────────────
+🔹 7. FINAL POLISH
+────────────────────────────
+- Test all main flows:
+  - Home → Listing → Detail → Back
+  - Profile → My Listings → Edit Listing
+  - Create new listing → Success confirmation
+  - Messaging → Send message
+- Ensure every font size, spacing, and component matches Odanet’s clean modern look.
+- No overlapping or clipped UI at the bottom safe area.
+
+────────────────────────────
+📦 DESIGN REFERENCES
+────────────────────────────
+Use visual references and style parity from:
+https://www.odanet.com.tr
+Focus on the gradient hierarchy, white space, and rounded card design.
+
+────────────────────────────
+✅ OUTCOME
+────────────────────────────
+Deliver a polished, branded, and unified mobile UI:
+- Modern and minimal aesthetic
+- Consistent typography & color palette
+- Smooth navigation and gradient cohesion
+- High fidelity with Odanet web platform
