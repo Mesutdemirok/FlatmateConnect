@@ -75,10 +75,16 @@ export function useListing(id: string | undefined) {
     queryKey: ["listing", id],
     queryFn: async () => {
       if (!id) throw new Error("Listing ID is required");
-      const { data } = await api.get<Listing>(`/listings/${id}`);
+      const response = await api.get(`/listings/${id}`);
       
-      // Images already come with full CDN URLs from the API
-      return data;
+      // Backend may return flat object or wrapped - handle both
+      const listing = response.data?.listing || response.data;
+      
+      if (!listing) {
+        throw new Error("Listing not found");
+      }
+      
+      return listing as Listing;
     },
     enabled: !!id && id !== "",
     retry: false,

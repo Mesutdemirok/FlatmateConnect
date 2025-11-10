@@ -10,6 +10,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { colors, fonts, borderRadius, spacing } from "../theme";
+import { getImageUrl } from "../../config";
 
 // Type guard helpers - check explicit type first, then fall back to heuristics
 const isListing = (item: any) => item?.type === "listing" || !!item?.rentAmount;
@@ -24,10 +25,10 @@ export function UnifiedCard({ item }: { item: any }) {
     else if (isSeeker(item)) router.push(`/seeker/${item.id}`);
   };
 
-  // Decide image source
+  // Decide image source - normalize URLs
   const imageUri = isListing(item)
-    ? item.images?.[0]?.imagePath
-    : item.profilePhotoUrl || undefined;
+    ? getImageUrl(item.images?.[0]?.imagePath)
+    : getImageUrl(item.profilePhotoUrl);
 
   const title = isListing(item)
     ? item.title

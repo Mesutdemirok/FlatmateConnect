@@ -212,6 +212,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get seeker by slug
+  app.get("/api/seekers/slug/:slug", async (req, res) => {
+    try {
+      const seeker = await storage.getSeekerProfileBySlug(req.params.slug);
+      if (!seeker || !seeker.isPublished || !seeker.isActive) {
+        return res.status(404).json({ message: "Profil bulunamadı" });
+      }
+      res.json(seeker); // Return flat seeker object
+    } catch (err: any) {
+      console.error("❌ /api/seekers/slug/:slug error:", err);
+      res.status(500).json({ message: "Veritabanı hatası" });
+    }
+  });
+
   app.get("/api/users/:userId", jwtAuth, async (req, res) => {
     try {
       const user = await storage.getUser(req.params.userId);
@@ -232,6 +246,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listings = await storage.getListings({});
       res.json(listings);
     } catch {
+      res.status(500).json({ message: "Veritabanı hatası" });
+    }
+  });
+
+  // Get listing by slug (must come before /:id to avoid route conflict)
+  app.get("/api/listings/slug/:slug", async (req, res) => {
+    try {
+      const listing = await storage.getListingBySlug(req.params.slug);
+      if (!listing || listing.status !== "active") {
+        return res.status(404).json({ message: "İlan bulunamadı" });
+      }
+      res.json(listing); // Return flat listing object
+    } catch (err: any) {
+      console.error("❌ /api/listings/slug/:slug error:", err);
+      res.status(500).json({ message: "Veritabanı hatası" });
+    }
+  });
+
+  // Get listing by ID
+  app.get("/api/listings/:id", async (req, res) => {
+    try {
+      const listing = await storage.getListing(req.params.id);
+      if (!listing) {
+        return res.status(404).json({ message: "İlan bulunamadı" });
+      }
+      res.json(listing); // Return flat listing object
+    } catch (err: any) {
+      console.error("❌ /api/listings/:id error:", err);
       res.status(500).json({ message: "Veritabanı hatası" });
     }
   });

@@ -1,0 +1,147 @@
+
+⸻
+
+🧠 CREEPID AGENT PROMPT — Full Sync & Detail Page Fix (Web + Mobile)
+
+Prompt Title: Repair Odanet Unified Data Flow — Fix Listing & Seeker Display (Web + Expo Mobile)
+
+⸻
+
+Context Summary
+
+We are working on Odanet, a room rental and roommate-finding platform.
+Currently, the system is partly functional but misaligned between backend, website, and Expo mobile app.
+
+Current State
+	1.	✅ API /api/users/seekers responds correctly and returns JSON data.
+	2.	⚠️ In the Expo app, seeker cards appear but their profile images are missing.
+	3.	❌ Room listing detail pages in the mobile app open but only show “İlan Sahibi / İlan Sahibine Ulaş” — no title, price, or description.
+	4.	❌ On the website, when clicking any listing or seeker, it says “İlan Bulunamadı” for both types (broken slug or ID routing).
+	5.	⚠️ config.ts may have been deleted earlier and needs to be fully restored and referenced properly by both the mobile and web projects.
+
+⸻
+
+🎯 Mission
+
+The goal is to restore full cross-platform functionality:
+	•	Seekers and listings both load correctly with images.
+	•	Detail pages (on both web and mobile) display full information.
+	•	Click actions route properly by slug or ID.
+	•	The config.ts file is restored and used consistently by all components.
+
+⸻
+
+🧩 Tasks to Execute
+
+1. Restore and Standardize Config
+	•	Create a single /workspace/config.ts file with:
+
+export const API_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://www.odanet.com.tr"
+    : "http://localhost:5000";
+
+
+	•	Update all mobile hooks (useSeekers.ts, useListings.ts, etc.) to:
+
+import { API_URL } from "../../config";
+
+
+	•	Ensure backend references this same base URL when generating full image paths.
+
+⸻
+
+2. Fix SeekerCard Image Rendering (Mobile)
+	•	In /odanet-mobile/components/SeekerCard.tsx, update:
+
+<Image
+  source={{ uri: `${API_URL}${seeker.profilePhotoUrl}` }}
+  style={styles.image}
+  resizeMode="cover"
+/>
+
+and add a graceful fallback:
+
+{!seeker.profilePhotoUrl && (
+  <Ionicons name="person-circle-outline" size={48} color="#ccc" />
+)}
+
+
+	•	Confirm that profilePhotoUrl in the seeker API includes /uploads/seekers/... path (if not, update backend response to include it).
+
+⸻
+
+3. Fix Room Listing Detail Page (Mobile)
+	•	In /odanet-mobile/app/listing/[id].tsx:
+	•	Fetch listing data from:
+
+`${API_URL}/api/listings/${id}`
+
+
+	•	Display:
+	•	Title
+	•	Address
+	•	Rent amount
+	•	Description (about)
+	•	Image carousel (listing.images)
+	•	Add safe checks for missing data and show placeholders if fields are null.
+
+⸻
+
+4. Fix Website “İlan Bulunamadı” Issue
+	•	Check backend routes inside registerRoutes in server/routes.ts:
+
+app.get("/api/listings/slug/:slug", async (req, res) => { ... });
+app.get("/api/seekers/slug/:slug", async (req, res) => { ... });
+
+
+	•	Ensure both routes:
+	•	Query correct DB table (getListingBySlug, getSeekerProfileBySlug)
+	•	Return JSON data with slug, title, about, rentAmount, and profilePhotoUrl
+	•	Do not conflict with /api/users/:userId
+	•	On the frontend:
+	•	Verify dynamic page paths /oda-ilani/[slug] and /oda-arayan/[slug] fetch the correct endpoint.
+	•	If slug is missing, fallback to /api/listings/:id or /api/seekers/:id.
+
+⸻
+
+5. Fix Database Query Filters
+	•	Update storage.getSeekerProfiles() and storage.getListings() so they always return:
+
+{ isActive: true, isPublished: true }
+
+
+	•	Ensure both include related user data and images.
+
+⸻
+
+6. Final Sync & Testing
+Run the following to fully reload all environments:
+
+# Restart backend
+npm run dev
+
+# Restart Expo mobile
+cd odanet-mobile && npx expo start --tunnel --clear
+
+Verify:
+	•	✅ Mobile home feed shows both seekers + listings with images
+	•	✅ Detail pages load full info (title, rent, image, about text)
+	•	✅ Website pages /oda-ilani/[slug] and /oda-arayan/[slug] display correctly
+	•	✅ Console shows:
+
+✅ Seekers fetched: X | ✅ Listings fetched: Y
+✅ Detail page loaded successfully
+
+
+
+⸻
+
+✅ End Result
+
+After this repair:
+	•	Both mobile and website display room listings + room seekers with images and details.
+	•	Clicking any card opens a fully populated detail page.
+	•	All API endpoints and routes are consistent (/api/listings, /api/seekers, /api/users/seekers).
+	•	The config.ts file is restored and synchronized across all environments.
+

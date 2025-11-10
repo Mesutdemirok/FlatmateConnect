@@ -1,13 +1,13 @@
 import axios, { AxiosError } from "axios";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
+import { getApiUrl } from "../../config";
 
 /**
  * 🔧 Base API URL Configuration
- * If no API URL is found in app.config.ts → fallback to production URL.
+ * Uses centralized config.ts for consistency across platforms
  */
-const apiUrl =
-  Constants?.expoConfig?.extra?.apiBaseUrl || "https://www.odanet.com.tr/api";
+const apiUrl = Constants?.expoConfig?.extra?.apiBaseUrl || getApiUrl("");
 
 export const api = axios.create({
   baseURL: apiUrl,
