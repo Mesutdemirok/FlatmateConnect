@@ -8,7 +8,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (Nov 10, 2025)
 
-### Phase 5: Enhanced Listing Detail Pages with 8 Comprehensive Sections (Latest)
+### Phase 6: Editable Profile Dashboard with Personal Info and Listings Management (Latest)
+- **Backend API**: Implemented PATCH /api/users/me for updating personal info (firstName, lastName, phone, bio), GET /api/my-listings with _skipStatusFilter for fetching all user listings including drafts, and GET /api/seekers/user/:userId with ownership enforcement and _skipActiveCheck for user's own profile access.
+- **Security**: Ownership validation on seeker profile endpoint (403 if userId mismatch), whitelisted updatable fields in user endpoint, all endpoints require JWT authentication.
+- **Web Profile Page**: Made "Kişisel Bilgiler" tab editable with React Hook Form + Zod validation, auto-population from user data, Save/Cancel buttons with loading states, and proper error handling.
+- **My Listings Tab**: Displays all user's room listings and seeker profile including drafts, shows status badges (Aktif/Pasif) to distinguish active vs inactive content.
+- **Type Safety**: Added userId and _skipStatusFilter to IStorage.getListings, userId and _skipActiveCheck to IStorage.getSeekerProfiles, ensuring TypeScript compliance across storage contract.
+- **Status**: Architect-approved, production-ready implementation with proper cache invalidation and auth error handling.
+
+### Phase 5: Enhanced Listing Detail Pages with 8 Comprehensive Sections
 - **Web Detail Page**: Added Description section (whitespace-preserved formatting), Address/Location section (city/district/neighborhood with teal icon, fallback to address), and Terms section (deposit, move-in date, min stay with purple theme and defensive validation).
 - **Mobile Detail Page**: Added Location section (accent-colored icon with structured address) and Terms section (grid layout with deposit/move-in/min stay, purple icons, Turkish formatting).
 - **Defensive Validation**: IIFE pattern with null/NaN guards for deposit, moveInDate, minStayMonths. Sections hide completely if no valid data exists.
@@ -40,14 +48,15 @@ The platform prioritizes a mobile-first design with consistent branding. The web
 - **Mandatory Image Validation**: Backend and frontend validation ensure `profilePhotoUrl` is present for seeker profiles and at least one image for listings (after draft creation), providing Turkish error messages.
 
 ### Feature Specifications
-- **User Management**: Profile creation, verification, and image uploads.
-- **Listing System**: Detailed room listings with multiple images and filtering.
-- **Seeker Profiles**: Comprehensive profiles with dedicated detail pages.
+- **User Management**: Profile creation, verification, and image uploads. Editable profile dashboard with personal info form and listings management.
+- **Listing System**: Detailed room listings with multiple images and filtering. Dashboard shows all user's listings including drafts.
+- **Seeker Profiles**: Comprehensive profiles with dedicated detail pages. Dashboard shows user's own seeker profile including inactive states.
 - **Messaging System**: Real-time communication.
 - **Favorites System**: Users can save and manage favorite listings.
 - **Search & Filtering**: Location-based search with various filters for both room and flatmate searches.
 - **Homepage Feed**: A unified chronological feed of listings and seeker profiles.
 - **Seeker Detail Pages**: Display complete profile information, including contact options.
+- **Profile Dashboard**: Four-tab interface (Personal Info, Preferences, My Listings, Favorites) with editable forms, status badges, and quick action buttons.
 
 ### System Design Choices
 The system uses a modular schema with foreign key relationships. Backend fallbacks for slug-based lookups ensure backward compatibility.

@@ -39,6 +39,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { User, Settings, Heart, Home, Shield, Loader2 } from "lucide-react";
 import { z } from "zod";
 
+// Schema for personal info (user account fields)
+const personalInfoSchema = z.object({
+  firstName: z.string().min(1, "Ad gereklidir"),
+  lastName: z.string().min(1, "Soyad gereklidir"),
+  phone: z.string().optional(),
+  bio: z.string().optional(),
+});
+
+type PersonalInfoFormData = z.infer<typeof personalInfoSchema>;
+
 // Use a schema for the preference fields only (these match the unified seeker profile fields)
 const preferencesSchema = z.object({
   smokingPreference: z.string().optional(),
@@ -103,6 +113,16 @@ export default function Profile() {
     enabled: isAuthenticated,
   });
 
+  const personalInfoForm = useForm<PersonalInfoFormData>({
+    resolver: zodResolver(personalInfoSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      phone: "",
+      bio: "",
+    },
+  });
+
   const preferencesForm = useForm<PreferencesFormData>({
     resolver: zodResolver(preferencesSchema),
     defaultValues: {
@@ -116,6 +136,18 @@ export default function Profile() {
       genderPreference: "",
     },
   });
+
+  // Update personal info form when user is loaded
+  useEffect(() => {
+    if (user) {
+      personalInfoForm.reset({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        phone: user.phone || "",
+        bio: user.bio || "",
+      });
+    }
+  }, [user, personalInfoForm]);
 
   // Update form when seeker profile is loaded
   useEffect(() => {
@@ -132,6 +164,38 @@ export default function Profile() {
       });
     }
   }, [mySeekerProfile, preferencesForm]);
+
+  const updatePersonalInfoMutation = useMutation({
+    mutationFn: async (data: PersonalInfoFormData) => {
+      const response = await apiRequest("PATCH", "/api/users/me", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      toast({
+        title: "Başarılı!",
+        description: "Kişisel bilgileriniz güncellendi",
+      });
+    },
+    onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: t("errors.unauthorized"),
+          description: t("errors.unauthorized_description"),
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          setLocation("/giris?next=/profil");
+        }, 500);
+        return;
+      }
+      toast({
+        title: t("errors.server_error"),
+        description: "Bilgiler güncellenemedi",
+        variant: "destructive",
+      });
+    },
+  });
 
   const updatePreferencesMutation = useMutation({
     mutationFn: async (data: PreferencesFormData) => {
@@ -185,6 +249,10 @@ export default function Profile() {
       }
     },
   });
+
+  const onPersonalInfoSubmit = (data: PersonalInfoFormData) => {
+    updatePersonalInfoMutation.mutate(data);
+  };
 
   const onPreferencesSubmit = (data: PreferencesFormData) => {
     updatePreferencesMutation.mutate(data);
@@ -376,50 +444,119 @@ export default function Profile() {
 
               <Card className="lg:col-span-2 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader>
-                  <CardTitle>Hesap Bilgileri</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-muted-foreground">
-                    Hesap bilgileriniz güvenli kimlik doğrulama sistemimiz
-                    tarafından yönetilmektedir.
+                  <CardTitle>Kişisel Bilgiler</CardTitle>
+                  <p className="text-muted-foreground text-sm">
+                    Profilinizde görünen bilgilerinizi güncelleyin
                   </p>
+                </CardHeader>
+                <CardContent>
+                  <Form {...personalInfoForm}>
+                    <form
+                      onSubmit={personalInfoForm.handleSubmit(onPersonalInfoSubmit)}
+                      className="space-y-4"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={personalInfoForm.control}
+                          name="firstName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Ad</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  data-testid="input-first-name"
+                                  placeholder="Adınız"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={personalInfoForm.control}
+                          name="lastName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Soyad</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  data-testid="input-last-name"
+                                  placeholder="Soyadınız"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="rounded-lg border bg-muted/30 p-3">
-                      <label className="text-xs font-medium text-muted-foreground">
-                        Ad
-                      </label>
-                      <p className="text-foreground text-sm">
-                        {user?.firstName || "Belirtilmemiş"}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/30 p-3">
-                      <label className="text-xs font-medium text-muted-foreground">
-                        Soyad
-                      </label>
-                      <p className="text-foreground text-sm">
-                        {user?.lastName || "Belirtilmemiş"}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/30 p-3">
-                      <label className="text-xs font-medium text-muted-foreground">
-                        E-posta
-                      </label>
-                      <p className="text-foreground text-sm">
-                        {user?.email || "Belirtilmemiş"}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border bg-muted/30 p-3">
-                      <label className="text-xs font-medium text-muted-foreground">
-                        Doğrulama Durumu
-                      </label>
-                      <p className="text-foreground text-sm">
-                        {user?.verificationStatus === "verified"
-                          ? "Doğrulandı"
-                          : "Doğrulanmadı"}
-                      </p>
-                    </div>
-                  </div>
+                      <FormField
+                        control={personalInfoForm.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Telefon (İsteğe Bağlı)</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                data-testid="input-phone"
+                                placeholder="05XX XXX XX XX"
+                                type="tel"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={personalInfoForm.control}
+                        name="bio"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Hakkımda (İsteğe Bağlı)</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                data-testid="input-bio"
+                                placeholder="Kısa bir tanıtım yazısı..."
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          type="submit"
+                          className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-indigo-500 text-white hover:opacity-95"
+                          disabled={updatePersonalInfoMutation.isPending}
+                          data-testid="button-save-personal-info"
+                        >
+                          {updatePersonalInfoMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Kaydediliyor...
+                            </>
+                          ) : (
+                            "Kaydet"
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => personalInfoForm.reset()}
+                          disabled={updatePersonalInfoMutation.isPending}
+                          data-testid="button-reset-personal-info"
+                        >
+                          İptal
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
                 </CardContent>
               </Card>
             </div>
