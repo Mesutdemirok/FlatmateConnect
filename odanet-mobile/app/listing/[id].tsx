@@ -218,7 +218,97 @@ export default function ListingDetailScreen() {
           </View>
         )}
 
-        {/* Contact Card (only clean one) */}
+        {/* Location Section */}
+        <View style={styles.card}>
+          <Section title="Konum">
+            <View style={styles.locationRow}>
+              <View style={styles.locationIcon}>
+                <Ionicons name="location" size={20} color={colors.accent} />
+              </View>
+              <View style={{ flex: 1, marginLeft: spacing.md }}>
+                {(listing.city || listing.district || listing.neighborhood) ? (
+                  <>
+                    <Text style={styles.locationText}>
+                      {[listing.neighborhood, listing.district, listing.city]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </Text>
+                    {listing.address && (
+                      <Text style={styles.locationSubtext}>{listing.address}</Text>
+                    )}
+                  </>
+                ) : (
+                  listing.address && (
+                    <Text style={styles.locationText}>{listing.address}</Text>
+                  )
+                )}
+              </View>
+            </View>
+          </Section>
+        </View>
+
+        {/* Terms Section */}
+        {(() => {
+          const hasDeposit = listing.deposit && !isNaN(parseFloat(listing.deposit));
+          const hasMoveInDate = listing.moveInDate && !isNaN(new Date(listing.moveInDate).getTime());
+          const hasMinStay = listing.minStayMonths && Number(listing.minStayMonths) > 0;
+          
+          if (!hasDeposit && !hasMoveInDate && !hasMinStay) return null;
+          
+          return (
+            <View style={styles.card}>
+              <Section title="Kiralama Koşulları">
+                <View style={styles.termsGrid}>
+                  {hasDeposit && (
+                    <View style={styles.termCard}>
+                      <View style={styles.termIcon}>
+                        <MaterialCommunityIcons
+                          name="cash-multiple"
+                          size={20}
+                          color={colors.primary}
+                        />
+                      </View>
+                      <Text style={styles.termLabel}>Depozito</Text>
+                      <Text style={styles.termValue}>
+                        ₺{parseFloat(listing.deposit).toLocaleString("tr-TR")}
+                      </Text>
+                    </View>
+                  )}
+                  {hasMoveInDate && (
+                    <View style={styles.termCard}>
+                      <View style={styles.termIcon}>
+                        <Ionicons
+                          name="calendar-outline"
+                          size={20}
+                          color={colors.primary}
+                        />
+                      </View>
+                      <Text style={styles.termLabel}>Taşınma Tarihi</Text>
+                      <Text style={styles.termValue}>
+                        {new Date(listing.moveInDate).toLocaleDateString("tr-TR")}
+                      </Text>
+                    </View>
+                  )}
+                  {hasMinStay && (
+                    <View style={styles.termCard}>
+                      <View style={styles.termIcon}>
+                        <Ionicons
+                          name="time-outline"
+                          size={20}
+                          color={colors.primary}
+                        />
+                      </View>
+                      <Text style={styles.termLabel}>Min. Kalış</Text>
+                      <Text style={styles.termValue}>{listing.minStayMonths} ay</Text>
+                    </View>
+                  )}
+                </View>
+              </Section>
+            </View>
+          );
+        })()}
+
+        {/* Contact Card */}
         <View style={[styles.card, { marginBottom: 40 }]}>
           <View style={contactCardStyles.infoRow}>
             <View style={contactCardStyles.avatar}>
@@ -453,6 +543,65 @@ const styles = StyleSheet.create({
     color: colors.text,
     lineHeight: 22,
     fontSize: fonts.size.base,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  locationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.accent + "20",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  locationText: {
+    fontSize: fonts.size.base,
+    fontWeight: fonts.weight.semibold,
+    color: colors.text,
+  },
+  locationSubtext: {
+    fontSize: fonts.size.sm,
+    color: colors.textLight,
+    marginTop: spacing.xs,
+  },
+  termsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -spacing.xs,
+  },
+  termCard: {
+    flex: 1,
+    minWidth: "30%",
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  termIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary + "20",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  termLabel: {
+    fontSize: fonts.size.xs,
+    color: colors.textLight,
+    textAlign: "center",
+    marginBottom: spacing.xs,
+  },
+  termValue: {
+    fontSize: fonts.size.sm,
+    fontWeight: fonts.weight.semibold,
+    color: colors.text,
+    textAlign: "center",
   },
   stickyActionFooter: {
     position: "absolute",
