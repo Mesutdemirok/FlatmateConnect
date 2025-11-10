@@ -25,11 +25,12 @@ The platform features a mobile-first design with consistent branding. Web app us
 ### Feature Specifications
 - **User Management**: Profile creation, verification, and image uploads.
 - **Listing System**: Detailed room listings with multiple images and filtering.
-- **Seeker Profiles**: Comprehensive profiles for accommodation seekers.
+- **Seeker Profiles**: Comprehensive profiles for accommodation seekers with dedicated detail pages on both web and mobile platforms.
 - **Messaging System**: Real-time communication.
 - **Favorites System**: Allows users to save and manage favorite listings.
-- **Search & Filtering**: Location-based search with various filters for both room and flatmate searches.
+- **Search & Filtering**: Location-based search with various filters for both room and flatmate searches. Web seeker filtering supports location and budget parameters via /api/seekers/public endpoint.
 - **Homepage Feed**: Unified chronological feed displaying both listings and seeker profiles sorted by createdAt descending (newest first), matching website homepage UX. Mobile app fetches both datasets simultaneously and interleaves them for seamless browsing.
+- **Seeker Detail Pages**: Mobile seeker detail screen (app/seeker/[id].tsx) displays complete profile information including photo (with automatic URL normalization), name, budget, location, demographics, preferences, and bio. Contact button enables direct messaging.
 
 ### System Design Choices
 The system employs a modular schema with foreign key relationships for robust data management. Backend fallbacks for slug-based lookups ensure backward compatibility with ID-based URLs.
