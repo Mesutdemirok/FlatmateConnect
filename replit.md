@@ -4,12 +4,20 @@
 Odanet is a flatmate and room rental platform for the Turkish market, connecting individuals seeking shared accommodation with room providers. It focuses on verified profiles, intelligent matching, and secure communication to build a trustworthy environment. Key capabilities include comprehensive user and listing management, seeker profiles, real-time messaging, and advanced search and filtering.
 
 ## Recent Changes (Nov 10, 2025)
-Fixed critical cross-platform data flow issues:
+
+### Phase 1: Cross-Platform Data Flow Fixes
 - **Centralized Configuration**: Created `config.ts` with unified API_URL and image normalization helpers for consistent URL handling across web/mobile platforms.
 - **Backend Routing**: Added slug-based detail endpoints (`/api/listings/slug/:slug`, `/api/seekers/slug/:slug`) with proper publish/active filtering, plus ID-based endpoints for mobile compatibility.
 - **Mobile Image Fix**: Resolved seeker profile photo display issues by implementing `getImageUrl()` helper in UnifiedCard component to prepend base URL to relative paths.
 - **Mobile Listing Detail Fix**: Corrected `useListing` hook to unwrap API responses properly, restoring title/price/description display on detail screens.
 - **Web Detail Pages**: Fixed "İlan Bulunamadı" errors by ensuring backend returns flat objects matching frontend expectations and enforcing proper status checks.
+
+### Phase 2: Dynamic Image Fallback System (Latest)
+- **Smart Placeholder System**: Enhanced `getImageUrl()` with deterministic CDN-hosted placeholders for seekers without photos (5 unique images selected by ID hash) and listings without images (single default placeholder).
+- **Robust Hash Distribution**: Implemented full-string hash function (FNV-1a style) ensuring even distribution of seeker placeholders across entire UUID, replacing weak first-character hashing.
+- **Graceful Degradation**: Added onError handler in UnifiedCard component that falls back to gradient placeholder when CDN images fail to load, preventing broken image states.
+- **Component Lifecycle Fix**: Implemented useEffect hook keyed to item.id to reset imageError state when card components are recycled during scrolling, ensuring fresh image load attempts.
+- **Backward Compatibility**: Maintained API suffix removal (`/api` → base URL) for web platform compatibility while adding optional type and ID parameters for mobile smart fallbacks.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
