@@ -88,6 +88,7 @@ export interface IStorage {
 
   // Listing operations
   getListings(filters?: {
+    userId?: string;
     location?: string;
     minPrice?: number;
     maxPrice?: number;
@@ -101,6 +102,7 @@ export interface IStorage {
     billsIncluded?: boolean;
     parkingAvailable?: boolean;
     internetIncluded?: boolean;
+    _skipStatusFilter?: boolean;
   }): Promise<(Listing & { images: ListingImage[]; user: User })[]>;
   getListing(
     id: string,
@@ -151,6 +153,7 @@ export interface IStorage {
 
   // Seeker profiles
   getSeekerProfiles(filters?: {
+    userId?: string;
     minBudget?: number;
     maxBudget?: number;
     gender?: string;
@@ -158,6 +161,7 @@ export interface IStorage {
     isFeatured?: boolean;
     isPublished?: boolean;
     isActive?: boolean;
+    _skipActiveCheck?: boolean;
   }): Promise<(SeekerProfile & { photos: SeekerPhoto[]; user: User })[]>;
   getSeekerProfile(
     id: string,
@@ -230,9 +234,16 @@ export class DatabaseStorage implements IStorage {
   async getListings(
     filters?: any,
   ): Promise<(Listing & { images: ListingImage[]; user: User })[]> {
-    const conditions = [eq(listings.status, "active")];
+    const conditions = [];
+    
+    // Skip status filter only if explicitly requested (for user's own profile dashboard)
+    if (!filters?._skipStatusFilter) {
+      conditions.push(eq(listings.status, "active"));
+    }
 
     if (filters) {
+      if (filters.userId)
+        conditions.push(eq(listings.userId, filters.userId));
       if (filters.location)
         conditions.push(ilike(listings.address, `%${filters.location}%`));
       if (filters.minPrice)
@@ -537,6 +548,7 @@ export class DatabaseStorage implements IStorage {
 
   // Seeker profiles
   async getSeekerProfiles(filters?: {
+    userId?: string;
     minBudget?: number;
     maxBudget?: number;
     gender?: string;
@@ -544,10 +556,18 @@ export class DatabaseStorage implements IStorage {
     isFeatured?: boolean;
     isPublished?: boolean;
     isActive?: boolean;
+    _skipActiveCheck?: boolean;
   }): Promise<(SeekerProfile & { photos: SeekerPhoto[], user: User })[]> {
     const whereConditions = [];
     
-    if (filters?.isActive !== undefined) {
+    if (filters?.userId) {
+      whereConditions.push(eq(seekerProfiles.userId, filters.userId));
+    }
+    
+    // Skip active check only if explicitly requested (for user's own profile dashboard)
+    if (filters?._skipActiveCheck) {
+      // Don't add isActive condition at all
+    } else if (filters?.isActive !== undefined) {
       whereConditions.push(eq(seekerProfiles.isActive, filters.isActive));
     } else {
       whereConditions.push(eq(seekerProfiles.isActive, true));

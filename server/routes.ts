@@ -317,6 +317,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update current user's profile
+  app.patch("/api/users/me", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const allowedFields = ['firstName', 'lastName', 'phone', 'dateOfBirth', 'gender', 'occupation', 'bio', 'profileImageUrl'];
+      const updates: any = {};
+      
+      // Only allow specific fields to be updated
+      for (const field of allowedFields) {
+        if (field in req.body) {
+          updates[field] = req.body[field];
+        }
+      }
+      
+      const updatedUser = await storage.updateUser(userId, updates);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+      }
+      
+      const { password, ...safeUser } = updatedUser;
+      res.json(safeUser);
+    } catch (err: any) {
+      console.error("❌ Update user error:", err);
+      res.status(400).json({ 
+        message: err.message || "Profil güncellenemedi" 
+      });
+    }
+  });
+
+  // Get seeker profile for the current authenticated user
+  app.get("/api/seekers/user/:userId", jwtAuth, async (req, res) => {
+    try {
+      const authenticatedUserId = req.userId!;
+      const requestedUserId = req.params.userId;
+      
+      // Security: Only allow users to fetch their own seeker profile
+      if (authenticatedUserId !== requestedUserId) {
+        return res.status(403).json({ message: "Yetkiniz yok" });
+      }
+      
+      // Don't filter by isActive to show drafts/inactive profiles to owner
+      const seekers = await storage.getSeekerProfiles({ 
+        userId: requestedUserId,
+        _skipActiveCheck: true // Special flag to bypass isActive filter
+      });
+      
+      if (!seekers || seekers.length === 0) {
+        return res.status(404).json({ message: "Profil bulunamadı" });
+      }
+      res.json(seekers[0]); // Return first (should be only one) seeker profile
+    } catch (err: any) {
+      console.error("❌ /api/seekers/user/:userId error:", err);
+      res.status(500).json({ message: "Veritabanı hatası" });
+    }
+  });
+
   /* -------------------------------------------------------
      🏠 Listings
   ------------------------------------------------------- */
@@ -325,6 +381,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listings = await storage.getListings({});
       res.json(listings);
     } catch {
+      res.status(500).json({ message: "Veritabanı hatası" });
+    }
+  });
+
+  // Get current user's listings (including drafts/inactive)
+  app.get("/api/my-listings", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const listings = await storage.getListings({ 
+        userId,
+        _skipStatusFilter: true // Show all user's listings including drafts
+      });
+      res.json(listings);
+    } catch (err: any) {
+      console.error("❌ /api/my-listings error:", err);
       res.status(500).json({ message: "Veritabanı hatası" });
     }
   });
