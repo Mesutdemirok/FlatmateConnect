@@ -8,8 +8,7 @@ packages = ["lsof", "yakut", "jq", "vlang", "file"]
 # ✅ Deployment Configuration (Autoscale Production)
 [deployment]
 deploymentTarget = "autoscale"
-# Build now runs your sitemap + RSS generation automatically
-build = ["npm", "run", "build", "&&", "npm", "run", "sitemap"]
+build = ["npm", "run", "build"]
 run = ["npm", "start"]
 
 [[ports]]
