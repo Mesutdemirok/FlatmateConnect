@@ -6,6 +6,21 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (Nov 10, 2025)
+
+### Phase 5: Enhanced Listing Detail Pages with 8 Comprehensive Sections (Latest)
+- **Web Detail Page**: Added Description section (whitespace-preserved formatting), Address/Location section (city/district/neighborhood with teal icon, fallback to address), and Terms section (deposit, move-in date, min stay with purple theme and defensive validation).
+- **Mobile Detail Page**: Added Location section (accent-colored icon with structured address) and Terms section (grid layout with deposit/move-in/min stay, purple icons, Turkish formatting).
+- **Defensive Validation**: IIFE pattern with null/NaN guards for deposit, moveInDate, minStayMonths. Sections hide completely if no valid data exists.
+- **React Native Compatibility**: Replaced unsupported `gap` with explicit margins for consistent cross-device layout.
+- **8-Section Compliance**: Hero carousel ✅, Summary row ✅, Address ✅, Landlord ✅, Description ✅, Room Details ✅, Terms ✅, Contact CTA ✅.
+- **Status**: Architect-approved, production-ready implementation with backward compatibility.
+
+### Phase 4: Enhanced Listing Cards with Modern Design
+- **Schema Extension**: Added 10 optional fields (city, citySlug, district, districtSlug, neighborhood, neighborhoodSlug, description, deposit, moveInDate, minStayMonths, latitude, longitude).
+- **Modernized Cards**: Web and mobile ListingCard rebuilt with 16:9 images, dynamic badges (NEW/UPDATED), bottom white overlays, purple pricing, teal location icons, favorite toggles, and location fallback logic.
+- **Production Quality**: Uses centralized image helpers, robust error handling, TypeScript type safety, performance optimization (useMemo), testid attributes.
+
 ## System Architecture
 
 ### UI/UX Decisions
