@@ -5,6 +5,13 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 
 ## Recent Changes (Nov 10, 2025)
 
+### Phase 3: Mandatory Image Upload Validation (Latest)
+- **Backend Validation**: Created POST/PUT endpoints for seeker profiles (`/api/seekers`, `/api/seekers/:id`) with mandatory `profilePhotoUrl` validation, automatic slug generation from fullName + preferredLocation, ownership verification, and Turkish error messages. Removed image validation from POST `/api/listings` to allow draft creation (images uploaded separately).
+- **Frontend Validation**: Added client-side checks in CreateListing.tsx preventing form submission without images (toast: "Fotoğraf Gerekli - En az bir oda fotoğrafı eklemelisiniz") and CreateSeekerProfile.tsx preventing submission without photo (toast: "Fotoğraf Gerekli - Profil fotoğrafı eklenmeden ilan yayınlanamaz").
+- **Architecture Alignment**: Listings follow two-step flow (create draft → upload images via separate endpoint), while seekers upload photo first then submit with path in payload. Both approaches enforce mandatory media at frontend and backend layers.
+- **Seeker Endpoints**: POST defaults `isPublished` to false, generates slug automatically, validates photo presence. PUT checks ownership, validates photo if updating, regenerates slug if name/location changes.
+- **Production Ready**: All validation uses consistent Turkish error messages, proper HTTP status codes (400 for validation errors, 404 for not found), and architect-approved implementation.
+
 ### Phase 1: Cross-Platform Data Flow Fixes
 - **Centralized Configuration**: Created `config.ts` with unified API_URL and image normalization helpers for consistent URL handling across web/mobile platforms.
 - **Backend Routing**: Added slug-based detail endpoints (`/api/listings/slug/:slug`, `/api/seekers/slug/:slug`) with proper publish/active filtering, plus ID-based endpoints for mobile compatibility.
