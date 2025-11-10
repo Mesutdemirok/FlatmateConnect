@@ -1,4 +1,4 @@
-import { Heart, MapPin } from "lucide-react";
+import { Star, MapPin, ChevronLeft, ChevronRight, Bed, Bath, Users } from "lucide-react";
 import { Link } from "wouter";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +22,11 @@ interface ListingCardProps {
     createdAt?: string | Date;
     updatedAt?: string | Date;
     user?: { verificationStatus?: string | null };
+    roomType?: string | null;
+    propertyType?: string | null;
+    bedroomCount?: number | null;
+    bathroomCount?: number | null;
+    currentOccupants?: number | null;
   };
   isFavorited?: boolean;
 }
@@ -44,24 +49,35 @@ export default function ListingCard({
   const queryClient = useQueryClient();
 
   const [favorite, setFavorite] = useState(isFavorited);
-  const [imageError, setImageError] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Determine badge text
-  const badge = useMemo(() => {
-    if (isWithinDays(listing.updatedAt, 7)) return "GÜNCELLEND İ";
-    if (isWithinDays(listing.createdAt, 7)) return "YENİ";
-    return null;
-  }, [listing.createdAt, listing.updatedAt]);
+  // Get all images
+  const images = useMemo(() => {
+    if (!listing.images || listing.images.length === 0) return [];
+    // Sort: primary first, then by order
+    return [...listing.images].sort((a, b) => {
+      if (a.isPrimary && !b.isPrimary) return -1;
+      if (!a.isPrimary && b.isPrimary) return 1;
+      return 0;
+    });
+  }, [listing.images]);
 
-  // Get primary image
-  const primaryImage = listing.images?.find(img => img.isPrimary) ?? listing.images?.[0];
-  const imageUrl = getAbsoluteImageUrl(primaryImage?.imagePath || "");
+  const hasMultipleImages = images.length > 1;
 
-  // Format location with fallback to address
+  // Determine badge text (only show if within 7 days)
+  const showNewBadge = useMemo(() => {
+    return isWithinDays(listing.createdAt, 7);
+  }, [listing.createdAt]);
+
+  // Get current image URL
+  const currentImageUrl = images[currentImageIndex]
+    ? getAbsoluteImageUrl(images[currentImageIndex].imagePath || "")
+    : "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800";
+
+  // Format location
   const location = useMemo(() => {
     const cityDistrict = [listing.district, listing.city].filter(Boolean).join(", ");
     if (cityDistrict) return cityDistrict;
-    // Fallback: show first part of address (before comma or first 40 chars)
     if (listing.address) {
       const addressPart = listing.address.split(",")[0];
       return addressPart.length > 40 ? addressPart.substring(0, 37) + "..." : addressPart;
@@ -106,6 +122,18 @@ export default function ListingCard({
     },
   });
 
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
   const listingUrl = listing.slug
     ? `/oda-ilani/${listing.slug}`
     : `/oda-ilani/${listing.id}`;
@@ -114,27 +142,49 @@ export default function ListingCard({
     <Link href={listingUrl}>
       <article
         data-testid={`card-listing-${listing.id}`}
-        className="group block overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        className="group block overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-xl transition-all duration-300"
       >
-        {/* HERO IMAGE */}
-        <div className="relative w-full aspect-[16/9] overflow-hidden">
-          {!imageError ? (
-            <img
-              src={imageUrl}
-              alt={listing.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-              <p className="text-white text-sm font-medium">Görsel bulunamadı</p>
+        {/* IMAGE CAROUSEL */}
+        <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100">
+          <img
+            src={currentImageUrl}
+            alt={listing.title}
+            className="w-full h-full object-cover"
+          />
+
+          {/* Left Arrow */}
+          {hasMultipleImages && (
+            <button
+              onClick={handlePrevImage}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all hover:scale-105 z-10"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-800" strokeWidth={2.5} />
+            </button>
+          )}
+
+          {/* Right Arrow */}
+          {hasMultipleImages && (
+            <button
+              onClick={handleNextImage}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all hover:scale-105 z-10"
+              aria-label="Next image"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-800" strokeWidth={2.5} />
+            </button>
+          )}
+
+          {/* NEW BADGE */}
+          {showNewBadge && (
+            <div className="absolute top-3 left-3 px-4 py-2 rounded-lg bg-white text-gray-900 text-sm font-bold shadow-md">
+              NEW
             </div>
           )}
 
-          {/* NEW/UPDATED BADGE */}
-          {badge && (
-            <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-teal-500 text-white text-xs font-bold shadow-lg">
-              {badge}
+          {/* IMAGE COUNTER */}
+          {hasMultipleImages && (
+            <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-gray-800/70 text-white text-sm font-medium">
+              {currentImageIndex + 1}/{images.length}
             </div>
           )}
 
@@ -143,38 +193,67 @@ export default function ListingCard({
             data-testid={`button-favorite-${listing.id}`}
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               if (!isAuthenticated) {
                 window.location.href = "/giris";
                 return;
               }
               toggleFavorite.mutate();
             }}
-            className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all hover:scale-110"
+            className="absolute bottom-3 right-3 w-12 h-12 rounded-full bg-transparent border-2 border-white flex items-center justify-center transition-all hover:scale-110"
             aria-label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"}
           >
-            <Heart
-              className={`w-5 h-5 ${favorite ? "fill-red-500 text-red-500" : "text-gray-700"}`}
+            <Star
+              className={`w-6 h-6 ${favorite ? "fill-white text-white" : "text-white"}`}
               strokeWidth={2}
             />
           </button>
+        </div>
 
-          {/* BOTTOM OVERLAY */}
-          <div className="absolute bottom-0 left-0 right-0 bg-white m-3 rounded-xl p-4 shadow-lg">
-            <h3 className="text-lg font-bold text-gray-900 line-clamp-2 mb-2">
+        {/* INFO SECTION */}
+        <div className="p-4 bg-white">
+          {/* Title and Price Row */}
+          <div className="flex items-start justify-between gap-3 mb-1">
+            <h3 className="text-lg font-bold text-gray-900 line-clamp-2 flex-1">
               {listing.title}
             </h3>
+            <div className="text-xl font-bold text-gray-900 whitespace-nowrap">
+              ₺{formatCurrency(amount)} <span className="text-sm font-normal text-gray-600">ay</span>
+            </div>
+          </div>
 
-            {location && (
-              <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-3">
-                <MapPin className="w-4 h-4 text-teal-600" />
-                <span className="line-clamp-1">{location}</span>
+          {/* Location */}
+          {location && (
+            <div className="flex items-center gap-1 text-sm text-gray-600 mb-2">
+              <span className="line-clamp-1">{location}</span>
+            </div>
+          )}
+
+          {/* Availability */}
+          <div className="text-sm text-gray-600 mb-3">
+            Available now
+          </div>
+
+          {/* Icons Row */}
+          <div className="flex items-center gap-4 text-gray-700">
+            {listing.bedroomCount !== null && listing.bedroomCount !== undefined && (
+              <div className="flex items-center gap-1.5">
+                <Bed className="w-5 h-5 text-gray-500" />
+                <span className="text-sm font-medium">{listing.bedroomCount}</span>
               </div>
             )}
-
-            <div className="text-2xl font-bold text-purple-600">
-              ₺{formatCurrency(amount)}
-              <span className="text-base font-normal text-gray-600">/ay</span>
-            </div>
+            {listing.bathroomCount !== null && listing.bathroomCount !== undefined && (
+              <div className="flex items-center gap-1.5">
+                <Bath className="w-5 h-5 text-gray-500" />
+                <span className="text-sm font-medium">{listing.bathroomCount}</span>
+              </div>
+            )}
+            {listing.currentOccupants !== null && listing.currentOccupants !== undefined && (
+              <div className="flex items-center gap-1.5">
+                <Users className="w-5 h-5 text-gray-500" />
+                <span className="text-sm font-medium">{listing.currentOccupants}</span>
+              </div>
+            )}
           </div>
         </div>
       </article>

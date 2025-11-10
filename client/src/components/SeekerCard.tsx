@@ -1,8 +1,8 @@
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
-import { MessageCircle, MapPin } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useMemo } from "react";
 
 type Seeker = {
   id: string;
@@ -19,19 +19,17 @@ type Seeker = {
   preferredLocation?: string | null;
   budgetMonthly?: string | null;
   age?: number | null;
+  gender?: string | null;
   occupation?: string | null;
-  genderPreference?: string | null;
+  moveInDate?: string | null;
+  createdAt?: string | Date;
 };
 
 function nameOf(s: Seeker) {
-  if (s.fullName) {
-    const parts = s.fullName.trim().split(/\s+/);
-    if (parts.length > 1) return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
-    return parts[0];
-  }
+  if (s.fullName) return s.fullName.trim();
   if (s.user?.firstName) {
-    const ln = s.user?.lastName?.[0]?.toUpperCase() || "";
-    return `${s.user.firstName} ${ln ? ln + "." : ""}`.trim();
+    const ln = s.user?.lastName || "";
+    return `${s.user.firstName} ${ln}`.trim();
   }
   return "Oda arayan";
 }
@@ -53,117 +51,181 @@ function formatBudget(budget?: string | null) {
   return `₺${num.toLocaleString("tr-TR")}`;
 }
 
-function formatOccupation(o?: string | null) {
-  if (!o) return "";
-  const map: Record<string, string> = {
-    Öğrenci: "öğrenci",
-    Çalışan: "çalışan",
-    Serbest: "serbest meslek",
-    Diğer: "diğer",
+function formatGender(gender?: string | null) {
+  if (!gender) return "";
+  const genderMap: Record<string, string> = {
+    male: "man",
+    female: "woman",
+    other: "person"
   };
-  return map[o] || o.toLowerCase();
+  return genderMap[gender.toLowerCase()] || gender;
 }
+
+function formatMoveInDate(date?: string | null) {
+  if (!date) return "Available now";
+  const d = new Date(date);
+  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+  return `Available ${d.toLocaleDateString('en-GB', options)}`;
+}
+
+// Helper to check if date is within last N days
+const isWithinDays = (date: string | Date | undefined, days: number): boolean => {
+  if (!date) return false;
+  const d = new Date(date);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays < days;
+};
 
 interface SeekerCardProps {
   seeker: Seeker;
 }
 
 export default function SeekerCard({ seeker }: SeekerCardProps) {
-  const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const seekerUrl = seeker.slug
     ? `/oda-arayan/${seeker.slug}`
     : `/oda-arayan/${seeker.id}`;
-  const name = nameOf(seeker);
-  const photo = photoOf(seeker);
-  const budget = formatBudget(seeker.budgetMonthly);
-  const occupation = formatOccupation(seeker.occupation);
-  const location = seeker.preferredLocation?.trim() || "";
 
-  const handleContact = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent card link navigation
-    e.stopPropagation();
-    
-    const targetUserId = seeker.user?.id || seeker.userId;
-    if (!targetUserId) return;
-    
-    if (!isAuthenticated) {
-      // Redirect to login, then return to this conversation
-      setLocation(`/giris?next=/mesajlar/${targetUserId}`);
-    } else {
-      setLocation(`/mesajlar/${targetUserId}`);
+  const name = nameOf(seeker);
+  const budget = formatBudget(seeker.budgetMonthly);
+  const genderText = formatGender(seeker.gender);
+  const availability = formatMoveInDate(seeker.moveInDate);
+
+  // Get all photos
+  const photos = useMemo(() => {
+    const allPhotos = [];
+    if (seeker.profilePhotoUrl) {
+      allPhotos.push(getAbsoluteImageUrl(seeker.profilePhotoUrl));
     }
+    if (seeker.photos && seeker.photos.length > 0) {
+      const sorted = [...seeker.photos].sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+      sorted.forEach(p => {
+        if (p.imagePath) {
+          const url = getAbsoluteImageUrl(p.imagePath);
+          if (!allPhotos.includes(url)) {
+            allPhotos.push(url);
+          }
+        }
+      });
+    }
+    if (allPhotos.length === 0) {
+      allPhotos.push(`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=8b5cf6&color=fff&size=512`);
+    }
+    return allPhotos;
+  }, [seeker.profilePhotoUrl, seeker.photos, name]);
+
+  const hasMultiplePhotos = photos.length > 1;
+  const currentPhotoUrl = photos[currentImageIndex];
+
+  // Show NEW badge if created within last 7 days
+  const showNewBadge = useMemo(() => {
+    return isWithinDays(seeker.createdAt, 7);
+  }, [seeker.createdAt]);
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
   };
 
   return (
     <Link href={seekerUrl}>
-      <article className="group flex h-full w-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition hover:shadow-lg hover:-translate-y-[2px]">
-        {/* Image area */}
-        <div className="relative w-full h-[180px] md:h-[220px] overflow-hidden">
+      <article className="group block overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-xl transition-all duration-300">
+        {/* IMAGE CAROUSEL */}
+        <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100">
           <img
-            src={photo}
+            src={currentPhotoUrl}
             alt={name}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
 
-          {/* Top badges */}
-          <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-            {budget && (
-              <span className="rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-indigo-700 shadow-sm">
-                {budget} <span className="text-xs text-indigo-500">/ay</span>
-              </span>
-            )}
-          </div>
+          {/* Left Arrow */}
+          {hasMultiplePhotos && (
+            <button
+              onClick={handlePrevImage}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all hover:scale-105 z-10"
+              aria-label="Previous photo"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-800" strokeWidth={2.5} />
+            </button>
+          )}
 
-          {/* Name overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
-            <h3 className="text-white text-[15px] sm:text-[17px] font-semibold drop-shadow-sm">
-              {name}
-            </h3>
-          </div>
-        </div>
+          {/* Right Arrow */}
+          {hasMultiplePhotos && (
+            <button
+              onClick={handleNextImage}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all hover:scale-105 z-10"
+              aria-label="Next photo"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-800" strokeWidth={2.5} />
+            </button>
+          )}
 
-        {/* Info area */}
-        <div className="flex flex-col flex-1 px-4 py-3 md:py-4">
-          {/* location */}
-          {location && (
-            <div className="flex items-center gap-1 text-slate-600 text-[13px] sm:text-sm font-medium mb-1">
-              <MapPin className="w-4 h-4 text-violet-600" />
-              <span className="truncate">{location}</span>
+          {/* NEW BADGE */}
+          {showNewBadge && (
+            <div className="absolute top-3 left-3 px-4 py-2 rounded-lg bg-white text-gray-900 text-sm font-bold shadow-md">
+              NEW
             </div>
           )}
 
-          {/* tags */}
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {occupation && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[11px] sm:text-xs font-medium">
-                {occupation}
-              </span>
-            )}
-            {seeker.age && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-700 text-[11px] sm:text-xs font-medium">
-                {seeker.age} yaş
-              </span>
-            )}
-            {seeker.genderPreference && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[11px] sm:text-xs font-medium">
-                {seeker.genderPreference === "Kadın" ? "Tercih: Kadın" : seeker.genderPreference === "Erkek" ? "Tercih: Erkek" : "Tercih: Farketmez"}
-              </span>
+          {/* IMAGE COUNTER */}
+          {hasMultiplePhotos && (
+            <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-gray-800/70 text-white text-sm font-medium">
+              {currentImageIndex + 1}/{photos.length}
+            </div>
+          )}
+
+          {/* FAVORITE BUTTON */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!isAuthenticated) {
+                window.location.href = "/giris";
+              }
+              // TODO: Implement seeker favorites
+            }}
+            className="absolute bottom-3 right-3 w-12 h-12 rounded-full bg-transparent border-2 border-white flex items-center justify-center transition-all hover:scale-110"
+            aria-label="Add to favorites"
+            data-testid="button-favorite-seeker"
+          >
+            <Star className="w-6 h-6 text-white" strokeWidth={2} />
+          </button>
+        </div>
+
+        {/* INFO SECTION */}
+        <div className="p-4 bg-white">
+          {/* Name and Budget Row */}
+          <div className="flex items-start justify-between gap-3 mb-1">
+            <h3 className="text-lg font-bold text-gray-900 line-clamp-1 flex-1">
+              {name}
+            </h3>
+            {budget && (
+              <div className="text-xl font-bold text-gray-900 whitespace-nowrap">
+                {budget} <span className="text-sm font-normal text-gray-600">ay</span>
+              </div>
             )}
           </div>
 
-          {/* CTA */}
-          <div className="mt-auto pt-2">
-            <Button
-              onClick={handleContact}
-              className="w-full h-9 md:h-10 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-2"
-              data-testid="button-contact-seeker"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span className="ml-1.5">İletişime Geç</span>
-            </Button>
+          {/* Age and Gender */}
+          {(seeker.age || genderText) && (
+            <div className="text-sm text-gray-600 mb-2">
+              {seeker.age && genderText ? `${seeker.age} year old ${genderText}` : genderText || `${seeker.age} years old`}
+            </div>
+          )}
+
+          {/* Availability */}
+          <div className="text-sm text-gray-600">
+            {availability}
           </div>
         </div>
       </article>
