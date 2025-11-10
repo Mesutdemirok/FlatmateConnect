@@ -1,3 +1,4 @@
+// ✅ Unified feed: Fetches real seekers data from live Odanet backend
 import { useQuery } from "@tanstack/react-query";
 
 // Unified Seeker type that matches SeekerCard
@@ -26,7 +27,7 @@ function normalizeSeekers(raw: any): Seeker[] {
 
     // 2️⃣ Handle object maps (keyed by id)
     if (raw && typeof raw === "object") {
-      const values = Object.values(raw);
+      const values = Object.values(raw) as any[];
       if (Array.isArray(values) && values.length > 0) return values;
     }
   } catch (_) {
@@ -39,9 +40,9 @@ async function fetchSeekers(): Promise<Seeker[]> {
   const base =
     process.env.EXPO_PUBLIC_API_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    "https://www.odanet.com.tr/api";
+    "https://www.odanet.com.tr";
 
-  const url = `${base}/seekers`;
+  const url = `${base}/api/users/seekers`;
   const res = await fetch(url, { headers: { Accept: "application/json" } });
 
   if (!res.ok) {
@@ -67,6 +68,7 @@ async function fetchSeekers(): Promise<Seeker[]> {
 
     return {
       id: String(s.id ?? s._id ?? `seeker-${idx}`),
+      type: "seeker", // ✅ Explicit type for UnifiedCard type guard
       user: {
         firstName: firstName || "Kullanıcı",
         lastName: lastName || "",
@@ -94,6 +96,12 @@ async function fetchSeekers(): Promise<Seeker[]> {
             ? "hayir"
             : "",
       bio: s.bio || s.description || "",
+      // ✅ Preserve metadata for chronological sorting and navigation
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+      slug: s.slug,
+      fullName: fullName,
+      profilePhotoUrl: s.profilePhotoUrl || s.profilePhoto || s.avatar,
     };
   });
 

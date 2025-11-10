@@ -11,9 +11,9 @@ import { useRouter } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { colors, fonts, borderRadius, spacing } from "../theme";
 
-// Type guard helpers
-const isListing = (item: any) => !!item?.rentAmount;
-const isSeeker = (item: any) => !!item?.budget || !!item?.bio;
+// Type guard helpers - check explicit type first, then fall back to heuristics
+const isListing = (item: any) => item?.type === "listing" || !!item?.rentAmount;
+const isSeeker = (item: any) => item?.type === "seeker" || !!item?.budget || !!item?.bio;
 
 export function UnifiedCard({ item }: { item: any }) {
   const router = useRouter();
@@ -184,3 +184,12 @@ const styles = StyleSheet.create({
     color: colors.textLight,
   },
 });
+
+// Export wrapper components that adapt legacy props to UnifiedCard's {item} prop
+export function ListingCard({ listing }: { listing: any }) {
+  return <UnifiedCard item={listing} />;
+}
+
+export function SeekerCard({ seeker }: { seeker: any }) {
+  return <UnifiedCard item={seeker} />;
+}

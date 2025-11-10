@@ -12,9 +12,8 @@ import { useState, useMemo } from "react";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useListings } from "../../hooks/useListings";
-import { useSeekers } from "../../hooks/useSeekers";
-import { ListingCard } from "../../components/ListingCard";
-import { SeekerCard } from "../../components/SeekerCard"; // ✅ FIXED named import
+import { useSeekers } from "../../components/SeekerCard";
+import { UnifiedCard } from "../../components/ListingCard";
 import { colors, fonts, borderRadius, spacing } from "../../theme";
 
 export default function HomeScreen() {
@@ -40,6 +39,8 @@ export default function HomeScreen() {
   const seekers = Array.isArray(seekersData)
     ? seekersData
     : seekersData?.seekers || [];
+
+  console.log(`📊 Feed data: ${listings.length} listings, ${seekers.length} seekers`);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -68,7 +69,7 @@ export default function HomeScreen() {
   }, [listings, seekers]);
 
   const isLoading = isLoadingListings || isLoadingSeekers;
-  const showEmpty = !isLoading && (combinedFeed.length === 0 || seekersError);
+  const showEmpty = !isLoading && combinedFeed.length === 0;
 
   return (
     <View style={styles.container}>
@@ -135,13 +136,9 @@ export default function HomeScreen() {
             </Text>
           </View>
         ) : (
-          combinedFeed.map((item: any) =>
-            item.type === "listing" ? (
-              <ListingCard key={`listing-${item.id}`} listing={item} />
-            ) : (
-              <SeekerCard key={`seeker-${item.id}`} seeker={item} />
-            ),
-          )
+          combinedFeed.map((item: any) => (
+            <UnifiedCard key={`${item.type}-${item.id}`} item={item} />
+          ))
         )}
       </ScrollView>
 

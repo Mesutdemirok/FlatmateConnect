@@ -16,9 +16,8 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "../../hooks/useAuth";
 import { useListings } from "../../hooks/useListings";
-import { useSeekers } from "../../hooks/useSeekers";
-import { ListingCard } from "../../components/ListingCard";
-import { SeekerCard } from "../../components/SeekerCard";
+import { useSeekers } from "../../components/SeekerCard";
+import { ListingCard, SeekerCard } from "../../components/ListingCard";
 import { colors, fonts, borderRadius, spacing } from "../../theme";
 
 /** ----------------------------------------------------------------

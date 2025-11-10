@@ -1,0 +1,96 @@
+
+
+✅ FINAL AGENT PROMPT — “Unify Seekers + Listings Feed Fix”
+
+Prompt Title: Fix Expo Mobile Unified Feed and Config Path
+
+⸻
+
+Context Summary (Current State):
+	•	The mobile Expo app (odanet-mobile) successfully runs via npx expo start --tunnel --clear.
+	•	The app is already showing “Tüm İlanlar” with real listings from /api/listings.
+	•	The seeker API (https://www.odanet.com.tr/api/users/seekers) is working live and returns valid JSON { "seekers": [...] }.
+	•	The backend and routes are deployed correctly.
+	•	Problem: The mobile app still doesn’t show seeker cards in the unified home feed.
+	•	Likely cause: config.ts file is in the wrong place, incorrect import paths (../config instead of ../../config), or missing export consistency between seekers and listings.
+	•	Goal: Fully automate the file arrangement and data merging so seekers display along with listings on the home page chronologically.
+
+⸻
+
+Tasks for the Agent:
+	1.	Move and organize files properly:
+	•	Ensure there is exactly one config.ts file at the project root (not inside odanet-mobile).
+Example path: /workspace/config.ts
+	•	Inside it, define:
+
+export const API_URL = "https://www.odanet.com.tr";
+
+
+	•	Fix all imports in /odanet-mobile/hooks/ to use:
+
+import { API_URL } from "../../config";
+
+(This applies to useSeekers.ts, useListings.ts, and any similar files.)
+
+	2.	Fix the useSeekers.ts hook:
+	•	Ensure it fetches from the correct live endpoint:
+
+${API_URL}/api/users/seekers
+
+
+	•	Parse both array and object responses gracefully:
+
+return Array.isArray(json) ? json : json.seekers || [];
+
+
+	•	Log success and error messages clearly in Expo logs.
+
+	3.	Verify SeekerCard export:
+	•	Confirm SeekerCard is a named export:
+
+export function SeekerCard() { ... }
+
+and not a default export.
+
+	•	If default, adjust imports in /app/(tabs)/index.tsx to match.
+
+	4.	Unify the Home Feed:
+	•	In /odanet-mobile/app/(tabs)/index.tsx, ensure that:
+
+combinedFeed = [...listingsWithType, ...seekersWithType]
+  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+
+	•	For rendering:
+
+{combinedFeed.map((item) =>
+  item.type === "listing"
+    ? <ListingCard key={`listing-${item.id}`} listing={item} />
+    : <SeekerCard key={`seeker-${item.id}`} seeker={item} />
+)}
+
+
+	5.	Test and Confirm:
+	•	Run the app with:
+
+cd odanet-mobile && npx expo start --tunnel --clear
+
+
+	•	Ensure the console shows:
+
+📡 Fetching seekers from https://www.odanet.com.tr/api/users/seekers
+✅ Seekers fetched: X
+✅ Listings fetched: Y
+
+
+	•	Verify the home feed displays both room listings and room seekers, mixed chronologically.
+
+	6.	Clean & Document:
+	•	Remove unused imports or duplicate config files.
+	•	Add a short summary comment at the top of useSeekers.ts:
+
+// ✅ Unified feed: Fetches real seekers data from live Odanet backend
+
+
+
+⸻
