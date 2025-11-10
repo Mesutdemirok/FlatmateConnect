@@ -54,8 +54,12 @@ export const listings = pgTable("listings", {
   
   // Basic Information
   address: text("address").notNull(),
+  city: varchar("city"), // İstanbul, Ankara, etc.
+  district: varchar("district"), // Kadıköy, Beşiktaş, etc.
   title: varchar("title").notNull(),
+  description: text("description"), // Detailed listing description
   rentAmount: decimal("rent_amount", { precision: 8, scale: 2 }).notNull(), // Monthly rent
+  deposit: decimal("deposit", { precision: 8, scale: 2 }), // Security deposit
   billsIncluded: boolean("bills_included").default(false), // Utilities included
   excludedBills: text("excluded_bills").array().default(sql`ARRAY[]::text[]`), // Bills not included when billsIncluded is false
   
@@ -73,6 +77,14 @@ export const listings = pgTable("listings", {
   totalOccupants: integer("total_occupants"), // How many people live there
   roommatePreference: varchar("roommate_preference"), // Kadın/Erkek/Farketmez
   smokingPolicy: varchar("smoking_policy"), // İçilebilir/İçilemez/Balkon Dahil İçilemez
+  
+  // Availability & Terms
+  moveInDate: date("move_in_date"), // When room becomes available
+  minStayMonths: integer("min_stay_months"), // Minimum stay duration in months
+  
+  // Location coordinates for map
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
   
   // System fields
   status: varchar("status").default('active'),

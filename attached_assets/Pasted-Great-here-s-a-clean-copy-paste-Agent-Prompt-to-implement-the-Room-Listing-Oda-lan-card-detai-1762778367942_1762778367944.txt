@@ -1,0 +1,146 @@
+Great—here’s a clean, copy-paste Agent Prompt to implement the Room Listing (Oda İlanı) card + detail, matching the seeker style you liked, for both web and mobile. Everything is Turkish, and aligned with your current codebase (Next.js + Expo).
+
+⸻
+
+🧠 Agent Prompt — Build “Oda İlanı” Card + Detail (Web + Mobile)
+
+Goal
+Match the visual style of the seeker design (screenshots you provided) for Room Listings: polished hero image, clean info blocks, rounded badges, and the same typography hierarchy. Implement on web and mobile. Use our centralized image helpers (getImageUrl) and enforce “at least 1 photo to publish”.
+
+⸻
+
+0) Conventions & Shared Utilities
+	•	Use getImageUrl(imagePath, "listing", listing.id) everywhere (web + mobile).
+	•	All labels in Turkish.
+	•	Colors: primary #6A1B9A (purple), accent #009688 (teal), light text #6B7280, bg #FAFAFA.
+	•	Rounded corners (card 16, buttons 9999), subtle shadow.
+	•	Skeleton loaders for hero + sections.
+	•	If image missing → gradient placeholder with “Görsel bulunamadı”.
+
+⸻
+
+1) Listing Card (Ana Akış Kartı)
+
+Files
+	•	Mobile: odanet-mobile/components/ListingCard.tsx (or your UnifiedCard path)
+	•	Web: frontend/src/components/listings/ListingCard.tsx
+
+Data
+id, title, city, district, address, rentAmount, currency, images[0].imagePath, updatedAt, createdAt, isPublished, isActive, verified
+
+UI (like your “Martyn” card)
+	•	Full-bleed image 16:9 with rounded corners.
+	•	Top-left pill if updatedAt < 7 days → “GÜNCELLENDİ”, else if createdAt < 7 days → “YENİ”.
+	•	Bottom overlay (white box):
+	•	Title (bold, 18–20px)
+	•	Location: district, city with location icon
+	•	Price (bold, purple): ₺{rentAmount}/ay
+	•	Tap → navigate:
+	•	Mobile: /listing/${id}
+	•	Web: /oda-ilani/[slug] (fallback by id query if slug not found)
+
+Acceptance
+	•	Correct image render via getImageUrl.
+	•	Graceful placeholder on error.
+	•	Card height stable; no text overflow.
+
+⸻
+
+2) Listing Detail (Oda İlanı Detay)
+
+Files
+	•	Mobile: odanet-mobile/app/listing/[id].tsx
+	•	Web (App Router): frontend/src/app/oda-ilani/[slug]/page.tsx
+Fallback: frontend/src/app/oda-ilani/[id]/page.tsx → fetch by ID if slug missing.
+
+Endpoint
+GET /api/listings/:id (include: images, landlord(user) minimal profile, amenities, rules, billsIncluded, room/flat details)
+
+Layout Sections (order + labels)
+	1.	Hero
+	•	Carousel of images (snap paging on mobile; lightbox on web).
+	•	Floating buttons (top-right): Paylaş, Favori.
+	•	Bottom gradient overlay showing Title.
+	2.	Özet Satırı (3 sütun)
+	•	Bütçe: ₺{rentAmount}/ay
+	•	Giriş tarihi: Taşınmaya uygun: {moveInDate | “Hemen”}
+	•	Minimum süre: {minStayMonths} ay
+	3.	Adres / Konum
+	•	Pin icon + Mahalle, İlçe, Şehir
+	•	Button: Haritada Gör (links to Google/Apple Maps with coords if available)
+	4.	İlan Sahibi
+	•	Avatar + ad/soyad (veya “İlan Sahibi”)
+	•	Kimlik Doğrulaması: “Doğrulandı / Doğrulanmadı”
+	•	Mini rozetler: “Hızlı yanıt”, “Güvenilir”
+	5.	Açıklama — description
+	6.	Oda & Ev Detayları
+	•	Oda: metrekare (varsa), mobilyalı mı, banyo durumu, oda tipi
+	•	Ev: oda sayısı, banyo sayısı, bina tipi, kat
+	•	Dahil Olanlar: İnternet, faturalar, ısınma… (badges)
+	•	Kurallar: Sigara, evcil hayvan, misafir, çocuk uygunluğu (badges)
+	7.	Uygunluk & Koşullar
+	•	Depozito: ₺{deposit}
+	•	Minimum kalış: X ay
+	•	Masraflar: liste
+	8.	İletişim Bileşeni (bottom sticky on mobile, right rail on web)
+	•	Primary CTA: İlan sahibine ulaş
+	•	If not logged in → “Devam etmek için giriş yapın.”
+	•	Start chat: POST /api/messages/start/:listingId
+
+Empty/Error States
+	•	404 or unpublished → “İlan bulunamadı” + “Ana sayfaya dön”
+	•	Image load fail → gradient placeholder
+
+Analytics hooks
+	•	Fire view_listings_detail with id, slug, city, price.
+
+⸻
+
+3) Publish-Time Guard (Photo Required)
+
+Backend rule (apply to both APIs: create & update):
+	•	If isPublished === true then require at least 1 image.
+Return 400 with:
+{"message":"İlan yayımlanamıyor. En az bir fotoğraf ekleyin."}
+
+Where
+	•	server/routes/listings.ts: in create/update handlers before saving.
+
+Web/Mobile UI
+	•	Disable Yayınla button until an image exists.
+	•	Inline helper: “Yayımlamak için en az 1 fotoğraf yükleyin.”
+
+⸻
+
+4) Routing & Links
+	•	Mobile: /listing/[id] (Expo Router)
+	•	Web: canonical /oda-ilani/[slug] with fallback to /oda-ilani/[id].
+	•	Generate slug on the server when creating: title + city + district.
+
+⸻
+
+5) Performance
+	•	Use expo-image on mobile (cache: memory-disk).
+	•	Lazy load non-visible sections.
+	•	Compress thumbnails on the backend for cards (e.g., ?w=800&q=70 if you have an image proxy).
+
+⸻
+
+6) QA Checklist (must pass before done)
+	•	Card shows correct price, title, location, first photo.
+	•	Detail page sections exactly in order above; Turkish labels.
+	•	All images render on both platforms with getImageUrl.
+	•	Sticky “İlan sahibine ulaş” CTA works; starts chat if logged in.
+	•	404/unpublished shows friendly page.
+	•	Publish blocked without at least 1 photo (server + UI).
+	•	Favorites toggle works (web + mobile).
+	•	Skeletons visible during fetch.
+	•	Deep links from card to detail succeed (web slug + id fallback, mobile id).
+
+Success message to print when finished:
+
+“✅ Oda İlanı kartı ve detay sayfası, web ve mobilde modern Türkçe tasarımla tamamlandı; fotoğrafsız yayın engeli aktif, görseller ve CTA’lar sorunsuz çalışıyor.”
+
+⸻
+
+If you want, I can also add a mini style guide (spacing, font sizes, and icon set) and a ready-to-paste card CSS/StyleSheet next.
