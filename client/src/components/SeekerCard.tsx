@@ -54,18 +54,18 @@ function formatBudget(budget?: string | null) {
 function formatGender(gender?: string | null) {
   if (!gender) return "";
   const genderMap: Record<string, string> = {
-    male: "man",
-    female: "woman",
-    other: "person"
+    male: "Erkek",
+    female: "Kadın",
+    other: "Diğer"
   };
   return genderMap[gender.toLowerCase()] || gender;
 }
 
 function formatMoveInDate(date?: string | null) {
-  if (!date) return "Available now";
+  if (!date) return "Şimdi müsait";
   const d = new Date(date);
   const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-  return `Available ${d.toLocaleDateString('en-GB', options)}`;
+  return `${d.toLocaleDateString('tr-TR', options)} tarihinde`;
 }
 
 // Helper to check if date is within last N days
@@ -173,7 +173,7 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
           {/* NEW BADGE */}
           {showNewBadge && (
             <div className="absolute top-3 left-3 px-4 py-2 rounded-lg bg-white text-gray-900 text-sm font-bold shadow-md">
-              NEW
+              YENİ
             </div>
           )}
 
@@ -206,20 +206,20 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
         <div className="p-4 bg-white">
           {/* Name and Budget Row */}
           <div className="flex items-start justify-between gap-3 mb-1">
-            <h3 className="text-lg font-bold text-gray-900 line-clamp-1 flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 line-clamp-1 flex-1">
               {name}
             </h3>
             {budget && (
-              <div className="text-xl font-bold text-gray-900 whitespace-nowrap">
-                {budget} <span className="text-sm font-normal text-gray-600">ay</span>
+              <div className="text-xl font-semibold text-purple-600 whitespace-nowrap">
+                {budget.replace(/[.,]00/, '')} <span className="text-sm font-normal text-gray-600">ay</span>
               </div>
             )}
           </div>
 
           {/* Age and Gender */}
           {(seeker.age || genderText) && (
-            <div className="text-sm text-gray-600 mb-2">
-              {seeker.age && genderText ? `${seeker.age} year old ${genderText}` : genderText || `${seeker.age} years old`}
+            <div className="text-sm text-gray-700 mb-2">
+              {seeker.age && genderText ? `${seeker.age} yaşında ${genderText}` : genderText || `${seeker.age} yaşında`}
             </div>
           )}
 

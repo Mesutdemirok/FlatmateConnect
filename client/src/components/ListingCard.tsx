@@ -177,7 +177,7 @@ export default function ListingCard({
           {/* NEW BADGE */}
           {showNewBadge && (
             <div className="absolute top-3 left-3 px-4 py-2 rounded-lg bg-white text-gray-900 text-sm font-bold shadow-md">
-              NEW
+              YENİ
             </div>
           )}
 
@@ -214,11 +214,11 @@ export default function ListingCard({
         <div className="p-4 bg-white">
           {/* Title and Price Row */}
           <div className="flex items-start justify-between gap-3 mb-1">
-            <h3 className="text-lg font-bold text-gray-900 line-clamp-2 flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">
               {listing.title}
             </h3>
-            <div className="text-xl font-bold text-gray-900 whitespace-nowrap">
-              ₺{formatCurrency(amount)} <span className="text-sm font-normal text-gray-600">ay</span>
+            <div className="text-xl font-semibold text-teal-600 whitespace-nowrap">
+              ₺{Math.round(amount).toLocaleString("tr-TR")} <span className="text-sm font-normal text-gray-600">ay</span>
             </div>
           </div>
 
@@ -231,26 +231,26 @@ export default function ListingCard({
 
           {/* Availability */}
           <div className="text-sm text-gray-600 mb-3">
-            Available now
+            Şimdi müsait
           </div>
 
           {/* Icons Row */}
           <div className="flex items-center gap-4 text-gray-700">
             {listing.bedroomCount !== null && listing.bedroomCount !== undefined && (
               <div className="flex items-center gap-1.5">
-                <Bed className="w-5 h-5 text-gray-500" />
+                <Bed className="w-5 h-5 text-teal-600" />
                 <span className="text-sm font-medium">{listing.bedroomCount}</span>
               </div>
             )}
             {listing.bathroomCount !== null && listing.bathroomCount !== undefined && (
               <div className="flex items-center gap-1.5">
-                <Bath className="w-5 h-5 text-gray-500" />
+                <Bath className="w-5 h-5 text-blue-600" />
                 <span className="text-sm font-medium">{listing.bathroomCount}</span>
               </div>
             )}
             {listing.currentOccupants !== null && listing.currentOccupants !== undefined && (
               <div className="flex items-center gap-1.5">
-                <Users className="w-5 h-5 text-gray-500" />
+                <Users className="w-5 h-5 text-purple-600" />
                 <span className="text-sm font-medium">{listing.currentOccupants}</span>
               </div>
             )}
