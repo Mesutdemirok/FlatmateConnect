@@ -234,6 +234,16 @@ export default function CreateSeekerProfile() {
   };
 
   const onSubmit = async (data: CreateSeekerFormData) => {
+    // ✅ Enforce mandatory photo requirement before submission
+    if (!uploadedPhotoPath && !existingPhotoUrl) {
+      toast({
+        title: 'Fotoğraf Gerekli',
+        description: 'Profil fotoğrafı eklenmeden ilan yayınlanamaz.',
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       await createSeekerMutation.mutateAsync(data);

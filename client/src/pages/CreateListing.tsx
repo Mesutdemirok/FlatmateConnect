@@ -177,6 +177,16 @@ export default function CreateListing() {
   });
 
   const onSubmit = async (data: CreateListingFormData) => {
+    // ✅ Enforce mandatory image requirement before submission
+    if (images.length === 0) {
+      toast({
+        title: 'Fotoğraf Gerekli',
+        description: 'En az bir oda fotoğrafı eklemelisiniz.',
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       await createListingMutation.mutateAsync(data);
