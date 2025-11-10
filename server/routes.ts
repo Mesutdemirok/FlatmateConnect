@@ -191,6 +191,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ✅ PUBLIC route for web frontend (returns plain array, not wrapped)
+  app.get("/api/seekers/public", async (req, res) => {
+    try {
+      // Extract filter parameters from query string
+      const filters: any = {
+        isPublished: true,
+        isActive: true,
+      };
+      
+      if (req.query.location) filters.location = String(req.query.location);
+      if (req.query.minBudget) filters.minBudget = String(req.query.minBudget);
+      if (req.query.maxBudget) filters.maxBudget = String(req.query.maxBudget);
+      
+      const seekers = await storage.getSeekerProfiles(filters);
+      res.json(seekers); // Return array directly, not {seekers: [...]}
+    } catch (err: any) {
+      console.error("❌ /api/seekers/public error:", err);
+      res.status(500).json({ message: "Veritabanı hatası" });
+    }
+  });
+
   app.get("/api/users/:userId", jwtAuth, async (req, res) => {
     try {
       const user = await storage.getUser(req.params.userId);

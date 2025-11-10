@@ -1,0 +1,121 @@
+
+🧠 FINAL AGENT PROMPT — Restore Config + Fix Seeker Visibility (Web + Mobile)
+
+Prompt Title: Restore Config and Fix Seeker Listing Visibility Across Web + Mobile
+
+⸻
+
+Context Summary
+
+We have a working Odanet project (web + Expo mobile) where:
+	•	/api/users/seekers and /api/listings endpoints are both live and respond correctly.
+	•	On mobile (Expo), the unified feed now shows seekers but not their images or detail pages.
+	•	On the website, seeker listings completely disappeared (likely due to route or database filter issues).
+	•	The config.ts file was accidentally deleted and must be restored so both platforms can correctly access the live API.
+
+⸻
+
+🔧 Tasks to Fix Everything
+	1.	Restore and Position Config File
+	•	Create /workspace/config.ts with the following content:
+
+export const API_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://www.odanet.com.tr"
+    : "http://localhost:5000";
+
+
+	•	Update all hooks (useSeekers.ts, useListings.ts, etc.) to import it properly:
+
+import { API_URL } from "../../config";
+
+
+	•	Confirm there is only one config.ts file in the project root (not inside subfolders).
+
+⸻
+
+	2.	Fix Website Seeker Visibility
+	•	In server/routes (inside registerRoutes):
+	•	Ensure the route /api/seekers/public or /api/seekers exists and returns all isActive: true and isPublished: true seeker profiles:
+
+app.get("/api/seekers", async (req, res) => {
+  try {
+    const seekers = await storage.getSeekerProfiles({
+      isPublished: true,
+      isActive: true,
+    });
+    res.json(seekers);
+  } catch (err) {
+    console.error("❌ /api/seekers error:", err);
+    res.status(500).json({ message: "Veritabanı hatası" });
+  }
+});
+
+
+	•	Make sure this route is registered before /api/users/:userId to avoid Express routing conflicts.
+	•	Redeploy backend after update and verify that this URL works:
+👉 https://www.odanet.com.tr/api/seekers
+
+⸻
+
+	3.	Fix Mobile SeekerCard Rendering
+	•	In /odanet-mobile/components/SeekerCard.tsx:
+	•	Confirm image is displayed using:
+
+{seeker.profilePhotoUrl ? (
+  <Image
+    source={{ uri: `${API_URL}${seeker.profilePhotoUrl}` }}
+    style={styles.image}
+    resizeMode="cover"
+  />
+) : (
+  <Ionicons name="person-circle-outline" size={48} color="#ccc" />
+)}
+
+
+	•	Add navigation to the seeker detail page:
+
+onPress={() => router.push(`/seeker/${seeker.id}`)}
+
+
+	•	Ensure detail screen (app/seeker/[id].tsx) exists and fetches data from:
+
+`${API_URL}/api/seekers/${id}`
+
+
+
+⸻
+
+	4.	Verify Database Filters
+	•	In storage.getSeekerProfiles(), confirm that it doesn’t filter out valid seekers incorrectly.
+	•	It should include all where:
+
+isActive: true,
+isPublished: true
+
+and return with related user fields (firstName, lastName).
+
+⸻
+
+	5.	Final Check
+	•	Restart both servers:
+
+# Backend
+npm run dev
+# Mobile
+cd odanet-mobile && npx expo start --tunnel --clear
+
+
+	•	Confirm:
+	•	✅ On web: seekers reappear at /oda-arayan and homepage.
+	•	✅ On mobile: seeker images and detail pages now open correctly.
+
+⸻
+
+✅ Goal
+
+After this fix:
+	•	The website will again display all seeker profiles publicly.
+	•	The mobile app will display full seeker cards (with profile image + details).
+	•	Both share one consistent, correct config.ts file pointing to the live backend.
+
