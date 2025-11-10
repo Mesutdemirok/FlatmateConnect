@@ -8,7 +8,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (Nov 10, 2025)
 
-### Phase 6: Editable Profile Dashboard with Personal Info and Listings Management (Latest)
+### Phase 7: Complete Card Redesign with Image Carousels and Turkish Formatting (Latest)
+- **ListingCard Redesign**: Full-width 4:3 image carousel with white circular navigation arrows (ChevronLeft/Right), image counter badge (e.g., "2/11"), white "NEW" badge, and white outlined star favorite button in bottom right.
+- **SeekerCard Redesign**: Matching carousel structure with identical badge system and star favorites for visual consistency across card types.
+- **Turkish Localization**: Replaced USD ($) with Turkish Lira (₺), changed "pw" (per week) to "ay" (monthly), and applied TR locale formatting (e.g., `num.toLocaleString("tr-TR")`).
+- **Clean Info Section**: White card background below image, title/name on left with price/budget right-aligned on same row, location/age/gender text, availability status, and room detail icons (Bed, Bath, Users) for listings.
+- **Icon System**: Star icon (not Heart) for favorites with filled state on toggle, Lucide icons (MapPin, Bed, Bath, Users) for room details, consistent white overlay controls.
+- **Reference Match**: All design elements precisely match user-provided reference images including aspect ratio, badge positioning, navigation controls, and info layout.
+- **Status**: Architect-approved, production-ready implementation with proper test IDs and event handling.
+
+### Phase 6: Editable Profile Dashboard with Personal Info and Listings Management
 - **Backend API**: Implemented PATCH /api/users/me for updating personal info (firstName, lastName, phone, bio), GET /api/my-listings with _skipStatusFilter for fetching all user listings including drafts, and GET /api/seekers/user/:userId with ownership enforcement and _skipActiveCheck for user's own profile access.
 - **Security**: Ownership validation on seeker profile endpoint (403 if userId mismatch), whitelisted updatable fields in user endpoint, all endpoints require JWT authentication.
 - **Web Profile Page**: Made "Kişisel Bilgiler" tab editable with React Hook Form + Zod validation, auto-population from user data, Save/Cancel buttons with loading states, and proper error handling.
@@ -43,7 +52,7 @@ The platform prioritizes a mobile-first design with consistent branding. The web
 - **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing. Cloudflare R2 serves as the CDN. All uploads require JWT authentication and ownership verification.
 - **SEO**: Implemented with React Helmet for dynamic meta tags, Open Graph, and Twitter card generation. Slugs are generated for listings and seeker profiles. A sitemap.xml and rss.xml are dynamically generated, and `robots.txt` is configured. 301 redirects handle legacy UUID-based URLs.
 - **Mobile Build System**: EAS (Expo Application Services) is configured for Android and iOS, supporting development, preview, and production profiles.
-- **Listing & Seeker Cards**: Modernized ListingCard and SeekerCard components with dynamic badges, 16:9 hero images, bottom overlays for details, favorite toggles, and robust location fallback.
+- **Listing & Seeker Cards**: Redesigned ListingCard and SeekerCard with 4:3 image carousels, white circular navigation arrows, image counter badges, simple white "NEW" badges, white outlined star favorites, Turkish Lira (₺) with "ay" (monthly) suffix, clean white info sections, and room detail icons (Bed, Bath, Users) matching reference designs.
 - **Image Fallback System**: `getImageUrl()` provides deterministic CDN-hosted placeholders for seekers and listings without images, using a robust hash function. Graceful degradation includes gradient placeholders for failed image loads.
 - **Mandatory Image Validation**: Backend and frontend validation ensure `profilePhotoUrl` is present for seeker profiles and at least one image for listings (after draft creation), providing Turkish error messages.
 
