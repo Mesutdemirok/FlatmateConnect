@@ -270,3 +270,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
+
+// Unified card component that renders either ListingCard or SeekerCard based on type
+export function UnifiedCard({ item }: { item: any }) {
+  if (item.type === "seeker") {
+    return <SeekerCard seeker={item} />;
+  }
+  return <ListingCard listing={item} />;
+}
