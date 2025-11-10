@@ -380,7 +380,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const listings = await storage.getListings({});
       res.json(listings);
-    } catch {
+    } catch (err: any) {
+      console.error("❌ /api/listings error:", err);
       res.status(500).json({ message: "Veritabanı hatası" });
     }
   });
