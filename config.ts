@@ -1,31 +1,62 @@
-/**
- * Centralized API Configuration for Odanet Platform
- * Used by both web (Vite) and mobile (Expo) frontends
- */
-
+// 🌍 Global API configuration for Odanet (shared by web + mobile)
 export const API_URL =
   process.env.NODE_ENV === "production"
     ? "https://www.odanet.com.tr"
-    : process.env.API_URL || "http://localhost:5000";
+    : "http://localhost:5000";
 
 /**
- * Normalize image URLs to absolute paths
- * @param imagePath - Relative or absolute image path
- * @returns Full absolute URL to the image
+ * Simple deterministic hash function for string distribution
  */
-export function getImageUrl(imagePath: string | null | undefined): string {
-  if (!imagePath) {
-    return "";
+function simpleHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
   }
+  return Math.abs(hash);
+}
 
+/**
+ * 🖼️ Ensures consistent absolute image URLs across platforms
+ * Adds dynamic fallback photos for seekers without uploaded images.
+ * 
+ * @param path - Image path (relative or absolute)
+ * @param type - Content type for fallback selection
+ * @param id - Unique ID for deterministic fallback selection
+ */
+export function getImageUrl(
+  path?: string | null, 
+  type: "listing" | "seeker" = "listing", 
+  id?: string
+): string {
   // Already absolute URL
-  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
-    return imagePath;
+  if (path && (path.startsWith("http://") || path.startsWith("https://"))) {
+    return path;
   }
 
-  // Relative path - prepend API base
-  const baseUrl = API_URL.replace(/\/api$/, ""); // Remove /api suffix if present
-  return `${baseUrl}${imagePath.startsWith("/") ? "" : "/"}${imagePath}`;
+  // Relative path - normalize to absolute
+  if (path) {
+    const baseUrl = API_URL.replace(/\/api$/, ""); // Remove /api suffix if present
+    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+  }
+
+  // Generate unique fallback photos based on seeker ID hash (ensures variety)
+  if (type === "seeker" && id) {
+    const fallbackImages = [
+      "https://cdn.odanet.com.tr/placeholders/seeker1.jpg",
+      "https://cdn.odanet.com.tr/placeholders/seeker2.jpg",
+      "https://cdn.odanet.com.tr/placeholders/seeker3.jpg",
+      "https://cdn.odanet.com.tr/placeholders/seeker4.jpg",
+      "https://cdn.odanet.com.tr/placeholders/seeker5.jpg",
+    ];
+    const index = simpleHash(id) % fallbackImages.length;
+    return fallbackImages[index];
+  }
+
+  // Default fallback for listings or when no ID provided
+  return type === "seeker" 
+    ? "https://cdn.odanet.com.tr/placeholders/seeker1.jpg"
+    : "https://cdn.odanet.com.tr/placeholders/listing-default.jpg";
 }
 
 /**

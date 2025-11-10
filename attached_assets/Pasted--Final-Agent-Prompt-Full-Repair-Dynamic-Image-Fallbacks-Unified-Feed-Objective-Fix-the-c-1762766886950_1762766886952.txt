@@ -1,0 +1,123 @@
+
+
+🚀 Final Agent Prompt — Full Repair + Dynamic Image Fallbacks + Unified Feed
+
+Objective:
+Fix the config import issue, ensure both room and seeker listings display correctly in the mobile app and website, and implement unique fallback images for seekers without profile photos.
+
+⸻
+
+1. Remove duplicate config file
+Delete this incorrect file:
+
+/workspace/odanet-mobile/config.ts
+
+Keep the real one at:
+
+/workspace/config.ts
+
+
+⸻
+
+2. Paste this final version into /workspace/config.ts:
+
+// 🌍 Global API configuration for Odanet (shared by web + mobile)
+export const API_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://www.odanet.com.tr"
+    : "http://localhost:5000";
+
+/**
+ * 🖼️ Ensures consistent absolute image URLs across platforms
+ * Adds dynamic fallback photos for seekers without uploaded images.
+ */
+export function getImageUrl(path?: string, type: "listing" | "seeker" = "listing", id?: string): string {
+  if (path && path.startsWith("http")) return path;
+  if (path) return `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
+
+  // Generate unique fallback photos based on seeker ID hash (ensures variety)
+  if (type === "seeker") {
+    const fallbackImages = [
+      "https://cdn.odanet.com.tr/placeholders/seeker1.jpg",
+      "https://cdn.odanet.com.tr/placeholders/seeker2.jpg",
+      "https://cdn.odanet.com.tr/placeholders/seeker3.jpg",
+      "https://cdn.odanet.com.tr/placeholders/seeker4.jpg",
+      "https://cdn.odanet.com.tr/placeholders/seeker5.jpg",
+    ];
+    const index = id ? id.charCodeAt(0) % fallbackImages.length : Math.floor(Math.random() * fallbackImages.length);
+    return fallbackImages[index];
+  }
+
+  // Default fallback for listings
+  return "https://cdn.odanet.com.tr/placeholders/listing-default.jpg";
+}
+
+🟢 This version:
+	•	Uses one config.ts across both platforms
+	•	Adds 5 different placeholder images for seekers
+	•	Selects a random fallback based on each seeker’s id for natural variation
+
+⸻
+
+3. Fix all imports in mobile app
+Search the entire /odanet-mobile directory and fix every config import.
+
+✅ Correct import format:
+
+import { API_URL, getImageUrl } from "../../config";
+
+Fix files including:
+	•	/odanet-mobile/components/ListingCard.tsx
+	•	/odanet-mobile/components/SeekerCard.tsx
+	•	/odanet-mobile/hooks/useListings.ts
+	•	/odanet-mobile/hooks/useSeekers.ts
+	•	/odanet-mobile/app/(tabs)/index.tsx
+
+⸻
+
+4. Validate backend API endpoints
+Before rebuilding Expo, confirm these APIs return live JSON data:
+
+GET https://www.odanet.com.tr/api/seekers/public
+GET https://www.odanet.com.tr/api/listings
+
+They must return objects with id, slug, createdAt, and image fields.
+If either 404s, fix backend route mappings first.
+
+⸻
+
+5. Clean Expo build
+After fixes, run:
+
+cd odanet-mobile && npx expo start --tunnel --clear
+
+Then scan the QR code again with Expo Go.
+
+⸻
+
+6. Verify full functionality
+Make sure the following are working in the app:
+	•	✅ Unified home feed mixing seekers + listings
+	•	✅ Images visible for both listings and seekers (unique placeholders when missing)
+	•	✅ /listing/[id].tsx detail page shows full title, price, image, and “ilan sahibi” info
+	•	✅ /seeker/[id].tsx shows full name, photo, bio, and preferences
+	•	✅ No more “ilan bulunamadı” anywhere
+	•	✅ API_URL points to the correct environment automatically
+
+⸻
+
+7. Confirm success
+All done when:
+	•	Both web and mobile show real listings and seekers
+	•	Expo app builds cleanly with no red screens
+	•	Each seeker profile card has a distinct fallback image
+	•	No config import or API route errors remain
+
+⸻
+
+Title:
+Fix Config Imports, Validate APIs, and Add Smart Fallback Images for Odanet Mobile
+
+Goal:
+Achieve a unified, visually complete app where seekers and listings load dynamically with distinct fallback images and working detail pages.
+

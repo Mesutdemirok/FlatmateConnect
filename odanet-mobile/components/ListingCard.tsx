@@ -11,6 +11,7 @@ import { useRouter } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { colors, fonts, borderRadius, spacing } from "../theme";
 import { getImageUrl } from "../../config";
+import { useState, useEffect } from "react";
 
 // Type guard helpers - check explicit type first, then fall back to heuristics
 const isListing = (item: any) => item?.type === "listing" || !!item?.rentAmount;
@@ -18,6 +19,12 @@ const isSeeker = (item: any) => item?.type === "seeker" || !!item?.budget || !!i
 
 export function UnifiedCard({ item }: { item: any }) {
   const router = useRouter();
+  const [imageError, setImageError] = useState(false);
+
+  // Reset error state when item changes (fixes component recycling issue)
+  useEffect(() => {
+    setImageError(false);
+  }, [item.id]);
 
   // Decide navigation route
   const handlePress = () => {
@@ -25,10 +32,10 @@ export function UnifiedCard({ item }: { item: any }) {
     else if (isSeeker(item)) router.push(`/seeker/${item.id}`);
   };
 
-  // Decide image source - normalize URLs
+  // Decide image source - normalize URLs with smart fallbacks
   const imageUri = isListing(item)
-    ? getImageUrl(item.images?.[0]?.imagePath)
-    : getImageUrl(item.profilePhotoUrl);
+    ? getImageUrl(item.images?.[0]?.imagePath, "listing", item.id)
+    : getImageUrl(item.profilePhotoUrl, "seeker", item.id);
 
   const title = isListing(item)
     ? item.title
@@ -51,11 +58,12 @@ export function UnifiedCard({ item }: { item: any }) {
       activeOpacity={0.9}
     >
       <View style={styles.imageWrapper}>
-        {imageUri ? (
+        {!imageError ? (
           <Image
             source={{ uri: imageUri }}
             style={styles.image}
             resizeMode="cover"
+            onError={() => setImageError(true)}
           />
         ) : (
           <LinearGradient
@@ -67,7 +75,7 @@ export function UnifiedCard({ item }: { item: any }) {
               size={40}
               color={colors.textWhite}
             />
-            <Text style={styles.placeholderText}>Görsel Yok</Text>
+            <Text style={styles.placeholderText}>Görsel Yüklenemedi</Text>
           </LinearGradient>
         )}
 
