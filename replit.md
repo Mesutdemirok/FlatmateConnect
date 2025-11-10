@@ -1,30 +1,7 @@
 # Odanet - Flatmate & Room Rental Platform
 
 ## Overview
-Odanet is a flatmate and room rental platform for the Turkish market, connecting individuals seeking shared accommodation with room providers. It focuses on verified profiles, intelligent matching, and secure communication to build a trustworthy environment. Key capabilities include comprehensive user and listing management, seeker profiles, real-time messaging, and advanced search and filtering.
-
-## Recent Changes (Nov 10, 2025)
-
-### Phase 3: Mandatory Image Upload Validation (Latest)
-- **Backend Validation**: Created POST/PUT endpoints for seeker profiles (`/api/seekers`, `/api/seekers/:id`) with mandatory `profilePhotoUrl` validation, automatic slug generation from fullName + preferredLocation, ownership verification, and Turkish error messages. Removed image validation from POST `/api/listings` to allow draft creation (images uploaded separately).
-- **Frontend Validation**: Added client-side checks in CreateListing.tsx preventing form submission without images (toast: "Fotoğraf Gerekli - En az bir oda fotoğrafı eklemelisiniz") and CreateSeekerProfile.tsx preventing submission without photo (toast: "Fotoğraf Gerekli - Profil fotoğrafı eklenmeden ilan yayınlanamaz").
-- **Architecture Alignment**: Listings follow two-step flow (create draft → upload images via separate endpoint), while seekers upload photo first then submit with path in payload. Both approaches enforce mandatory media at frontend and backend layers.
-- **Seeker Endpoints**: POST defaults `isPublished` to false, generates slug automatically, validates photo presence. PUT checks ownership, validates photo if updating, regenerates slug if name/location changes.
-- **Production Ready**: All validation uses consistent Turkish error messages, proper HTTP status codes (400 for validation errors, 404 for not found), and architect-approved implementation.
-
-### Phase 1: Cross-Platform Data Flow Fixes
-- **Centralized Configuration**: Created `config.ts` with unified API_URL and image normalization helpers for consistent URL handling across web/mobile platforms.
-- **Backend Routing**: Added slug-based detail endpoints (`/api/listings/slug/:slug`, `/api/seekers/slug/:slug`) with proper publish/active filtering, plus ID-based endpoints for mobile compatibility.
-- **Mobile Image Fix**: Resolved seeker profile photo display issues by implementing `getImageUrl()` helper in UnifiedCard component to prepend base URL to relative paths.
-- **Mobile Listing Detail Fix**: Corrected `useListing` hook to unwrap API responses properly, restoring title/price/description display on detail screens.
-- **Web Detail Pages**: Fixed "İlan Bulunamadı" errors by ensuring backend returns flat objects matching frontend expectations and enforcing proper status checks.
-
-### Phase 2: Dynamic Image Fallback System (Latest)
-- **Smart Placeholder System**: Enhanced `getImageUrl()` with deterministic CDN-hosted placeholders for seekers without photos (5 unique images selected by ID hash) and listings without images (single default placeholder).
-- **Robust Hash Distribution**: Implemented full-string hash function (FNV-1a style) ensuring even distribution of seeker placeholders across entire UUID, replacing weak first-character hashing.
-- **Graceful Degradation**: Added onError handler in UnifiedCard component that falls back to gradient placeholder when CDN images fail to load, preventing broken image states.
-- **Component Lifecycle Fix**: Implemented useEffect hook keyed to item.id to reset imageError state when card components are recycled during scrolling, ensuring fresh image load attempts.
-- **Backward Compatibility**: Maintained API suffix removal (`/api` → base URL) for web platform compatibility while adding optional type and ID parameters for mobile smart fallbacks.
+Odanet is a flatmate and room rental platform for the Turkish market, connecting individuals seeking shared accommodation with room providers. It aims to build a trustworthy environment through verified profiles, intelligent matching, and secure communication. The platform offers comprehensive user and listing management, seeker profiles, real-time messaging, and advanced search and filtering capabilities. The business vision is to become the leading platform for shared accommodation in Turkey, leveraging intelligent technology and a user-centric design to solve common pain points in the rental market.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -32,38 +9,39 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### UI/UX Decisions
-The platform features a mobile-first design with consistent branding. Web app uses shadcn/ui with Radix components and teal/turquoise primary color (#00A6A6). Mobile app rebuilt with purple gradient design system (#7F00FF → #E100FF) matching new brand identity, featuring gradient headers, white cards with gradient shadows, rounded corners (16px), and icon-based navigation. Logo displays at top with platform tagline "Güvenilir ve şeffaf oda arama deneyimi". Home screen features unified feed showing both room listings and seeker profiles mixed chronologically (sorted by createdAt descending), matching website homepage experience. All screens use real API data with proper loading and empty states.
+The platform prioritizes a mobile-first design with consistent branding. The web application uses shadcn/ui with Radix components, featuring a teal/turquoise primary color. The mobile application employs a purple gradient design system, including gradient headers, white cards with gradient shadows, rounded corners, and icon-based navigation. The logo and tagline "Güvenilir ve şeffaf oda arama deneyimi" are consistently displayed. The homepage features a unified chronological feed of both room listings and seeker profiles. All screens utilize real API data with appropriate loading and empty states.
 
 ### Technical Implementations
-- **Frontend (Web)**: React with TypeScript (Vite), Tailwind CSS, shadcn/ui, Radix UI for accessibility. State management uses React Query for server state and React hooks for local state. Wouter handles client-side routing, and i18next provides internationalization (Turkish primary locale). Detail pages use slug-based routing (`/oda-ilani/[slug]`, `/oda-arayan/[slug]`) for SEO-friendly URLs.
-- **Frontend (Mobile)**: Expo SDK 54 + React Native 0.81.5, Expo Router for file-based navigation, React Native StyleSheet API for all styling with centralized theme system (theme/colors.ts, fonts.ts, spacing.ts). Purple gradient design (#7F00FF → #E100FF) with light violet background (#F7F5FB), white cards with gradient shadows. React Native Web support for unified web/mobile codebase. TanStack Query for data fetching, SecureStore for JWT token management with automatic Authorization header attachment, expo-linear-gradient for all gradient effects. Custom UI components (PrimaryButton with purple gradient, SecondaryButton with gradient outline, ListingCard, SeekerCard) all using theme tokens. Home screen displays unified chronological feed of both listings and seekers sorted by createdAt (newest first), mirroring website homepage. Login/Register screen with purple gradient header and tab switcher. Profile screen with gradient header, white menu cards, and "Popüler Oda Arkadaşları" horizontal scroll section. Images use automatic URL normalization via centralized config helper. Bottom tab navigation with purple active states (Home, Messages, Favorites, Profile). Production-ready with EAS build configuration for Android and iOS deployment.
-- **Backend**: Express.js with TypeScript. PostgreSQL is used as the database with Drizzle ORM. The API is RESTful with standardized error handling. All detail endpoints (`/api/listings/:id`, `/api/listings/slug/:slug`, `/api/seekers/slug/:slug`) return flat objects with eager-loaded relations (images, photos, user data) and enforce publish/active filters.
-- **Configuration**: Centralized `config.ts` at project root exports `API_URL` (environment-aware), `getImageUrl()` helper for normalizing relative/absolute image paths, and `getApiUrl()` for building endpoint URLs. Single source of truth used by web (Vite), mobile (Expo Metro), and server.
-- **Authentication**: Unified JWT-based authentication supporting both Google OAuth and email/password. All auth flows set identical secure cookies (`auth_token`) with SameSite=None, Secure flags, and domain `.odanet.com.tr` for production. OAuth callback: `https://www.odanet.com.tr/api/oauth/google/callback`. Mobile app uses SecureStore for token persistence with automatic header attachment. Google OAuth for mobile requires backend to redirect to `odanet://auth?token=<JWT>` for token capture via WebBrowser.openAuthSessionAsync.
-- **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing using Sharp and Busboy. Cloudflare R2 serves as the CDN for production image delivery. All upload endpoints require JWT authentication with ownership verification.
-- **SEO**: Implemented with React Helmet for dynamic meta tags, Open Graph, and Twitter card generation for social media sharing. Slugs are generated for listings and seeker profiles for SEO-friendly URLs.
-- **Blog System**: Markdown-based content management using gray-matter for frontmatter parsing and react-markdown with remark-gfm for rendering. Blog posts stored as .md files in src/content/blog/ with YAML frontmatter (slug, title, description, date, author, image). Vite configured with vite-plugin-node-polyfills to provide Buffer/global/process polyfills for Node.js libraries in browser environment.
-- **SEO Optimization**: Comprehensive sitemap.xml auto-generated via scripts/generateSitemap.js, dynamically fetching all active listings, published seeker profiles, and blog posts from API endpoints. RSS feed (rss.xml) generated for blog content. robots.txt configured for search engine crawlers. Sitemap includes 40+ URLs with proper priorities and change frequencies. Run `node scripts/generateSitemap.js` to regenerate after content changes. 301 redirect middleware automatically redirects legacy UUID-only URLs (`/oda-ilani/{uuid}`) to SEO-friendly slug-based URLs (`/oda-ilani/{slug}`) for better search engine indexing and link equity preservation.
-- **Mobile Build System**: EAS (Expo Application Services) configured with development, preview, and production profiles. Android builds use APK format for preview (easy sharing) and AAB for production (Play Store). iOS builds configured with bundle identifier and resource classes. All dependencies aligned with Expo SDK 51 (16/16 expo-doctor checks passed).
+- **Frontend (Web)**: React with TypeScript (Vite), Tailwind CSS, shadcn/ui, and Radix UI. State management is handled by React Query and React hooks. Wouter provides client-side routing, and i18next manages internationalization (Turkish primary locale). Detail pages use SEO-friendly slug-based routing.
+- **Frontend (Mobile)**: Built with Expo SDK and React Native, utilizing Expo Router for file-based navigation. Styling is managed via React Native's StyleSheet API with a centralized theme system. TanStack Query handles data fetching, and SecureStore manages JWT tokens. Custom UI components adhere to the purple gradient design system. The home screen displays a unified chronological feed of listings and seekers. Login/Register and Profile screens feature gradient headers and themed components. Bottom tab navigation uses purple active states.
+- **Backend**: Developed with Express.js and TypeScript, using PostgreSQL as the database with Drizzle ORM. The API is RESTful, providing detail endpoints with eager-loaded relations and enforcing publish/active filters.
+- **Configuration**: A centralized `config.ts` manages `API_URL`, `getImageUrl()` for image path normalization, and `getApiUrl()` for endpoint URL construction, ensuring consistency across platforms.
+- **Authentication**: JWT-based authentication supports both Google OAuth and email/password, with secure cookies set for `.odanet.com.tr`. Mobile authentication uses SecureStore for token persistence.
+- **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing. Cloudflare R2 serves as the CDN. All uploads require JWT authentication and ownership verification.
+- **SEO**: Implemented with React Helmet for dynamic meta tags, Open Graph, and Twitter card generation. Slugs are generated for listings and seeker profiles. A sitemap.xml and rss.xml are dynamically generated, and `robots.txt` is configured. 301 redirects handle legacy UUID-based URLs.
+- **Mobile Build System**: EAS (Expo Application Services) is configured for Android and iOS, supporting development, preview, and production profiles.
+- **Listing & Seeker Cards**: Modernized ListingCard and SeekerCard components with dynamic badges, 16:9 hero images, bottom overlays for details, favorite toggles, and robust location fallback.
+- **Image Fallback System**: `getImageUrl()` provides deterministic CDN-hosted placeholders for seekers and listings without images, using a robust hash function. Graceful degradation includes gradient placeholders for failed image loads.
+- **Mandatory Image Validation**: Backend and frontend validation ensure `profilePhotoUrl` is present for seeker profiles and at least one image for listings (after draft creation), providing Turkish error messages.
 
 ### Feature Specifications
 - **User Management**: Profile creation, verification, and image uploads.
 - **Listing System**: Detailed room listings with multiple images and filtering.
-- **Seeker Profiles**: Comprehensive profiles for accommodation seekers with dedicated detail pages on both web and mobile platforms.
+- **Seeker Profiles**: Comprehensive profiles with dedicated detail pages.
 - **Messaging System**: Real-time communication.
-- **Favorites System**: Allows users to save and manage favorite listings.
-- **Search & Filtering**: Location-based search with various filters for both room and flatmate searches. Web seeker filtering supports location and budget parameters via /api/seekers/public endpoint.
-- **Homepage Feed**: Unified chronological feed displaying both listings and seeker profiles sorted by createdAt descending (newest first), matching website homepage UX. Mobile app fetches both datasets simultaneously and interleaves them for seamless browsing.
-- **Seeker Detail Pages**: Mobile seeker detail screen (app/seeker/[id].tsx) displays complete profile information including photo (with automatic URL normalization), name, budget, location, demographics, preferences, and bio. Contact button enables direct messaging.
+- **Favorites System**: Users can save and manage favorite listings.
+- **Search & Filtering**: Location-based search with various filters for both room and flatmate searches.
+- **Homepage Feed**: A unified chronological feed of listings and seeker profiles.
+- **Seeker Detail Pages**: Display complete profile information, including contact options.
 
 ### System Design Choices
-The system employs a modular schema with foreign key relationships for robust data management. Backend fallbacks for slug-based lookups ensure backward compatibility with ID-based URLs.
+The system uses a modular schema with foreign key relationships. Backend fallbacks for slug-based lookups ensure backward compatibility.
 
 ## External Dependencies
 
 ### Database & ORM
 - **Neon Database**: PostgreSQL hosting.
-- **Drizzle ORM**: Database interactions and schema management.
+- **Drizzle ORM**: Database interactions.
 - **connect-pg-simple**: PostgreSQL session store.
 
 ### UI/UX Libraries
@@ -78,31 +56,30 @@ The system employs a modular schema with foreign key relationships for robust da
 ### Authentication
 - **JWT (jsonwebtoken)**: Token-based authentication.
 - **bcrypt**: Password hashing.
-- **Google OAuth 2.0**: Social login via openid-client.
+- **Google OAuth 2.0**: Social login via `openid-client`.
 
 ### Utilities
 - **i18next**: Internationalization.
 - **date-fns**: Date manipulation.
 - **Sharp & Busboy**: Image processing for uploads.
-- **nanoid**: Compact, URL-safe unique ID generation.
+- **nanoid**: Unique ID generation.
 - **slugify**: Turkish-locale URL slug generation.
-- **gray-matter**: YAML frontmatter parsing for Markdown blog posts.
-- **react-markdown**: Markdown rendering in React components.
-- **remark-gfm**: GitHub-flavored Markdown syntax support.
-- **vite-plugin-node-polyfills**: Browser polyfills for Node.js modules (Buffer, process, global).
+- **gray-matter**: YAML frontmatter parsing.
+- **react-markdown**: Markdown rendering.
+- **remark-gfm**: GitHub-flavored Markdown support.
+- **vite-plugin-node-polyfills**: Browser polyfills.
 
 ### Cloud Services
-- **Cloudflare R2**: Object storage for images (`odanet-uploads` bucket).
-- **Cloudflare CDN**: Custom domain (`cdn.odanet.com.tr`) for image delivery.
-- **AWS SDK S3 Client**: Used for R2 API compatibility.
+- **Cloudflare R2**: Object storage for images.
+- **Cloudflare CDN**: Custom domain for image delivery.
+- **AWS SDK S3 Client**: For R2 API compatibility.
 
 ### Analytics
-- **Google Analytics 4**: Event tracking (ID: G-ME5ES9KLDE) with automatic pageview tracking via Wouter routing and custom event tracking.
+- **Google Analytics 4**: Event tracking (ID: G-ME5ES9KLDE).
 
 ### Mobile Development
-- **Expo SDK 51**: Complete mobile framework with EAS build support.
-- **React Native 0.74.5**: Native iOS and Android components.
-- **Expo Router 3.5.24**: File-based routing matching web patterns.
-- **NativeWind 4.2.1**: Tailwind CSS for React Native with Reanimated 3.x.
-- **EAS CLI 16.26.0**: Production build system for app store deployment.
-- **EAS Project**: Configured with ID a21f0bc7-a5a4-417c-9eea-3e7ad1915192, ready for preview and production builds.
+- **Expo SDK**: Mobile framework.
+- **React Native**: Native iOS and Android components.
+- **Expo Router**: File-based routing.
+- **NativeWind**: Tailwind CSS for React Native.
+- **EAS CLI**: Production build system.
