@@ -1,38 +1,32 @@
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { colors, fonts, borderRadius, spacing } from "../theme";
-import { getImageUrl } from "../../config";
+import { getImageUrl } from "../config"; // ✅ Fixed import path
 import { useState, useEffect } from "react";
 
-// Type guard helpers - check explicit type first, then fall back to heuristics
+// Helpers: detect type
 const isListing = (item: any) => item?.type === "listing" || !!item?.rentAmount;
-const isSeeker = (item: any) => item?.type === "seeker" || !!item?.budget || !!item?.bio;
+const isSeeker = (item: any) =>
+  item?.type === "seeker" || !!item?.budget || !!item?.bio;
 
 export function UnifiedCard({ item }: { item: any }) {
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
 
-  // Reset error state when item changes (fixes component recycling issue)
+  // Reset error state when item changes
   useEffect(() => {
     setImageError(false);
   }, [item.id]);
 
-  // Decide navigation route
+  // Navigation logic
   const handlePress = () => {
     if (isListing(item)) router.push(`/listing/${item.id}`);
     else if (isSeeker(item)) router.push(`/seeker/${item.id}`);
   };
 
-  // Decide image source - normalize URLs with smart fallbacks
+  // Image URL handling
   const imageUri = isListing(item)
     ? getImageUrl(item.images?.[0]?.imagePath, "listing", item.id)
     : getImageUrl(item.profilePhotoUrl, "seeker", item.id);
@@ -194,7 +188,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// Export wrapper components that adapt legacy props to UnifiedCard's {item} prop
+// ✅ Wrappers
 export function ListingCard({ listing }: { listing: any }) {
   return <UnifiedCard item={listing} />;
 }

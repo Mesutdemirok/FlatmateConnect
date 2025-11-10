@@ -1,68 +1,71 @@
 import { Tabs } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { View, StyleSheet } from "react-native";
+import { colors } from "../../theme";
 
 export default function TabLayout() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: "#7F00FF",
-          tabBarInactiveTintColor: "#666",
-          tabBarStyle: {
-            backgroundColor: "#fff",
-            paddingBottom: 8,
-            height: 65,
-          },
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: "600",
-          },
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: "#b3b3b3",
+        tabBarStyle: {
+          position: "absolute",
+          height: 65,
+          borderTopWidth: 0,
+          backgroundColor: "transparent",
+        },
+        tabBarBackground: () => (
+          <BlurView
+            intensity={40}
+            tint="light"
+            style={StyleSheet.absoluteFill}
+          />
+        ),
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Ana Sayfa",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="home" size={size} color={color} />
+          ),
         }}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: "Ana Sayfa",
-            tabBarLabel: "Home",
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="home" size={22} color={color} />
-            ),
-            headerTitle: "Odanet",
-          }}
-        />
-        <Tabs.Screen
-          name="messages"
-          options={{
-            title: "Mesajlar",
-            tabBarLabel: "Messages",
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="chatbubble" size={22} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="favorites"
-          options={{
-            title: "Favoriler",
-            tabBarLabel: "Favorites",
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="heart" size={22} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: "Profil",
-            tabBarLabel: "Profile",
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="person" size={22} color={color} />
-            ),
-          }}
-        />
-      </Tabs>
-    </SafeAreaView>
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: "Mesajlar",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons
+              name="chat-bubble-outline"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profil",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="person-outline" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  blurContainer: {
+    flex: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+  },
+});

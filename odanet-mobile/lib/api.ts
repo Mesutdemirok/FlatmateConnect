@@ -1,13 +1,13 @@
 import axios, { AxiosError } from "axios";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
-import { getApiUrl } from "../../config";
+import { getApiUrl } from "../config"; // ✅ Fixed path (was "../../config")
 
 /**
  * 🔧 Base API URL Configuration
- * Uses centralized config.ts for consistency across platforms
+ * Automatically selects production or local API base
  */
-const apiUrl = Constants?.expoConfig?.extra?.apiBaseUrl || getApiUrl("");
+const apiUrl = Constants?.expoConfig?.extra?.apiBaseUrl || getApiUrl(""); // falls back to config.ts logic
 
 export const api = axios.create({
   baseURL: apiUrl,
@@ -47,7 +47,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    // Handle unauthorized (401)
+    // 🔐 Handle unauthorized (401)
     if (error.response?.status === 401) {
       try {
         await SecureStore.deleteItemAsync("auth_token");
@@ -57,11 +57,12 @@ api.interceptors.response.use(
       }
     }
 
-    // Handle timeouts or server unavailability
+    // ⏳ Handle timeouts or server unavailability
     if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
       console.error("⏳ Request timed out. Check your network connection.");
     }
 
+    // 🌐 Handle offline/network failures
     if (!error.response) {
       console.error("🌐 Network Error: Could not reach the API server.");
     }

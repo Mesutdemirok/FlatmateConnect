@@ -1,0 +1,96 @@
+
+⸻
+
+🧠 Agent Prompt — Enforce Mandatory Image Upload for All Listings (Seekers + Rooms)
+
+Goal:
+Ensure that both room seeker profiles and room listings must include at least one valid image before they can be published.
+This must apply across backend, web, and mobile (Expo).
+
+⸻
+
+🎯 Objectives
+
+🧩 1. Backend Validation (Express + Drizzle)
+Update the backend routes in server.js (inside registerRoutes) for both:
+	•	/api/seekers
+	•	/api/listings
+
+Add validation logic before creating or updating:
+
+For Seeker Profiles
+
+if (!data.profilePhotoUrl || data.profilePhotoUrl.trim() === "") {
+  return res.status(400).json({
+    message: "Profil fotoğrafı eklenmeden ilan yayınlanamaz.",
+  });
+}
+
+For Room Listings
+
+if (!data.images || data.images.length === 0) {
+  return res.status(400).json({
+    message: "En az bir oda fotoğrafı eklenmeden ilan yayınlanamaz.",
+  });
+}
+
+	•	These rules apply when:
+	•	Creating (POST /api/seekers, POST /api/listings)
+	•	Updating (PUT /api/seekers/:id, PUT /api/listings/:id)
+	•	Setting isPublished: true in any payload
+
+🧱 Important: Keep the logic before storage.createListing() and storage.createSeekerProfile() calls to block invalid inserts.
+
+⸻
+
+📱 2. Mobile App Validation (Expo)
+In /odanet-mobile/app/ilan-olustur.tsx and /odanet-mobile/app/oda-arama-ilani-olustur.tsx:
+	•	Add front-end validation before publishing:
+	•	If no image is uploaded, show alert:
+“Lütfen en az bir fotoğraf yükleyin. Fotoğrafsız ilan yayınlanamaz.”
+	•	Disable “Yayınla” button until image upload is complete.
+	•	Highlight missing image section in red.
+	•	Update image upload components to check that profilePhotoUrl or images[] array is not empty before submitting.
+
+⸻
+
+💻 3. Web App Validation (Next.js)
+In:
+	•	/frontend/src/app/ilan-olustur/page.tsx
+	•	/frontend/src/app/oda-arama-ilani-olustur/page.tsx
+
+Add a front-end guard before submission:
+
+if (!image || !image.length) {
+  alert("Lütfen en az bir fotoğraf yükleyin. Fotoğrafsız ilan yayınlanamaz.");
+  return;
+}
+
+	•	Prevent API request if the check fails.
+	•	Smooth scroll to the upload field when validation fails.
+	•	Display a red warning message under the photo uploader.
+
+⸻
+
+🧠 4. Feed & Fallback Logic
+	•	Update listing and seeker card components (ListingCard.tsx, SeekerCard.tsx, or UnifiedCard.tsx) to only render published items with valid images.
+	•	If backend validation already enforced, fallback images should be used only for legacy data created before this rule.
+
+⸻
+
+🔄 5. Testing & Sync
+After implementing:
+	•	Test creating a new seeker or room listing without image → should show validation error (not published).
+	•	Test creating one with image → should publish successfully.
+	•	Ensure both mobile and web frontends handle the same logic visually and via backend.
+
+⸻
+
+✅ Deliverables
+	1.	Backend rules enforced for all publishes (seekers + listings).
+	2.	Web & mobile frontends block publish until image is uploaded.
+	3.	Unified consistent user message across all platforms.
+	4.	Fallback images remain only for old legacy data.
+	5.	Confirmation message:
+“✅ Image requirement enforced — seekers and listings cannot be published without a photo across web + mobile.”
+

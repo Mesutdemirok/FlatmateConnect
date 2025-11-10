@@ -1,18 +1,19 @@
 import {
   View,
   Text,
-  StyleSheet,
-  TouchableOpacity,
   ScrollView,
   RefreshControl,
   StatusBar,
+  StyleSheet,
+  ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useMemo } from "react";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useListings } from "../../hooks/useListings";
-import { useSeekers } from "../../components/SeekerCard";
+import { useSeekers } from "../../hooks/useSeekers";
 import { UnifiedCard } from "../../components/ListingCard";
 import { colors, fonts, borderRadius, spacing } from "../../theme";
 
@@ -20,7 +21,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch both listings and seekers
   const {
     data: listingsData = [],
     refetch: refetchListings,
@@ -31,78 +31,60 @@ export default function HomeScreen() {
     data: seekersData = [],
     refetch: refetchSeekers,
     isLoading: isLoadingSeekers,
-    error: seekersError,
   } = useSeekers();
 
-  // Safely normalize both data sources
   const listings = Array.isArray(listingsData) ? listingsData : [];
   const seekers = Array.isArray(seekersData)
     ? seekersData
     : seekersData?.seekers || [];
 
-  console.log(`📊 Feed data: ${listings.length} listings, ${seekers.length} seekers`);
-
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.allSettled([refetchListings(), refetchSeekers()]);
+    await Promise.all([refetchListings(), refetchSeekers()]);
     setRefreshing(false);
   };
 
-  // Combine and sort chronologically (newest first)
   const combinedFeed = useMemo(() => {
-    const listingsWithType = listings.map((item: any) => ({
+    const listingsWithType = listings.map((item) => ({
       ...item,
       type: "listing",
     }));
-
-    const seekersWithType = seekers.map((item: any) => ({
+    const seekersWithType = seekers.map((item) => ({
       ...item,
       type: "seeker",
     }));
-
     const combined = [...listingsWithType, ...seekersWithType];
-    return combined.sort((a: any, b: any) => {
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
-      return dateB - dateA; // Newest first
-    });
+    return combined.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    );
   }, [listings, seekers]);
 
   const isLoading = isLoadingListings || isLoadingSeekers;
-  const showEmpty = !isLoading && combinedFeed.length === 0;
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.card} />
+      <StatusBar barStyle="light-content" backgroundColor="#8e44ad" />
 
-      {/* HEADER */}
-      <View style={styles.fixedHeader}>
-        <SafeAreaView edges={["top"]} style={styles.topBarSafeArea}>
-          <View style={styles.topBar}>
-            <View>
-              <Text style={styles.logo}>Odanet</Text>
-              <Text style={styles.tagline}>
-                Güvenilir ve şeffaf oda arama deneyimi
+      {/* 🌈 Hero Section */}
+      <View style={styles.heroWrapper}>
+        <LinearGradient
+          colors={["#8e44ad", "#7b2cbf"]}
+          style={styles.heroBackground}
+        >
+          <SafeAreaView style={styles.heroSafe}>
+            <View style={styles.heroContent}>
+              <Text style={styles.heroLogo}>Odanet</Text>
+              <Text style={styles.heroTagline}>
+                Ev arkadaşı bulmanın en kolay yolu
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => router.push("/profile")}
-              style={styles.profileButton}
-            >
-              <MaterialIcons
-                name="person-outline"
-                size={26}
-                color={colors.text}
-              />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
+          </SafeAreaView>
+        </LinearGradient>
       </View>
 
-      {/* UNIFIED FEED */}
+      {/* 🏡 Unified Feed */}
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={styles.feedContainer}
         refreshControl={
           <RefreshControl
             refreshing={refreshing || isLoading}
@@ -111,19 +93,11 @@ export default function HomeScreen() {
           />
         }
       >
-        <Text style={styles.sectionTitle}>Tüm İlanlar</Text>
-
-        {isLoading ? (
-          <View style={styles.emptyContainer}>
-            <MaterialIcons
-              name="hourglass-empty"
-              size={48}
-              color={colors.textLight}
-              style={{ marginBottom: spacing.md }}
-            />
-            <Text style={styles.emptyText}>Yükleniyor...</Text>
-          </View>
-        ) : showEmpty ? (
+        {combinedFeed.length > 0 ? (
+          combinedFeed.map((item) => (
+            <UnifiedCard key={`${item.type}-${item.id}`} item={item} />
+          ))
+        ) : (
           <View style={styles.emptyContainer}>
             <MaterialIcons
               name="inbox"
@@ -132,131 +106,59 @@ export default function HomeScreen() {
               style={{ marginBottom: spacing.md }}
             />
             <Text style={styles.emptyText}>
-              Henüz ilan bulunamadı veya sunucuya erişilemiyor.
+              {isLoading
+                ? "Yükleniyor..."
+                : "Henüz ilan bulunamadı veya sunucuya erişilemiyor."}
             </Text>
           </View>
-        ) : (
-          combinedFeed.map((item: any) => (
-            <UnifiedCard key={`${item.type}-${item.id}`} item={item} />
-          ))
         )}
       </ScrollView>
-
-      {/* BOTTOM BAR */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.bottomBarButton}>
-          <MaterialIcons name="home" size={24} color={colors.accent} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.bottomBarButton}
-          onPress={() => router.push("/messages")}
-        >
-          <MaterialIcons name="message" size={24} color={colors.inactive} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomBarButton}>
-          <MaterialIcons
-            name="favorite-border"
-            size={24}
-            color={colors.inactive}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.bottomBarButton}
-          onPress={() => router.push("/profile")}
-        >
-          <MaterialIcons
-            name="person-outline"
-            size={24}
-            color={colors.inactive}
-          />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
 
-// --- STYLES ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  fixedHeader: {
-    backgroundColor: colors.card,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
-    zIndex: 10,
-  },
-  topBarSafeArea: {
-    backgroundColor: colors.card,
-    paddingHorizontal: spacing.base,
-  },
-  topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: spacing.md,
-  },
-  logo: {
-    fontSize: fonts.size.xxl,
-    fontWeight: fonts.weight.bold,
-    color: colors.accent,
-  },
-  tagline: {
-    fontSize: fonts.size.xs,
-    color: colors.textLight,
-    marginTop: 2,
-  },
-  profileButton: {
-    padding: spacing.xs,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xxl * 3,
-    gap: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: fonts.size.xl,
-    fontWeight: fonts.weight.bold,
-    color: colors.text,
+  heroWrapper: {
+    height: 160,
+    borderBottomRightRadius: 28,
+    borderBottomLeftRadius: 28,
+    overflow: "hidden",
     marginBottom: spacing.sm,
-    paddingHorizontal: spacing.xs,
   },
-  bottomBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    height: 60,
-    backgroundColor: colors.card,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 20,
-    paddingBottom: 5,
-  },
-  bottomBarButton: {
+  heroBackground: {
     flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: spacing.xs,
+  },
+  heroSafe: {
+    width: "100%",
+    alignItems: "center",
+  },
+  heroContent: {
+    alignItems: "center",
+  },
+  heroLogo: {
+    fontSize: 36,
+    fontWeight: "900",
+    color: "#fff",
+    letterSpacing: 0.5,
+  },
+  heroTagline: {
+    fontSize: 14,
+    color: "#f0e6ff",
+    marginTop: 6,
+  },
+  feedContainer: {
+    paddingBottom: 80,
   },
   emptyContainer: {
-    padding: spacing.xxl,
     alignItems: "center",
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    marginTop: spacing.lg,
+    justifyContent: "center",
+    padding: spacing.xxl,
   },
   emptyText: {
     fontSize: fonts.size.base,

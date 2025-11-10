@@ -1,46 +1,47 @@
 // 🌍 Global API configuration for Odanet (shared by web + mobile)
+
 export const API_URL =
   process.env.NODE_ENV === "production"
     ? "https://www.odanet.com.tr"
-    : "http://localhost:5000";
+    : "https://www.odanet.com.tr"; // Always use live API for mobile (Expo tunnel can't access localhost)
 
 /**
- * Simple deterministic hash function for string distribution
+ * Simple deterministic hash function for generating consistent fallback image selections
  */
 function simpleHash(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = (hash << 5) - hash + str.charCodeAt(i);
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash);
 }
 
 /**
- * 🖼️ Ensures consistent absolute image URLs across platforms
- * Adds dynamic fallback photos for seekers without uploaded images.
- * 
- * @param path - Image path (relative or absolute)
- * @param type - Content type for fallback selection
+ * 🖼️ Normalizes image URLs across platforms
+ * Ensures proper absolute URLs and assigns dynamic fallback placeholders.
+ *
+ * @param path - Relative or absolute image path
+ * @param type - 'listing' | 'seeker' (used for fallback choice)
  * @param id - Unique ID for deterministic fallback selection
  */
 export function getImageUrl(
-  path?: string | null, 
-  type: "listing" | "seeker" = "listing", 
-  id?: string
+  path?: string | null,
+  type: "listing" | "seeker" = "listing",
+  id?: string,
 ): string {
-  // Already absolute URL
+  // 1️⃣ Already absolute (skip processing)
   if (path && (path.startsWith("http://") || path.startsWith("https://"))) {
     return path;
   }
 
-  // Relative path - normalize to absolute
+  // 2️⃣ Relative path — normalize to full absolute URL
   if (path) {
     const baseUrl = API_URL.replace(/\/api$/, ""); // Remove /api suffix if present
     return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   }
 
-  // Generate unique fallback photos based on seeker ID hash (ensures variety)
+  // 3️⃣ Dynamic fallback for seekers
   if (type === "seeker" && id) {
     const fallbackImages = [
       "https://cdn.odanet.com.tr/placeholders/seeker1.jpg",
@@ -53,16 +54,17 @@ export function getImageUrl(
     return fallbackImages[index];
   }
 
-  // Default fallback for listings or when no ID provided
-  return type === "seeker" 
+  // 4️⃣ Default placeholders
+  return type === "seeker"
     ? "https://cdn.odanet.com.tr/placeholders/seeker1.jpg"
     : "https://cdn.odanet.com.tr/placeholders/listing-default.jpg";
 }
 
 /**
- * Get API endpoint URL
- * @param path - API endpoint path (e.g., '/listings' or 'listings')
- * @returns Full API URL
+ * 🔗 Builds consistent API endpoint URLs for both web + mobile
+ *
+ * @param path - Endpoint path (e.g. '/listings' or 'seekers/public')
+ * @returns Full absolute API URL
  */
 export function getApiUrl(path: string): string {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;

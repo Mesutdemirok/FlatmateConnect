@@ -226,6 +226,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create seeker profile (photo required)
+  app.post("/api/seekers", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const data = insertSeekerProfileSchema.parse({ ...req.body, userId });
+      
+      // ✅ Enforce mandatory photo requirement
+      if (!data.profilePhotoUrl || data.profilePhotoUrl.trim() === "") {
+        return res.status(400).json({
+          message: "Profil fotoğrafı eklenmeden ilan yayınlanamaz.",
+        });
+      }
+      
+      // Generate slug from fullName + preferredLocation, fallback to userId
+      const slugParts = [
+        data.fullName || "",
+        data.preferredLocation || "",
+      ].filter(Boolean);
+      const slug = slugParts.length > 0 
+        ? makeSlug(slugParts) 
+        : makeSlug([userId]);
+      
+      // Default to unpublished (user must explicitly publish)
+      const profile = await storage.createSeekerProfile({ 
+        ...data, 
+        slug,
+        isPublished: false,
+      });
+      res.status(201).json(profile);
+    } catch (err: any) {
+      console.error("❌ Create seeker profile error:", err);
+      res.status(400).json({ 
+        message: err.message || "Profil oluşturulamadı" 
+      });
+    }
+  });
+
+  // Update seeker profile (photo required if changing)
+  app.put("/api/seekers/:id", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const profileId = req.params.id;
+      
+      // Verify ownership
+      const existing = await storage.getSeekerProfile(profileId);
+      if (!existing || existing.user.id !== userId) {
+        return res.status(404).json({ message: "Profil bulunamadı" });
+      }
+      
+      const data = insertSeekerProfileSchema.partial().parse(req.body);
+      
+      // If updating profilePhotoUrl, ensure it's not empty
+      if ("profilePhotoUrl" in data) {
+        if (!data.profilePhotoUrl || data.profilePhotoUrl.trim() === "") {
+          return res.status(400).json({
+            message: "Profil fotoğrafı boş olamaz.",
+          });
+        }
+      }
+      
+      // Re-generate slug if name or location changed
+      if (data.fullName || data.preferredLocation) {
+        const slugParts = [
+          data.fullName || existing.fullName || "",
+          data.preferredLocation || existing.preferredLocation || "",
+        ].filter(Boolean);
+        data.slug = slugParts.length > 0 ? makeSlug(slugParts) : existing.slug;
+      }
+      
+      const profile = await storage.updateSeekerProfile(profileId, data);
+      res.status(200).json(profile);
+    } catch (err: any) {
+      console.error("❌ Update seeker profile error:", err);
+      res.status(400).json({ 
+        message: err.message || "Profil güncellenemedi" 
+      });
+    }
+  });
+
   app.get("/api/users/:userId", jwtAuth, async (req, res) => {
     try {
       const user = await storage.getUser(req.params.userId);
@@ -278,6 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create listing (images uploaded separately afterward)
   app.post("/api/listings", jwtAuth, async (req, res) => {
     try {
       const userId = req.userId!;
@@ -285,8 +365,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const slug = makeSlug([data.title, data.address]);
       const listing = await storage.createListing({ ...data, slug });
       res.status(201).json(listing);
-    } catch {
-      res.status(400).json({ message: "İlan oluşturulamadı" });
+    } catch (err: any) {
+      console.error("❌ Create listing error:", err);
+      res.status(400).json({ 
+        message: err.message || "İlan oluşturulamadı" 
+      });
     }
   });
 
