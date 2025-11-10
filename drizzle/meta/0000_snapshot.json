@@ -1,5 +1,5 @@
 {
-  "id": "a96f8ac1-be5a-42b5-9843-35fac6d61154",
+  "id": "6212ecd3-cd9d-4240-81a1-a319106bb9ce",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -153,6 +153,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "title": {
+          "name": "title",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "address": {
           "name": "address",
           "type": "text",
@@ -165,21 +177,33 @@
           "primaryKey": false,
           "notNull": false
         },
+        "city_slug": {
+          "name": "city_slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "district": {
           "name": "district",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
         },
-        "title": {
-          "name": "title",
+        "district_slug": {
+          "name": "district_slug",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
-        "description": {
-          "name": "description",
-          "type": "text",
+        "neighborhood": {
+          "name": "neighborhood",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "neighborhood_slug": {
+          "name": "neighborhood_slug",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": false
         },
@@ -285,6 +309,12 @@
         "longitude": {
           "name": "longitude",
           "type": "numeric(10, 7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "images": {
+          "name": "images",
+          "type": "text[]",
           "primaryKey": false,
           "notNull": false
         },
