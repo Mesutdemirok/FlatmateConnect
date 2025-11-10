@@ -3,55 +3,59 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { colors, fonts, borderRadius, spacing } from "../theme";
-import { getImageUrl } from "../config"; // ✅ Fixed import path
+import { getImageUrl } from "../config";
 import { useState, useEffect } from "react";
 
-// Helpers: detect type
-const isListing = (item: any) => item?.type === "listing" || !!item?.rentAmount;
-const isSeeker = (item: any) =>
-  item?.type === "seeker" || !!item?.budget || !!item?.bio;
+// Helper: check if date is within N days
+const isWithinDays = (date: string | Date | undefined, days: number): boolean => {
+  if (!date) return false;
+  const d = new Date(date);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays < days;
+};
 
-export function UnifiedCard({ item }: { item: any }) {
+export function ListingCard({ listing }: { listing: any }) {
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
 
-  // Reset error state when item changes
+  // Reset error state when listing changes
   useEffect(() => {
     setImageError(false);
-  }, [item.id]);
+  }, [listing.id]);
 
-  // Navigation logic
-  const handlePress = () => {
-    if (isListing(item)) router.push(`/listing/${item.id}`);
-    else if (isSeeker(item)) router.push(`/seeker/${item.id}`);
-  };
+  // Determine badge text
+  let badge = null;
+  if (isWithinDays(listing.updatedAt, 7)) badge = "GÜNCELLEND İ";
+  else if (isWithinDays(listing.createdAt, 7)) badge = "YENİ";
 
-  // Image URL handling
-  const imageUri = isListing(item)
-    ? getImageUrl(item.images?.[0]?.imagePath, "listing", item.id)
-    : getImageUrl(item.profilePhotoUrl, "seeker", item.id);
+  // Get primary image
+  const primaryImage = listing.images?.find((img: any) => img.isPrimary) ?? listing.images?.[0];
+  const imageUri = getImageUrl(primaryImage?.imagePath, "listing", listing.id);
 
-  const title = isListing(item)
-    ? item.title
-    : `${item.user?.firstName || "İsimsiz"} ${item.user?.lastName || ""}`;
+  // Format location with fallback to address
+  const location = (() => {
+    const cityDistrict = [listing.district, listing.city].filter(Boolean).join(", ");
+    if (cityDistrict) return cityDistrict;
+    // Fallback: show first part of address (before comma or first 40 chars)
+    if (listing.address) {
+      const addressPart = listing.address.split(",")[0];
+      return addressPart.length > 40 ? addressPart.substring(0, 37) + "..." : addressPart;
+    }
+    return "";
+  })();
 
-  const subtitle = isListing(item)
-    ? item.address
-    : item.preferredAreas?.[0] || item.city || "";
-
-  const price = isListing(item)
-    ? `₺${parseFloat(item.rentAmount || 0).toLocaleString("tr-TR")}/ay`
-    : `₺${parseFloat(item.budget || 0).toLocaleString("tr-TR")}/ay bütçe`;
-
-  const label = isListing(item) ? "Oda İlanı" : "Oda Arkadaşı Arıyor";
+  // Format price
+  const amount = parseFloat(listing.rentAmount || 0);
 
   return (
     <TouchableOpacity
-      onPress={handlePress}
+      onPress={() => router.push(`/listing/${listing.id}`)}
       style={styles.card}
       activeOpacity={0.9}
     >
-      <View style={styles.imageWrapper}>
+      {/* HERO IMAGE */}
+      <View style={styles.imageContainer}>
         {!imageError ? (
           <Image
             source={{ uri: imageUri }}
@@ -61,50 +65,111 @@ export function UnifiedCard({ item }: { item: any }) {
           />
         ) : (
           <LinearGradient
-            colors={[colors.gradientStart, colors.gradientEnd]}
-            style={styles.placeholderContainer}
+            colors={["#7F00FF", "#E100FF"]}
+            style={styles.placeholder}
           >
-            <MaterialIcons
-              name="image-not-supported"
-              size={40}
-              color={colors.textWhite}
-            />
+            <Text style={styles.placeholderText}>Görsel bulunamadı</Text>
+          </LinearGradient>
+        )}
+
+        {/* NEW/UPDATED BADGE */}
+        {badge && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{badge}</Text>
+          </View>
+        )}
+
+        {/* BOTTOM WHITE OVERLAY */}
+        <View style={styles.overlay}>
+          <Text style={styles.title} numberOfLines={2}>
+            {listing.title}
+          </Text>
+
+          {location ? (
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={16} color="#009688" />
+              <Text style={styles.location} numberOfLines={1}>
+                {location}
+              </Text>
+            </View>
+          ) : null}
+
+          <Text style={styles.price}>
+            ₺{amount.toLocaleString("tr-TR")}
+            <Text style={styles.priceUnit}>/ay</Text>
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// Keep SeekerCard separate (from original UnifiedCard logic)
+export function SeekerCard({ seeker }: { seeker: any }) {
+  const router = useRouter();
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [seeker.id]);
+
+  const imageUri = getImageUrl(seeker.profilePhotoUrl, "seeker", seeker.id);
+  const title = `${seeker.user?.firstName || "İsimsiz"} ${seeker.user?.lastName || ""}`;
+  const subtitle = seeker.preferredLocation || seeker.city || "";
+  const price = `₺${parseFloat(seeker.budgetMonthly || 0).toLocaleString("tr-TR")}/ay bütçe`;
+
+  return (
+    <TouchableOpacity
+      onPress={() => router.push(`/seeker/${seeker.id}`)}
+      style={styles.card}
+      activeOpacity={0.9}
+    >
+      <View style={styles.imageContainer}>
+        {!imageError ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.image}
+            resizeMode="cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <LinearGradient
+            colors={["#7F00FF", "#E100FF"]}
+            style={styles.placeholder}
+          >
+            <MaterialIcons name="image-not-supported" size={40} color="#FFF" />
             <Text style={styles.placeholderText}>Görsel Yüklenemedi</Text>
           </LinearGradient>
         )}
 
-        {/* Top-right badge */}
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{label}</Text>
+        <View style={[styles.badge, { backgroundColor: "#6A1B9A" }]}>
+          <Text style={styles.badgeText}>Oda Arkadaşı Arıyor</Text>
         </View>
-      </View>
 
-      {/* Info */}
-      <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={2}>
-          {title}
-        </Text>
-
-        {subtitle ? (
-          <View style={styles.detailRow}>
-            <Ionicons
-              name="location-outline"
-              size={14}
-              color={colors.textLight}
-            />
-            <Text style={styles.address} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          </View>
-        ) : null}
-
-        <Text style={styles.price}>{price}</Text>
-
-        {isSeeker(item) && item.bio ? (
-          <Text style={styles.bio} numberOfLines={2}>
-            {item.bio}
+        <View style={styles.overlay}>
+          <Text style={styles.title} numberOfLines={2}>
+            {title}
           </Text>
-        ) : null}
+
+          {subtitle ? (
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={16} color="#009688" />
+              <Text style={styles.location} numberOfLines={1}>
+                {subtitle}
+              </Text>
+            </View>
+          ) : null}
+
+          <Text style={styles.price}>
+            {price}
+          </Text>
+
+          {seeker.about ? (
+            <Text style={styles.bio} numberOfLines={2}>
+              {seeker.about}
+            </Text>
+          ) : null}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -112,87 +177,96 @@ export function UnifiedCard({ item }: { item: any }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.sm,
-    marginBottom: spacing.md,
-    marginHorizontal: spacing.base,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  imageWrapper: {
-    borderRadius: borderRadius.md,
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    marginBottom: 16,
+    marginHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
     overflow: "hidden",
+  },
+  imageContainer: {
     position: "relative",
+    width: "100%",
   },
   image: {
     width: "100%",
     aspectRatio: 16 / 9,
   },
-  placeholderContainer: {
+  placeholder: {
     width: "100%",
     aspectRatio: 16 / 9,
     alignItems: "center",
     justifyContent: "center",
   },
   placeholderText: {
-    color: colors.textWhite,
-    fontSize: fonts.size.sm,
-    marginTop: 4,
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: 8,
   },
   badge: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: colors.accent,
-    borderRadius: borderRadius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    top: 12,
+    left: 12,
+    backgroundColor: "#009688",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   badgeText: {
-    color: "white",
-    fontSize: fonts.size.xs,
-    fontWeight: fonts.weight.medium,
+    color: "#FFF",
+    fontSize: 11,
+    fontWeight: "700",
   },
-  content: {
-    marginTop: spacing.sm,
-    gap: 4,
+  overlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 12,
+    right: 12,
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
-    fontSize: fonts.size.lg,
-    fontWeight: fonts.weight.semibold,
-    color: colors.text,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 8,
   },
-  detailRow: {
+  locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
+    marginBottom: 12,
   },
-  address: {
+  location: {
     fontSize: 14,
-    color: colors.textLight,
-    flexShrink: 1,
+    color: "#6B7280",
+    flex: 1,
   },
   price: {
-    fontSize: fonts.size.base,
+    fontSize: 24,
     fontWeight: "700",
-    color: colors.accent,
-    marginTop: 2,
+    color: "#6A1B9A",
+  },
+  priceUnit: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#6B7280",
   },
   bio: {
-    fontSize: fonts.size.sm,
-    color: colors.textLight,
+    fontSize: 14,
+    color: "#6B7280",
+    marginTop: 8,
   },
 });
-
-// ✅ Wrappers
-export function ListingCard({ listing }: { listing: any }) {
-  return <UnifiedCard item={listing} />;
-}
-
-export function SeekerCard({ seeker }: { seeker: any }) {
-  return <UnifiedCard item={seeker} />;
-}

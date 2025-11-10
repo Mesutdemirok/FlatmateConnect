@@ -1,8 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Heart, ShieldCheck, MapPin } from "lucide-react";
+import { Heart, MapPin } from "lucide-react";
 import { Link } from "wouter";
 import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,94 +9,89 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { formatCurrency } from "@/lib/formatters";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
 
-type AspectOpt = "16/9" | "4/3" | "16/10";
-
 interface ListingCardProps {
-  listing?: {
-    id?: string;
+  listing: {
+    id: string;
     slug?: string | null;
-    title?: string | null;
-    suburb?: string | null;
+    title: string;
+    city?: string | null;
+    district?: string | null;
     address?: string | null;
-    rentAmount?: string | number | null;
-    totalOccupants?: number | null;
-    roommatePreference?: string | null;
-    furnishingStatus?: string | null;
-    smokingPolicy?: string | null;
+    rentAmount: string | number;
     images?: Array<{ imagePath?: string; isPrimary?: boolean }>;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
     user?: { verificationStatus?: string | null };
   };
   isFavorited?: boolean;
-  imageAspect?: AspectOpt;
-  addressOverlay?: boolean;
 }
 
-const aspectClass = (a?: AspectOpt) =>
-  a === "4/3"
-    ? "aspect-[4/3]"
-    : a === "16/9"
-      ? "aspect-[16/9]"
-      : "aspect-[16/10]";
-
-const FALLBACK_IMG =
-  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=60";
+// Helper to check if date is within last N days
+const isWithinDays = (date: string | Date | undefined, days: number): boolean => {
+  if (!date) return false;
+  const d = new Date(date);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays < days;
+};
 
 export default function ListingCard({
   listing,
   isFavorited = false,
-  imageAspect = "16/10",
-  addressOverlay = false,
 }: ListingCardProps) {
-  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const id = listing?.id ?? "";
-  const title = (listing?.title ?? "İlan").toString();
-  const suburb = (listing?.suburb ?? "").toString();
-  const address = (listing?.address ?? "").toString();
-  const totalOccupants = listing?.totalOccupants;
-  const roommatePreference = listing?.roommatePreference;
-  const furnishingStatus = listing?.furnishingStatus;
-  const smokingPolicy = listing?.smokingPolicy;
-  const isVerified = listing?.user?.verificationStatus === "verified";
-
-  const amount = useMemo(() => {
-    const v = listing?.rentAmount;
-    if (typeof v === "string")
-      return Number(v.replace(/[^\d.,-]/g, "").replace(",", "."));
-    return Number(v ?? 0);
-  }, [listing?.rentAmount]);
-
-  const imgs =
-    Array.isArray(listing?.images) && listing?.images.length
-      ? listing!.images
-      : [{ imagePath: FALLBACK_IMG, isPrimary: true }];
-
-  const primary = imgs.find((i) => i?.isPrimary) ?? imgs[0];
-  const imageUrl = getAbsoluteImageUrl(primary?.imagePath || FALLBACK_IMG);
   const [favorite, setFavorite] = useState(isFavorited);
+  const [imageError, setImageError] = useState(false);
+
+  // Determine badge text
+  const badge = useMemo(() => {
+    if (isWithinDays(listing.updatedAt, 7)) return "GÜNCELLEND İ";
+    if (isWithinDays(listing.createdAt, 7)) return "YENİ";
+    return null;
+  }, [listing.createdAt, listing.updatedAt]);
+
+  // Get primary image
+  const primaryImage = listing.images?.find(img => img.isPrimary) ?? listing.images?.[0];
+  const imageUrl = getAbsoluteImageUrl(primaryImage?.imagePath || "");
+
+  // Format location with fallback to address
+  const location = useMemo(() => {
+    const cityDistrict = [listing.district, listing.city].filter(Boolean).join(", ");
+    if (cityDistrict) return cityDistrict;
+    // Fallback: show first part of address (before comma or first 40 chars)
+    if (listing.address) {
+      const addressPart = listing.address.split(",")[0];
+      return addressPart.length > 40 ? addressPart.substring(0, 37) + "..." : addressPart;
+    }
+    return "";
+  }, [listing.district, listing.city, listing.address]);
+
+  // Format price
+  const amount = useMemo(() => {
+    const v = listing.rentAmount;
+    if (typeof v === "string") return Number(v.replace(/[^\d.,-]/g, "").replace(",", "."));
+    return Number(v ?? 0);
+  }, [listing.rentAmount]);
 
   const toggleFavorite = useMutation({
     mutationFn: async () => {
-      if (!id) return;
-      if (favorite) await apiRequest("DELETE", `/api/favorites/${id}`);
-      else await apiRequest("POST", "/api/favorites", { listingId: id });
+      if (favorite) await apiRequest("DELETE", `/api/favorites/${listing.id}`);
+      else await apiRequest("POST", "/api/favorites", { listingId: listing.id });
     },
     onSuccess: () => {
-      setFavorite((f) => !f);
+      setFavorite(!favorite);
       queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
       toast({
-        title: favorite
-          ? t("success.removed_from_favorites")
-          : t("success.added_to_favorites"),
+        title: favorite ? "Favorilerden Çıkarıldı" : "Favorilere Eklendi",
       });
     },
     onError: (err) => {
       if (isUnauthorizedError(err)) {
         toast({
-          title: t("errors.unauthorized"),
+          title: "Giriş Gerekli",
           description: "Lütfen giriş yapın.",
           variant: "destructive",
         });
@@ -113,111 +106,75 @@ export default function ListingCard({
     },
   });
 
-  const listingUrl = listing?.slug
+  const listingUrl = listing.slug
     ? `/oda-ilani/${listing.slug}`
-    : id
-      ? `/oda-ilani/${id}`
-      : "#";
+    : `/oda-ilani/${listing.id}`;
 
   return (
     <Link href={listingUrl}>
-      <article className="group flex h-full w-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition hover:shadow-lg hover:-translate-y-[2px]">
-        {/* IMAGE AREA */}
-        <div className="relative w-full h-[180px] md:h-[220px] overflow-hidden">
-          <img
-            src={imageUrl}
-            alt={title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+      <article
+        data-testid={`card-listing-${listing.id}`}
+        className="group block overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+      >
+        {/* HERO IMAGE */}
+        <div className="relative w-full aspect-[16/9] overflow-hidden">
+          {!imageError ? (
+            <img
+              src={imageUrl}
+              alt={listing.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+              <p className="text-white text-sm font-medium">Görsel bulunamadı</p>
+            </div>
+          )}
 
-          {/* PRICE BADGE */}
-          <div className="absolute top-2 right-2 rounded-full bg-white/95 px-3 py-1 text-sm font-semibold text-indigo-700 shadow">
-            {formatCurrency(Number.isFinite(amount) ? amount : 0)}{" "}
-            <span className="text-xs text-indigo-600">/ay</span>
-          </div>
+          {/* NEW/UPDATED BADGE */}
+          {badge && (
+            <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-teal-500 text-white text-xs font-bold shadow-lg">
+              {badge}
+            </div>
+          )}
 
           {/* FAVORITE BUTTON */}
-          <Button
-            variant="secondary"
-            size="icon"
-            aria-label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"}
-            className="absolute left-2 top-2 h-10 w-10 rounded-full bg-orange-600 text-white hover:bg-orange-700 shadow ring-1 ring-white/50"
+          <button
+            data-testid={`button-favorite-${listing.id}`}
             onClick={(e) => {
               e.preventDefault();
-              if (!isAuthenticated) return (window.location.href = "/giris");
+              if (!isAuthenticated) {
+                window.location.href = "/giris";
+                return;
+              }
               toggleFavorite.mutate();
             }}
+            className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all hover:scale-110"
+            aria-label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"}
           >
             <Heart
-              className="h-5 w-5"
+              className={`w-5 h-5 ${favorite ? "fill-red-500 text-red-500" : "text-gray-700"}`}
               strokeWidth={2}
-              fill={favorite ? "currentColor" : "none"}
             />
-          </Button>
+          </button>
 
-          {/* VERIFIED ICON */}
-          {isVerified && (
-            <div className="absolute bottom-2 left-2 rounded-full bg-emerald-600/95 p-1.5 text-white shadow ring-1 ring-white/50">
-              <ShieldCheck className="h-4 w-4" />
+          {/* BOTTOM OVERLAY */}
+          <div className="absolute bottom-0 left-0 right-0 bg-white m-3 rounded-xl p-4 shadow-lg">
+            <h3 className="text-lg font-bold text-gray-900 line-clamp-2 mb-2">
+              {listing.title}
+            </h3>
+
+            {location && (
+              <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-3">
+                <MapPin className="w-4 h-4 text-teal-600" />
+                <span className="line-clamp-1">{location}</span>
+              </div>
+            )}
+
+            <div className="text-2xl font-bold text-purple-600">
+              ₺{formatCurrency(amount)}
+              <span className="text-base font-normal text-gray-600">/ay</span>
             </div>
-          )}
-
-          {/* ADDRESS OVERLAY */}
-          {addressOverlay && (address || suburb) && (
-            <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] sm:text-xs font-medium text-slate-700 shadow-sm ring-1 ring-black/5">
-              <MapPin className="w-3.5 h-3.5 text-violet-600" />
-              <span className="max-w-[14ch] truncate">{address || suburb}</span>
-            </div>
-          )}
-        </div>
-
-        {/* INFO AREA */}
-        <div className="flex flex-col flex-1 px-4 py-3 md:py-4">
-          <h3 className="text-[15px] sm:text-[17px] font-semibold text-slate-900 leading-snug line-clamp-2">
-            {title}
-          </h3>
-          {!addressOverlay && suburb && (
-            <p className="mt-0.5 text-[13px] sm:text-sm text-slate-600 truncate flex items-center gap-1">
-              <MapPin className="w-4 h-4 text-violet-500" />
-              {suburb}
-            </p>
-          )}
-
-          {/* ROOM INFO BADGES */}
-          {(totalOccupants || roommatePreference || furnishingStatus || smokingPolicy) && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {totalOccupants && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[11px] sm:text-xs font-medium">
-                  👥 {totalOccupants} kişi
-                </span>
-              )}
-              {furnishingStatus && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] sm:text-xs font-medium">
-                  {furnishingStatus === "Eşyalı" ? "🛋️ Eşyalı" : furnishingStatus === "Eşyasız" ? "📦 Eşyasız" : furnishingStatus === "Kısmen Eşyalı" ? "🛋️ Kısmen Eşyalı" : furnishingStatus}
-                </span>
-              )}
-              {roommatePreference && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 text-[11px] sm:text-xs font-medium">
-                  {roommatePreference === "Kadın" ? "Tercih: Kadın" : roommatePreference === "Erkek" ? "Tercih: Erkek" : "Tercih: Farketmez"}
-                </span>
-              )}
-              {smokingPolicy && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px] sm:text-xs font-medium">
-                  {smokingPolicy === "İçilmez" ? "🚭 İçilmez" : smokingPolicy === "İçilir" ? "🚬 İçilir" : "🤝 Farketmez"}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* CTA BUTTON */}
-          <div className="mt-auto pt-3">
-            <Button
-              asChild
-              className="w-full h-9 md:h-10 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg flex items-center justify-center transition"
-            >
-              <span>Detay Gör</span>
-            </Button>
           </div>
         </div>
       </article>

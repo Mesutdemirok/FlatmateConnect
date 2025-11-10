@@ -53,15 +53,19 @@ export const listings = pgTable("listings", {
   slug: varchar("slug").unique(),
   
   // Basic Information
-  address: text("address").notNull(),
-  city: varchar("city"), // İstanbul, Ankara, etc.
-  district: varchar("district"), // Kadıköy, Beşiktaş, etc.
   title: varchar("title").notNull(),
   description: text("description"), // Detailed listing description
+  address: text("address").notNull(),
+  city: varchar("city"), // İstanbul, Ankara, etc.
+  citySlug: varchar("city_slug"), // istanbul, ankara, etc.
+  district: varchar("district"), // Kadıköy, Beşiktaş, etc.
+  districtSlug: varchar("district_slug"), // kadikoy, besiktas, etc.
+  neighborhood: varchar("neighborhood"), // Moda, Cihangir, etc.
+  neighborhoodSlug: varchar("neighborhood_slug"), // moda, cihangir, etc.
   rentAmount: decimal("rent_amount", { precision: 8, scale: 2 }).notNull(), // Monthly rent
   deposit: decimal("deposit", { precision: 8, scale: 2 }), // Security deposit
   billsIncluded: boolean("bills_included").default(false), // Utilities included
-  excludedBills: text("excluded_bills").array().default(sql`ARRAY[]::text[]`), // Bills not included when billsIncluded is false
+  excludedBills: text("excluded_bills").array().default(sql`ARRAY[]::text[]`), // Bills not included
   
   // Property Details  
   propertyType: varchar("property_type"), // Rezidans/Apartman/Daire/Müstakil Ev/Diğer
@@ -85,6 +89,9 @@ export const listings = pgTable("listings", {
   // Location coordinates for map
   latitude: decimal("latitude", { precision: 10, scale: 7 }),
   longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  
+  // Legacy field (kept for compatibility)
+  images: text("images").array(), // Old image storage (replaced by listingImages relation)
   
   // System fields
   status: varchar("status").default('active'),
