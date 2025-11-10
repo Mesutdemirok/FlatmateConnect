@@ -7,6 +7,7 @@ import { dirname } from "path";
 import { registerRoutes } from "./routes";
 import uploadsRouter from "./routes/uploads";
 import proxyRouter from "./routes/proxy";
+import { pool } from "./db";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,6 +26,24 @@ app.get("/api/health", (_req, res) => {
     message: "Backend running fine ✅",
     timestamp: new Date().toISOString(),
   });
+});
+
+/* ---------------------------------------------------------
+   🔍 Diagnostics Endpoint
+   Verifies DB connection and data counts
+--------------------------------------------------------- */
+app.get("/api/_diag", async (_req, res) => {
+  try {
+    const r = await pool.query(`
+      select current_database() as db,
+             (select count(*) from listings) as listings,
+             (select count(*) from seeker_profiles) as seekers
+    `);
+    res.setHeader("Cache-Control", "no-store");
+    res.json(r.rows[0]);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 /* ---------------------------------------------------------

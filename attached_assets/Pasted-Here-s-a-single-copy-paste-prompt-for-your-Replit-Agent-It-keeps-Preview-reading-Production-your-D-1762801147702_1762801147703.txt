@@ -1,0 +1,65 @@
+Here’s a single copy-paste prompt for your Replit Agent. It keeps Preview reading Production (your DATABASE_URL change), stops Publish from trying to drop columns, and gets listings showing — no CSV imports.
+
+⸻
+
+Prompt for Replit Agent (paste exactly):
+
+Goal: Make listings visible and make Publish run with no destructive migrations. Keep Preview using Production DB safely (no migrations from app boot).
+
+Do exactly these steps:
+	1.	Guard migrations on app boot (Preview/Prod)
+	•	Search the codebase for any migrate(, drizzle.migrate, or custom migration runner.
+	•	Wrap it so it does nothing when process.env.SKIP_MIGRATIONS === "1":
+
+if (process.env.SKIP_MIGRATIONS !== "1") {
+  // existing migrate() call here
+}
+
+	•	In Secrets → App Secrets (both Preview & Production) set:
+	•	SKIP_MIGRATIONS=1
+
+	2.	Add a quick diagnostics route (server entry, before other routes):
+
+app.get("/api/_diag", async (_req, res) => {
+  try {
+    const r = await pool.query(`
+      select current_database() as db,
+             (select count(*) from listings) as listings,
+             (select count(*) from seeker_profiles) as seekers
+    `);
+    res.setHeader("Cache-Control", "no-store");
+    res.json(r.rows[0]);
+  } catch (e:any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+	•	Build and run Preview; open /api/_diag and confirm it shows Production DB name and non-zero counts.
+
+	3.	Make Development DB schema match Production (so Publish stops generating DROP COLUMN)
+	•	Open Resources → Databases → Development Database → SQL console and run exactly:
+
+-- Add only-if-missing columns seen in Publish warnings
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS description     text;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS deposit         numeric;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS move_in_date    date;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS min_stay_months integer;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS latitude        double precision;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS longitude       double precision;
+
+	•	Verify there are no errors.
+
+	4.	Ensure no file-based migrations can recreate the drop plan
+	•	If a /migrations or /drizzle folder exists with SQL migration files, leave it empty (or keep only metadata files). Do not add new migrations in this task.
+	5.	Republish
+	•	Click Publish. In the “Generated migrations” step it should show no DROP COLUMN actions.
+	•	Approve and finish Publish.
+	6.	Smoke test in Production
+	•	Visit https://www.odanent.com.tr/api/_diag → should show non-zero listings.
+	•	Visit homepage and confirm listing cards render. If cards exist but thumbnails 404, ensure we mount static uploads before any catch-all (separate task).
+	7.	Output back to chat
+	•	Paste the /api/_diag JSON for Preview and Production, and confirm the Publish step showed no drops.
+
+⸻
+
+If you want, I can also give the agent a separate micro-prompt to mount /uploads statically after this is green.
