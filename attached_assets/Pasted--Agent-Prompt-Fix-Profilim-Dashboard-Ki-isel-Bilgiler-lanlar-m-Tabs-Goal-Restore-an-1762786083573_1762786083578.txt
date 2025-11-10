@@ -1,0 +1,177 @@
+
+⸻
+
+🧠 Agent Prompt — Fix “Profilim” Dashboard (Kişisel Bilgiler + İlanlarım Tabs)
+
+Goal:
+Restore and improve the profile dashboard functionality on both web and mobile for logged-in users, including:
+	•	Displaying user’s listings (both “Oda İlanı” and “Oda Arama İlanı”) under “İlanlarım”.
+	•	Displaying editable personal information under “Kişisel Bilgiler”.
+	•	Ensuring correct API integration with authentication.
+
+⸻
+
+🔧 Files to Review / Update
+	•	Web frontend:
+/frontend/src/app/profil/page.tsx or /client/pages/profile/index.tsx
+Components under: /frontend/src/components/profile/
+	•	ProfileTabs.tsx
+	•	PersonalInfoForm.tsx
+	•	MyListingsSection.tsx
+	•	API:
+/server/routes/users.ts
+/server/routes/listings.ts
+/server/routes/seekers.ts
+
+⸻
+
+🧩 1) “Kişisel Bilgiler” Tab Fix
+
+Problem: Data not loading or edit form missing.
+Goal: Reconnect it to the authenticated user endpoint and re-enable editing.
+
+✅ Expected behavior
+	•	Fetch current user via /api/users/me
+	•	Show editable fields:
+	•	Ad / Soyad
+	•	E-posta
+	•	Telefon (optional)
+	•	Cinsiyet
+	•	Yaş
+	•	Profil fotoğrafı (upload + preview)
+	•	Save via PATCH /api/users/update
+	•	Show toast: “✅ Bilgileriniz başarıyla güncellendi.”
+
+🔧 Example Code Outline
+
+const { data: user, refetch } = useQuery(["me"], () => api.get("/users/me").then(r => r.data));
+
+const mutation = useMutation((formData) => api.patch("/users/update", formData), {
+  onSuccess: () => toast.success("Bilgileriniz başarıyla güncellendi."),
+});
+
+return (
+  <form onSubmit={handleSubmit(mutation.mutate)}>
+    <Input name="firstName" label="Ad" defaultValue={user?.firstName} />
+    <Input name="lastName" label="Soyad" defaultValue={user?.lastName} />
+    <Input name="email" label="E-posta" defaultValue={user?.email} disabled />
+    <Button type="submit">Kaydet</Button>
+  </form>
+);
+
+
+⸻
+
+🏠 2) “İlanlarım” Tab Fix
+
+Problem: “Henüz oda arama ilanınız yok” appears even if listings exist.
+Goal: Fetch both room and seeker listings by current user ID, display cards, and allow editing or deletion.
+
+✅ Expected behavior
+	1.	Fetch:
+
+GET /api/users/me/listings
+GET /api/users/me/seekers
+
+
+	2.	Display:
+	•	“Oda İlanlarım” → show listing cards (with edit & delete)
+	•	“Oda Arama İlanım” → show seeker profile card (if exists)
+	3.	Actions:
+	•	✏️ Edit → /oda-ilani/duzenle/:id
+	•	❌ Delete → confirmation → DELETE /api/listings/:id
+	•	➕ Add → /oda-ilani-ver
+
+🔧 Example structure
+
+const { data: myListings } = useQuery(["myListings"], () =>
+  api.get("/users/me/listings").then(r => r.data)
+);
+const { data: mySeeker } = useQuery(["mySeeker"], () =>
+  api.get("/users/me/seekers").then(r => r.data[0])
+);
+
+return (
+  <div className="myListingsSection">
+    <h3>Oda İlanlarım</h3>
+    {myListings?.length ? (
+      <ListingGrid listings={myListings} />
+    ) : (
+      <EmptyState
+        text="Henüz oda ilanınız yok."
+        actionLabel="Oda İlanı Ver"
+        actionHref="/oda-ilani-ver"
+      />
+    )}
+
+    <h3>Oda Arama İlanım</h3>
+    {mySeeker ? (
+      <SeekerCard seeker={mySeeker} />
+    ) : (
+      <EmptyState
+        text="Henüz oda arama ilanınız yok."
+        actionLabel="Oda Arama İlanı Ver"
+        actionHref="/oda-arama-ilani-ver"
+      />
+    )}
+  </div>
+);
+
+
+⸻
+
+🔐 3) API Endpoints (Backend Adjustments)
+
+Ensure these routes are implemented and return correct data for logged-in users:
+
+// users.ts
+router.get("/me", jwtAuth, async (req, res) => {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, req.user.id),
+    with: { listings: true, seekerProfiles: true },
+  });
+  res.json(user);
+});
+
+router.get("/me/listings", jwtAuth, async (req, res) => {
+  const listings = await db.query.listings.findMany({
+    where: eq(listings.userId, req.user.id),
+    orderBy: (l, { desc }) => [desc(l.createdAt)],
+  });
+  res.json(listings);
+});
+
+router.get("/me/seekers", jwtAuth, async (req, res) => {
+  const seekers = await db.query.seekerProfiles.findMany({
+    where: eq(seekerProfiles.userId, req.user.id),
+  });
+  res.json(seekers);
+});
+
+
+⸻
+
+🎨 4) Visuals & UI Polish
+	•	Keep Odanet purple gradient header consistent (linear-gradient(90deg, #6A1B9A, #8E24AA)).
+	•	Use rounded section boxes with subtle drop shadow.
+	•	Add tab animation (fade in/out when switching).
+	•	Show skeleton loaders during data fetch.
+
+⸻
+
+✅ Final Expected Outcome
+
+After fix:
+	•	Clicking “Kişisel Bilgiler” shows editable profile form.
+	•	Clicking “İlanlarım” displays:
+	•	all listings (cards with edit/delete buttons)
+	•	seeker profile card (if created)
+	•	All API calls authenticated with JWT.
+	•	Mobile and web mirror each other.
+	•	No empty-state errors when data exists.
+
+Success confirmation:
+
+“✅ Profil sayfası tam olarak çalışır hale getirildi — kişisel bilgiler düzenlenebiliyor, ilanlar görüntülenip düzenlenebiliyor.”
+
+⸻
