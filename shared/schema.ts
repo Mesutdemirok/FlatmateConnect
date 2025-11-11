@@ -154,7 +154,17 @@ export const seekerProfiles = pgTable("seeker_profiles", {
   // Search Preferences
   budgetMonthly: varchar("budget_monthly"), // Monthly budget (stored as string to avoid validation issues)
   about: text("about"), // Bio/description
-  preferredLocation: text("preferred_location"), // Single location preference
+  
+  // Location Preferences (structured)
+  city: varchar("city"), // İstanbul, Ankara, etc.
+  citySlug: varchar("city_slug"), // istanbul, ankara, etc.
+  district: varchar("district"), // Kadıköy, Beşiktaş, etc.
+  districtSlug: varchar("district_slug"), // kadikoy, besiktas, etc.
+  neighborhood: varchar("neighborhood"), // Moda, Cihangir, etc. (optional)
+  neighborhoodSlug: varchar("neighborhood_slug"), // moda, cihangir, etc. (optional)
+  
+  // @deprecated - Use city/district/neighborhood instead. Kept for backward compatibility during migration.
+  preferredLocation: text("preferred_location"), // Legacy single location preference
   
   // Personal Lifestyle (about the seeker)
   isSmoker: varchar("is_smoker"), // "true" | "false" - Whether the seeker smokes
@@ -294,16 +304,34 @@ export const insertListingImageSchema = createInsertSchema(listingImages).omit({
   createdAt: true,
 });
 
-export const insertSeekerProfileSchema = createInsertSchema(seekerProfiles).omit({
+// Base schema without refinement - used for updates
+const baseSeekerProfileSchema = createInsertSchema(seekerProfiles).omit({
   id: true,
   slug: true,
   createdAt: true,
   updatedAt: true,
 }).extend({
+  // Structured location fields
+  city: z.string().optional(),
+  citySlug: z.string().optional(),
+  district: z.string().optional(),
+  districtSlug: z.string().optional(),
+  neighborhood: z.string().optional(),
+  neighborhoodSlug: z.string().optional(),
+  // Legacy field - maintained for backward compatibility
   preferredLocation: z.string().regex(/^[\s\S]*$/).optional(),
   budgetMonthly: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
   age: z.union([z.string(), z.number()]).transform(val => Number(val)).optional(),
 });
+
+// Create schema with location validation - used for creation
+export const insertSeekerProfileSchema = baseSeekerProfileSchema.refine(
+  data => (data.city && data.district) || data.preferredLocation,
+  { message: "Either (city + district) or preferredLocation is required" }
+);
+
+// Update schema without refinement - allows partial updates
+export const updateSeekerProfileSchema = baseSeekerProfileSchema;
 
 export const insertSeekerPhotoSchema = createInsertSchema(seekerPhotos).omit({
   id: true,

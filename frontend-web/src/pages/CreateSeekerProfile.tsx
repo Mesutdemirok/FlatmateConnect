@@ -19,13 +19,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, User, Upload, Trash2 } from "lucide-react";
 import { z } from "zod";
+import { getCities, getDistricts, getNeighborhoods } from "@/lib/turkishLocations";
+import slugify from "slugify";
 
 const createSeekerSchema = z.object({
   fullName: z.string().min(3, 'Lütfen adınızı ve soyadınızı giriniz'),
   age: z.string().min(1, 'Lütfen yaşınızı giriniz'),
   gender: z.string().min(1, 'Lütfen cinsiyetinizi seçiniz'),
   occupation: z.string().min(1, 'Lütfen mesleğinizi giriniz'),
-  preferredLocation: z.string().min(3, 'Lütfen tercih ettiğiniz lokasyonu giriniz'),
+  // Structured location fields
+  city: z.string().min(1, 'Lütfen şehir seçiniz'),
+  district: z.string().min(1, 'Lütfen ilçe seçiniz'),
+  neighborhood: z.string().optional(),
   about: z.string().min(10, 'Lütfen kendiniz hakkında bilgi veriniz (en az 10 karakter)'),
   // ODANET Revizyon – Yaşam Tarzı
   isSmoker: z.string().optional(),
@@ -68,7 +73,9 @@ export default function CreateSeekerProfile() {
       age: '',
       gender: '',
       occupation: '',
-      preferredLocation: '',
+      city: '',
+      district: '',
+      neighborhood: '',
       about: '',
       isSmoker: '',
       hasPets: '',
@@ -78,6 +85,31 @@ export default function CreateSeekerProfile() {
     },
   });
 
+  // Watch city/district for cascading dropdowns
+  const selectedCity = form.watch('city');
+  const selectedDistrict = form.watch('district');
+  const [isFormHydrated, setIsFormHydrated] = useState(false);
+
+  // Get location data
+  const cities = getCities();
+  const districts = selectedCity ? getDistricts(selectedCity) : [];
+  const neighborhoods = selectedCity && selectedDistrict ? getNeighborhoods(selectedCity, selectedDistrict) : [];
+  
+  // Clear district when city changes (skip initial hydration)
+  useEffect(() => {
+    if (isFormHydrated) {
+      form.setValue('district', '');
+      form.setValue('neighborhood', '');
+    }
+  }, [selectedCity, form, isFormHydrated]);
+
+  // Clear neighborhood when district changes (skip initial hydration)
+  useEffect(() => {
+    if (isFormHydrated) {
+      form.setValue('neighborhood', '');
+    }
+  }, [selectedDistrict, form, isFormHydrated]);
+
   // Pre-populate form with existing data when editing
   useEffect(() => {
     if (existingProfile) {
@@ -86,7 +118,9 @@ export default function CreateSeekerProfile() {
         age: existingProfile.age?.toString() || '',
         gender: existingProfile.gender || '',
         occupation: existingProfile.occupation || '',
-        preferredLocation: existingProfile.preferredLocation || '',
+        city: existingProfile.city || '',
+        district: existingProfile.district || '',
+        neighborhood: existingProfile.neighborhood || '',
         about: existingProfile.about || '',
         isSmoker: existingProfile.isSmoker || '',
         hasPets: existingProfile.hasPets || '',
@@ -95,6 +129,11 @@ export default function CreateSeekerProfile() {
         petPreference: existingProfile.petPreference || '',
       });
       setExistingPhotoUrl(existingProfile.profilePhotoUrl || null);
+      // Mark form as hydrated after initial population
+      setTimeout(() => setIsFormHydrated(true), 0);
+    } else {
+      // For create mode, mark as hydrated immediately
+      setIsFormHydrated(true);
     }
   }, [existingProfile, form]);
 
@@ -123,7 +162,13 @@ export default function CreateSeekerProfile() {
         occupation: data.occupation,
         budgetMonthly: data.budgetMonthly,
         about: data.about,
-        preferredLocation: data.preferredLocation,
+        // Structured location fields
+        city: data.city,
+        citySlug: slugify(data.city, { lower: true, strict: true, locale: 'tr' }),
+        district: data.district,
+        districtSlug: slugify(data.district, { lower: true, strict: true, locale: 'tr' }),
+        neighborhood: data.neighborhood || '',
+        neighborhoodSlug: data.neighborhood ? slugify(data.neighborhood, { lower: true, strict: true, locale: 'tr' }) : '',
         isSmoker: data.isSmoker || undefined,
         hasPets: data.hasPets || undefined,
         smokingPreference: data.smokingPreference || 'no-preference',
@@ -592,16 +637,91 @@ export default function CreateSeekerProfile() {
                   )}
                 />
 
-                {/* Lokasyon */}
+                {/* Şehir */}
                 <FormField
                   control={form.control}
-                  name="preferredLocation"
+                  name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tercih Ettiğiniz Lokasyon *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="örn., Kadıköy, İstanbul" {...field} data-testid="input-preferredLocation" />
-                      </FormControl>
+                      <FormLabel>Şehir *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-city">
+                            <SelectValue placeholder="Şehir seçiniz" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {cities.map(city => (
+                            <SelectItem key={city} value={city} data-testid={`option-city-${city}`}>
+                              {city}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* İlçe */}
+                <FormField
+                  control={form.control}
+                  name="district"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>İlçe *</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value || ''}
+                        disabled={!selectedCity}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-district">
+                            <SelectValue placeholder={selectedCity ? "İlçe seçiniz" : "Önce şehir seçiniz"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {districts.map(district => (
+                            <SelectItem key={district} value={district} data-testid={`option-district-${district}`}>
+                              {district}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Mahalle (Optional) */}
+                <FormField
+                  control={form.control}
+                  name="neighborhood"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mahalle (Opsiyonel)</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value || ''}
+                        disabled={!selectedCity || !selectedDistrict}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-neighborhood">
+                            <SelectValue placeholder={
+                              selectedCity && selectedDistrict ? "Mahalle seçiniz" : 
+                              selectedCity ? "Önce ilçe seçiniz" : 
+                              "Önce şehir ve ilçe seçiniz"
+                            } />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {neighborhoods.map(neighborhood => (
+                            <SelectItem key={neighborhood} value={neighborhood} data-testid={`option-neighborhood-${neighborhood}`}>
+                              {neighborhood}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

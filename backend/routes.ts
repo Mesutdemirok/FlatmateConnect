@@ -10,6 +10,7 @@ import {
   insertFavoriteSchema,
   insertUserSchema,
   insertSeekerProfileSchema,
+  updateSeekerProfileSchema,
 } from "@shared/schema";
 import { getErrorMessage, detectLanguage } from "./i18n";
 import multer from "multer";
@@ -239,18 +240,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Generate slug from fullName + preferredLocation, fallback to userId
+      // Generate slug from fullName + location, fallback to userId
+      const locationPart = data.city || data.preferredLocation || "";
       const slugParts = [
         data.fullName || "",
-        data.preferredLocation || "",
+        locationPart,
       ].filter(Boolean);
       const slug = slugParts.length > 0 
         ? makeSlug(slugParts) 
         : makeSlug([userId]);
       
+      // Build preferredLocation string from structured fields for backward compatibility
+      const preferredLocation = data.city && data.district
+        ? [data.city, data.district, data.neighborhood].filter(Boolean).join(", ")
+        : data.preferredLocation || "";
+      
       // Default to unpublished (user must explicitly publish)
       const profile = await storage.createSeekerProfile({ 
-        ...data, 
+        ...data,
+        preferredLocation, // Populate both structured and legacy fields
         slug,
         isPublished: false,
       });
@@ -275,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profil bulunamadı" });
       }
       
-      const data = insertSeekerProfileSchema.partial().parse(req.body);
+      const data = updateSeekerProfileSchema.partial().parse(req.body);
       
       // If updating profilePhotoUrl, ensure it's not empty
       if ("profilePhotoUrl" in data) {
@@ -286,12 +294,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Re-generate slug if name or location changed
+      // Build preferredLocation string from structured fields for backward compatibility
       const updateData: any = { ...data };
-      if (data.fullName || data.preferredLocation) {
+      if (data.city && data.district) {
+        const preferredLocation = [data.city, data.district, data.neighborhood].filter(Boolean).join(", ");
+        updateData.preferredLocation = preferredLocation;
+      }
+      
+      // Re-generate slug if name or location changed
+      const locationPart = data.city || updateData.preferredLocation || existing.city || existing.preferredLocation || "";
+      if (data.fullName || data.city || data.preferredLocation) {
         const slugParts = [
           data.fullName || existing.fullName || "",
-          data.preferredLocation || existing.preferredLocation || "",
+          locationPart,
         ].filter(Boolean);
         updateData.slug = slugParts.length > 0 ? makeSlug(slugParts) : existing.slug;
       }

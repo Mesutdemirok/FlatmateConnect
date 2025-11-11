@@ -13,6 +13,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LocationPicker from "@/components/LocationPicker";
 import { getCities, getDistricts, getNeighborhoods } from "@/lib/turkishLocations";
+import slugify from "slugify";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -140,8 +141,11 @@ export default function CreateListing() {
         description: data.description,
         address: data.address,
         city: data.city,
+        citySlug: slugify(data.city, { lower: true, strict: true, locale: 'tr' }),
         district: data.district,
+        districtSlug: slugify(data.district, { lower: true, strict: true, locale: 'tr' }),
         neighborhood: data.neighborhood || '',
+        neighborhoodSlug: data.neighborhood ? slugify(data.neighborhood, { lower: true, strict: true, locale: 'tr' }) : '',
         latitude: latitude?.toString() || null,
         longitude: longitude?.toString() || null,
         rentAmount: data.rentAmount.toString(),
