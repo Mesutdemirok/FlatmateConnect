@@ -93,6 +93,9 @@ function Router() {
       <Route path="/ilan-olustur">
         <ProtectedRoute component={CreateListing} path="/ilan-olustur" />
       </Route>
+      <Route path="/oda-ilani-olustur">
+        <ProtectedRoute component={CreateListing} path="/oda-ilani-olustur" />
+      </Route>
       <Route path="/ilan-duzenle/:id">
         <ProtectedRoute component={EditListing} path="/ilan-duzenle/:id" />
       </Route>
