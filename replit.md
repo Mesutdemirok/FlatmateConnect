@@ -28,6 +28,9 @@ The platform prioritizes a mobile-first design with consistent branding. The web
 - **Configuration**: A centralized `config.ts` manages `API_URL`, `getImageUrl()` for image path normalization, and `getApiUrl()` for endpoint URL construction. Shared environment variables are defined in `.env.shared`.
 - **Authentication**: JWT-based authentication supports both Google OAuth and email/password, with secure cookies set for `.odanet.com.tr`. Mobile authentication uses SecureStore for token persistence.
 - **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing. Cloudflare R2 serves as the CDN. All uploads require JWT authentication and ownership verification. Mandatory image validation is in place for seeker profiles and listings.
+- **Turkish Location System**: Integrated `turkey-neighbourhoods` NPM package provides comprehensive Turkish location data (81 cities, 973 districts, 50,000+ neighborhoods). The CreateListing and CreateSeekerProfile forms use cascading dropdowns for city/district/neighborhood selection, ensuring data consistency and user-friendly location input.
+- **Interactive Map Picker**: Implemented with `@vis.gl/react-google-maps` (Google's official React Maps library). The LocationPicker component features draggable markers, reverse geocoding (coordinates → address), and automatic address population. Users can select precise locations on an interactive map, with Google Geocoding API integration for address validation.
+- **Geocoding Integration**: Google Maps Geocoding API converts user-selected map coordinates to formatted addresses automatically. The system supports both forward (address → lat/lng) and reverse (lat/lng → address) geocoding, with fallback handling for missing or incomplete location data. API key is stored securely as `VITE_GOOGLE_MAPS_API_KEY`.
 - **SEO**: Implemented with React Helmet for dynamic meta tags, Open Graph, and Twitter card generation. Slugs are generated for listings and seeker profiles. A sitemap.xml and rss.xml are dynamically generated, and `robots.txt` is configured. 301 redirects handle legacy UUID-based URLs.
 - **Mobile Build System**: EAS (Expo Application Services) is configured for Android and iOS.
 - **Image Fallback System**: `getImageUrl()` provides deterministic CDN-hosted placeholders for seekers and listings without images, using a robust hash function. Graceful degradation includes gradient placeholders for failed image loads.
@@ -75,6 +78,8 @@ The system uses a modular schema with foreign key relationships. Backend fallbac
 - **react-markdown**: Markdown rendering.
 - **remark-gfm**: GitHub-flavored Markdown support.
 - **vite-plugin-node-polyfills**: Browser polyfills.
+- **turkey-neighbourhoods**: Comprehensive Turkish location data (cities, districts, neighborhoods).
+- **@vis.gl/react-google-maps**: Google Maps integration for React with geocoding support.
 
 ### Cloud Services
 - **Cloudflare R2**: Object storage for images.
