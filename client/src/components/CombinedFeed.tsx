@@ -49,8 +49,6 @@ export default function CombinedFeed() {
               <ListingCard
                 key={`l-${item.data.id}-${idx}`}
                 listing={item.data}
-                imageAspect="4/3"
-                addressOverlay
               />
             ) : (
               <SeekerCard
