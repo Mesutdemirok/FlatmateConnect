@@ -287,15 +287,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Re-generate slug if name or location changed
+      const updateData: any = { ...data };
       if (data.fullName || data.preferredLocation) {
         const slugParts = [
           data.fullName || existing.fullName || "",
           data.preferredLocation || existing.preferredLocation || "",
         ].filter(Boolean);
-        data.slug = slugParts.length > 0 ? makeSlug(slugParts) : existing.slug;
+        updateData.slug = slugParts.length > 0 ? makeSlug(slugParts) : existing.slug;
       }
       
-      const profile = await storage.updateSeekerProfile(profileId, data);
+      const profile = await storage.updateSeekerProfile(profileId, updateData);
       res.status(200).json(profile);
     } catch (err: any) {
       console.error("❌ Update seeker profile error:", err);
