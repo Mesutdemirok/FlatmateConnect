@@ -10,12 +10,18 @@ Preferred communication style: Simple, everyday language.
 
 ### Phase 8: Deployment Migration Fix and Diagnostics (Latest)
 - **Critical Fix**: Restored corrupted server/routes.ts file from git history after accidental overwrite.
-- **TypeScript Fix**: Fixed slug property type error in seeker profile update endpoint by properly handling partial schema updates.
+- **TypeScript Fixes**: 
+  - Fixed slug property type error in seeker profile update endpoint by properly handling partial schema updates
+  - Removed invalid props (imageAspect, addressOverlay) from CombinedFeed.tsx ListingCard usage
 - **Migration Cleanup**: Removed all migration folders (drizzle/ and migrations/) to prevent "stage already exists" validation errors during deployment.
-- **Database Sync**: Synced Development DB schema with Production by adding missing columns (description, deposit, move_in_date, min_stay_months, latitude, longitude) via SQL ALTER TABLE.
+- **Database Schema Sync**: 
+  - Added missing columns to both Development and Production databases via SQL ALTER TABLE
+  - Columns added: description, deposit, move_in_date, min_stay_months, latitude, longitude
+  - Both databases now fully synchronized with shared/schema.ts
 - **Diagnostics Endpoint**: Added /api/_diag endpoint that returns database name, listing count, and seeker count for deployment verification.
+- **Homepage Fix**: Resolved "column does not exist" errors preventing listings from displaying - all 28 listings now visible in CombinedFeed.
 - **Deployment Ready**: All migration validation errors resolved, zero destructive SQL operations, Production and Development schemas fully synchronized.
-- **Status**: Production-ready with 28 listings and 14 seekers verified via diagnostics endpoint.
+- **Status**: Production-ready with 28 listings and 14 seekers verified and displaying correctly.
 
 ### Phase 7: Complete Turkish Localization and Color-Enhanced Cards
 - **Database Schema Fix**: Added missing Phase 4 columns (description, deposit, move_in_date, min_stay_months, city/district/neighborhood, latitude/longitude) to production database, resolving "column does not exist" errors that prevented listings from displaying.
