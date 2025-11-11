@@ -20,8 +20,13 @@ Preferred communication style: Simple, everyday language.
   - Both databases now fully synchronized with shared/schema.ts
 - **Diagnostics Endpoint**: Added /api/_diag endpoint that returns database name, listing count, and seeker count for deployment verification.
 - **Homepage Fix**: Resolved "column does not exist" errors preventing listings from displaying - all 28 listings now visible in CombinedFeed.
+- **Bug Fixes (Nov 11)**:
+  - Fixed Expo mobile app crash by removing duplicate @types/react from devDependencies (resolved version conflict 19.2.2 vs ~19.1.10)
+  - Removed excessive console.log statements from authentication middleware and frontend auth code (security and performance improvement)
+  - Removed Google News subscription script from client/index.html that was causing CORS errors in browser console
+  - All workflows now running cleanly without warnings or console spam
 - **Deployment Ready**: All migration validation errors resolved, zero destructive SQL operations, Production and Development schemas fully synchronized.
-- **Status**: Production-ready with 28 listings and 14 seekers verified and displaying correctly.
+- **Status**: Production-ready with 28 listings and 14 seekers verified and displaying correctly. Both web and mobile workflows running without errors.
 
 ### Phase 7: Complete Turkish Localization and Color-Enhanced Cards
 - **Database Schema Fix**: Added missing Phase 4 columns (description, deposit, move_in_date, min_stay_months, city/district/neighborhood, latitude/longitude) to production database, resolving "column does not exist" errors that prevented listings from displaying.
