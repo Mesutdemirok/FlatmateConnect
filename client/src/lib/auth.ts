@@ -92,43 +92,25 @@ export async function logout(): Promise<void> {
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const token = getToken();
-  
-  console.log('🔍 getCurrentUser called:', {
-    hasLocalStorageToken: !!token,
-    timestamp: new Date().toISOString()
-  });
 
   try {
-    // Send request with credentials to include cookies (OAuth uses httpOnly cookie)
     const response = await fetch('/api/auth/me', {
       headers: token ? {
         'Authorization': `Bearer ${token}`,
       } : {},
-      credentials: 'include', // Always include cookies
-    });
-
-    console.log('📡 /api/auth/me response:', {
-      status: response.status,
-      ok: response.ok
+      credentials: 'include',
     });
 
     if (!response.ok) {
       if (response.status === 401) {
-        console.log('❌ Unauthorized (401) - clearing localStorage token');
         removeToken();
       }
       return null;
     }
 
     const user = await response.json();
-    console.log('✅ User fetched successfully:', {
-      userId: user.id,
-      email: user.email
-    });
-    
     return user;
   } catch (error) {
-    console.error('❌ Get current user error:', error);
     removeToken();
     return null;
   }
