@@ -333,7 +333,8 @@ export const insertUserSchema = createInsertSchema(users)
     password: z.string().min(8, "Şifre en az 8 karakter olmalıdır"),
   });
 
-export const insertSeekerProfileSchema = createInsertSchema(seekerProfiles)
+// Base schema for seeker profiles (without refinement)
+const baseSeekerProfileSchema = createInsertSchema(seekerProfiles)
   .omit({ id: true, slug: true, createdAt: true, updatedAt: true })
   .extend({
     city: z.string().optional(),
@@ -343,16 +344,16 @@ export const insertSeekerProfileSchema = createInsertSchema(seekerProfiles)
       .union([z.string(), z.number()])
       .transform((v) => String(v))
       .optional(),
-  })
+  });
+
+// Insert schema with location validation
+export const insertSeekerProfileSchema = baseSeekerProfileSchema
   .refine((d) => (d.city && d.district) || d.preferredLocation, {
     message: "Either (city + district) or preferredLocation is required",
   });
 
-export const updateSeekerProfileSchema = z
-  .object({
-    ...insertSeekerProfileSchema.shape,
-  })
-  .partial();
+// Update schema without refinement (allows partial updates)
+export const updateSeekerProfileSchema = baseSeekerProfileSchema.partial();
 
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
