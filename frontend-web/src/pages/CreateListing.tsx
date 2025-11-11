@@ -20,21 +20,46 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Loader2, Home, Upload } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Loader2, Home, Upload, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { tr } from "date-fns/locale";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 
 const createListingSchema = z.object({
-  address: z.string().min(5, 'Lütfen geçerli bir adres giriniz'),
+  // Basic Information
   title: z.string().min(10, 'Başlık en az 10 karakter olmalıdır'),
+  description: z.string().min(50, 'Açıklama en az 50 karakter olmalıdır'),
+  
+  // Location
+  address: z.string().min(5, 'Lütfen geçerli bir adres giriniz'),
+  city: z.string().min(2, 'Şehir gereklidir'),
+  district: z.string().min(2, 'İlçe gereklidir'),
+  neighborhood: z.string().optional(),
+  
+  // Pricing & Terms
   rentAmount: z.coerce.number().positive('Kira tutarı 0\'dan büyük olmalıdır'),
+  deposit: z.coerce.number().nonnegative('Depozito 0 veya daha büyük olmalıdır'),
+  moveInDate: z.date({
+    required_error: "Taşınma tarihi gereklidir",
+  }),
+  minStayMonths: z.coerce.number().int().positive('Minimum kalış süresi en az 1 ay olmalıdır'),
+  
+  // Bills & Utilities
   billsIncluded: z.enum(['yes', 'no']),
   excludedBills: z.array(z.string()).optional().default([]),
+  
+  // Property Details
   propertyType: z.string().min(1, 'Lütfen konut tipini seçiniz'),
   internetIncluded: z.enum(['yes', 'no']),
   totalRooms: z.coerce.number().int().positive('Oda sayısı 0\'dan büyük olmalıdır'),
   bathroomType: z.string().min(1, 'Lütfen banyo tipini seçiniz'),
   furnishingStatus: z.string().min(1, 'Lütfen eşya durumunu seçiniz'),
   amenities: z.array(z.string()).default([]),
+  
+  // Roommate Preferences
   totalOccupants: z.coerce.number().int().positive('Kişi sayısı 0\'dan büyük olmalıdır'),
   roommatePreference: z.string().min(1, 'Lütfen ev arkadaşı tercihinizi seçiniz'),
   smokingPolicy: z.string().min(1, 'Lütfen sigara politikasını seçiniz'),
@@ -54,9 +79,16 @@ export default function CreateListing() {
   const form = useForm<CreateListingFormData>({
     resolver: zodResolver(createListingSchema),
     defaultValues: {
-      address: '',
       title: '',
+      description: '',
+      address: '',
+      city: '',
+      district: '',
+      neighborhood: '',
       rentAmount: 0,
+      deposit: 0,
+      moveInDate: undefined,
+      minStayMonths: 3,
       billsIncluded: 'no',
       excludedBills: [],
       propertyType: '',
@@ -93,9 +125,16 @@ export default function CreateListing() {
     mutationFn: async (data: CreateListingFormData) => {
       const response = await apiRequest('POST', '/api/listings', {
         userId: user?.id,
-        address: data.address,
         title: data.title,
+        description: data.description,
+        address: data.address,
+        city: data.city,
+        district: data.district,
+        neighborhood: data.neighborhood || '',
         rentAmount: data.rentAmount.toString(),
+        deposit: data.deposit.toString(),
+        moveInDate: data.moveInDate.toISOString().split('T')[0],
+        minStayMonths: data.minStayMonths,
         billsIncluded: data.billsIncluded === 'yes',
         excludedBills: data.excludedBills || [],
         propertyType: data.propertyType,
@@ -266,7 +305,7 @@ export default function CreateListing() {
                       <FormLabel>1. İlan adresiniz nedir? *</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="örn., Kadıköy, İstanbul" 
+                          placeholder="örn., Caferağa Mahallesi, Moda Caddesi No:123" 
                           {...field} 
                           data-testid="input-address"
                         />
@@ -275,6 +314,63 @@ export default function CreateListing() {
                     </FormItem>
                   )}
                 />
+
+                {/* City, District, Neighborhood */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Şehir *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="İstanbul" 
+                            {...field} 
+                            data-testid="input-city"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="district"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>İlçe *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Kadıköy" 
+                            {...field} 
+                            data-testid="input-district"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="neighborhood"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mahalle</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Caferağa" 
+                            {...field} 
+                            data-testid="input-neighborhood"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 {/* 2. İlan başlığınız nedir? */}
                 <FormField
@@ -295,13 +391,36 @@ export default function CreateListing() {
                   )}
                 />
 
-                {/* 3. Aylık kira bedeli ne kadar? */}
+                {/* Description */}
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>3. İlan açıklaması *</FormLabel>
+                      <FormDescription>
+                        Odanızı ve evinizi detaylı bir şekilde tanıtın (min. 50 karakter)
+                      </FormDescription>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Örn: Kadıköy merkezde, denize yakın, ulaşımı kolay bir lokasyonda bulunan evimizde boş odamızı paylaşmak istiyoruz..."
+                          {...field}
+                          rows={5}
+                          data-testid="input-description"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 4. Aylık kira bedeli ne kadar? */}
                 <FormField
                   control={form.control}
                   name="rentAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>3. Aylık kira bedeli ne kadar? *</FormLabel>
+                      <FormLabel>4. Aylık kira bedeli ne kadar? *</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <span className="absolute left-3 top-2.5">₺</span>
@@ -319,7 +438,104 @@ export default function CreateListing() {
                   )}
                 />
 
-                {/* 4. Fiyata faturalar dahil mi? */}
+                {/* Deposit */}
+                <FormField
+                  control={form.control}
+                  name="deposit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>5. Depozito tutarı *</FormLabel>
+                      <FormDescription>
+                        Depozito yoksa 0 giriniz
+                      </FormDescription>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2.5">₺</span>
+                          <NumberInput 
+                            placeholder="0" 
+                            className="pl-8"
+                            value={field.value?.toString() || ''}
+                            onChange={(val) => field.onChange(parseFloat(val) || 0)}
+                            data-testid="input-deposit"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Move In Date */}
+                <FormField
+                  control={form.control}
+                  name="moveInDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>6. Taşınma tarihi *</FormLabel>
+                      <FormDescription>
+                        Oda ne zaman müsait olacak?
+                      </FormDescription>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                              data-testid="button-move-in-date"
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP", { locale: tr })
+                              ) : (
+                                <span>Tarih seçiniz</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date < new Date(new Date().setHours(0, 0, 0, 0))
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Minimum Stay */}
+                <FormField
+                  control={form.control}
+                  name="minStayMonths"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>7. Minimum kalış süresi (ay) *</FormLabel>
+                      <FormDescription>
+                        En az kaç ay kalmak istiyorsunuz?
+                      </FormDescription>
+                      <FormControl>
+                        <NumberInput 
+                          placeholder="3" 
+                          value={field.value?.toString() || ''}
+                          onChange={(val) => field.onChange(parseInt(val) || 0)}
+                          data-testid="input-min-stay"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 8. Fiyata faturalar dahil mi? */}
                 <FormField
                   control={form.control}
                   name="billsIncluded"
