@@ -7,30 +7,15 @@ export default function CombinedFeed() {
     queries: [
       {
         queryKey: ["/api/listings"],
-        queryFn: async () => {
-          const res = await fetch("/api/listings");
-          if (!res.ok) {
-            console.error(`Listings API error: ${res.status}`);
-            return [];
-          }
-          return res.json();
-        },
       },
       {
-        queryKey: ["/api/seekers/public"],
-        queryFn: async () => {
-          const res = await fetch("/api/seekers/public?isActive=true");
-          if (!res.ok) {
-            console.error(`Seekers API error: ${res.status}`);
-            return [];
-          }
-          return res.json();
-        },
+        queryKey: ["/api/seekers/public?isActive=true"],
       },
     ],
   });
 
   const [listingsQ, seekersQ] = results;
+  
   const listings = Array.isArray(listingsQ.data) ? listingsQ.data : [];
   const seekers = Array.isArray(seekersQ.data) ? seekersQ.data : [];
 
@@ -42,6 +27,7 @@ export default function CombinedFeed() {
     if (i < listings.length) mixed.push({ kind: "listing", data: listings[i] });
   }
 
+  // Check loading state FIRST, before checking if mixed is empty
   if (listingsQ.isLoading || seekersQ.isLoading) {
     return <div className="py-8 text-center text-slate-600">Yükleniyor…</div>;
   }
@@ -51,8 +37,15 @@ export default function CombinedFeed() {
       listingsError: listingsQ.error, 
       seekersError: seekersQ.error 
     });
+    // Return error message instead of continuing
+    return (
+      <div className="py-8 text-center text-red-600">
+        Veriler yüklenirken hata oluştu. Lütfen sayfayı yenileyin.
+      </div>
+    );
   }
 
+  // Only check if empty AFTER we know data has loaded
   if (mixed.length === 0) {
     return (
       <div className="py-8 text-center text-slate-600">Henüz ilan yok</div>
