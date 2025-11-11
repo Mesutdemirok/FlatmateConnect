@@ -7,12 +7,25 @@ export default function CombinedFeed() {
     queries: [
       {
         queryKey: ["/api/listings"],
-        queryFn: async () => (await fetch("/api/listings")).json(),
+        queryFn: async () => {
+          const res = await fetch("/api/listings");
+          if (!res.ok) {
+            console.error(`Listings API error: ${res.status}`);
+            return [];
+          }
+          return res.json();
+        },
       },
       {
         queryKey: ["/api/seekers/public"],
-        queryFn: async () =>
-          (await fetch("/api/seekers/public?isActive=true")).json(),
+        queryFn: async () => {
+          const res = await fetch("/api/seekers/public?isActive=true");
+          if (!res.ok) {
+            console.error(`Seekers API error: ${res.status}`);
+            return [];
+          }
+          return res.json();
+        },
       },
     ],
   });
@@ -31,6 +44,13 @@ export default function CombinedFeed() {
 
   if (listingsQ.isLoading || seekersQ.isLoading) {
     return <div className="py-8 text-center text-slate-600">Yükleniyor…</div>;
+  }
+
+  if (listingsQ.isError || seekersQ.isError) {
+    console.error("Error fetching data:", { 
+      listingsError: listingsQ.error, 
+      seekersError: seekersQ.error 
+    });
   }
 
   if (mixed.length === 0) {
