@@ -142,6 +142,8 @@ export default function CreateListing() {
         city: data.city,
         district: data.district,
         neighborhood: data.neighborhood || '',
+        latitude: latitude?.toString() || null,
+        longitude: longitude?.toString() || null,
         rentAmount: data.rentAmount.toString(),
         deposit: data.deposit.toString(),
         moveInDate: data.moveInDate.toISOString().split('T')[0],

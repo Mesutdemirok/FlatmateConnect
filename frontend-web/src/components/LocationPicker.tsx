@@ -51,6 +51,7 @@ export default function LocationPicker({
   });
   const [address, setAddress] = useState<string>(initialAddress || '');
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -70,6 +71,7 @@ export default function LocationPicker({
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     
+    setHasUserInteracted(true);
     setPosition({ lat, lng });
     setIsGeocoding(true);
   };
@@ -78,7 +80,8 @@ export default function LocationPicker({
     setAddress(newAddress);
     setIsGeocoding(false);
     
-    if (onLocationSelect) {
+    // Only call onLocationSelect if user has actually interacted with the map
+    if (hasUserInteracted && onLocationSelect) {
       onLocationSelect(position.lat, position.lng, newAddress);
     }
   };
@@ -89,6 +92,7 @@ export default function LocationPicker({
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     
+    setHasUserInteracted(true);
     setPosition({ lat, lng });
     setIsGeocoding(true);
   };
