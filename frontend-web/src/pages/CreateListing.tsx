@@ -210,7 +210,8 @@ export default function CreateListing() {
         description: 'İlan başarıyla oluşturuldu.'
       });
       
-      setLocation(`/oda-ilani/${listing.id}`);
+      // Navigate using slug if available, otherwise fallback to id
+      setLocation(`/oda-ilani/${listing.slug || listing.id}`);
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
