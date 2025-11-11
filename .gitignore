@@ -1,13 +1,69 @@
-node_modules
-dist
-.DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+# Dependencies
+node_modules/
+vendor/
 
-# Database backups and sensitive data
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.shared
+*.env
+
+# Build outputs
+dist/
+coverage/
+.next/
+tmp/
+temp/
+.cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
 *.sql
 !scripts/*.sql
 !migrations/*.sql
-server/backups/
+backend/backups/
+
+# Uploads & Storage
 uploads/
+*.bak
+
+# Mobile (Expo)
+.expo/
+.expo-shared/
+*.expo
+mobile-app/.expo/
+mobile-app/android/
+mobile-app/ios/
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Replit
+.replit
+.upm/
+.config/
+
+# Testing
+test-results/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Build artifacts
+*.tsbuildinfo

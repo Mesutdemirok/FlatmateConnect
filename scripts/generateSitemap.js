@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename);
 
 const SITE_URL = "https://www.odanet.com.tr";
 const BLOG_DIR = path.join(__dirname, "../src/content/blog");
-const PUBLIC_DIR = path.join(__dirname, "../client/public");
+const PUBLIC_DIR = path.join(__dirname, "../public");
 
 // ------------------------------
 // 🧩 BLOG POSTS (Markdown)

@@ -45,10 +45,10 @@ async function verifyAPI() {
     const fs = await import('fs');
     const path = await import('path');
     
-    // Check for .env files
+    // Check for .env files in new monorepo structure
     const envPaths = [
-      'client/.env.local',
-      'client/.env',
+      'frontend-web/.env.local',
+      'frontend-web/.env',
       '.env.shared'
     ];
     
@@ -64,7 +64,7 @@ async function verifyAPI() {
   // 4. Mobile .env check
   try {
     const fs = await import('fs');
-    const mobileConfigPath = "odanet-mobile/app.config.ts";
+    const mobileConfigPath = "mobile-app/app.config.ts";
     
     if (fs.existsSync(mobileConfigPath)) {
       const configContent = fs.readFileSync(mobileConfigPath, "utf-8");

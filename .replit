@@ -64,6 +64,10 @@ localPort = 43031
 externalPort = 8080
 
 [[ports]]
+localPort = 43219
+externalPort = 8099
+
+[[ports]]
 localPort = 46639
 externalPort = 6000
 
@@ -80,7 +84,7 @@ integrations = [
 expertMode = true
 
 [workflows]
-runButton = "Mobile App (Expo)"
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
@@ -99,12 +103,12 @@ args = "Start application"
 name = "Mobile App (Expo)"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd odanet-mobile && npx expo start --tunnel --clear"
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd mobile-app && npx expo start --tunnel --clear"
 
 [[workflows.workflow]]
 name = "Start application"

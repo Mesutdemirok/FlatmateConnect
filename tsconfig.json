@@ -1,8 +1,8 @@
 {
   "include": [
-    "client/src/**/*",
+    "frontend-web/src/**/*",
     "shared/**/*",
-    "server/**/*"
+    "backend/**/*"
   ],
   "exclude": [
     "node_modules",
@@ -33,7 +33,7 @@
     ],
     "paths": {
       "@/*": [
-        "./client/src/*"
+        "./frontend-web/src/*"
       ],
       "@shared/*": [
         "./shared/*"
