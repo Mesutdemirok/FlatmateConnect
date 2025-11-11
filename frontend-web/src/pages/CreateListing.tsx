@@ -11,6 +11,8 @@ import { apiRequest, getAuthHeaders } from "@/lib/queryClient";
 import NumberInput from "@/components/forms/NumberInput";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LocationPicker from "@/components/LocationPicker";
+import { getCities, getDistricts, getNeighborhoods } from "@/lib/turkishLocations";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -75,6 +77,8 @@ export default function CreateListing() {
   const [, setLocation] = useLocation();
   const [images, setImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
 
   const form = useForm<CreateListingFormData>({
     resolver: zodResolver(createListingSchema),
@@ -103,8 +107,15 @@ export default function CreateListing() {
     },
   });
 
-  // Watch billsIncluded field to show/hide excluded bills
+  // Watch city/district for cascading dropdowns
+  const selectedCity = form.watch('city');
+  const selectedDistrict = form.watch('district');
   const billsIncluded = form.watch('billsIncluded');
+
+  // Get location data
+  const cities = getCities();
+  const districts = selectedCity ? getDistricts(selectedCity) : [];
+  const neighborhoods = selectedCity && selectedDistrict ? getNeighborhoods(selectedCity, selectedDistrict) : [];
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -296,38 +307,119 @@ export default function CreateListing() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* 1. İlan adresiniz nedir? */}
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>1. İlan adresiniz nedir? *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="örn., Caferağa Mahallesi, Moda Caddesi No:123" 
-                          {...field} 
-                          data-testid="input-address"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* 1. Location Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">1. Konum Bilgileri *</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Şehir *</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              form.setValue('district', '');
+                              form.setValue('neighborhood', '');
+                            }}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-city">
+                                <SelectValue placeholder="Şehir seçiniz" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {cities.map((city) => (
+                                <SelectItem key={city.code} value={city.name}>
+                                  {city.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                {/* City, District, Neighborhood */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="district"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>İlçe *</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              form.setValue('neighborhood', '');
+                            }}
+                            value={field.value}
+                            disabled={!selectedCity}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-district">
+                                <SelectValue placeholder="İlçe seçiniz" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {districts.map((district) => (
+                                <SelectItem key={district} value={district}>
+                                  {district}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="neighborhood"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mahalle</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={!selectedDistrict}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-neighborhood">
+                                <SelectValue placeholder="Mahalle seçiniz (opsiyonel)" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {neighborhoods.map((neighborhood) => (
+                                <SelectItem key={neighborhood} value={neighborhood}>
+                                  {neighborhood}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
                     control={form.control}
-                    name="city"
+                    name="address"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Şehir *</FormLabel>
+                        <FormLabel>Detaylı Adres *</FormLabel>
+                        <FormDescription>
+                          Sokak, cadde, bina numarası ve daire bilgisi
+                        </FormDescription>
                         <FormControl>
                           <Input 
-                            placeholder="İstanbul" 
+                            placeholder="örn., Moda Caddesi No: 123 D: 4" 
                             {...field} 
-                            data-testid="input-city"
+                            data-testid="input-address"
                           />
                         </FormControl>
                         <FormMessage />
@@ -335,41 +427,25 @@ export default function CreateListing() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="district"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>İlçe *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Kadıköy" 
-                            {...field} 
-                            data-testid="input-district"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="neighborhood"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mahalle</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Caferağa" 
-                            {...field} 
-                            data-testid="input-neighborhood"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Map Picker */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">
+                      Haritadan Konum Seçin (Opsiyonel)
+                    </Label>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Konumunuzu haritada işaretleyerek daha doğru sonuçlar alabilirsiniz
+                    </p>
+                    <LocationPicker
+                      onLocationSelect={(lat, lng, address) => {
+                        setLatitude(lat);
+                        setLongitude(lng);
+                        if (address && !form.getValues('address')) {
+                          form.setValue('address', address);
+                        }
+                      }}
+                      height="350px"
+                    />
+                  </div>
                 </div>
 
                 {/* 2. İlan başlığınız nedir? */}

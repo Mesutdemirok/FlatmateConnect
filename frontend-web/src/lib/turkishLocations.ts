@@ -1,57 +1,48 @@
-import turkeyData from 'turkey-neighbourhoods/data/core/index.json';
+import {
+  getCities as getTurkeyCities,
+  getDistrictsByCityCode,
+  getNeighbourhoodsByCityCodeAndDistrict,
+  cityCodes,
+  cityNames,
+} from 'turkey-neighbourhoods';
 
 export interface City {
   code: string;
   name: string;
 }
 
-export interface District {
-  name: string;
-  neighborhoods: string[];
-}
-
-export interface CityData {
-  name: string;
-  districts: Record<string, District>;
-}
-
-const typedTurkeyData = turkeyData as Record<string, CityData>;
-
 export function getCities(): City[] {
-  return Object.entries(typedTurkeyData)
-    .map(([code, data]) => ({
-      code,
-      name: data.name,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+  const codes = cityCodes();
+  const names = cityNames();
+  
+  return codes.map((code, index) => ({
+    code,
+    name: names[index],
+  })).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+}
+
+function getCityCodeByName(cityName: string): string | null {
+  const cities = getCities();
+  const city = cities.find(
+    (c) => c.name.toLowerCase() === cityName.toLowerCase()
+  );
+  return city?.code || null;
 }
 
 export function getDistricts(cityName: string): string[] {
-  const cityEntry = Object.values(typedTurkeyData).find(
-    (city) => city.name.toLowerCase() === cityName.toLowerCase()
-  );
+  const cityCode = getCityCodeByName(cityName);
+  if (!cityCode) return [];
 
-  if (!cityEntry) return [];
-
-  return Object.keys(cityEntry.districts).sort((a, b) =>
-    a.localeCompare(b, 'tr')
-  );
+  const districts = getDistrictsByCityCode(cityCode);
+  return Object.keys(districts).sort((a, b) => a.localeCompare(b, 'tr'));
 }
 
 export function getNeighborhoods(cityName: string, districtName: string): string[] {
-  const cityEntry = Object.values(typedTurkeyData).find(
-    (city) => city.name.toLowerCase() === cityName.toLowerCase()
-  );
+  const cityCode = getCityCodeByName(cityName);
+  if (!cityCode) return [];
 
-  if (!cityEntry) return [];
-
-  const district = Object.entries(cityEntry.districts).find(
-    ([name]) => name.toLowerCase() === districtName.toLowerCase()
-  );
-
-  if (!district) return [];
-
-  return district[1].neighborhoods.sort((a, b) => a.localeCompare(b, 'tr'));
+  const neighborhoods = getNeighbourhoodsByCityCodeAndDistrict(cityCode, districtName);
+  return neighborhoods.sort((a, b) => a.localeCompare(b, 'tr'));
 }
 
 export function validateLocation(
