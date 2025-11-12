@@ -62,22 +62,25 @@ const seekerUpload = multer({
 ------------------------------------------------------- */
 function getCookieOptions(req: express.Request) {
   const host = req.get("host") || "";
+  const origin = req.get("origin") || "";
   const isProduction = process.env.NODE_ENV === "production";
-  const isProductionDomain = host.includes("odanet.com.tr");
+  const isProductionDomain = host.includes("odanet.com.tr") || origin.includes("odanet.com.tr");
+  const isSecureContext = req.protocol === "https" || req.get("x-forwarded-proto") === "https";
   
-  // Use 'lax' for production to work better with redirects, 'none' for development with CORS
-  const sameSiteValue = (isProduction || isProductionDomain) ? "lax" : "none";
+  // For production HTTPS, use 'none' with Secure flag to allow cross-origin cookies
+  // For development or same-origin, use 'lax' for better security
+  const sameSiteValue = (isSecureContext && isProductionDomain) ? "none" : "lax";
   
   const cookieOptions = {
     httpOnly: true,
-    secure: isProduction || isProductionDomain || host.includes("replit"), // Always secure in production/replit
+    secure: isSecureContext || isProduction || isProductionDomain || host.includes("replit"),
     sameSite: sameSiteValue as "lax" | "none" | "strict",
-    domain: isProductionDomain ? ".odanet.com.tr" : undefined, // Cross-subdomain cookies for production
+    domain: isProductionDomain ? ".odanet.com.tr" : undefined, // Cross-subdomain cookies
     path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   };
   
-  console.log(`🍪 Cookie options for ${host}:`, cookieOptions);
+  console.log(`🍪 Cookie options for ${host} (origin: ${origin}, secure: ${isSecureContext}):`, cookieOptions);
   return cookieOptions;
 }
 
