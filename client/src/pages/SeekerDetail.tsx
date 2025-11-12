@@ -41,12 +41,16 @@ export default function SeekerDetail() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imgOk, setImgOk] = useState(true);
 
+  // Try to fetch by slug first, then fall back to ID
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug || '');
+  const endpoint = isUUID ? `/api/seekers/${slug}` : `/api/seekers/slug/${slug}`;
+
   const {
     data: seeker,
     isLoading,
     error,
   } = useQuery<SeekerProfileWithRelations>({
-    queryKey: [`/api/seekers/slug/${slug}`],
+    queryKey: [endpoint],
     enabled: !!slug,
   });
 

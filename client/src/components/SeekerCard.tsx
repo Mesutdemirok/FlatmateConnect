@@ -85,8 +85,8 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
   const { isAuthenticated } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // ✅ FIX: Use userId or id (not slug) for correct backend route
-  const seekerUrl = `/oda-arayan/${seeker.userId || seeker.id}`;
+  // Use slug if available, otherwise use id
+  const seekerUrl = `/oda-arayan/${seeker.slug || seeker.id}`;
 
   const name = nameOf(seeker);
   const budget = formatBudget(seeker.budgetMonthly);
@@ -95,7 +95,7 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
 
   // Get all photos
   const photos = useMemo(() => {
-    const allPhotos = [];
+    const allPhotos: string[] = [];
     if (seeker.profilePhotoUrl) {
       allPhotos.push(getAbsoluteImageUrl(seeker.profilePhotoUrl));
     }

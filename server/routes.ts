@@ -212,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get seeker by slug
+  // Get seeker by slug (must come before /:id to avoid shadowing)
   app.get("/api/seekers/slug/:slug", async (req, res) => {
     try {
       const seeker = await storage.getSeekerProfileBySlug(req.params.slug);
@@ -222,6 +222,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(seeker); // Return flat seeker object
     } catch (err: any) {
       console.error("❌ /api/seekers/slug/:slug error:", err);
+      res.status(500).json({ message: "Veritabanı hatası" });
+    }
+  });
+
+  // Get seeker by ID (PUBLIC) - UUID format only to avoid conflicts
+  app.get("/api/seekers/:id", async (req, res) => {
+    try {
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(req.params.id)) {
+        return res.status(400).json({ message: "Geçersiz ID formatı" });
+      }
+      
+      const seeker = await storage.getSeekerProfile(req.params.id);
+      if (!seeker || !seeker.isPublished || !seeker.isActive) {
+        return res.status(404).json({ message: "Profil bulunamadı" });
+      }
+      res.json(seeker);
+    } catch (err: any) {
+      console.error("❌ /api/seekers/:id error:", err);
       res.status(500).json({ message: "Veritabanı hatası" });
     }
   });
@@ -248,11 +268,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? makeSlug(slugParts) 
         : makeSlug([userId]);
       
-      // Default to unpublished (user must explicitly publish)
+      // Create profile with default values from schema (isActive: true, isPublished: true)
       const profile = await storage.createSeekerProfile({ 
         ...data, 
         slug,
-        isPublished: false,
       });
       res.status(201).json(profile);
     } catch (err: any) {
@@ -287,15 +306,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Re-generate slug if name or location changed
+      let updatedSlug: string | undefined;
       if (data.fullName || data.preferredLocation) {
         const slugParts = [
           data.fullName || existing.fullName || "",
           data.preferredLocation || existing.preferredLocation || "",
         ].filter(Boolean);
-        data.slug = slugParts.length > 0 ? makeSlug(slugParts) : existing.slug;
+        updatedSlug = slugParts.length > 0 ? makeSlug(slugParts) : (existing.slug ?? undefined);
       }
       
-      const profile = await storage.updateSeekerProfile(profileId, data);
+      const profile = await storage.updateSeekerProfile(profileId, { 
+        ...data,
+        ...(updatedSlug && { slug: updatedSlug })
+      });
       res.status(200).json(profile);
     } catch (err: any) {
       console.error("❌ Update seeker profile error:", err);
