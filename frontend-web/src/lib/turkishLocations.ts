@@ -4,7 +4,7 @@ import {
   getNeighbourhoodsByCityCodeAndDistrict,
   cityCodes,
   cityNames,
-} from 'turkey-neighbourhoods';
+} from "turkey-neighbourhoods";
 
 export interface City {
   code: string;
@@ -14,17 +14,19 @@ export interface City {
 export function getCities(): City[] {
   const codes = cityCodes();
   const names = cityNames();
-  
-  return codes.map((code, index) => ({
-    code,
-    name: names[index],
-  })).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+
+  return codes
+    .map((code, index) => ({
+      code,
+      name: names[index],
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "tr"));
 }
 
 function getCityCodeByName(cityName: string): string | null {
   const cities = getCities();
   const city = cities.find(
-    (c) => c.name.toLowerCase() === cityName.toLowerCase()
+    (c) => c.name.toLowerCase() === cityName.toLowerCase(),
   );
   return city?.code || null;
 }
@@ -34,25 +36,31 @@ export function getDistricts(cityName: string): string[] {
   if (!cityCode) return [];
 
   const districts = getDistrictsByCityCode(cityCode);
-  return Object.keys(districts).sort((a, b) => a.localeCompare(b, 'tr'));
+  return Object.keys(districts).sort((a, b) => a.localeCompare(b, "tr"));
 }
 
-export function getNeighborhoods(cityName: string, districtName: string): string[] {
+export function getNeighborhoods(
+  cityName: string,
+  districtName: string,
+): string[] {
   const cityCode = getCityCodeByName(cityName);
   if (!cityCode) return [];
 
-  const neighborhoods = getNeighbourhoodsByCityCodeAndDistrict(cityCode, districtName);
-  return neighborhoods.sort((a, b) => a.localeCompare(b, 'tr'));
+  const neighborhoods = getNeighbourhoodsByCityCodeAndDistrict(
+    cityCode,
+    districtName,
+  );
+  return neighborhoods.sort((a, b) => a.localeCompare(b, "tr"));
 }
 
 export function validateLocation(
   city: string,
   district?: string,
-  neighborhood?: string
+  neighborhood?: string,
 ): boolean {
   const cities = getCities();
   const cityExists = cities.some(
-    (c) => c.name.toLowerCase() === city.toLowerCase()
+    (c) => c.name.toLowerCase() === city.toLowerCase(),
   );
 
   if (!cityExists) return false;
@@ -60,7 +68,7 @@ export function validateLocation(
 
   const districts = getDistricts(city);
   const districtExists = districts.some(
-    (d) => d.toLowerCase() === district.toLowerCase()
+    (d) => d.toLowerCase() === district.toLowerCase(),
   );
 
   if (!districtExists) return false;
@@ -68,6 +76,6 @@ export function validateLocation(
 
   const neighborhoods = getNeighborhoods(city, district);
   return neighborhoods.some(
-    (n) => n.toLowerCase() === neighborhood.toLowerCase()
+    (n) => n.toLowerCase() === neighborhood.toLowerCase(),
   );
 }

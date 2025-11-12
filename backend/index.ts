@@ -79,19 +79,9 @@ app.use("/api/uploads", uploadsRouter);
 app.use("/api", proxyRouter);
 
 /* ---------------------------------------------------------
-   🌐 SPA Routing (Frontend)
-   Ensures non-API routes serve index.html
---------------------------------------------------------- */
-const distPath = path.join(__dirname, "../dist/public");
-app.use(express.static(distPath));
-
-// All non-API routes go to React SPA
-app.get(/^\/(?!api).*/, (_req, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
-});
-
-/* ---------------------------------------------------------
    🚀 Start Server
+   Note: Frontend serving is handled by registerRoutes() in backend/routes.ts
+   which calls either setupVite (dev) or serveStatic (prod)
 --------------------------------------------------------- */
 (async () => {
   try {

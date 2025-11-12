@@ -7,7 +7,7 @@
     "dev": "npx kill-port 5000 && NODE_ENV=development tsx backend/index.ts",
     "build": "vite build && node scripts/generateSitemap.js && esbuild backend/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "cross-env NODE_ENV=production node dist/index.js",
-    "deploy": "npm run build && node server.js",
+    "deploy": "npm run build && npm run start",
     "sitemap": "node scripts/generateSitemap.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
