@@ -8,7 +8,7 @@ packages = ["lsof", "yakut", "jq", "vlang", "file"]
 # ✅ Deployment Configuration (Autoscale Production)
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
+build = ["bash", "-c", "npm ci --legacy-peer-deps || npm install --legacy-peer-deps && npm run build"]
 run = ["npm", "start"]
 
 [[ports]]
