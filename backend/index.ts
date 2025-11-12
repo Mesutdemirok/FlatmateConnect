@@ -1,8 +1,10 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import path, { dirname } from "path";
+import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
+import { dirname } from "path";
 import { registerRoutes } from "./routes";
 import uploadsRouter from "./routes/uploads";
 import proxyRouter from "./routes/proxy";
@@ -17,13 +19,13 @@ const app = express();
    🩺 Health Checks
 --------------------------------------------------------- */
 app.get("/health", (_req, res) => res.status(200).send("ok"));
-app.get("/api/health", (_req, res) =>
+app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
     msg: "Backend running ✅",
     time: new Date().toISOString(),
-  }),
-);
+  });
+});
 
 /* ---------------------------------------------------------
    ⚙️ Middleware Setup
@@ -32,6 +34,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// Dynamic CORS configuration
 const corsOrigins = [
   "https://www.odanet.com.tr",
   "https://odanet.com.tr",
@@ -53,7 +56,7 @@ app.use(
       ) {
         callback(null, true);
       } else {
-        console.warn(`⚠️ CORS: temporarily allowing unknown origin ${origin}`);
+        console.warn(`⚠️ CORS: Allowing unexpected origin: ${origin}`);
         callback(null, true);
       }
     },
@@ -65,12 +68,35 @@ app.use(
 );
 
 /* ---------------------------------------------------------
-   📁 Static File Serving (uploads)
+   📁 Static File Serving (Frontend)
 --------------------------------------------------------- */
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+let publicPath = path.join(__dirname, "public");
+
+// Fallback path logic (handles Replit build directory structure)
+if (!fs.existsSync(path.join(publicPath, "index.html"))) {
+  publicPath = path.join(__dirname, "../public");
+}
+if (!fs.existsSync(path.join(publicPath, "index.html"))) {
+  publicPath = path.join(__dirname, "../dist/public");
+}
+
+console.log("🗂️ Serving static files from:", publicPath);
+
+app.use(express.static(publicPath));
+
+// ✅ Fallback route for React Router (serves SPA properly)
+app.get("*", (_req, res) => {
+  const indexFile = path.join(publicPath, "index.html");
+  if (fs.existsSync(indexFile)) {
+    res.sendFile(indexFile);
+  } else {
+    console.error("❌ index.html not found in:", publicPath);
+    res.status(500).send("Frontend build not found.");
+  }
+});
 
 /* ---------------------------------------------------------
-   🧩 API Routes (must be registered before frontend serving!)
+   🧩 API Routes
 --------------------------------------------------------- */
 app.use("/api/uploads", uploadsRouter);
 app.use("/api", proxyRouter);
@@ -80,21 +106,9 @@ app.use("/api", proxyRouter);
 --------------------------------------------------------- */
 (async () => {
   try {
-    // Register all API routes FIRST
     const server = await registerRoutes(app);
-    
-    // THEN serve frontend static files (after all API routes are registered)
-    const distPath = path.join(__dirname, "../dist/public");
-    app.use(express.static(distPath));
-    
-    // Catch-all route for SPA routing (must be LAST)
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-    
     const port = parseInt(process.env.PORT || "5000", 10);
     const host = "0.0.0.0";
-
     server.listen(port, host, () => {
       console.log("==========================================");
       console.log("✅ Odanet backend is now running!");
@@ -107,6 +121,16 @@ app.use("/api", proxyRouter);
     process.exit(1);
   }
 })();
+
+/* ---------------------------------------------------------
+   🔥 Global Crash Handlers
+--------------------------------------------------------- */
+process.on("uncaughtException", (err) => {
+  console.error("🔥 Uncaught Exception:", err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("🔥 Unhandled Promise Rejection:", reason);
+});
 
 /* ---------------------------------------------------------
    🛑 Global Error Handler
