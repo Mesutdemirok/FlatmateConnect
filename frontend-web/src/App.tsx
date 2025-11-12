@@ -6,8 +6,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { trackPageView } from "@/lib/analytics";
+
+// 🧭 Pages
 import NotFound from "@/pages/not-found";
-import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
 import SeekerList from "@/pages/SeekerList";
@@ -30,57 +31,70 @@ import GizlilikPolitikasi from "@/pages/GizlilikPolitikasi";
 import CerezPolitikasi from "@/pages/cerez-politikasi";
 import YardimMerkezi from "@/pages/yardim-merkezi";
 import GuvenliIlanRehberi from "@/pages/guvenli-ilan-rehberi";
-import "./i18n"; // Initialize i18n
 
-function ProtectedRoute({ component: Component, ...rest }: { component: () => JSX.Element; path?: string }) {
+import "./i18n"; // 🌐 Initialize translations
+
+/* ---------------------------------------------------------
+   🔒 Protected Route Wrapper
+--------------------------------------------------------- */
+function ProtectedRoute({
+  component: Component,
+  path,
+}: {
+  component: () => JSX.Element;
+  path?: string;
+}) {
   const { isAuthenticated, isLoading } = useAuth();
   const [location, navigate] = useLocation();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      const currentPath = rest.path || location;
+      const currentPath = path || location;
       navigate(`/giris?next=${encodeURIComponent(currentPath)}`);
     }
-  }, [isLoading, isAuthenticated, location, navigate, rest.path]);
+  }, [isLoading, isAuthenticated, location, navigate, path]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Yükleniyor...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-700">
+        Yükleniyor...
+      </div>
+    );
   }
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
+  if (!isAuthenticated) return null;
   return <Component />;
 }
 
+/* ---------------------------------------------------------
+   🌐 Main Router
+--------------------------------------------------------- */
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
   const [location] = useLocation();
 
-  // Track pageviews on route change (Google Analytics)
+  // Google Analytics pageview tracking
   useEffect(() => {
     trackPageView(location);
-  }, [location]);
-
-  // Scroll to top on route change
-  useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [location]);
 
   return (
     <Switch>
-      {/* Auth routes - Turkish URLs - Unified auth page */}
+      {/* Authentication Routes */}
       <Route path="/giris" component={Auth} />
       <Route path="/uye-ol" component={Auth} />
       <Route path="/auth" component={Auth} />
       <Route path="/auth/register" component={Auth} />
       <Route path="/auth/callback" component={AuthCallback} />
-      
-      {/* Home route - Same for all users */}
+
+      {/* Public Pages */}
       <Route path="/" component={Home} />
-      
-      {/* Protected routes - Turkish URLs */}
+      <Route path="/oda-ilanlari" component={Search} />
+      <Route path="/oda-aramalari" component={SeekerList} />
+      <Route path="/oda-ilani/:slug" component={ListingDetail} />
+      <Route path="/oda-arayan/:slug" component={SeekerDetail} />
+
+      {/* Protected User Pages */}
       <Route path="/profil">
         <ProtectedRoute component={Profile} path="/profil" />
       </Route>
@@ -90,6 +104,8 @@ function Router() {
       <Route path="/mesajlar/:userId">
         <ProtectedRoute component={Messages} path="/mesajlar/:userId" />
       </Route>
+
+      {/* ✅ Listing Creation Pages */}
       <Route path="/ilan-olustur">
         <ProtectedRoute component={CreateListing} path="/ilan-olustur" />
       </Route>
@@ -99,36 +115,41 @@ function Router() {
       <Route path="/ilan-duzenle/:id">
         <ProtectedRoute component={EditListing} path="/ilan-duzenle/:id" />
       </Route>
+
+      {/* ✅ Seeker (Room Search) Creation */}
       <Route path="/oda-arama-ilani-olustur">
-        <ProtectedRoute component={CreateSeekerProfile} path="/oda-arama-ilani-olustur" />
+        <ProtectedRoute
+          component={CreateSeekerProfile}
+          path="/oda-arama-ilani-olustur"
+        />
       </Route>
-      
-      {/* Public routes - Turkish URLs */}
-      <Route path="/oda-ilanlari" component={Search} />
-      <Route path="/oda-aramalari" component={SeekerList} />
-      <Route path="/oda-ilani/:slug" component={ListingDetail} />
-      <Route path="/oda-arayan/:slug" component={SeekerDetail} />
-      
-      {/* Blog routes */}
+
+      {/* Blog Routes */}
       <Route path="/blog" component={BlogList} />
       <Route path="/blog/:slug" component={BlogPost} />
-      
-      {/* Footer pages - Static content */}
+
+      {/* Static Info Pages */}
       <Route path="/hakkimizda" component={Hakkimizda} />
       <Route path="/iletisim" component={Iletisim} />
       <Route path="/kullanim-kosullari" component={KullanimKosullari} />
-      <Route path="/ilan-yayinlama-kurallari" component={IlanYayinlamaKurallari} />
+      <Route
+        path="/ilan-yayinlama-kurallari"
+        component={IlanYayinlamaKurallari}
+      />
       <Route path="/gizlilik-politikasi" component={GizlilikPolitikasi} />
       <Route path="/cerez-politikasi" component={CerezPolitikasi} />
       <Route path="/yardim-merkezi" component={YardimMerkezi} />
       <Route path="/guvenli-ilan-rehberi" component={GuvenliIlanRehberi} />
-      
-      {/* Fallback to 404 */}
+
+      {/* 404 Fallback */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
+/* ---------------------------------------------------------
+   🌍 Root App Wrapper
+--------------------------------------------------------- */
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
