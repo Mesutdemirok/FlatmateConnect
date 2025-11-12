@@ -9,7 +9,7 @@ packages = ["lsof", "yakut", "jq", "vlang", "file"]
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["node", "dist/index.js"]
+run = ["npm", "start"]
 
 [[ports]]
 localPort = 5000
@@ -52,10 +52,6 @@ localPort = 38891
 externalPort = 3003
 
 [[ports]]
-localPort = 39211
-externalPort = 8099
-
-[[ports]]
 localPort = 39463
 externalPort = 3000
 
@@ -64,12 +60,8 @@ localPort = 40181
 externalPort = 5000
 
 [[ports]]
-localPort = 43031
+localPort = 41063
 externalPort = 8080
-
-[[ports]]
-localPort = 43653
-externalPort = 9000
 
 [[ports]]
 localPort = 46639
@@ -81,7 +73,10 @@ PORT = "5000"
 
 # ✅ Replit Agent Config
 [agent]
-integrations = ["javascript_database:1.0.0", "javascript_log_in_with_replit:1.0.0"]
+integrations = [
+  "javascript_database:1.0.0",
+  "javascript_log_in_with_replit:1.0.0",
+]
 expertMode = true
 
 [workflows]
@@ -94,11 +89,22 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start application"
+args = "Mobile App (Expo)"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Mobile App (Expo)"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Mobile App (Expo)"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd odanet-mobile && npx expo start --tunnel --clear"
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[workflows.workflow]]
 name = "Start application"
@@ -111,15 +117,3 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
-
-[[workflows.workflow]]
-name = "Mobile App (Expo)"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd mobile-app && npm start"
-waitForPort = 8080
