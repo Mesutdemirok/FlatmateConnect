@@ -1,16 +1,28 @@
 modules = ["nodejs-20", "postgresql-16", "web"]
-hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+hidden = [".config", ".git", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["lsof", "jq", "vlang", "file"]
+packages = ["lsof", "jq", "file"]
 
-# ✅ Environment Variables
 [env]
 PORT = "5000"
-NODE_ENV = "development"
+NODE_ENV = "production"
 
-# ✅ Run Configuration
+# ✅ Replit uses this to run locally
+run = "node server.js"
+
+# ✅ Define how publishing should deploy your site
+[deployment]
+run = "npm run build && node server.js"
+deploymentTarget = "web"
+ignore = ["node_modules", "dist/public/assets/*.map"]
+
+# ✅ Define open port mapping
+[[ports]]
+localPort = 5000
+externalPort = 80
+
 [workflows]
 runButton = "Project"
 
@@ -18,13 +30,6 @@ runButton = "Project"
 name = "Project"
 mode = "parallel"
 author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "node server.js & npm run dev"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
@@ -41,70 +46,3 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
-
-[[ports]]
-localPort = 5000
-externalPort = 80
-
-[[ports]]
-localPort = 8082
-externalPort = 6800
-
-[[ports]]
-localPort = 8083
-externalPort = 8008
-
-[[ports]]
-localPort = 33121
-externalPort = 8000
-
-[[ports]]
-localPort = 34485
-externalPort = 5173
-
-[[ports]]
-localPort = 34669
-externalPort = 3001
-
-[[ports]]
-localPort = 35735
-externalPort = 4200
-
-[[ports]]
-localPort = 37691
-externalPort = 3002
-
-[[ports]]
-localPort = 38891
-externalPort = 3003
-
-[[ports]]
-localPort = 39211
-externalPort = 8099
-
-[[ports]]
-localPort = 39463
-externalPort = 3000
-
-[[ports]]
-localPort = 39545
-externalPort = 8081
-
-[[ports]]
-localPort = 40181
-externalPort = 5000
-
-[[ports]]
-localPort = 43031
-externalPort = 8080
-
-[[ports]]
-localPort = 43653
-externalPort = 9000
-
-[[ports]]
-localPort = 46639
-externalPort = 6000
-
-[agent]
-expertMode = true
