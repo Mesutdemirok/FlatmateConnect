@@ -6,9 +6,19 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes (Nov 10, 2025)
+## Recent Changes (Nov 12, 2025)
 
-### Phase 7: Complete Turkish Localization and Color-Enhanced Cards (Latest)
+### Phase 8: Seeker Visibility & Routing Fixes (Latest)
+- **Default Publishing Fix**: Changed `isPublished` default from `false` to `true` in schema, ensuring newly created seeker profiles appear publicly immediately.
+- **Backend Fix**: Removed `isPublished: false` override in `POST /api/seekers` endpoint that was blocking visibility of new profiles.
+- **Dual Routing Support**: Added `GET /api/seekers/:id` endpoint with UUID validation for ID-based lookups alongside existing slug-based routing.
+- **Route Order Fix**: Reordered backend routes so `/api/seekers/slug/:slug` comes before `/api/seekers/:id` to prevent slug shadowing and ensure proper route matching.
+- **Frontend Routing**: Fixed `SeekerCard` to use `slug || id` for navigation and updated `SeekerDetail` to detect UUID vs slug format and fetch from appropriate endpoint.
+- **TypeScript Fixes**: Resolved slug assignment errors and photo array type issues in frontend components.
+- **Image Validation**: Verified existing frontend and backend validation requiring profile photos before seeker profile publication.
+- **Status**: Architect-approved, production-ready. All code changes complete. Seeker profiles now publish with `isPublished: true` by default and are accessible via both slug and ID routes.
+
+### Phase 7: Complete Turkish Localization and Color-Enhanced Cards
 - **Database Schema Fix**: Added missing Phase 4 columns (description, deposit, move_in_date, min_stay_months, city/district/neighborhood, latitude/longitude) to production database, resolving "column does not exist" errors that prevented listings from displaying.
 - **Full Turkish Translation**: All card text now in Turkish only - "YENİ" badge, "Şimdi müsait" availability, "22 yaşında Kadın" age/gender format, Turkish date formatting with TR locale.
 - **Enhanced Visual Design**:
