@@ -6,81 +6,27 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes (Nov 12, 2025)
-
-### Phase 9: Deployment Configuration & ESM Fixes (Latest)
-- **Deployment Build Command**: Updated deployment configuration to run `npm install && npm run build` ensuring dependencies are installed before building and available at runtime.
-- **Deployment Run Command**: Configured to execute `node dist/index.js` pointing to the correct bundled output.
-- **ESM Module Fixes**: Converted `vite.config.ts` from CommonJS `require()` to ESM `import` statements for Replit dev plugins.
-- **__dirname Polyfill**: Added ESM-compatible `__dirname` using `fileURLToPath(import.meta.url)` in `vite.config.ts`.
-- **Build Tools in Dependencies**: All build tools (vite, esbuild, tailwindcss, postcss, autoprefixer, typescript, drizzle-kit) moved to `dependencies` ensuring availability during deployment.
-- **Server Entry Point**: Verified build outputs to `dist/index.js` and deployment runs correct file.
-- **Status**: Development server running successfully. Deployment configured with proper dependency installation workflow.
-
-### Phase 8: Seeker Visibility & Routing Fixes
-- **Default Publishing Fix**: Changed `isPublished` default from `false` to `true` in schema, ensuring newly created seeker profiles appear publicly immediately.
-- **Backend Fix**: Removed `isPublished: false` override in `POST /api/seekers` endpoint that was blocking visibility of new profiles.
-- **Dual Routing Support**: Added `GET /api/seekers/:id` endpoint with UUID validation for ID-based lookups alongside existing slug-based routing.
-- **Route Order Fix**: Reordered backend routes so `/api/seekers/slug/:slug` comes before `/api/seekers/:id` to prevent slug shadowing and ensure proper route matching.
-- **Frontend Routing**: Fixed `SeekerCard` to use `slug || id` for navigation and updated `SeekerDetail` to detect UUID vs slug format and fetch from appropriate endpoint.
-- **TypeScript Fixes**: Resolved slug assignment errors and photo array type issues in frontend components.
-- **Image Validation**: Verified existing frontend and backend validation requiring profile photos before seeker profile publication.
-- **Status**: Architect-approved, production-ready. All code changes complete. Seeker profiles now publish with `isPublished: true` by default and are accessible via both slug and ID routes.
-
-### Phase 7: Complete Turkish Localization and Color-Enhanced Cards
-- **Database Schema Fix**: Added missing Phase 4 columns (description, deposit, move_in_date, min_stay_months, city/district/neighborhood, latitude/longitude) to production database, resolving "column does not exist" errors that prevented listings from displaying.
-- **Full Turkish Translation**: All card text now in Turkish only - "YENİ" badge, "Şimdi müsait" availability, "22 yaşında Kadın" age/gender format, Turkish date formatting with TR locale.
-- **Enhanced Visual Design**:
-  - **ListingCard**: Teal price (₺12.500 ay), colored icons (teal bed, blue bath, purple users), thinner font-semibold text, no decimal places on prices
-  - **SeekerCard**: Purple budget (₺14.000 ay), availability replaces occupation field, thinner text styling, cleaner number formatting
-- **4:3 Image Carousels**: White circular navigation arrows, image counter badges, "YENİ" badge in Turkish, white star favorites (not hearts)
-- **Number Formatting**: Removed .00 decimals from prices using Math.round() and .replace(), uses Turkish locale thousand separators (e.g., 12.500 not 12,500)
-- **Color System**: Teal for listings (price, bed icons), purple for seekers (budget), blue for bathrooms, consistent brand colors across cards
-- **Status**: Architect-approved, production-ready. Backend serving 27 active listings successfully.
-
-### Phase 6: Editable Profile Dashboard with Personal Info and Listings Management
-- **Backend API**: Implemented PATCH /api/users/me for updating personal info (firstName, lastName, phone, bio), GET /api/my-listings with _skipStatusFilter for fetching all user listings including drafts, and GET /api/seekers/user/:userId with ownership enforcement and _skipActiveCheck for user's own profile access.
-- **Security**: Ownership validation on seeker profile endpoint (403 if userId mismatch), whitelisted updatable fields in user endpoint, all endpoints require JWT authentication.
-- **Web Profile Page**: Made "Kişisel Bilgiler" tab editable with React Hook Form + Zod validation, auto-population from user data, Save/Cancel buttons with loading states, and proper error handling.
-- **My Listings Tab**: Displays all user's room listings and seeker profile including drafts, shows status badges (Aktif/Pasif) to distinguish active vs inactive content.
-- **Type Safety**: Added userId and _skipStatusFilter to IStorage.getListings, userId and _skipActiveCheck to IStorage.getSeekerProfiles, ensuring TypeScript compliance across storage contract.
-- **Status**: Architect-approved, production-ready implementation with proper cache invalidation and auth error handling.
-
-### Phase 5: Enhanced Listing Detail Pages with 8 Comprehensive Sections
-- **Web Detail Page**: Added Description section (whitespace-preserved formatting), Address/Location section (city/district/neighborhood with teal icon, fallback to address), and Terms section (deposit, move-in date, min stay with purple theme and defensive validation).
-- **Mobile Detail Page**: Added Location section (accent-colored icon with structured address) and Terms section (grid layout with deposit/move-in/min stay, purple icons, Turkish formatting).
-- **Defensive Validation**: IIFE pattern with null/NaN guards for deposit, moveInDate, minStayMonths. Sections hide completely if no valid data exists.
-- **React Native Compatibility**: Replaced unsupported `gap` with explicit margins for consistent cross-device layout.
-- **8-Section Compliance**: Hero carousel ✅, Summary row ✅, Address ✅, Landlord ✅, Description ✅, Room Details ✅, Terms ✅, Contact CTA ✅.
-- **Status**: Architect-approved, production-ready implementation with backward compatibility.
-
-### Phase 4: Enhanced Listing Cards with Modern Design
-- **Schema Extension**: Added 10 optional fields (city, citySlug, district, districtSlug, neighborhood, neighborhoodSlug, description, deposit, moveInDate, minStayMonths, latitude, longitude).
-- **Modernized Cards**: Web and mobile ListingCard rebuilt with 16:9 images, dynamic badges (NEW/UPDATED), bottom white overlays, purple pricing, teal location icons, favorite toggles, and location fallback logic.
-- **Production Quality**: Uses centralized image helpers, robust error handling, TypeScript type safety, performance optimization (useMemo), testid attributes.
-
 ## System Architecture
 
 ### UI/UX Decisions
-The platform prioritizes a mobile-first design with consistent branding. The web application uses shadcn/ui with Radix components, featuring a teal/turquoise primary color. The mobile application employs a purple gradient design system, including gradient headers, white cards with gradient shadows, rounded corners, and icon-based navigation. The logo and tagline "Güvenilir ve şeffaf oda arama deneyimi" are consistently displayed. The homepage features a unified chronological feed of both room listings and seeker profiles. All screens utilize real API data with appropriate loading and empty states.
+The platform prioritizes a mobile-first design with consistent branding. The web application uses shadcn/ui with Radix components, featuring a teal/turquoise primary color. The mobile application employs a purple gradient design system, including gradient headers, white cards with gradient shadows, rounded corners, and icon-based navigation. The logo and tagline "Güvenilir ve şeffaf oda arama deneyimi" are consistently displayed. The homepage features a unified chronological feed of both room listings and seeker profiles. All screens utilize real API data with appropriate loading and empty states. Listing and Seeker Cards are redesigned with 4:3 image carousels, dynamic badges (NEW/UPDATED), white outlined star favorites, Turkish Lira (₺) pricing, and room detail icons.
 
 ### Technical Implementations
-- **Frontend (Web)**: React with TypeScript (Vite), Tailwind CSS, shadcn/ui, and Radix UI. State management is handled by React Query and React hooks. Wouter provides client-side routing, and i18next manages internationalization (Turkish primary locale). Detail pages use SEO-friendly slug-based routing.
-- **Frontend (Mobile)**: Built with Expo SDK and React Native, utilizing Expo Router for file-based navigation. Styling is managed via React Native's StyleSheet API with a centralized theme system. TanStack Query handles data fetching, and SecureStore manages JWT tokens. Custom UI components adhere to the purple gradient design system. The home screen displays a unified chronological feed of listings and seekers. Login/Register and Profile screens feature gradient headers and themed components. Bottom tab navigation uses purple active states.
+- **Frontend (Web)**: React with TypeScript (Vite), Tailwind CSS, shadcn/ui, and Radix UI. State management uses React Query, client-side routing via Wouter, and i18next for internationalization (Turkish primary locale). Detail pages use SEO-friendly slug-based routing.
+- **Frontend (Mobile)**: Built with Expo SDK and React Native, utilizing Expo Router for file-based navigation. Styling is managed via React Native's StyleSheet API with a centralized theme system. TanStack Query handles data fetching, and SecureStore manages JWT tokens. The home screen displays a unified chronological feed of listings and seekers. Login/Register and Profile screens feature gradient headers and themed components. Bottom tab navigation uses purple active states.
 - **Backend**: Developed with Express.js and TypeScript, using PostgreSQL as the database with Drizzle ORM. The API is RESTful, providing detail endpoints with eager-loaded relations and enforcing publish/active filters.
-- **Configuration**: A centralized `config.ts` manages `API_URL`, `getImageUrl()` for image path normalization, and `getApiUrl()` for endpoint URL construction, ensuring consistency across platforms.
-- **Authentication**: JWT-based authentication supports both Google OAuth and email/password, with secure cookies set for `.odanet.com.tr`. Mobile authentication uses SecureStore for token persistence.
+- **Configuration**: A centralized `config.ts` manages `API_URL`, `getImageUrl()` for image path normalization, and `getApiUrl()` for endpoint URL construction.
+- **Authentication**: JWT-based authentication supports both Google OAuth and email/password, with secure cookies. Mobile authentication uses SecureStore.
 - **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing. Cloudflare R2 serves as the CDN. All uploads require JWT authentication and ownership verification.
 - **SEO**: Implemented with React Helmet for dynamic meta tags, Open Graph, and Twitter card generation. Slugs are generated for listings and seeker profiles. A sitemap.xml and rss.xml are dynamically generated, and `robots.txt` is configured. 301 redirects handle legacy UUID-based URLs.
-- **Mobile Build System**: EAS (Expo Application Services) is configured for Android and iOS, supporting development, preview, and production profiles.
-- **Listing & Seeker Cards**: Redesigned ListingCard and SeekerCard with 4:3 image carousels, white circular navigation arrows, image counter badges, simple white "NEW" badges, white outlined star favorites, Turkish Lira (₺) with "ay" (monthly) suffix, clean white info sections, and room detail icons (Bed, Bath, Users) matching reference designs.
-- **Image Fallback System**: `getImageUrl()` provides deterministic CDN-hosted placeholders for seekers and listings without images, using a robust hash function. Graceful degradation includes gradient placeholders for failed image loads.
-- **Mandatory Image Validation**: Backend and frontend validation ensure `profilePhotoUrl` is present for seeker profiles and at least one image for listings (after draft creation), providing Turkish error messages.
+- **Mobile Build System**: EAS (Expo Application Services) is configured for Android and iOS.
+- **Image Fallback System**: `getImageUrl()` provides deterministic CDN-hosted placeholders for seekers and listings without images. Graceful degradation includes gradient placeholders for failed image loads.
+- **Mandatory Image Validation**: Backend and frontend validation ensure `profilePhotoUrl` for seeker profiles and at least one image for listings.
 
 ### Feature Specifications
-- **User Management**: Profile creation, verification, and image uploads. Editable profile dashboard with personal info form and listings management.
-- **Listing System**: Detailed room listings with multiple images and filtering. Dashboard shows all user's listings including drafts.
-- **Seeker Profiles**: Comprehensive profiles with dedicated detail pages. Dashboard shows user's own seeker profile including inactive states.
+- **User Management**: Profile creation, verification, image uploads, and an editable profile dashboard with personal info and listings management.
+- **Listing System**: Detailed room listings with multiple images and filtering. The dashboard shows all user's listings, including drafts.
+- **Seeker Profiles**: Comprehensive profiles with dedicated detail pages. The dashboard shows the user's own seeker profile, including inactive states.
 - **Messaging System**: Real-time communication.
 - **Favorites System**: Users can save and manage favorite listings.
 - **Search & Filtering**: Location-based search with various filters for both room and flatmate searches.

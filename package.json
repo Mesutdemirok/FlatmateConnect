@@ -5,9 +5,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
-    "build": "vite build && node scripts/generateSitemap.js && esbuild server/index.ts --bundle --platform=node --format=esm --external:@babel/preset-typescript --external:pkg --outdir=dist",
+    "build": "vite build && node scripts/generateSitemap.js && esbuild server/index.ts --bundle --platform=node --format=esm --packages=external --outdir=dist",
     "start": "cross-env NODE_ENV=production node dist/index.js",
-    "deploy": "npm install && npm run build && node dist/index.js",
+    "deploy": "npm install && npm run build && npm start",
     "sitemap": "node scripts/generateSitemap.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
