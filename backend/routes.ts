@@ -5,9 +5,7 @@ import { storage } from "./storage";
 import { jwtAuth, generateToken, hashPassword, comparePassword } from "./auth";
 import {
   insertListingSchema,
-  insertUserPreferencesSchema,
   insertMessageSchema,
-  insertFavoriteSchema,
   insertUserSchema,
   insertSeekerProfileSchema,
   updateSeekerProfileSchema,
