@@ -56,7 +56,7 @@ function formatGender(gender?: string | null) {
   const genderMap: Record<string, string> = {
     male: "Erkek",
     female: "Kadın",
-    other: "Diğer"
+    other: "Diğer",
   };
   return genderMap[gender.toLowerCase()] || gender;
 }
@@ -64,8 +64,8 @@ function formatGender(gender?: string | null) {
 function formatMoveInDate(date?: string | null) {
   if (!date) return "Şimdi müsait";
   const d = new Date(date);
-  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-  return `${d.toLocaleDateString('tr-TR', options)} tarihinde`;
+  const options: Intl.DateTimeFormatOptions = { day: "numeric", month: "long", year: "numeric" };
+  return `${d.toLocaleDateString("tr-TR", options)} tarihinde`;
 }
 
 // Helper to check if date is within last N days
@@ -84,10 +84,9 @@ interface SeekerCardProps {
 export default function SeekerCard({ seeker }: SeekerCardProps) {
   const { isAuthenticated } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  const seekerUrl = seeker.slug
-    ? `/oda-arayan/${seeker.slug}`
-    : `/oda-arayan/${seeker.id}`;
+
+  // ✅ FIX: Use userId or id (not slug) for correct backend route
+  const seekerUrl = `/oda-arayan/${seeker.userId || seeker.id}`;
 
   const name = nameOf(seeker);
   const budget = formatBudget(seeker.budgetMonthly);
@@ -102,7 +101,7 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
     }
     if (seeker.photos && seeker.photos.length > 0) {
       const sorted = [...seeker.photos].sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
-      sorted.forEach(p => {
+      sorted.forEach((p) => {
         if (p.imagePath) {
           const url = getAbsoluteImageUrl(p.imagePath);
           if (!allPhotos.includes(url)) {
@@ -112,7 +111,9 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
       });
     }
     if (allPhotos.length === 0) {
-      allPhotos.push(`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=8b5cf6&color=fff&size=512`);
+      allPhotos.push(
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=8b5cf6&color=fff&size=512`
+      );
     }
     return allPhotos;
   }, [seeker.profilePhotoUrl, seeker.photos, name]);
@@ -170,65 +171,60 @@ export default function SeekerCard({ seeker }: SeekerCardProps) {
             </button>
           )}
 
-          {/* NEW BADGE */}
-          {showNewBadge && (
-            <div className="absolute top-3 left-3 px-4 py-2 rounded-lg bg-white text-gray-900 text-sm font-bold shadow-md">
-              YENİ
-            </div>
-          )}
-
-          {/* IMAGE COUNTER */}
+          {/* Image Counter */}
           {hasMultiplePhotos && (
-            <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-gray-800/70 text-white text-sm font-medium">
-              {currentImageIndex + 1}/{photos.length}
+            <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm">
+              <span className="text-white text-sm font-medium">
+                {currentImageIndex + 1} / {photos.length}
+              </span>
             </div>
           )}
 
-          {/* FAVORITE BUTTON */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (!isAuthenticated) {
-                window.location.href = "/giris";
-              }
-              // TODO: Implement seeker favorites
-            }}
-            className="absolute bottom-3 right-3 w-12 h-12 rounded-full bg-transparent border-2 border-white flex items-center justify-center transition-all hover:scale-110"
-            aria-label="Add to favorites"
-            data-testid="button-favorite-seeker"
-          >
-            <Star className="w-6 h-6 text-white" strokeWidth={2} />
-          </button>
+          {/* NEW Badge */}
+          {showNewBadge && (
+            <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white backdrop-blur-sm shadow-lg">
+              <span className="text-gray-800 text-xs font-bold uppercase tracking-wide">YENİ</span>
+            </div>
+          )}
+
+          {/* Favorite Button */}
+          {isAuthenticated && (
+            <button
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all hover:scale-105"
+              onClick={(e) => e.preventDefault()}
+              aria-label="Add to favorites"
+            >
+              <Star className="w-5 h-5 text-gray-800" strokeWidth={2.5} />
+            </button>
+          )}
         </div>
 
-        {/* INFO SECTION */}
-        <div className="p-4 bg-white">
-          {/* Name and Budget Row */}
-          <div className="flex items-start justify-between gap-3 mb-1">
-            <h3 className="text-lg font-semibold text-gray-900 line-clamp-1 flex-1">
-              {name}
-            </h3>
+        {/* Info Section */}
+        <div className="p-5 space-y-3">
+          <div className="flex items-center justify-between">
             {budget && (
-              <div className="text-xl font-semibold text-purple-600 whitespace-nowrap">
-                {budget.replace(/[.,]00/, '')} <span className="text-sm font-normal text-gray-600">ay</span>
+              <div className="text-2xl font-semibold text-purple-600">
+                {budget} <span className="text-lg font-normal text-gray-600">/ ay</span>
+              </div>
+            )}
+            {seeker.age && genderText && (
+              <div className="text-gray-600">
+                {seeker.age} yaşında {genderText}
               </div>
             )}
           </div>
 
-          {/* Age and Gender */}
-          {(seeker.age || genderText) && (
-            <div className="text-sm text-gray-700 mb-2">
-              {seeker.age && genderText ? `${seeker.age} yaşında ${genderText}` : genderText || `${seeker.age} yaşında`}
-            </div>
+          <h3 className="text-lg font-semibold text-gray-800 truncate">{name}</h3>
+
+          {seeker.preferredLocation && (
+            <p className="text-gray-600 truncate">{seeker.preferredLocation}</p>
           )}
 
-          {/* Availability */}
-          <div className="text-sm text-gray-600">
-            {availability}
-          </div>
+          <p className="text-sm text-gray-500">{availability}</p>
         </div>
       </article>
     </Link>
   );
 }
+
+export { SeekerCard };
