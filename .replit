@@ -1,5 +1,5 @@
 modules = ["nodejs-20", "postgresql-16", "web"]
-hidden = [".config", ".git", "node_modules", "dist"]
+hidden = [".config", ".git", "dist"]
 
 [nix]
 channel = "stable-24_05"
@@ -9,16 +9,19 @@ packages = ["lsof", "jq", "file"]
 PORT = "5000"
 NODE_ENV = "production"
 
-# ✅ Replit uses this to run locally
-run = "node server.js"
+# ✅ Used for local development (Replit run button)
+run = "npm run dev"
 
-# ✅ Define how publishing should deploy your site
+# ✅ Deployment configuration for autoscale
 [deployment]
+build = ["sh", "-c", "npm ci --omit=dev && npm run build"]
 run = ["node", "dist/index.js"]
 deploymentTarget = "autoscale"
-ignore = ["node_modules", "dist/public/assets/*.map"]
-build = ["sh", "-c", "npm install && npm run build"]
 
+# ⚠️ Do NOT ignore node_modules anymore
+ignore = ["dist/public/assets/*.map"]
+
+# ✅ Port forwarding
 [[ports]]
 localPort = 5000
 externalPort = 80
@@ -27,6 +30,7 @@ externalPort = 80
 localPort = 42891
 externalPort = 3000
 
+# ✅ Workflows
 [workflows]
 runButton = "Project"
 
