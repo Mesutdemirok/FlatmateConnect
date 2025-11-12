@@ -3,13 +3,29 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["lsof", "yakut", "jq", "vlang", "file"]
+packages = ["lsof", "jq", "vlang", "file"]
 
-# ✅ Deployment Configuration (Autoscale Production)
-[deployment]
-deploymentTarget = "autoscale"
-build = ["bash", "-c", "npm ci --legacy-peer-deps || npm install --legacy-peer-deps && npm run build"]
-run = ["npm", "start"]
+# ✅ Environment Variables
+[env]
+PORT = "5000"
+NODE_ENV = "development"
+
+# ✅ Run Configuration
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server.js & npm run dev"
+waitForPort = 5173
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [[ports]]
 localPort = 5000
@@ -75,38 +91,5 @@ externalPort = 9000
 localPort = 46639
 externalPort = 6000
 
-# ✅ Environment Variables
-[env]
-PORT = "5000"
-
-# ✅ Replit Agent Config
 [agent]
-integrations = [
-  "javascript_database:1.0.0",
-  "javascript_log_in_with_replit:1.0.0",
-]
 expertMode = true
-
-[workflows]
-runButton = "Project"
-
-[[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow]]
-name = "Start application"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev"
-waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"

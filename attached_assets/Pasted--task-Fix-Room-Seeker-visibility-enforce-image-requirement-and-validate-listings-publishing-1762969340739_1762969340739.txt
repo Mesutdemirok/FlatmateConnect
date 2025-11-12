@@ -1,0 +1,49 @@
+{
+  "task": "Fix Room Seeker visibility, enforce image requirement, and validate listings publishing",
+  "description": "Repair and improve the room seeker listing (Oda Arayan) and room listing (Oda İlanı) flow on Odanet so that every created listing is public, properly displayed, and includes mandatory images.",
+  "details": {
+    "issues": [
+      "When a new 'Oda Arayan' (room seeker) listing is created, it shows under the user's profile but cannot be opened publicly.",
+      "The seeker listing does not appear on the homepage feed or in the public search view.",
+      "Some listings (both 'Oda Arayan' and 'Oda İlanı') can be published without any image, which breaks layout and trust.",
+      "After creation, user listings are sometimes inactive or unpublished due to missing flags or validation issues."
+    ],
+    "expected_behavior": {
+      "room_seeker_listings": [
+        "All newly created seeker listings automatically set 'isActive: true' and 'isPublished: true'.",
+        "Each seeker listing should appear publicly under '/oda-arayan/:id' or '/oda-arayan/:slug'.",
+        "Seeker listings should also appear on the homepage seeker feed and in search results.",
+        "Users can edit or delete their own seeker listing from '/profil' > 'İlanlarım'.",
+        "All updates and deletions should reflect immediately on both the homepage feed and user profile."
+      ],
+      "room_listings": [
+        "All room listings ('Oda İlanı') must include at least one uploaded image before they can be published.",
+        "If a user attempts to save or publish a listing without images, show a clear validation message: 'Lütfen en az bir fotoğraf ekleyin.'",
+        "Publishing should be blocked until image validation passes."
+      ]
+    },
+    "backend_requirements": [
+      "Ensure '/api/seekers/public' endpoint returns all seeker listings where 'isActive=true' and 'isPublished=true'.",
+      "Ensure '/api/seekers/:id' returns public data even if the seeker has no slug.",
+      "Set default values for new seeker listings in DB: isActive=true, isPublished=true.",
+      "Update '/api/listings/create' and '/api/seekers/create' endpoints to check for uploaded images and return 400 if none are found.",
+      "Validate image count server-side to prevent empty listings.",
+      "Make sure '/api/my-listings' and '/api/seekers/user' return the correct filtered listings for the logged-in user."
+    ],
+    "frontend_requirements": [
+      "In 'SeekerCard.tsx', confirm the Link component uses the correct route ('/oda-arayan/' + seeker.id or seeker.slug).",
+      "Fix the SeekerDetail page to fetch and render seeker data from '/api/seekers/:id'.",
+      "Update the listing creation form (both room and seeker) to require at least one image before the Save/Publish button becomes active.",
+      "Show inline validation message under the image uploader if the user attempts to submit without any images.",
+      "Ensure new seeker listings immediately appear in the homepage feed after creation.",
+      "Verify all links in the homepage feed, seeker list, and profile page open correctly and no 404 appears."
+    ],
+    "post_deployment_validation": [
+      "After build, create a test seeker profile via '/oda-arama-ilani-ver' and confirm it appears under '/profil' and on the homepage feed.",
+      "Open its public page '/oda-arayan/:id' and ensure it displays all fields and images.",
+      "Attempt to publish a room listing without an image and confirm the validation message appears and publishing is blocked.",
+      "Verify that adding one or more images allows successful publication."
+    ],
+    "goal": "Deliver a fully functional, public, and reliable listing system where all seeker listings are visible and all published listings include at least one image."
+  }
+}
