@@ -9,7 +9,7 @@ packages = ["lsof", "yakut", "jq", "vlang", "file"]
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["node", "backend/index.js"]
+run = ["node", "dist/index.js"]
 
 [[ports]]
 localPort = 5000
