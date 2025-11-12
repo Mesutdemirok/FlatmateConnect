@@ -6,8 +6,9 @@ import { getApiUrl } from "../config"; // ✅ Fixed path (was "../../config")
 /**
  * 🔧 Base API URL Configuration
  * Automatically selects production or local API base
+ * Priority: Environment variable > Expo config > config.ts fallback
  */
-const apiUrl = Constants?.expoConfig?.extra?.apiBaseUrl || getApiUrl(""); // falls back to config.ts logic
+const apiUrl = process.env.EXPO_PUBLIC_API_URL || Constants?.expoConfig?.extra?.apiBaseUrl || getApiUrl(""); // falls back to config.ts logic
 
 export const api = axios.create({
   baseURL: apiUrl,

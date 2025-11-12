@@ -75,6 +75,10 @@ externalPort = 9000
 localPort = 46639
 externalPort = 6000
 
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
 # ✅ Environment Variables
 [env]
 PORT = "5000"
@@ -94,22 +98,11 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Mobile App (Expo)"
+args = "Start application"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow]]
-name = "Mobile App (Expo)"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd mobile-app && npx expo start --tunnel --clear"
+args = "Mobile App (Expo)"
 
 [[workflows.workflow]]
 name = "Start application"
@@ -122,3 +115,15 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow]]
+name = "Mobile App (Expo)"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd mobile-app && npm start"
+waitForPort = 8080
