@@ -1,16 +1,3 @@
-const PORT = process.env.PORT || 5000;
-app
-  .listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
-  })
-  .on("error", (err) => {
-    if (err.code === "EADDRINUSE") {
-      console.error(`⚠️ Port ${PORT} already in use. Trying another...`);
-      app.listen(0); // random free port
-    } else {
-      throw err;
-    }
-  });
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -19,22 +6,39 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
-// ✅ Statik dosyaları (build, public) serve et
-app.use(express.static(path.join(__dirname, "dist")));
-app.use(express.static(path.join(__dirname, "public")));
+// ✅ Serve static files from the correct build directory
+app.use(express.static(path.join(__dirname, "dist", "public")));
 
-// ✅ Sitemap ve RSS dosyaları için özel yönlendirme
+// ✅ Sitemap and RSS files
 app.get(["/sitemap.xml", "/rss.xml"], (req, res) => {
-  res.sendFile(path.join(__dirname, "public", req.path));
+  const filePath = path.join(__dirname, "dist", "public", req.path);
+  if (require('fs').existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    // Fallback to public directory
+    res.sendFile(path.join(__dirname, "public", req.path));
+  }
 });
 
-// ✅ Vite React SPA için fallback route
+// ✅ SPA fallback - serve index.html for all non-static routes
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+  // Skip API routes
+  if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+    return res.status(404).send("Not Found");
+  }
+  res.sendFile(path.join(__dirname, "dist", "public", "index.html"));
 });
 
 app.listen(PORT, () => {
   console.log(`✅ Odanet server running on http://localhost:${PORT}`);
-});
+})
+  .on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`⚠️ Port ${PORT} already in use. Trying another...`);
+      app.listen(0); // random free port
+    } else {
+      throw err;
+    }
+  });
