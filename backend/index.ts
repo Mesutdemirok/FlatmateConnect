@@ -70,28 +70,29 @@ app.use(
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 /* ---------------------------------------------------------
-   🧩 API Routes
+   🧩 API Routes (must be registered before frontend serving!)
 --------------------------------------------------------- */
 app.use("/api/uploads", uploadsRouter);
 app.use("/api", proxyRouter);
-
-/* ---------------------------------------------------------
-   🌐 Serve Frontend Build (Vite dist/public)
---------------------------------------------------------- */
-const distPath = path.join(__dirname, "../dist/public");
-app.use(express.static(distPath));
-
-app.get("*", (_req, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
-});
 
 /* ---------------------------------------------------------
    🚀 Start Server
 --------------------------------------------------------- */
 (async () => {
   try {
+    // Register all API routes FIRST
     const server = await registerRoutes(app);
-    const port = parseInt(process.env.PORT || "8081", 10);
+    
+    // THEN serve frontend static files (after all API routes are registered)
+    const distPath = path.join(__dirname, "../dist/public");
+    app.use(express.static(distPath));
+    
+    // Catch-all route for SPA routing (must be LAST)
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+    
+    const port = parseInt(process.env.PORT || "5000", 10);
     const host = "0.0.0.0";
 
     server.listen(port, host, () => {
