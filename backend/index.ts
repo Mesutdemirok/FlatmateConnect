@@ -15,23 +15,24 @@ const __dirname = dirname(__filename);
 const app = express();
 
 /* ---------------------------------------------------------
-   Health checks
+   🩺 Health Checks
 --------------------------------------------------------- */
 app.get("/health", (_req, res) => res.status(200).send("ok"));
-app.get("/api/health", (_req, res) =>
+app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
     msg: "Backend running ✅",
     time: new Date().toISOString(),
-  }),
-);
+  });
+});
 
 /* ---------------------------------------------------------
-   Middleware
+   ⚙️ Middleware Setup
 --------------------------------------------------------- */
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
 app.use(
   cors({
     origin: [
@@ -46,21 +47,30 @@ app.use(
 );
 
 /* ---------------------------------------------------------
-   Static + API routes
+   📁 Static File Serving
 --------------------------------------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+/* ---------------------------------------------------------
+   🧩 API Routes
+--------------------------------------------------------- */
 app.use("/api/uploads", uploadsRouter);
 app.use("/api", proxyRouter);
 
 /* ---------------------------------------------------------
-   SPA serving (critical fix)
+   🌐 SPA Routing (Frontend)
+   Ensures non-API routes serve index.html
 --------------------------------------------------------- */
 const distPath = path.join(__dirname, "../dist/public");
 app.use(express.static(distPath));
-app.get("*", (_req, res) => res.sendFile(path.join(distPath, "index.html")));
+
+// All non-API routes go to React SPA
+app.get(/^\/(?!api).*/, (_req, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
+});
 
 /* ---------------------------------------------------------
-   Start server
+   🚀 Start Server
 --------------------------------------------------------- */
 (async () => {
   try {
@@ -68,12 +78,37 @@ app.get("*", (_req, res) => res.sendFile(path.join(distPath, "index.html")));
     const port = parseInt(process.env.PORT || "8081", 10);
     const host = "0.0.0.0";
     server.listen(port, host, () => {
-      console.log("✅ Backend running on", port);
+      console.log("==========================================");
+      console.log("✅ Odanet backend is now running!");
+      console.log(`🌐 Listening at: http://localhost:${port}`);
+      console.log("🔒 Production domain: https://www.odanet.com.tr");
+      console.log("==========================================");
     });
   } catch (err) {
     console.error("❌ Startup error:", err);
     process.exit(1);
   }
 })();
+
+/* ---------------------------------------------------------
+   🛑 Global Error Handler
+--------------------------------------------------------- */
+app.use(
+  (
+    err: any,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    console.error("🔥 Unhandled global error:");
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Beklenmeyen sunucu hatası.",
+      error: err?.message || JSON.stringify(err),
+      stack: process.env.NODE_ENV !== "production" ? err?.stack : undefined,
+    });
+  },
+);
 
 export default app;
