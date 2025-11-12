@@ -15,41 +15,23 @@ const __dirname = dirname(__filename);
 const app = express();
 
 /* ---------------------------------------------------------
-   🩺 Health Checks
+   Health checks
 --------------------------------------------------------- */
 app.get("/health", (_req, res) => res.status(200).send("ok"));
-app.get("/api/health", (_req, res) => {
+app.get("/api/health", (_req, res) =>
   res.json({
     ok: true,
-    message: "Backend running fine ✅",
-    timestamp: new Date().toISOString(),
-  });
-});
+    msg: "Backend running ✅",
+    time: new Date().toISOString(),
+  }),
+);
 
 /* ---------------------------------------------------------
-   🔍 Diagnostics
---------------------------------------------------------- */
-app.get("/api/_diag", async (_req, res) => {
-  try {
-    const r = await pool.query(`
-      select current_database() as db,
-             (select count(*) from listings) as listings,
-             (select count(*) from seeker_profiles) as seekers
-    `);
-    res.setHeader("Cache-Control", "no-store");
-    res.json(r.rows[0]);
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-/* ---------------------------------------------------------
-   ⚙️ Middleware Setup
+   Middleware
 --------------------------------------------------------- */
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-
 app.use(
   cors({
     origin: [
@@ -64,68 +46,34 @@ app.use(
 );
 
 /* ---------------------------------------------------------
-   📁 Static Uploads (User images, etc.)
+   Static + API routes
 --------------------------------------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-
-/* ---------------------------------------------------------
-   🧩 Core API Routes
---------------------------------------------------------- */
 app.use("/api/uploads", uploadsRouter);
 app.use("/api", proxyRouter);
 
 /* ---------------------------------------------------------
-   🚀 Server Initialization + SPA Handling
+   SPA serving (critical fix)
+--------------------------------------------------------- */
+const distPath = path.join(__dirname, "../dist/public");
+app.use(express.static(distPath));
+app.get("*", (_req, res) => res.sendFile(path.join(distPath, "index.html")));
+
+/* ---------------------------------------------------------
+   Start server
 --------------------------------------------------------- */
 (async () => {
   try {
     const server = await registerRoutes(app);
-
-    // Serve static frontend (Next.js/Vite build)
-    const clientPath = path.join(__dirname, "../dist/public");
-    app.use(express.static(clientPath));
-
-    // SPA fallback — all unknown routes go to index.html
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(clientPath, "index.html"));
-    });
-
-    // Port fix for Replit and production
     const port = parseInt(process.env.PORT || "8081", 10);
     const host = "0.0.0.0";
-
     server.listen(port, host, () => {
-      console.log("==========================================");
-      console.log("✅ Odanet backend is now running!");
-      console.log(`🌐 Listening at: http://localhost:${port}`);
-      console.log("🔒 Production domain: https://www.odanet.com.tr");
-      console.log("==========================================");
+      console.log("✅ Backend running on", port);
     });
   } catch (err) {
-    console.error("❌ Server startup error:", err);
+    console.error("❌ Startup error:", err);
     process.exit(1);
   }
 })();
-
-/* ---------------------------------------------------------
-   🛑 Global Error Handler (Failsafe)
---------------------------------------------------------- */
-app.use(
-  (
-    err: any,
-    _req: express.Request,
-    res: express.Response,
-    _next: express.NextFunction,
-  ) => {
-    console.error("🔥 Unhandled global error:");
-    console.error(err);
-    res.status(500).json({
-      success: false,
-      message: "Beklenmeyen sunucu hatası.",
-      error: err?.message || JSON.stringify(err),
-      stack: process.env.NODE_ENV !== "production" ? err?.stack : undefined,
-    });
-  },
-);
 
 export default app;
