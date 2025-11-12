@@ -8,7 +8,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (Nov 12, 2025)
 
-### Phase 8: Seeker Visibility & Routing Fixes (Latest)
+### Phase 9: Deployment Configuration & ESM Fixes (Latest)
+- **Deployment Build Command**: Updated deployment configuration to run `npm install && npm run build` ensuring dependencies are installed before building and available at runtime.
+- **Deployment Run Command**: Configured to execute `node dist/index.js` pointing to the correct bundled output.
+- **ESM Module Fixes**: Converted `vite.config.ts` from CommonJS `require()` to ESM `import` statements for Replit dev plugins.
+- **__dirname Polyfill**: Added ESM-compatible `__dirname` using `fileURLToPath(import.meta.url)` in `vite.config.ts`.
+- **Build Tools in Dependencies**: All build tools (vite, esbuild, tailwindcss, postcss, autoprefixer, typescript, drizzle-kit) moved to `dependencies` ensuring availability during deployment.
+- **Server Entry Point**: Verified build outputs to `dist/index.js` and deployment runs correct file.
+- **Status**: Development server running successfully. Deployment configured with proper dependency installation workflow.
+
+### Phase 8: Seeker Visibility & Routing Fixes
 - **Default Publishing Fix**: Changed `isPublished` default from `false` to `true` in schema, ensuring newly created seeker profiles appear publicly immediately.
 - **Backend Fix**: Removed `isPublished: false` override in `POST /api/seekers` endpoint that was blocking visibility of new profiles.
 - **Dual Routing Support**: Added `GET /api/seekers/:id` endpoint with UUID validation for ID-based lookups alongside existing slug-based routing.
