@@ -16,10 +16,8 @@ const app = express();
 
 /* ---------------------------------------------------------
    🩺 Health Checks
-   Used by Replit autoscaler & manual browser testing
 --------------------------------------------------------- */
 app.get("/health", (_req, res) => res.status(200).send("ok"));
-
 app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
@@ -29,8 +27,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 /* ---------------------------------------------------------
-   🔍 Diagnostics Endpoint
-   Verifies DB connection and data counts
+   🔍 Diagnostics
 --------------------------------------------------------- */
 app.get("/api/_diag", async (_req, res) => {
   try {
@@ -67,7 +64,7 @@ app.use(
 );
 
 /* ---------------------------------------------------------
-   📁 Static File Serving
+   📁 Static Uploads (User images, etc.)
 --------------------------------------------------------- */
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
@@ -78,19 +75,23 @@ app.use("/api/uploads", uploadsRouter);
 app.use("/api", proxyRouter);
 
 /* ---------------------------------------------------------
-   🚀 Initialize Core Backend Routes
-   Includes:
-   - /api/listings
-   - /api/seekers (public + authenticated)
-   - /api/users/*
-   - /api/messages
-   - /api/auth/*
+   🚀 Server Initialization + SPA Handling
 --------------------------------------------------------- */
 (async () => {
   try {
     const server = await registerRoutes(app);
 
-    const port = parseInt(process.env.PORT || "5000", 10);
+    // Serve static frontend (Next.js/Vite build)
+    const clientPath = path.join(__dirname, "../dist/public");
+    app.use(express.static(clientPath));
+
+    // SPA fallback — all unknown routes go to index.html
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(clientPath, "index.html"));
+    });
+
+    // Port fix for Replit and production
+    const port = parseInt(process.env.PORT || "8081", 10);
     const host = "0.0.0.0";
 
     server.listen(port, host, () => {
@@ -118,7 +119,6 @@ app.use(
   ) => {
     console.error("🔥 Unhandled global error:");
     console.error(err);
-
     res.status(500).json({
       success: false,
       message: "Beklenmeyen sunucu hatası.",
