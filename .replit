@@ -14,14 +14,18 @@ run = "node server.js"
 
 # ✅ Define how publishing should deploy your site
 [deployment]
-run = "npm run build && node server.js"
-deploymentTarget = "web"
+run = ["node", "dist/index.js"]
+deploymentTarget = "autoscale"
 ignore = ["node_modules", "dist/public/assets/*.map"]
+build = ["npm", "run", "build"]
 
-# ✅ Define open port mapping
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 32963
+externalPort = 3000
 
 [workflows]
 runButton = "Project"
