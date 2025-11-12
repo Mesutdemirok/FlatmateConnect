@@ -68,11 +68,17 @@ app.use(
 );
 
 /* ---------------------------------------------------------
+   🧩 API Routes (Registered BEFORE frontend)
+--------------------------------------------------------- */
+app.use("/api/uploads", uploadsRouter);
+app.use("/api", proxyRouter);
+
+/* ---------------------------------------------------------
    📁 Static File Serving (Frontend)
 --------------------------------------------------------- */
 let publicPath = path.join(__dirname, "public");
 
-// Fallback path logic (handles Replit build directory structure)
+// Fallback path logic (handles different build outputs)
 if (!fs.existsSync(path.join(publicPath, "index.html"))) {
   publicPath = path.join(__dirname, "../public");
 }
@@ -94,12 +100,6 @@ app.get("*", (_req, res) => {
     res.status(500).send("Frontend build not found.");
   }
 });
-
-/* ---------------------------------------------------------
-   🧩 API Routes
---------------------------------------------------------- */
-app.use("/api/uploads", uploadsRouter);
-app.use("/api", proxyRouter);
 
 /* ---------------------------------------------------------
    🚀 Start Server
