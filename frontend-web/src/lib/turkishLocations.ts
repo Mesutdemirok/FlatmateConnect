@@ -1,9 +1,9 @@
 import {
   getCities as getTurkeyCities,
+  getCityCodes,
+  getCityNames,
   getDistrictsByCityCode,
   getNeighbourhoodsByCityCodeAndDistrict,
-  cityCodes,
-  cityNames,
 } from "turkey-neighbourhoods";
 
 export interface City {
@@ -12,8 +12,8 @@ export interface City {
 }
 
 export function getCities(): City[] {
-  const codes = cityCodes();
-  const names = cityNames();
+  const codes = getCityCodes();
+  const names = getCityNames();
 
   return codes
     .map((code, index) => ({
