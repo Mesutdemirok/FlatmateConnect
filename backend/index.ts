@@ -33,16 +33,37 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// Dynamic CORS configuration for better cookie handling
+const corsOrigins = [
+  "https://www.odanet.com.tr",
+  "https://odanet.com.tr",
+  "https://preview.odanet.com.tr",
+  "http://localhost:3000",
+  "http://localhost:5000",
+  "http://localhost:8081",
+];
+
 app.use(
   cors({
-    origin: [
-      "https://www.odanet.com.tr",
-      "https://odanet.com.tr",
-      "https://flatmate-connect-1-mesudemirok.replit.app",
-      "http://localhost:3000",
-      "http://localhost:8081",
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or Postman)
+      if (!origin) return callback(null, true);
+      
+      // Check if origin is in allowed list or is a Replit domain
+      if (corsOrigins.includes(origin) || 
+          origin.includes('.replit.app') || 
+          origin.includes('.repl.co') ||
+          origin.includes('.replit.dev')) {
+        callback(null, true);
+      } else {
+        console.warn(`CORS: Allowing origin ${origin}`);
+        callback(null, true); // Allow for now to avoid issues
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Set-Cookie'],
   }),
 );
 

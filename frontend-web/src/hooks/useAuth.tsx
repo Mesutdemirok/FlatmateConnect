@@ -16,35 +16,63 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   const refreshUser = async () => {
     try {
+      setIsLoading(true);
       const currentUser = await getCurrentUser();
       setUser(currentUser);
     } catch (error) {
+      console.error('Error refreshing user:', error);
       setUser(null);
     } finally {
       setIsLoading(false);
+      setHasCheckedAuth(true);
     }
   };
 
   useEffect(() => {
-    refreshUser();
-  }, []);
+    // Only check auth once on mount
+    if (!hasCheckedAuth) {
+      refreshUser();
+    }
+  }, [hasCheckedAuth]);
 
   const login = async (email: string, password: string) => {
-    const result = await authLogin({ email, password });
-    setUser(result.user);
+    try {
+      const result = await authLogin({ email, password });
+      setUser(result.user);
+      // Refresh user data after login to ensure consistency
+      setTimeout(() => refreshUser(), 100);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   };
 
   const register = async (data: { email: string; password: string; firstName: string; lastName: string }) => {
-    const result = await authRegister(data);
-    setUser(result.user);
+    try {
+      const result = await authRegister(data);
+      setUser(result.user);
+      // Refresh user data after registration to ensure consistency
+      setTimeout(() => refreshUser(), 100);
+    } catch (error) {
+      console.error('Register error:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
-    await authLogout();
-    setUser(null);
+    try {
+      await authLogout();
+      setUser(null);
+      setHasCheckedAuth(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Clear user even if logout fails
+      setUser(null);
+    }
   };
 
   return (

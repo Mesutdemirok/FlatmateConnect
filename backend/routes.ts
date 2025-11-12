@@ -61,15 +61,24 @@ const seekerUpload = multer({
    🔐 Cookie Setup
 ------------------------------------------------------- */
 function getCookieOptions(req: express.Request) {
-  const isProductionDomain = req.get("host")?.includes("odanet.com.tr");
-  return {
+  const host = req.get("host") || "";
+  const isProduction = process.env.NODE_ENV === "production";
+  const isProductionDomain = host.includes("odanet.com.tr");
+  
+  // Use 'lax' for production to work better with redirects, 'none' for development with CORS
+  const sameSiteValue = (isProduction || isProductionDomain) ? "lax" : "none";
+  
+  const cookieOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: "none" as const,
-    domain: isProductionDomain ? ".odanet.com.tr" : undefined,
+    secure: isProduction || isProductionDomain || host.includes("replit"), // Always secure in production/replit
+    sameSite: sameSiteValue as "lax" | "none" | "strict",
+    domain: isProductionDomain ? ".odanet.com.tr" : undefined, // Cross-subdomain cookies for production
     path: "/",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   };
+  
+  console.log(`🍪 Cookie options for ${host}:`, cookieOptions);
+  return cookieOptions;
 }
 
 /* -------------------------------------------------------
@@ -147,14 +156,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Çıkış yapıldı" });
   });
 
-  app.get("/api/auth/me", jwtAuth, async (req, res) => {
+  app.get("/api/auth/me", async (req, res) => {
     try {
-      const user = await storage.getUser(req.userId!);
-      if (!user)
-        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
-      const { password, ...safeUser } = user;
-      res.json(safeUser);
-    } catch {
+      // Try to get token from both header and cookie
+      const authHeader = req.headers.authorization;
+      const cookieToken = req.cookies?.auth_token || req.cookies?.token;
+      
+      const token = authHeader?.startsWith('Bearer ') 
+        ? authHeader.substring(7) 
+        : cookieToken;
+        
+      if (!token) {
+        return res.status(401).json({ message: "Yetkisiz erişim" });
+      }
+      
+      // Import JWT properly
+      const jwt = (await import("jsonwebtoken")).default;
+      const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+      
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        const user = await storage.getUser(decoded.userId);
+        
+        if (!user) {
+          return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+        }
+        
+        const { password, ...safeUser } = user;
+        res.json(safeUser);
+      } catch (tokenError: any) {
+        console.error("Token verification error:", tokenError.message);
+        return res.status(401).json({ message: "Geçersiz veya süresi dolmuş token" });
+      }
+    } catch (error: any) {
+      console.error("Auth/me error:", error.message);
       res.status(500).json({ message: "Kullanıcı bilgisi alınamadı" });
     }
   });

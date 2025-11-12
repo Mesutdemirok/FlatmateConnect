@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -46,23 +46,37 @@ function ProtectedRoute({
 }) {
   const { isAuthenticated, isLoading } = useAuth();
   const [location, navigate] = useLocation();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    // Only redirect if we've finished loading and user is not authenticated
+    if (!isLoading && !isAuthenticated && !hasRedirected) {
       const currentPath = path || location;
+      setHasRedirected(true);
       navigate(`/giris?next=${encodeURIComponent(currentPath)}`);
     }
-  }, [isLoading, isAuthenticated, location, navigate, path]);
+  }, [isLoading, isAuthenticated, location, navigate, path, hasRedirected]);
 
+  // Show loading spinner while checking auth
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-700">
-        Yükleniyor...
+      <div className="min-h-screen flex flex-col items-center justify-center text-gray-700">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <div>Yükleniyor...</div>
       </div>
     );
   }
 
-  if (!isAuthenticated) return null;
+  // If not authenticated and not loading, show a message (should redirect automatically)
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-gray-700">
+        <div>Yönlendiriliyorsunuz...</div>
+      </div>
+    );
+  }
+  
+  // User is authenticated, render the component
   return <Component />;
 }
 

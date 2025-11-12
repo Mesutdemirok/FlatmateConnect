@@ -44,6 +44,7 @@ export async function register(data: RegisterData): Promise<{ user: AuthUser; to
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include', // Ensure cookies are sent
     body: JSON.stringify(data),
   });
 
@@ -53,7 +54,9 @@ export async function register(data: RegisterData): Promise<{ user: AuthUser; to
   }
 
   const result = await response.json();
-  setToken(result.token);
+  if (result.token) {
+    setToken(result.token);
+  }
   return result;
 }
 
@@ -73,7 +76,9 @@ export async function login(data: LoginData): Promise<{ user: AuthUser; token: s
   }
 
   const result = await response.json();
-  setToken(result.token);
+  if (result.token) {
+    setToken(result.token);
+  }
   return result;
 }
 
@@ -91,18 +96,27 @@ export async function logout(): Promise<void> {
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const token = getToken();
-
   try {
+    // Always try with both token and cookies
+    const token = getToken();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     const response = await fetch('/api/auth/me', {
-      headers: token ? {
-        'Authorization': `Bearer ${token}`,
-      } : {},
-      credentials: 'include',
+      method: 'GET',
+      headers,
+      credentials: 'include', // Always include cookies
     });
 
     if (!response.ok) {
       if (response.status === 401) {
+        // Only remove token if we're sure it's invalid
+        console.log('Auth check failed with 401, clearing token');
         removeToken();
       }
       return null;
@@ -111,7 +125,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     const user = await response.json();
     return user;
   } catch (error) {
-    removeToken();
+    console.error('Error fetching current user:', error);
+    // Don't remove token on network errors, only on auth failures
     return null;
   }
 }
