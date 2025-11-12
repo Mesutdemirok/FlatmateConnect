@@ -1,0 +1,38 @@
+# Mobile app folder - not needed for web deployment
+odanet-mobile/
+
+# Development and test files
+test-results/
+*.test.ts
+*.test.tsx
+
+# Documentation
+docs/
+*.md
+
+# CSV data files
+*.csv
+
+# Development folders that shouldn't deploy
+mobile-app/
+frontend-web/
+backend/
+
+# Build info
+.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
