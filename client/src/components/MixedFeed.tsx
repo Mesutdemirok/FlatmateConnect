@@ -1,10 +1,10 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
-import { getAuthHeaders } from "@/lib/queryClient";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, AlertCircle, RefreshCw, Home } from "lucide-react";
 
 type FeedItem =
   | { 
@@ -190,32 +190,101 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
 }
 
 export default function MixedFeed() {
-  const { data, isLoading, error } = useQuery<FeedItem[]>({
+  console.log('🔍 MixedFeed component mounted/rendered');
+
+  useEffect(() => {
+    console.log('✅ MixedFeed useEffect - component is in the tree');
+  }, []);
+
+  const { data, isLoading, error, refetch } = useQuery<FeedItem[]>({
     queryKey: ['/api/feed'],
     queryFn: async () => {
-      const res = await fetch('/api/feed', {
-        headers: getAuthHeaders(),
-        credentials: 'include',
-      });
+      console.log('📡 MixedFeed queryFn executing - about to fetch /api/feed');
+      const res = await fetch('/api/feed');
       if (!res.ok) throw new Error('Failed to fetch feed');
-      return await res.json();
+      const fetchedData = await res.json();
+      console.log('✅ MixedFeed data received:', fetchedData);
+      return fetchedData;
     },
   });
 
+  console.log('🎯 MixedFeed state:', { isLoading, hasError: !!error, dataLength: data?.length });
+
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
-        {[...Array(8)].map((_, i) => (
-          <div 
-            key={i} 
-            className="h-64 bg-white/70 rounded-2xl ring-1 ring-black/5 animate-pulse" 
-          />
-        ))}
-      </div>
+      <section className="py-10 sm:py-12">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-6 sm:mb-8">
+            Güncel İlanlar ve Oda Arayanlar
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
+            {[...Array(8)].map((_, i) => (
+              <div 
+                key={i} 
+                className="h-64 bg-white/70 rounded-2xl ring-1 ring-black/5 animate-pulse" 
+              />
+            ))}
+          </div>
+        </div>
+      </section>
     );
   }
 
-  if (error || !data?.length) return null;
+  // Error state
+  if (error) {
+    return (
+      <section className="py-10 sm:py-12">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-6 sm:mb-8">
+            Güncel İlanlar ve Oda Arayanlar
+          </h2>
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-8 max-w-md w-full text-center">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                İlanlar Yüklenemedi
+              </h3>
+              <p className="text-sm text-slate-600 mb-6">
+                İlanları yüklerken bir sorun oluştu. Lütfen tekrar deneyin.
+              </p>
+              <Button
+                onClick={() => refetch()}
+                className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white"
+                data-testid="button-retry-feed"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Tekrar Dene
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Empty state
+  if (!data?.length) {
+    return (
+      <section className="py-10 sm:py-12">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-6 sm:mb-8">
+            Güncel İlanlar ve Oda Arayanlar
+          </h2>
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-8 max-w-md w-full text-center">
+              <Home className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                Henüz İlan Yok
+              </h3>
+              <p className="text-sm text-slate-600">
+                Şu anda gösterilecek ilan veya oda arayan profili bulunmuyor. Lütfen daha sonra tekrar kontrol edin.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-10 sm:py-12">
