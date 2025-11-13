@@ -1,5 +1,5 @@
 import { Star, MapPin, ChevronLeft, ChevronRight, Bed, Bath, Users, DoorOpen } from "lucide-react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -52,6 +52,7 @@ export default function ListingCard({
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const [favorite, setFavorite] = useState(isFavorited);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -144,11 +145,23 @@ export default function ListingCard({
     ? `/oda-ilani/${listing.slug}`
     : `/oda-ilani/${listing.id}`;
 
+  const handleCardClick = () => {
+    setLocation(listingUrl);
+  };
+
   return (
-    <Link href={listingUrl}>
       <article
+        role="link"
+        tabIndex={0}
+        onClick={handleCardClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleCardClick();
+          }
+        }}
         data-testid={`card-listing-${listing.id}`}
-        className="group block overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-xl transition-all duration-300"
+        className="group block overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
       >
         {/* IMAGE CAROUSEL */}
         <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100">
@@ -274,6 +287,5 @@ export default function ListingCard({
           </div>
         </div>
       </article>
-    </Link>
   );
 }
