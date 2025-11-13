@@ -23,10 +23,6 @@ ignore = ["dist/public/assets/*.map"]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 39439
-externalPort = 3000
-
 [workflows]
 runButton = "Project"
 

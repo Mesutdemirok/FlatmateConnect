@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
-import { MapPin, Wallet, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 
 type FeedItem =
   | { 
@@ -42,6 +42,9 @@ function formatOccupation(occupation: string | null | undefined): string {
 }
 
 function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) {
+  const [, setLocation] = useLocation();
+  const seekerUrl = `/oda-arayan/${item.slug || item.id}`;
+  
   const photo = item.photoUrl 
     ? getAbsoluteImageUrl(item.photoUrl) 
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.displayName)}&background=8b5cf6&color=fff&size=512`;
@@ -51,7 +54,7 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
   const budget = item.budgetMonthly ? `₺${item.budgetMonthly.toLocaleString("tr-TR")}` : "";
   
   return (
-    <Link href={`/oda-arayan/${item.slug || item.id}`}>
+    <Link href={seekerUrl}>
       <article 
         className="h-full w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
         data-testid={`card-seeker-${item.id}`}
@@ -138,14 +141,17 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
           {/* CTA Button - At bottom with mt-auto - same size as ListingCard */}
           <div className="mt-auto pt-2">
             <Button
-              asChild
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setLocation(seekerUrl);
+              }}
               className="w-full h-9 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg transition-colors"
               data-testid={`button-contact-${item.id}`}
             >
-              <span>
-                <MessageCircle className="w-4 h-4 mr-2 inline" />
-                İletişime Geçin
-              </span>
+              <MessageCircle className="w-4 h-4 mr-2 inline" />
+              İletişime Geçin
             </Button>
           </div>
         </div>
@@ -153,14 +159,17 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
         {/* Mobile: Compact white area with only CTA button */}
         <div className="md:hidden px-3 py-2.5">
           <Button
-            asChild
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setLocation(seekerUrl);
+            }}
             className="w-full h-11 bg-[#EA580C] hover:bg-[#C2410C] text-white text-sm font-semibold rounded-lg transition-colors"
             data-testid={`button-contact-${item.id}`}
           >
-            <span>
-              <MessageCircle className="w-4 h-4 mr-2 inline" />
-              İletişime Geçin
-            </span>
+            <MessageCircle className="w-4 h-4 mr-2 inline" />
+            İletişime Geçin
           </Button>
         </div>
       </article>

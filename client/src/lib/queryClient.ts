@@ -1,11 +1,17 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { getToken } from "./auth";
 
-// 🔥 Correct backend API base for Production (Final)
-const BACKEND_API_BASE = "https://www.odanet.com.tr/api";
+// Use same-origin setup for both dev and production (backend and frontend on same server)
+const BACKEND_API_BASE = "";
 
 // --- Helper: Build clean URL ---
 function buildUrl(path: string): string {
+  // If BACKEND_API_BASE is empty, use same-origin (relative URLs)
+  if (!BACKEND_API_BASE) {
+    return path.startsWith("/") ? path : `/${path}`;
+  }
+  
+  // If we have a base URL, clean and concatenate
   const clean = path.startsWith("/") ? path.slice(1) : path;
   return `${BACKEND_API_BASE}/${clean}`;
 }
