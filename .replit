@@ -1,5 +1,5 @@
 modules = ["nodejs-20", "postgresql-16", "web"]
-hidden = [".config", ".git", "dist"]
+hidden = [".config", ".git"]
 
 [nix]
 channel = "stable-24_05"
@@ -9,27 +9,27 @@ packages = ["lsof", "jq", "file"]
 PORT = "5000"
 NODE_ENV = "production"
 
-# ✅ Used for local development (Replit run button)
-run = "npm run dev"
+# 🔥 Force workspace run to use production backend build
+run = "node dist/index.js"
 
-# ✅ Deployment configuration for autoscale
+# 🔥 Deployment always uses dist too
 [deployment]
 build = ["npm", "ci", "--omit=dev"]
 run = ["node", "dist/index.js"]
 deploymentTarget = "autoscale"
 
-# ⚠️ Do NOT ignore node_modules anymore
+# ⚠️ Keep ignore simple and safe
 ignore = ["dist/public/assets/*.map"]
 
 [[ports]]
 localPort = 5000
 externalPort = 80
 
+# Optional port (not needed but safe to keep)
 [[ports]]
 localPort = 42891
 externalPort = 3000
 
-# ✅ Workflows
 [workflows]
 runButton = "Project"
 
@@ -47,8 +47,9 @@ name = "Start application"
 author = "agent"
 
 [[workflows.workflow.tasks]]
+# 🔥 Force workflow to use dist backend
 task = "shell.exec"
-args = "npm run dev"
+args = "node dist/index.js"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
