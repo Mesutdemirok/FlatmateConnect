@@ -160,6 +160,14 @@ export const seekerProfiles = pgTable("seeker_profiles", {
   about: text("about"), // Bio/description
   preferredLocation: text("preferred_location"), // Single location preference
   
+  // Legacy location fields (kept for backward compatibility with existing data)
+  city: varchar("city"),
+  citySlug: varchar("city_slug"),
+  district: varchar("district"),
+  districtSlug: varchar("district_slug"),
+  neighborhood: varchar("neighborhood"),
+  neighborhoodSlug: varchar("neighborhood_slug"),
+  
   // Personal Lifestyle (about the seeker)
   isSmoker: varchar("is_smoker"), // "true" | "false" - Whether the seeker smokes
   hasPets: varchar("has_pets"), // "true" | "false" - Whether the seeker has pets
