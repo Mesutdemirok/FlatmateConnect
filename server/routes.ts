@@ -369,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/users/me", jwtAuth, async (req, res) => {
     try {
       const userId = req.userId!;
-      const allowedFields = ['firstName', 'lastName', 'phone', 'dateOfBirth', 'gender', 'occupation', 'bio', 'profileImageUrl', 'city', 'smoking', 'pets', 'cleanliness', 'socialLevel'];
+      const allowedFields = ['firstName', 'lastName', 'phone', 'dateOfBirth', 'gender', 'occupation', 'bio', 'profileImageUrl', 'city'];
       const updates: any = {};
       
       // Only allow specific fields to be updated
@@ -390,6 +390,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("❌ Update user error:", err);
       res.status(400).json({ 
         message: err.message || "Profil güncellenemedi" 
+      });
+    }
+  });
+
+  /* -------------------------------------------------------
+     🎨 User Preferences
+  ------------------------------------------------------- */
+  // Get current user's preferences
+  app.get("/api/user-preferences", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const preferences = await storage.getUserPreferences(userId);
+      res.json(preferences || null);
+    } catch (err: any) {
+      console.error("❌ Get user preferences error:", err);
+      res.status(500).json({ message: "Tercihler alınamadı" });
+    }
+  });
+
+  // Create or update user preferences
+  app.post("/api/user-preferences", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const data = insertUserPreferencesSchema.parse({ ...req.body, userId });
+      const preferences = await storage.upsertUserPreferences(data);
+      
+      // Invalidate the user cache to refresh profile score
+      res.json(preferences);
+    } catch (err: any) {
+      console.error("❌ Upsert user preferences error:", err);
+      res.status(400).json({ 
+        message: err.message || "Tercihler kaydedilemedi" 
       });
     }
   });

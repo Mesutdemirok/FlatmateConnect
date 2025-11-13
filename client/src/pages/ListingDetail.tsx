@@ -470,6 +470,8 @@ export default function ListingDetail() {
                   (listing.user.firstName?.[0] || "U") +
                   (listing.user.lastName?.[0] || "")
                 }
+                onContactClick={handleContactOwner}
+                showContactButton={user?.id !== listing.userId}
               />
             </div>
           </div>
@@ -544,6 +546,8 @@ export default function ListingDetail() {
                 (listing.user.firstName?.[0] || "U") +
                 (listing.user.lastName?.[0] || "")
               }
+              onContactClick={handleContactOwner}
+              showContactButton={user?.id !== listing.userId}
             />
           </div>
         </div>

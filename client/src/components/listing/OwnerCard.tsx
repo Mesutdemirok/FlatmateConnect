@@ -1,17 +1,22 @@
 // ODANET Mobil Detay Revizyonu – Mülk Sahibi Kartı
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Shield, MessageCircle } from "lucide-react";
 
 interface OwnerCardProps {
   ownerName?: string;
   ownerPhoto?: string;
   ownerInitials?: string;
+  onContactClick?: () => void;
+  showContactButton?: boolean;
 }
 
 export default function OwnerCard({
   ownerName = "Anonim Kullanıcı",
   ownerPhoto,
   ownerInitials,
+  onContactClick,
+  showContactButton = true,
 }: OwnerCardProps) {
   // İsmi baş harf büyük formatla
   const formatName = (name: string) => {
@@ -38,11 +43,22 @@ export default function OwnerCard({
             {initials}
           </AvatarFallback>
         </Avatar>
-        <div>
+        <div className="flex-1">
           <p className="font-medium text-slate-900">{displayName}</p>
           <p className="text-xs text-slate-500">İlan Sahibi</p>
         </div>
       </div>
+
+      {showContactButton && onContactClick && (
+        <Button
+          onClick={onContactClick}
+          className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+          data-testid="button-contact-owner"
+        >
+          <MessageCircle className="h-4 w-4 mr-2" />
+          İletişim
+        </Button>
+      )}
 
       <div className="flex items-start gap-2 text-xs text-slate-600 bg-amber-50 border border-amber-100 rounded-lg p-3">
         <Shield className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
