@@ -7,9 +7,7 @@ export function getApiUrl(path: string = ''): string {
   
   // If no API URL configured, use relative path (same-origin)
   if (!apiBase) {
-    const result = path.startsWith('/') ? path : `/${path}`;
-    console.log(`🔧 getApiUrl('${path}') => '${result}' (same-origin)`);
-    return result;
+    return path.startsWith('/') ? path : `/${path}`;
   }
   
   // Ensure apiBase doesn't end with /
@@ -18,7 +16,5 @@ export function getApiUrl(path: string = ''): string {
   // Ensure path starts with /
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   
-  const result = `${base}${cleanPath}`;
-  console.log(`🔧 getApiUrl('${path}') => '${result}' (external API)`);
-  return result;
+  return `${base}${cleanPath}`;
 }

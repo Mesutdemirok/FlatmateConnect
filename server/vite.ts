@@ -42,26 +42,14 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  // Log all requests to see what Vite is intercepting
-  app.use((req, res, next) => {
-    if (req.path.startsWith("/api")) {
-      console.log(`🔍 API request detected: ${req.method} ${req.path}`);
-    }
-    next();
-  });
-
   app.use(vite.middlewares);
-  
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
     // Skip API and upload routes - let them be handled by Express routes
     if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
-      console.log(`🔀 Skipping Vite for API route: ${req.path}`);
       return next();
     }
-    
-    console.log(`📄 Serving HTML for: ${req.path}`);
 
     try {
       const clientTemplate = path.resolve(

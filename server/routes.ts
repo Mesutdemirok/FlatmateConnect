@@ -150,22 +150,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/me", jwtAuth, async (req, res) => {
-    console.log(`🎯 /api/auth/me endpoint HIT - userId: ${req.userId}`);
     try {
       const [user, prefs] = await Promise.all([
         storage.getUser(req.userId!),
         storage.getUserPreferences(req.userId!),
       ]);
-      if (!user) {
-        console.log(`❌ User not found for ID: ${req.userId}`);
+      if (!user)
         return res.status(404).json({ message: "Kullanıcı bulunamadı" });
-      }
       const { password, ...safeUser } = user;
       const profileScore = calculateProfileScore(user, prefs);
-      console.log(`✅ Returning user data for: ${user.email}`);
       res.json({ ...safeUser, profileScore });
-    } catch (err) {
-      console.error(`❌ Error in /api/auth/me:`, err);
+    } catch {
       res.status(500).json({ message: "Kullanıcı bilgisi alınamadı" });
     }
   });
