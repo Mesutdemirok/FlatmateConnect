@@ -13,8 +13,8 @@ NODE_ENV = "production"
 run = "node dist/index.js"
 
 [deployment]
-build = ["npm", "ci", "--omit=dev"]
-run = ["node", "dist/index.js"]
+build = ["sh", "-c", "npm ci --omit=dev && npm run build"]
+run = ["npm", "start"]
 deploymentTarget = "autoscale"
 
 ignore = ["dist/public/assets/*.map"]
@@ -22,6 +22,10 @@ ignore = ["dist/public/assets/*.map"]
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 38767
+externalPort = 3000
 
 [workflows]
 runButton = "Project"
