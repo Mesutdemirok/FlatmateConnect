@@ -1,6 +1,14 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { getToken } from "./auth";
-import { getApiUrl } from "./apiConfig";
+
+// 🔥 Correct backend URL (Final)
+const BACKEND_API_BASE = "https://flatmateconnect.mesudemirok-4j0.repl.co/api";
+
+// Clean join function
+function buildUrl(path: string): string {
+  const clean = path.startsWith("/") ? path.slice(1) : path;
+  return `${BACKEND_API_BASE}/${clean}`;
+}
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -13,7 +21,7 @@ export function getAuthHeaders(): Record<string, string> {
   const token = getToken();
   if (token) {
     return {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     };
   }
   return {};
@@ -29,10 +37,12 @@ export async function apiRequest(
   };
 
   if (data) {
-    headers['Content-Type'] = 'application/json';
+    headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(getApiUrl(url), {
+  const fullUrl = buildUrl(url);
+
+  const res = await fetch(fullUrl, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -44,12 +54,16 @@ export async function apiRequest(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(getApiUrl(queryKey.join("/")), {
+    const path = queryKey.join("/");
+    const fullUrl = buildUrl(path);
+
+    const res = await fetch(fullUrl, {
       headers: getAuthHeaders(),
       credentials: "include",
     });
