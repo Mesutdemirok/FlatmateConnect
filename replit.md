@@ -6,6 +6,13 @@ Odanet is a flatmate and room rental platform for the Turkish market, connecting
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Deployment
+- **Development**: Changes made in Replit run on localhost:5000 (preview environment)
+- **Production**: www.odanet.com.tr - requires clicking "Deploy"/"Publish" button to push changes
+- **Database**: Shared between both environments (Neon PostgreSQL)
+- **Important**: Any code changes only affect development until deployed to production
+- **Guide**: See DEPLOY_TO_PRODUCTION.md for deployment instructions
+
 ## System Architecture
 
 ### UI/UX Decisions

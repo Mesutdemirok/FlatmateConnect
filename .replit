@@ -14,7 +14,7 @@ run = "npm run dev"
 
 # ✅ Deployment configuration for autoscale
 [deployment]
-build = ["sh", "-c", "npm ci --omit=dev && npm run build"]
+build = ["npm", "ci", "--omit=dev"]
 run = ["node", "dist/index.js"]
 deploymentTarget = "autoscale"
 
@@ -26,7 +26,7 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 33079
+localPort = 41145
 externalPort = 3001
 
 [[ports]]

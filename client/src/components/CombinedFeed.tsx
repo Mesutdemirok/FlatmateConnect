@@ -50,13 +50,10 @@ export default function CombinedFeed() {
   }
 
   return (
-    <section className="py-10 sm:py-12" data-testid="combined-feed-section">
+    <section className="py-10 sm:py-12">
       <div className="mx-auto max-w-[1100px] px-3">
-        <h2 className="text-2xl font-bold mb-6 text-center" data-testid="feed-title">
-          {mixed.length} ilan bulundu
-        </h2>
         {/* 1 per row on mobile; 2 on md; 3 on lg */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="feed-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {mixed.map((item, idx) =>
             item.kind === "listing" ? (
               <ListingCard
