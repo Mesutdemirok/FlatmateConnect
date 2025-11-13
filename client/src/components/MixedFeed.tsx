@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+import { getAuthHeaders } from "@/lib/queryClient";
 import { MessageCircle } from "lucide-react";
 
 type FeedItem =
@@ -191,6 +192,14 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
 export default function MixedFeed() {
   const { data, isLoading, error } = useQuery<FeedItem[]>({
     queryKey: ['/api/feed'],
+    queryFn: async () => {
+      const res = await fetch('/api/feed', {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to fetch feed');
+      return await res.json();
+    },
   });
 
   if (isLoading) {

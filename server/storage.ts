@@ -187,6 +187,10 @@ export interface IStorage {
   addSeekerPhoto(photo: InsertSeekerPhoto): Promise<SeekerPhoto>;
   getSeekerPhotos(seekerId: string): Promise<SeekerPhoto[]>;
   deleteSeekerPhoto(id: string): Promise<void>;
+
+  // Feed operations
+  getFeedListings(limit: number): Promise<(Listing & { images: ListingImage[] })[]>;
+  getFeedSeekers(limit: number): Promise<SeekerProfile[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -754,6 +758,41 @@ export class DatabaseStorage implements IStorage {
     }
 
     await db.delete(seekerPhotos).where(eq(seekerPhotos.id, id));
+  }
+
+  // Feed operations
+  async getFeedListings(limit: number): Promise<(Listing & { images: ListingImage[] })[]> {
+    const results = await db
+      .select()
+      .from(listings)
+      .where(eq(listings.status, "active"))
+      .orderBy(desc(listings.createdAt))
+      .limit(limit);
+
+    const listingsWithImages = await Promise.all(
+      results.map(async (listing) => ({
+        ...listing,
+        images: await this.getListingImages(listing.id),
+      }))
+    );
+
+    return listingsWithImages;
+  }
+
+  async getFeedSeekers(limit: number): Promise<SeekerProfile[]> {
+    const results = await db
+      .select()
+      .from(seekerProfiles)
+      .where(
+        and(
+          eq(seekerProfiles.isPublished, true),
+          eq(seekerProfiles.isActive, true)
+        )
+      )
+      .orderBy(desc(seekerProfiles.createdAt))
+      .limit(limit);
+
+    return results;
   }
 }
 

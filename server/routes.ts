@@ -94,6 +94,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /* -------------------------------------------------------
+     🏠 Mixed Feed (Listings + Seekers)
+  ------------------------------------------------------- */
+  app.get("/api/feed", async (req, res) => {
+    try {
+      const [listings, seekers] = await Promise.all([
+        storage.getFeedListings(25),
+        storage.getFeedSeekers(25),
+      ]);
+
+      // Map listings to FeedItem shape
+      const listingItems = listings.map((listing) => ({
+        type: 'listing' as const,
+        id: listing.id,
+        slug: listing.slug,
+        title: listing.title,
+        suburb: listing.district ?? listing.neighborhood ?? listing.city,
+        rentAmount: listing.rentAmount,
+        totalOccupants: listing.totalOccupants,
+        roommatePreference: listing.roommatePreference,
+        furnishingStatus: listing.furnishingStatus,
+        images: listing.images,
+        createdAt: listing.createdAt,
+      }));
+
+      // Map seekers to FeedItem shape
+      const seekerItems = seekers.map((seeker) => ({
+        type: 'seeker' as const,
+        id: seeker.id,
+        slug: seeker.slug,
+        displayName: seeker.fullName,
+        budgetMonthly: seeker.budgetMonthly ? parseFloat(seeker.budgetMonthly) : null,
+        preferredLocation: seeker.preferredLocation,
+        photoUrl: seeker.profilePhotoUrl,
+        age: seeker.age,
+        occupation: seeker.occupation,
+        createdAt: seeker.createdAt,
+      }));
+
+      // Merge and sort by createdAt DESC
+      const combinedFeed = [...listingItems, ...seekerItems]
+        .sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        })
+        .slice(0, 40); // Limit to 40 items total
+
+      // Remove createdAt from response (used only for sorting)
+      const feedItems = combinedFeed.map(({ createdAt, ...item }) => item);
+
+      res.json(feedItems);
+    } catch (err: any) {
+      console.error("❌ /api/feed error:", err);
+      res.status(500).json({ message: "Feed yüklenemedi" });
+    }
+  });
+
+  /* -------------------------------------------------------
      👤 Authentication Routes
   ------------------------------------------------------- */
   app.post("/api/auth/register", async (req, res) => {
