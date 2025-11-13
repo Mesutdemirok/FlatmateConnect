@@ -16,8 +16,9 @@ interface ListingCardProps {
     title: string;
     city?: string | null;
     district?: string | null;
+    suburb?: string | null;
     address?: string | null;
-    rentAmount: string | number;
+    rentAmount: string | number | null;
     images?: Array<{ imagePath?: string; isPrimary?: boolean }>;
     createdAt?: string | Date;
     updatedAt?: string | Date;
@@ -27,6 +28,9 @@ interface ListingCardProps {
     bedroomCount?: number | null;
     bathroomCount?: number | null;
     currentOccupants?: number | null;
+    totalOccupants?: number | null;
+    roommatePreference?: string | null;
+    furnishingStatus?: string | null;
   };
   isFavorited?: boolean;
 }
@@ -76,20 +80,21 @@ export default function ListingCard({
 
   // Format location
   const location = useMemo(() => {
-    const cityDistrict = [listing.district, listing.city].filter(Boolean).join(", ");
+    const cityDistrict = [listing.district, listing.city, listing.suburb].filter(Boolean).join(", ");
     if (cityDistrict) return cityDistrict;
     if (listing.address) {
       const addressPart = listing.address.split(",")[0];
       return addressPart.length > 40 ? addressPart.substring(0, 37) + "..." : addressPart;
     }
     return "";
-  }, [listing.district, listing.city, listing.address]);
+  }, [listing.district, listing.city, listing.suburb, listing.address]);
 
   // Format price
   const amount = useMemo(() => {
     const v = listing.rentAmount;
+    if (!v) return 0;
     if (typeof v === "string") return Number(v.replace(/[^\d.,-]/g, "").replace(",", "."));
-    return Number(v ?? 0);
+    return Number(v);
   }, [listing.rentAmount]);
 
   const toggleFavorite = useMutation({
@@ -248,12 +253,15 @@ export default function ListingCard({
                 <span className="text-sm font-medium">{listing.bathroomCount}</span>
               </div>
             )}
-            {listing.currentOccupants !== null && listing.currentOccupants !== undefined && (
+            {(listing.currentOccupants !== null && listing.currentOccupants !== undefined) || 
+             (listing.totalOccupants !== null && listing.totalOccupants !== undefined) ? (
               <div className="flex items-center gap-1.5">
                 <Users className="w-5 h-5 text-purple-600" />
-                <span className="text-sm font-medium">{listing.currentOccupants}</span>
+                <span className="text-sm font-medium">
+                  {listing.currentOccupants ?? listing.totalOccupants}
+                </span>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </article>

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import ListingCard from "@/components/ListingCard";
@@ -190,50 +189,20 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
 }
 
 export default function MixedFeed() {
-  console.log('🔍 MixedFeed component mounted/rendered');
-
-  useEffect(() => {
-    console.log('✅ MixedFeed useEffect - component is in the tree');
-  }, []);
-
   const { data, isLoading, error, refetch } = useQuery<FeedItem[]>({
     queryKey: ['/api/feed'],
     queryFn: async () => {
-      console.log('📡 MixedFeed queryFn executing - about to fetch /api/feed');
       const res = await fetch('/api/feed');
       if (!res.ok) throw new Error('Failed to fetch feed');
-      const fetchedData = await res.json();
-      console.log('✅ MixedFeed data received:', fetchedData);
-      return fetchedData;
+      const json = await res.json();
+      return json;
     },
   });
 
-  console.log('🎯 MixedFeed state:', { isLoading, hasError: !!error, dataLength: data?.length });
-
-  if (isLoading) {
-    return (
-      <section className="py-10 sm:py-12">
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-6 sm:mb-8">
-            Güncel İlanlar ve Oda Arayanlar
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
-            {[...Array(8)].map((_, i) => (
-              <div 
-                key={i} 
-                className="h-64 bg-white/70 rounded-2xl ring-1 ring-black/5 animate-pulse" 
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // Error state
+  // Error state - check first so it's reachable
   if (error) {
     return (
-      <section className="py-10 sm:py-12">
+      <section className="py-10 sm:py-12 isolate">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-6 sm:mb-8">
             Güncel İlanlar ve Oda Arayanlar
@@ -262,10 +231,30 @@ export default function MixedFeed() {
     );
   }
 
-  // Empty state
+  // Wait for data to load
+  if (isLoading || !data) {
+    return (
+      <section className="py-10 sm:py-12 isolate">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-6 sm:mb-8">
+            Güncel İlanlar ve Oda Arayanlar
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
+            {[...Array(8)].map((_, i) => (
+              <div 
+                key={i} 
+                className="h-64 bg-white/70 rounded-2xl ring-1 ring-black/5 animate-pulse" 
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (!data?.length) {
     return (
-      <section className="py-10 sm:py-12">
+      <section className="py-10 sm:py-12 isolate">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-6 sm:mb-8">
             Güncel İlanlar ve Oda Arayanlar
@@ -287,32 +276,36 @@ export default function MixedFeed() {
   }
 
   return (
-    <section className="py-10 sm:py-12">
+    <section className="py-10 sm:py-12 isolate">
       <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-6 sm:mb-8">
           Güncel İlanlar ve Oda Arayanlar
         </h2>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
-          {data.map((item) =>
-            item.type === 'listing' ? (
-              <div key={`feed-listing-${item.id}`} className="h-full">
-                <ListingCard 
-                  listing={{
-                    id: item.id,
-                    slug: item.slug,
-                    title: item.title,
-                    rentAmount: item.rentAmount ?? "0",
-                    images: item.images
-                  }} 
-                />
-              </div>
+          {data.map((item) => {
+            return item.type === 'listing' ? (
+              <ListingCard 
+                key={`listing-${item.id}`}
+                listing={{
+                  id: item.id,
+                  slug: item.slug ?? null,
+                  title: item.title,
+                  suburb: item.suburb ?? null,
+                  rentAmount: item.rentAmount ?? "0",
+                  totalOccupants: item.totalOccupants ?? null,
+                  roommatePreference: item.roommatePreference ?? null,
+                  furnishingStatus: item.furnishingStatus ?? null,
+                  images: item.images ?? []
+                }}
+              />
             ) : (
-              <div key={`feed-seeker-${item.id}`} className="h-full">
-                <SeekerMiniCard item={item} />
-              </div>
-            )
-          )}
+              <SeekerMiniCard 
+                key={`seeker-${item.id}`}
+                item={item}
+              />
+            );
+          })}
         </div>
       </div>
     </section>
