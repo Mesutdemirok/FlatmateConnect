@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 
 export default function Login() {
   const [, navigate] = useLocation();
-  const { login, user } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
   
@@ -19,7 +19,13 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   const params = new URLSearchParams(window.location.search);
-  const nextPath = params.get('next') || '/profil';
+  const nextPath = params.get('redirect') || params.get('next') || '/profil';
+
+  // Auto-redirect if already logged in
+  if (isAuthenticated) {
+    navigate('/profil');
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

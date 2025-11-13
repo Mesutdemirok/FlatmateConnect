@@ -11,8 +11,13 @@ type FeedItem =
       id: string;
       slug?: string | null;
       title: string; 
-      suburb: string | null; 
+      suburb: string | null;
+      city: string | null;
+      district: string | null;
       rentAmount: string | null;
+      roomType: string | null;
+      bathroomCount: number | null;
+      moveInDate: string | null;
       totalOccupants?: number | null;
       roommatePreference?: string | null;
       furnishingStatus?: string | null;
@@ -191,12 +196,6 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
 export default function MixedFeed() {
   const { data, isLoading, error, refetch } = useQuery<FeedItem[]>({
     queryKey: ['/api/feed'],
-    queryFn: async () => {
-      const res = await fetch('/api/feed');
-      if (!res.ok) throw new Error('Failed to fetch feed');
-      const json = await res.json();
-      return json;
-    },
   });
 
   // Error state - check first so it's reachable
@@ -239,7 +238,7 @@ export default function MixedFeed() {
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-6 sm:mb-8">
             Güncel İlanlar ve Oda Arayanlar
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
             {[...Array(8)].map((_, i) => (
               <div 
                 key={i} 
@@ -282,7 +281,7 @@ export default function MixedFeed() {
           Güncel İlanlar ve Oda Arayanlar
         </h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
           {data.map((item) => {
             return item.type === 'listing' ? (
               <ListingCard 
@@ -292,7 +291,12 @@ export default function MixedFeed() {
                   slug: item.slug ?? null,
                   title: item.title,
                   suburb: item.suburb ?? null,
+                  city: item.city ?? null,
+                  district: item.district ?? null,
                   rentAmount: item.rentAmount ?? "0",
+                  roomType: item.roomType ?? null,
+                  bathroomCount: item.bathroomCount ?? null,
+                  moveInDate: item.moveInDate ?? null,
                   totalOccupants: item.totalOccupants ?? null,
                   roommatePreference: item.roommatePreference ?? null,
                   furnishingStatus: item.furnishingStatus ?? null,

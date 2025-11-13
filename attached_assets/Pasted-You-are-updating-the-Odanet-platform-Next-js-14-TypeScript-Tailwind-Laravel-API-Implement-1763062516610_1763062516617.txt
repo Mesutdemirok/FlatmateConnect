@@ -1,0 +1,249 @@
+You are updating the Odanet platform (Next.js 14 + TypeScript + Tailwind + Laravel API).  
+Implement ALL the following changes exactly and completely.
+
+=====================================================
+PART 1 — LISTING CARD REDESIGN (UI/UX REQUIREMENTS)
+=====================================================
+
+A. Desktop grid
+- 3 columns on xl
+- 2 columns on md
+- exact class: 
+  grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6
+- All cards must be SAME HEIGHT: image, title, price, availability, icons.
+
+B. Mobile grid
+- STRICT rule: only 1 listing per row
+- class: grid-cols-1 gap-4
+- Fixed image height: h-56
+- Consistent padding, fonts, margins.
+
+C. Image section
+- Use primary image OR first image
+- object-cover, rounded-xl
+- No blur background, no weird effects.
+
+D. Price display
+- Move into TOP-RIGHT **inside image**
+- White background, 90% opacity
+- Black text
+- Format: ₺{rent} / ay
+
+E. Title formatting
+- Title must show ONLY:
+  suburb + city
+  Example: “Beşiktaş, İstanbul”
+- Use line-clamp-1
+
+F. Availability badge
+- Replace old badge completely
+- Light gray (#f3f4f6)
+- Dark text
+- rounded-full
+- If available_from <= today: “Şimdi müsait”
+- Else: “{date} uygun”
+
+G. Icon row
+- 3 icons:
+  - Room type → DoorOpen icon
+  - Bathroom → Bath icon
+  - Housemates → Users icon
+- Size: 18px
+- All text gray-700, size small.
+
+H. Favorite button
+- White round button bottom-right
+- Shadow
+- Heart icon gray.
+
+=====================================================
+PART 2 — LISTING CARD FULL CODE IMPLEMENTATION
+=====================================================
+
+Replace ENTIRE ListingCard.tsx with:
+
+------------------------------------------
+LISTINGCARD.TSX (FINAL VERSION WITH LOGIN CHECK)
+------------------------------------------
+
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Heart, Bath, Users, DoorOpen } from "lucide-react";
+
+export default function ListingCard({ listing }) {
+  const router = useRouter();
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const handleOpen = () => {
+    if (!token) {
+      router.push(`/auth/login?redirect=/listing/${listing.id}`);
+      return;
+    }
+    router.push(`/listing/${listing.id}`);
+  };
+
+  const primaryImage =
+    listing.images?.find((img) => img.is_primary) || listing.images?.[0];
+
+  const isAvailable =
+    listing.available_from &&
+    new Date(listing.available_from) <= new Date();
+
+  const availableText = isAvailable
+    ? "Şimdi müsait"
+    : listing.available_from
+    ? `${listing.available_from} uygun`
+    : "Müsait";
+
+  return (
+    <div
+      onClick={handleOpen}
+      className="cursor-pointer rounded-xl overflow-hidden shadow-sm border hover:shadow-md transition-all bg-white"
+    >
+      {/* IMAGE */}
+      <div className="relative h-56 w-full">
+        <Image
+          src={primaryImage?.image_path}
+          alt={listing.suburb}
+          fill
+          className="object-cover"
+        />
+
+        {/* PRICE TAG */}
+        <div className="absolute top-3 right-3 bg-white/90 px-3 py-1 rounded-md font-semibold text-black shadow">
+          ₺{listing.rent_amount.toLocaleString()} / ay
+        </div>
+
+        {/* FAVORITE BUTTON */}
+        <button
+          className="absolute bottom-3 right-3 bg-white rounded-full p-2 shadow-md"
+          type="button"
+        >
+          <Heart size={18} className="text-gray-600" />
+        </button>
+      </div>
+
+      {/* CARD BODY */}
+      <div className="p-4 flex flex-col gap-2">
+
+        {/* TITLE */}
+        <p className="font-semibold text-lg line-clamp-1">
+          {listing.suburb}, {listing.city}
+        </p>
+
+        {/* AVAILABILITY */}
+        <span className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full">
+          {availableText}
+        </span>
+
+        {/* ICON ROW */}
+        <div className="flex items-center gap-4 mt-1 text-gray-700">
+          <div className="flex items-center gap-1 text-sm">
+            <DoorOpen size={18} /> {listing.room_type}
+          </div>
+
+          <div className="flex items-center gap-1 text-sm">
+            <Bath size={18} /> {listing.bathroom_type || "Banyo"}
+          </div>
+
+          <div className="flex items-center gap-1 text-sm">
+            <Users size={18} /> {listing.housemates || 1}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+=====================================================
+PART 3 — PROFILE LOGIN BEHAVIOR RULES
+=====================================================
+
+A. If user logs in from navigation “Login”:
+- After login → REDIRECT DIRECTLY TO /profile
+
+B. If user is ALREADY logged in:
+- Clicking “Login” takes them IMMEDIATELY to /profile
+- No login screen allowed
+
+C. LOGIN PAGE LOGIC
+
+Inside /auth/login/page.tsx implement:
+
+const redirect = searchParams.get("redirect");
+
+if (loginSuccess) {
+  router.push(redirect || "/profile");
+}
+
+=====================================================
+PART 4 — CONTACT / CONNECT BUTTON LOGIC
+=====================================================
+
+When user clicks:
+- “Connect”
+- “Contact Owner”
+- “Message Owner”
+- “Send Message”
+
+NEW BEHAVIOR:
+
+1. If NOT logged in:
+   → Redirect to login:
+     /auth/login?redirect=/listing/{id}&openMessage=true
+
+2. After login:
+   - User is redirected back to listing
+   - AND message modal automatically opens
+
+Add this to listing detail page:
+
+const searchParams = useSearchParams();
+if (searchParams.get("openMessage") === "true") {
+   openMessageModal();
+}
+
+=====================================================
+PART 5 — LISTING DETAIL ROUTING FIX
+=====================================================
+
+Ensure the page exists:
+
+src/app/listing/[id]/page.tsx
+
+Use dynamic fetch:
+
+const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listings/${params.id}`);
+
+Return error UI if fails.
+
+=====================================================
+PART 6 — LOGIN STORAGE FIX
+=====================================================
+
+When login succeeds:
+
+localStorage.setItem("token", token);
+
+All API requests must include:
+
+Authorization: Bearer <token>
+
+=====================================================
+PART 7 — HOMEPAGE GRID (FINAL)
+=====================================================
+
+Replace listing grid container with:
+
+<div className="
+  grid
+  grid-cols-1
+  md:grid-cols-2
+  xl:grid-cols-3
+  gap-6
+">
+
+=====================================================
+END OF FULL PROMPT
+=====================================================

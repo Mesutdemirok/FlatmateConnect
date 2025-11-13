@@ -1,4 +1,4 @@
-import { Star, MapPin, ChevronLeft, ChevronRight, Bed, Bath, Users } from "lucide-react";
+import { Star, MapPin, ChevronLeft, ChevronRight, Bed, Bath, Users, DoorOpen } from "lucide-react";
 import { Link } from "wouter";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +31,7 @@ interface ListingCardProps {
     totalOccupants?: number | null;
     roommatePreference?: string | null;
     furnishingStatus?: string | null;
+    moveInDate?: string | Date | null;
   };
   isFavorited?: boolean;
 }
@@ -157,6 +158,11 @@ export default function ListingCard({
             className="w-full h-full object-cover"
           />
 
+          {/* Price Badge */}
+          <div className="absolute top-3 right-3 bg-white/90 px-3 py-1.5 rounded-md font-semibold text-gray-900 shadow-md">
+            ₺{Math.round(amount).toLocaleString("tr-TR")} <span className="text-sm font-normal text-gray-600">/ay</span>
+          </div>
+
           {/* Left Arrow */}
           {hasMultipleImages && (
             <button
@@ -188,7 +194,7 @@ export default function ListingCard({
 
           {/* IMAGE COUNTER */}
           {hasMultipleImages && (
-            <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-gray-800/70 text-white text-sm font-medium">
+            <div className="absolute bottom-3 left-3 px-3 py-1.5 rounded-full bg-gray-800/70 text-white text-sm font-medium">
               {currentImageIndex + 1}/{images.length}
             </div>
           )}
@@ -217,15 +223,10 @@ export default function ListingCard({
 
         {/* INFO SECTION */}
         <div className="p-4 bg-white">
-          {/* Title and Price Row */}
-          <div className="flex items-start justify-between gap-3 mb-1">
-            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">
-              {listing.title}
-            </h3>
-            <div className="text-xl font-semibold text-teal-600 whitespace-nowrap">
-              ₺{Math.round(amount).toLocaleString("tr-TR")} <span className="text-sm font-normal text-gray-600">ay</span>
-            </div>
-          </div>
+          {/* Title */}
+          <h3 className="text-lg font-semibold text-gray-900 line-clamp-1 mb-1">
+            {[listing.suburb || listing.district, listing.city].filter(Boolean).join(", ") || listing.title}
+          </h3>
 
           {/* Location */}
           {location && (
@@ -235,12 +236,20 @@ export default function ListingCard({
           )}
 
           {/* Availability */}
-          <div className="text-sm text-gray-600 mb-3">
-            Şimdi müsait
-          </div>
+          {listing.moveInDate && (
+            <div className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full mb-3">
+              {new Date(listing.moveInDate) <= new Date() ? "Şimdi müsait" : `${new Date(listing.moveInDate).toLocaleDateString("tr-TR")} uygun`}
+            </div>
+          )}
 
           {/* Icons Row */}
           <div className="flex items-center gap-4 text-gray-700">
+            {listing.roomType && (
+              <div className="flex items-center gap-1.5">
+                <DoorOpen className="w-5 h-5 text-gray-600" />
+                <span className="text-sm font-medium">{listing.roomType}</span>
+              </div>
+            )}
             {listing.bedroomCount !== null && listing.bedroomCount !== undefined && (
               <div className="flex items-center gap-1.5">
                 <Bed className="w-5 h-5 text-teal-600" />
