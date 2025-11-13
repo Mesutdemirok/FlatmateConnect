@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, getAuthHeaders } from "@/lib/queryClient";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+import { getApiUrl } from "@/lib/apiConfig";
 import NumberInput from "@/components/forms/NumberInput";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -54,7 +55,7 @@ export default function EditListing() {
   const { data: listing, isLoading: listingLoading } = useQuery({
     queryKey: ['/api/listings', id],
     queryFn: async () => {
-      const res = await fetch(`/api/listings/${id}`);
+      const res = await fetch(getApiUrl(`/api/listings/${id}`));
       if (!res.ok) throw new Error('İlan bulunamadı');
       return res.json();
     },
@@ -153,7 +154,7 @@ export default function EditListing() {
           const formData = new FormData();
           newImages.forEach(image => formData.append('images', image));
           
-          const imageResponse = await fetch(`/api/uploads/listings/${id}/images`, {
+          const imageResponse = await fetch(getApiUrl(`/api/uploads/listings/${id}/images`), {
             method: 'POST',
             headers: getAuthHeaders(),
             body: formData,

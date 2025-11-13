@@ -14,6 +14,7 @@ import { AlertCircle, Search as SearchIcon } from "lucide-react";
 
 import { SeekerProfileWithRelations } from "@/lib/seekerApi";
 import SEOHead from "@/components/SEOHead";
+import { getApiUrl } from "@/lib/apiConfig";
 
 type Filters = {
   location: string;
@@ -70,7 +71,7 @@ export default function SeekerList() {
   } = useQuery<SeekerProfileWithRelations[]>({
     queryKey: ["/api/seekers/public", queryString],
     queryFn: async () => {
-      const res = await fetch(`/api/seekers/public?${queryString}`);
+      const res = await fetch(getApiUrl(`/api/seekers/public?${queryString}`));
       if (!res.ok) throw new Error("Failed to fetch seekers");
       return res.json();
     },

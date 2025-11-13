@@ -1,3 +1,5 @@
+import { getApiUrl } from './apiConfig';
+
 const TOKEN_KEY = 'auth_token';
 
 export interface AuthUser {
@@ -39,7 +41,7 @@ export function removeToken(): void {
 }
 
 export async function register(data: RegisterData): Promise<{ user: AuthUser; token: string }> {
-  const response = await fetch('/api/auth/register', {
+  const response = await fetch(getApiUrl('/api/auth/register'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -58,7 +60,7 @@ export async function register(data: RegisterData): Promise<{ user: AuthUser; to
 }
 
 export async function login(data: LoginData): Promise<{ user: AuthUser; token: string }> {
-  const response = await fetch('/api/auth/login', {
+  const response = await fetch(getApiUrl('/api/auth/login'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -79,7 +81,7 @@ export async function login(data: LoginData): Promise<{ user: AuthUser; token: s
 
 export async function logout(): Promise<void> {
   try {
-    await fetch('/api/auth/logout', {
+    await fetch(getApiUrl('/api/auth/logout'), {
       method: 'POST',
       credentials: 'include',
     });
@@ -100,7 +102,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   try {
     // Send request with credentials to include cookies (OAuth uses httpOnly cookie)
-    const response = await fetch('/api/auth/me', {
+    const response = await fetch(getApiUrl('/api/auth/me'), {
       headers: token ? {
         'Authorization': `Bearer ${token}`,
       } : {},

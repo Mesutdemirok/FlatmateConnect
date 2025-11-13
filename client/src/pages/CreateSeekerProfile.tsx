@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, getAuthHeaders } from "@/lib/queryClient";
 import { SeekerProfileWithRelations } from "@/lib/seekerApi";
+import { getApiUrl } from "@/lib/apiConfig";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NumberInput from "@/components/forms/NumberInput";
@@ -318,7 +319,7 @@ export default function CreateSeekerProfile() {
 
       console.log('Uploading to /api/uploads/seeker-photo...');
 
-      const response = await fetch('/api/uploads/seeker-photo', {
+      const response = await fetch(getApiUrl('/api/uploads/seeker-photo'), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: formData,

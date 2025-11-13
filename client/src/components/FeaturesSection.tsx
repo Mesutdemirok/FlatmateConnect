@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import ListingCard from "@/components/ListingCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
+import { getApiUrl } from "@/lib/apiConfig";
 
 export default function FeaturedListings() {
   const { t } = useTranslation();
@@ -22,7 +23,7 @@ export default function FeaturedListings() {
       const timeout = setTimeout(() => controller.abort(), 10_000);
 
       try {
-        const res = await fetch("/api/listings", {
+        const res = await fetch(getApiUrl("/api/listings"), {
           // prefer react-query's signal, else our controller
           signal: signal ?? controller.signal,
           headers: { accept: "application/json" },

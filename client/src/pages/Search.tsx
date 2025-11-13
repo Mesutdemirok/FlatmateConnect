@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Search as SearchIcon } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
+import { getApiUrl } from "@/lib/apiConfig";
 
 export default function Search() {
   const { t } = useTranslation();
@@ -48,7 +49,7 @@ export default function Search() {
   const { data: listings, isLoading, error } = useQuery({
     queryKey: ['/api/listings', buildQueryParams(filters)],
     queryFn: async () => {
-      const response = await fetch(`/api/listings?${buildQueryParams(filters)}`);
+      const response = await fetch(getApiUrl(`/api/listings?${buildQueryParams(filters)}`));
       if (!response.ok) throw new Error('Failed to fetch listings');
       return response.json();
     }

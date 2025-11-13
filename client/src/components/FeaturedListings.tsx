@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { formatMonthlyPrice } from "@/lib/formatters";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
+import { getApiUrl } from "@/lib/apiConfig";
 
 export default function FeaturedListings() {
   const { t } = useTranslation();
@@ -16,7 +17,7 @@ export default function FeaturedListings() {
   } = useQuery({
     queryKey: ["/api/listings"],
     queryFn: async () => {
-      const res = await fetch("/api/listings");
+      const res = await fetch(getApiUrl("/api/listings"));
       if (!res.ok) throw new Error("Failed to fetch listings");
       return res.json();
     },

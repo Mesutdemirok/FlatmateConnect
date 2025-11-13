@@ -1,18 +1,19 @@
 import { useQueries } from "@tanstack/react-query";
 import ListingCard from "@/components/ListingCard";
 import SeekerCard from "@/components/SeekerCard";
+import { getApiUrl } from "@/lib/apiConfig";
 
 export default function CombinedFeed() {
   const results = useQueries({
     queries: [
       {
         queryKey: ["/api/listings"],
-        queryFn: async () => (await fetch("/api/listings")).json(),
+        queryFn: async () => (await fetch(getApiUrl("/api/listings"))).json(),
       },
       {
         queryKey: ["/api/seekers/public"],
         queryFn: async () =>
-          (await fetch("/api/seekers/public?isActive=true")).json(),
+          (await fetch(getApiUrl("/api/seekers/public?isActive=true"))).json(),
       },
     ],
   });

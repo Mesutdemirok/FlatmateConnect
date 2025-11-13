@@ -1,4 +1,5 @@
 import { SeekerProfile, SeekerPhoto } from "@/../../shared/schema";
+import { getApiUrl } from './apiConfig';
 
 export interface SeekerProfileWithRelations extends SeekerProfile {
   photos: SeekerPhoto[];
@@ -12,7 +13,7 @@ export interface SeekerProfileWithRelations extends SeekerProfile {
 }
 
 export async function fetchFeaturedSeekers(count: number = 4): Promise<SeekerProfileWithRelations[]> {
-  const response = await fetch(`/api/seekers/featured?count=${count}`);
+  const response = await fetch(getApiUrl(`/api/seekers/featured?count=${count}`));
   if (!response.ok) {
     throw new Error('Failed to fetch featured seekers');
   }
@@ -31,7 +32,7 @@ export async function fetchSeekers(filters?: {
   if (filters?.gender) params.append('gender', filters.gender);
   if (filters?.location) params.append('location', filters.location);
 
-  const response = await fetch(`/api/seekers?${params.toString()}`);
+  const response = await fetch(getApiUrl(`/api/seekers?${params.toString()}`));
   if (!response.ok) {
     throw new Error('Failed to fetch seekers');
   }
@@ -39,7 +40,7 @@ export async function fetchSeekers(filters?: {
 }
 
 export async function fetchSeeker(id: string): Promise<SeekerProfileWithRelations> {
-  const response = await fetch(`/api/seekers/${id}`);
+  const response = await fetch(getApiUrl(`/api/seekers/${id}`));
   if (!response.ok) {
     throw new Error('Failed to fetch seeker');
   }

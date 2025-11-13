@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, getAuthHeaders } from "@/lib/queryClient";
+import { getApiUrl } from "@/lib/apiConfig";
 import NumberInput from "@/components/forms/NumberInput";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -119,7 +120,7 @@ export default function CreateListing() {
             formData.append('images', image);
           });
           
-          const imageResponse = await fetch(`/api/uploads/listings/${listing.id}/images`, {
+          const imageResponse = await fetch(getApiUrl(`/api/uploads/listings/${listing.id}/images`), {
             method: 'POST',
             headers: getAuthHeaders(),
             body: formData,
