@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
@@ -50,7 +51,7 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
   const budget = item.budgetMonthly ? `₺${item.budgetMonthly.toLocaleString("tr-TR")}` : "";
   
   return (
-    <a href={`/oda-arayan/${item.slug || item.id}`}>
+    <Link href={`/oda-arayan/${item.slug || item.id}`}>
       <article 
         className="h-full w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
         data-testid={`card-seeker-${item.id}`}
@@ -163,7 +164,7 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
           </Button>
         </div>
       </article>
-    </a>
+    </Link>
   );
 }
 
@@ -203,11 +204,7 @@ export default function MixedFeed() {
                     id: item.id,
                     slug: item.slug,
                     title: item.title,
-                    suburb: item.suburb ?? undefined,
-                    rentAmount: item.rentAmount ?? undefined,
-                    totalOccupants: item.totalOccupants ?? undefined,
-                    roommatePreference: item.roommatePreference ?? undefined,
-                    furnishingStatus: item.furnishingStatus ?? undefined,
+                    rentAmount: item.rentAmount ?? "0",
                     images: item.images
                   }} 
                 />
