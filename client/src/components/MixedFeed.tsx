@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { getAbsoluteImageUrl } from "@/lib/imageUtils";
@@ -54,9 +54,21 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
   const budget = item.budgetMonthly ? `₺${item.budgetMonthly.toLocaleString("tr-TR")}` : "";
   
   return (
-    <Link href={seekerUrl}>
       <article 
-        className="h-full w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col"
+        role="link"
+        tabIndex={0}
+        onClick={(e) => {
+          e.preventDefault();
+          setLocation(seekerUrl);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setLocation(seekerUrl);
+          }
+        }}
+        aria-label={`${item.displayName} profil sayfasına git`}
+        className="h-full w-full overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition flex flex-col cursor-pointer"
         data-testid={`card-seeker-${item.id}`}
       >
         {/* Image Section - Desktop: full cover image like ListingCard, Mobile: with overlay */}
@@ -173,7 +185,6 @@ function SeekerMiniCard({ item }: { item: Extract<FeedItem, {type:'seeker'}> }) 
           </Button>
         </div>
       </article>
-    </Link>
   );
 }
 
