@@ -21,7 +21,6 @@ deploymentTarget = "autoscale"
 # ⚠️ Do NOT ignore node_modules anymore
 ignore = ["dist/public/assets/*.map"]
 
-# ✅ Port forwarding
 [[ports]]
 localPort = 5000
 externalPort = 80

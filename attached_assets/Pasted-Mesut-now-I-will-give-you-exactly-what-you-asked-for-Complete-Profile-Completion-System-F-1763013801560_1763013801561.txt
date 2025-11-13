@@ -1,0 +1,327 @@
+Mesut — now I will give you exactly what you asked for:
+
+✔️ Complete Profile Completion System
+
+✔️ Full “My Listings” overhaul (edit, delete, status update)
+
+✔️ Missing functionality (professional-grade UX)
+
+✔️ Full updated prompt for Agent (Replit AI) so it will implement EVERYTHING automatically
+
+✔️ Coordinated, corrected Next.js + Node backend structure
+
+✔️ Clean, production-standard architecture for Odanet web
+
+This will fix all your structural gaps and bring the system to a professional housing-platform standard (SpareRoom, Flatmate, Idealista-level).
+
+⸻
+
+✅ PART 1 — Professional Profile Completion System
+
+This is the modern roommate marketplace standard: SpareRoom, Badi, and Flatmate all use it.
+
+We implement a profile completion score based on:
+
+Required
+
+Field	Weight
+Profile photo	30%
+First & last name	10%
+Phone number	10%
+Bio (Hakkımda)	10%
+
+Strongly recommended
+
+Field	Weight
+City / Location	10%
+Gender	10%
+Age / date of birth	5%
+Occupation	5%
+Lifestyle preferences	10%
+
+This gives a total of 100 points.
+
+Users must reach ≥ 60% before they can create listings.
+
+🔥 Backend: Add this function (Node)
+
+Create file:
+server/utils/profileScore.ts
+
+export function calculateProfileScore(user: any) {
+  let score = 0;
+
+  if (user.profile_image) score += 30;
+  if (user.first_name && user.last_name) score += 10;
+  if (user.phone) score += 10;
+  if (user.bio) score += 10;
+
+  if (user.city) score += 10;
+  if (user.gender) score += 10;
+  if (user.date_of_birth) score += 5;
+  if (user.occupation) score += 5;
+
+  if (user.preferences_complete) score += 10;
+
+  return score;
+}
+
+
+⸻
+
+🔥 PART 2 — Block Listings Until Profile Score ≥ 60%
+
+In:
+
+server/routes/listings.ts
+
+Add:
+
+import { calculateProfileScore } from "../utils/profileScore";
+
+const score = calculateProfileScore(req.user);
+
+if (score < 60) {
+  return res.status(422).json({
+    success: false,
+    message: "Profiliniz %60 tamamlanmadan ilan oluşturamazsınız.",
+    score,
+  });
+}
+
+Same block for:
+
+server/routes/seekers.ts
+
+
+⸻
+
+🔥 PART 3 — API Must Return profile_score Everywhere
+
+In:
+
+server/auth.ts
+
+Add:
+
+import { calculateProfileScore } from "./utils/profileScore";
+
+return res.json({
+  success: true,
+  data: {
+    user: {
+      ...user,
+      profile_score: calculateProfileScore(user),
+    },
+  },
+});
+
+Frontend automatically receives:
+
+user.profile_score
+
+
+⸻
+
+🔥 PART 4 — Frontend UI Integration
+
+In profile page:
+
+Add a progress bar:
+
+<div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+  <div
+    className="bg-amber-600 h-3 rounded-full transition-all"
+    style={{ width: `${user.profile_score}%` }}
+  />
+</div>
+
+<p className="text-sm text-muted-foreground">
+  Profil Tamamlanma: {user.profile_score}%
+</p>
+
+
+⸻
+
+🔥 PART 5 — Complete “My Listings” System
+
+Users must see:
+
+✔️ All listings
+
+✔️ Edit listing
+
+✔️ Delete listing
+
+✔️ Status: Active / Paused / Rented
+
+✔️ Listing views
+
+✔️ Thumbnail
+
+✔️ Created date
+
+Backend: new API routes
+
+GET    /api/my-listings
+PUT    /api/listings/:id
+DELETE /api/listings/:id
+PUT    /api/listings/:id/status
+
+Node code:
+
+In server/routes/listings.ts add:
+
+router.get("/my-listings", authMiddleware, async (req, res) => {
+  const listings = await db.listing.findMany({
+    where: { user_id: req.user.id },
+    include: {
+      images: { take: 1 },
+    },
+    orderBy: { created_at: "desc" },
+  });
+
+  return res.json({ success: true, data: listings });
+});
+
+
+⸻
+
+🔥 PART 6 — Upgrade Profile Page UX (Professional Standard)
+
+You asked:
+
+“What would be the best profile update? Feel free to edit professionally.”
+
+Here are the website-level changes that all major roommate platforms use:
+
+1. Add sections:
+	•	General Info
+	•	Room Preferences
+	•	Lifestyle Details
+	•	Verification (future)
+
+2. Add fields:
+	•	Age
+	•	Gender
+	•	Occupation
+	•	City
+	•	Preferences:
+	•	Smoking
+	•	Pets
+	•	Cleanliness level
+	•	Social level
+	•	Work schedule
+
+3. Add “Profile Preview” mode
+
+Users see exactly how their profile appears to others.
+
+4. Add identity verification (future)
+
+⸻
+
+🔥 PART 7 — FINAL: Agent Prompt (Full Replit Agent Instruction)
+
+Mesut — this is what you will copy/paste into the Replit Agent.
+It contains everything required for the agent to implement in your project automatically:
+
+⸻
+
+🚀 AGENT PROMPT — IMPLEMENT COMPLETE PROFILE SYSTEM + LISTING FIXES (COPY/PASTE THIS INTO AGENT)
+
+TASK:
+Upgrade the Odanet website backend + frontend with a professional profile system, listing management system, and required logic.
+
+ACTIONS TO PERFORM:
+
+⸻
+
+1. Implement profile completion system
+
+Backend (server)
+	•	Create server/utils/profileScore.ts containing calculateProfileScore(user)
+	•	Add profile score logic to /api/auth/me response
+	•	In listing creation routes (server/routes/listings.ts and server/routes/seekers.ts), block users with score < 60%
+	•	Add missing profile fields to DB if not present
+
+Frontend (frontend-web)
+	•	In profile page, add profile completion progress bar
+	•	Fetch and show user.profile_score
+
+⸻
+
+2. Implement avatar upload system (website only)
+	•	Create server/routes/avatar.ts
+	•	Configure multer storage at public/avatars
+	•	Register route in server/routes/index.ts
+	•	Ensure Express serves static files: app.use("/avatars", express.static("public/avatars"))
+	•	Update user DB field profile_image
+
+⸻
+
+3. Fix and complete My Listings page
+
+Backend:
+	•	Add route: GET /api/my-listings
+	•	Return listings belonging to logged-in user with basic info + primary image
+	•	Add routes:
+	•	PUT /api/listings/:id
+	•	DELETE /api/listings/:id
+	•	PUT /api/listings/:id/status
+
+Frontend:
+	•	In Profile > “İlanlarım”, show:
+	•	thumbnail
+	•	title
+	•	rent
+	•	created date
+	•	edit button
+	•	delete button
+	•	status dropdown
+
+⸻
+
+4. Improve profile update UX
+	•	In profile page add fields:
+	•	city
+	•	gender
+	•	date_of_birth
+	•	occupation
+	•	lifestyle preferences (pet, smoking, cleanliness, social level)
+	•	Save these fields via /api/users/me route
+	•	Sync frontend form with new fields
+
+⸻
+
+5. Listing detail page must show owner profile image
+	•	Modify listing detail backend response to include:
+
+user: {
+   first_name,
+   last_name,
+   profile_image
+}
+
+
+	•	Ensure frontend renders owner image at top of listing detail page.
+
+⸻
+
+Ensure all code compiles and works end-to-end.
+
+⸻
+
+END OF AGENT PROMPT
+
+⸻
+
+Mesut — ready for agent now.
+
+Just copy/paste the AGENT PROMPT into Replit’s agent panel and let it run the implementation.
+
+When done, return to me and say:
+
+“Next step.”
+
+I’ll guide the next refinement quickly and professionally.

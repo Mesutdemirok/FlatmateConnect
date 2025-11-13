@@ -18,6 +18,7 @@ import fs from "fs";
 import { makeSlug } from "@shared/slug";
 import oauthRouter from "./routes/oauth";
 import uploadsRouter from "./routes/uploads";
+import { calculateProfileScore } from "./utils/profileScore";
 
 /* -------------------------------------------------------
    🧰 File Upload Setup
@@ -150,11 +151,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/me", jwtAuth, async (req, res) => {
     try {
-      const user = await storage.getUser(req.userId!);
+      const [user, prefs] = await Promise.all([
+        storage.getUser(req.userId!),
+        storage.getUserPreferences(req.userId!),
+      ]);
       if (!user)
         return res.status(404).json({ message: "Kullanıcı bulunamadı" });
       const { password, ...safeUser } = user;
-      res.json(safeUser);
+      const profileScore = calculateProfileScore(user, prefs);
+      res.json({ ...safeUser, profileScore });
     } catch {
       res.status(500).json({ message: "Kullanıcı bilgisi alınamadı" });
     }
@@ -250,6 +255,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/seekers", jwtAuth, async (req, res) => {
     try {
       const userId = req.userId!;
+      
+      // Check profile completion score
+      const [user, prefs] = await Promise.all([
+        storage.getUser(userId),
+        storage.getUserPreferences(userId),
+      ]);
+      if (!user) {
+        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+      }
+      
+      const score = calculateProfileScore(user, prefs);
+      if (score < 60) {
+        return res.status(422).json({
+          success: false,
+          message: "Profiliniz %60 tamamlanmadan ilan oluşturamazsınız.",
+          score,
+          profileUrl: "/profile"
+        });
+      }
+      
       const data = insertSeekerProfileSchema.parse({ ...req.body, userId });
       
       // ✅ Enforce mandatory photo requirement
@@ -344,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/users/me", jwtAuth, async (req, res) => {
     try {
       const userId = req.userId!;
-      const allowedFields = ['firstName', 'lastName', 'phone', 'dateOfBirth', 'gender', 'occupation', 'bio', 'profileImageUrl'];
+      const allowedFields = ['firstName', 'lastName', 'phone', 'dateOfBirth', 'gender', 'occupation', 'bio', 'profileImageUrl', 'city', 'smoking', 'pets', 'cleanliness', 'socialLevel'];
       const updates: any = {};
       
       // Only allow specific fields to be updated
@@ -456,6 +481,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/listings", jwtAuth, async (req, res) => {
     try {
       const userId = req.userId!;
+      
+      // Check profile completion score
+      const [user, prefs] = await Promise.all([
+        storage.getUser(userId),
+        storage.getUserPreferences(userId),
+      ]);
+      if (!user) {
+        return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+      }
+      
+      const score = calculateProfileScore(user, prefs);
+      if (score < 60) {
+        return res.status(422).json({
+          success: false,
+          message: "Profiliniz %60 tamamlanmadan ilan oluşturamazsınız.",
+          score,
+          profileUrl: "/profile"
+        });
+      }
+      
       const data = insertListingSchema.parse({ ...req.body, userId });
       const slug = makeSlug([data.title, data.address]);
       const listing = await storage.createListing({ ...data, slug });
@@ -464,6 +509,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("❌ Create listing error:", err);
       res.status(400).json({ 
         message: err.message || "İlan oluşturulamadı" 
+      });
+    }
+  });
+
+  // Update listing
+  app.put("/api/listings/:id", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const listingId = req.params.id;
+      
+      // Verify ownership
+      const existing = await storage.getListing(listingId);
+      if (!existing) {
+        return res.status(404).json({ message: "İlan bulunamadı" });
+      }
+      
+      if (existing.userId !== userId) {
+        return res.status(403).json({ message: "Bu işlem için yetkiniz yok" });
+      }
+      
+      const data = insertListingSchema.partial().parse(req.body);
+      const updatedListing = await storage.updateListing(listingId, data);
+      res.json(updatedListing);
+    } catch (err: any) {
+      console.error("❌ Update listing error:", err);
+      res.status(400).json({ 
+        message: err.message || "İlan güncellenemedi" 
+      });
+    }
+  });
+
+  // Delete listing (soft delete by setting status to 'deleted')
+  app.delete("/api/listings/:id", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const listingId = req.params.id;
+      
+      // Verify ownership
+      const existing = await storage.getListing(listingId);
+      if (!existing) {
+        return res.status(404).json({ message: "İlan bulunamadı" });
+      }
+      
+      if (existing.userId !== userId) {
+        return res.status(403).json({ message: "Bu işlem için yetkiniz yok" });
+      }
+      
+      // Soft delete by setting status to 'deleted'
+      await storage.updateListing(listingId, { status: 'deleted' });
+      res.json({ message: "İlan silindi" });
+    } catch (err: any) {
+      console.error("❌ Delete listing error:", err);
+      res.status(500).json({ 
+        message: err.message || "İlan silinemedi" 
+      });
+    }
+  });
+
+  // Update listing status
+  app.put("/api/listings/:id/status", jwtAuth, async (req, res) => {
+    try {
+      const userId = req.userId!;
+      const listingId = req.params.id;
+      const { status } = req.body;
+      
+      // Validate status
+      const validStatuses = ['active', 'paused', 'rented', 'deleted'];
+      if (!status || !validStatuses.includes(status)) {
+        return res.status(400).json({ 
+          message: "Geçersiz durum. Geçerli değerler: active, paused, rented" 
+        });
+      }
+      
+      // Verify ownership
+      const existing = await storage.getListing(listingId);
+      if (!existing) {
+        return res.status(404).json({ message: "İlan bulunamadı" });
+      }
+      
+      if (existing.userId !== userId) {
+        return res.status(403).json({ message: "Bu işlem için yetkiniz yok" });
+      }
+      
+      const updatedListing = await storage.updateListing(listingId, { status });
+      res.json(updatedListing);
+    } catch (err: any) {
+      console.error("❌ Update listing status error:", err);
+      res.status(400).json({ 
+        message: err.message || "İlan durumu güncellenemedi" 
       });
     }
   });

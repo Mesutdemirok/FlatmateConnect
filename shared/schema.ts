@@ -42,6 +42,7 @@ export const users = pgTable("users", {
   gender: varchar("gender"),
   occupation: varchar("occupation"),
   bio: text("bio"),
+  city: varchar("city"),
   verificationStatus: varchar("verification_status").default('unverified'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

@@ -1,41 +1,46 @@
-import { useState, useEffect } from "react";
+"use client";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
-import { z } from "zod";
+import { isUnauthorizedError } from "@/lib/authUtils";
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  FormControl,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { User, Home, Heart, Settings, Loader2, Camera } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Settings, Heart, Home, Loader2 } from "lucide-react";
 
-// —————————————————————————————————————————————————————————
-// Zod schema for validation
-// —————————————————————————————————————————————————————————
+// --------------------------------------------------------------
+// VALIDATION SCHEMA WITH REQUIRED IMAGE
+// --------------------------------------------------------------
 const personalInfoSchema = z.object({
   firstName: z.string().min(1, "Ad gereklidir"),
   lastName: z.string().min(1, "Soyad gereklidir"),
-  phone: z.string().optional(),
+  phone: z.string().min(10, "Geçerli bir telefon giriniz"),
   bio: z.string().optional(),
+  profileImage: z.string().min(1, "Profil fotoğrafı gereklidir"),
 });
+
 type PersonalInfoFormData = z.infer<typeof personalInfoSchema>;
 
 export default function Profile() {
@@ -44,9 +49,11 @@ export default function Profile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("profile");
 
-  // Redirect if not authenticated
+  const [activeTab, setActiveTab] = useState("profile");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Redirect if unauthenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({
@@ -56,96 +63,134 @@ export default function Profile() {
       });
       setTimeout(() => setLocation("/giris?next=/profil"), 500);
     }
-  }, [isAuthenticated, authLoading, toast, setLocation]);
+  }, [isAuthenticated, authLoading]);
 
   // Queries
   const { data: myListings, isLoading: listingsLoading } = useQuery({
     queryKey: ["/api/my-listings"],
     enabled: isAuthenticated,
   });
+
   const { data: favorites, isLoading: favoritesLoading } = useQuery({
     queryKey: ["/api/favorites"],
     enabled: isAuthenticated,
   });
 
-  // Form setup
-  const personalInfoForm = useForm<PersonalInfoFormData>({
+  // --------------------------------------------------------------
+  // FORM
+  // --------------------------------------------------------------
+  const form = useForm<PersonalInfoFormData>({
     resolver: zodResolver(personalInfoSchema),
-    defaultValues: { firstName: "", lastName: "", phone: "", bio: "" },
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      phone: "",
+      bio: "",
+      profileImage: "",
+    },
   });
 
+  // Fill form when user loaded
   useEffect(() => {
     if (user) {
-      personalInfoForm.reset({
+      form.reset({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         phone: user.phone || "",
         bio: user.bio || "",
+        profileImage: user.profile_image || "",
       });
     }
-  }, [user, personalInfoForm]);
+  }, [user]);
 
-  const updatePersonalInfo = useMutation({
+  // --------------------------------------------------------------
+  // AVATAR UPLOAD HANDLER
+  // --------------------------------------------------------------
+  const handleAvatarUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const response = await apiRequest(
+        "POST",
+        "/api/users/upload-avatar",
+        formData,
+        {
+          isFormData: true,
+        },
+      ).then((r) => r.json());
+
+      form.setValue("profileImage", response.data.profile_image);
+
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+
+      toast({
+        title: "Profil fotoğrafı güncellendi",
+      });
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Fotoğraf yüklenemedi",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // --------------------------------------------------------------
+  // UPDATE PERSONAL INFO
+  // --------------------------------------------------------------
+  const updateProfile = useMutation({
     mutationFn: async (data: PersonalInfoFormData) => {
-      const response = await apiRequest("PATCH", "/api/users/me", data);
-      return response.json();
+      return apiRequest("PATCH", "/api/users/me", data).then((r) => r.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      toast({ title: "Başarılı!", description: "Bilgileriniz güncellendi." });
+
+      toast({
+        title: "Başarılı",
+        description: "Profiliniz güncellendi.",
+      });
     },
-    onError: (error: any) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: t("errors.unauthorized"),
-          description: t("errors.unauthorized_description"),
-          variant: "destructive",
-        });
-        setTimeout(() => setLocation("/giris?next=/profil"), 500);
-      } else {
-        toast({
-          title: "Hata",
-          description: "Bilgiler güncellenemedi",
-          variant: "destructive",
-        });
-      }
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Bilgiler güncellenemedi.",
+        variant: "destructive",
+      });
     },
   });
 
-  const onSubmit = (data: PersonalInfoFormData) =>
-    updatePersonalInfo.mutate(data);
-
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen grid place-items-center">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
+  // --------------------------------------------------------------
+  // UI
+  // --------------------------------------------------------------
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <SEOHead
         title="Profilim | Odanet"
-        description="Profil bilgilerinizi görüntüleyin ve düzenleyin."
-        url="https://www.odanet.com.tr/profil"
+        description="Profil bilgilerinizi düzenleyin."
       />
+
       <Header />
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <div className="relative mb-8 overflow-hidden rounded-2xl border bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-teal-500/15 p-6">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl p-[2px] bg-gradient-to-br from-violet-500 via-fuchsia-500 to-indigo-500">
-              <div className="h-full w-full rounded-[0.65rem] bg-background grid place-items-center">
-                <Settings className="h-6 w-6 text-amber-700" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Profilim</h1>
-              <p className="text-muted-foreground">
-                Hesabınızı yönetin, ilanlarınızı kontrol edin.
-              </p>
-            </div>
+        <div className="flex items-center gap-4 mb-8">
+          <Settings className="h-10 w-10 text-amber-700" />
+          <div>
+            <h1 className="text-3xl font-bold">Profilim</h1>
+            <p className="text-muted-foreground">Hesabınızı yönetin</p>
           </div>
         </div>
 
@@ -155,60 +200,92 @@ export default function Profile() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-3 rounded-xl bg-muted/60 p-1">
+          <TabsList className="grid grid-cols-3 bg-muted p-1 rounded-xl">
             <TabsTrigger value="profile">
-              <User className="h-4 w-4" /> Bilgiler
+              <User /> Bilgiler
             </TabsTrigger>
             <TabsTrigger value="listings">
-              <Home className="h-4 w-4" /> İlanlarım
+              <Home /> İlanlarım
             </TabsTrigger>
             <TabsTrigger value="favorites">
-              <Heart className="h-4 w-4" /> Favorilerim
+              <Heart /> Favorilerim
             </TabsTrigger>
           </TabsList>
 
-          {/* Personal Info */}
+          {/* -------------------------------------------------------------- */}
+          {/* PROFILE TAB */}
+          {/* -------------------------------------------------------------- */}
           <TabsContent value="profile">
             <Card>
               <CardHeader>
                 <CardTitle>Kişisel Bilgiler</CardTitle>
               </CardHeader>
               <CardContent>
-                <Form {...personalInfoForm}>
+                {/* AVATAR */}
+                <div className="flex items-center gap-6 mb-6">
+                  <div className="relative">
+                    <img
+                      src={form.watch("profileImage") || "/default-avatar.png"}
+                      className="h-20 w-20 rounded-full object-cover border"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      type="button"
+                      className="absolute bottom-0 right-0 bg-black/60 p-1 rounded-full"
+                    >
+                      <Camera className="h-4 w-4 text-white" />
+                    </button>
+                  </div>
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                </div>
+
+                {/* FORM */}
+                <Form {...form}>
                   <form
-                    onSubmit={personalInfoForm.handleSubmit(onSubmit)}
+                    onSubmit={form.handleSubmit((data) =>
+                      updateProfile.mutate(data),
+                    )}
                     className="space-y-4"
                   >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
-                        control={personalInfoForm.control}
+                        control={form.control}
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Ad</FormLabel>
                             <FormControl>
-                              <Input {...field} placeholder="Adınız" />
+                              <Input {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+
                       <FormField
-                        control={personalInfoForm.control}
+                        control={form.control}
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Soyad</FormLabel>
                             <FormControl>
-                              <Input {...field} placeholder="Soyadınız" />
+                              <Input {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
+
                     <FormField
-                      control={personalInfoForm.control}
+                      control={form.control}
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
@@ -220,8 +297,9 @@ export default function Profile() {
                         </FormItem>
                       )}
                     />
+
                     <FormField
-                      control={personalInfoForm.control}
+                      control={form.control}
                       name="bio"
                       render={({ field }) => (
                         <FormItem>
@@ -229,43 +307,33 @@ export default function Profile() {
                           <FormControl>
                             <Input
                               {...field}
-                              placeholder="Kısa bir tanıtım yazısı..."
+                              placeholder="Kısa bir tanıtım yazısı"
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        type="submit"
-                        disabled={updatePersonalInfo.isPending}
-                      >
-                        {updatePersonalInfo.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                            Kaydediliyor...
-                          </>
-                        ) : (
-                          "Kaydet"
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => personalInfoForm.reset()}
-                        disabled={updatePersonalInfo.isPending}
-                      >
-                        İptal
-                      </Button>
-                    </div>
+
+                    <Button type="submit" disabled={updateProfile.isPending}>
+                      {updateProfile.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Kaydediliyor...
+                        </>
+                      ) : (
+                        "Kaydet"
+                      )}
+                    </Button>
                   </form>
                 </Form>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Listings */}
+          {/* -------------------------------------------------------------- */}
+          {/* LISTINGS */}
+          {/* -------------------------------------------------------------- */}
           <TabsContent value="listings">
             <Card>
               <CardHeader>
@@ -281,7 +349,9 @@ export default function Profile() {
             </Card>
           </TabsContent>
 
-          {/* Favorites */}
+          {/* -------------------------------------------------------------- */}
+          {/* FAVORITES */}
+          {/* -------------------------------------------------------------- */}
           <TabsContent value="favorites">
             <Card>
               <CardHeader>
