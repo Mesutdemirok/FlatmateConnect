@@ -17,6 +17,7 @@ The platform prioritizes a mobile-first design with consistent branding. The web
 - **Backend**: Developed with Express.js and TypeScript, using PostgreSQL as the database with Drizzle ORM. The API is RESTful, providing detail endpoints with eager-loaded relations and enforcing publish/active filters.
 - **Configuration**: A centralized `config.ts` manages `API_URL`, `getImageUrl()` for image path normalization, and `getApiUrl()` for endpoint URL construction.
 - **Authentication**: JWT-based authentication supports both Google OAuth and email/password, with secure cookies. Mobile authentication uses SecureStore.
+- **Profile Completion System**: Weighted scoring system calculating profile completion percentage. Fields include: profileImageUrl (30%), name (10%), phone (10%), bio (10%), city (10%), gender (10%), dateOfBirth (5%), occupation (5%), and lifestyle preferences (10%). Backend validation enforces 60% minimum score before creating listings or seeker profiles. Calculated server-side in `calculateProfileScore()` utility using existing `users` and `userPreferences` tables.
 - **File Upload System**: Supports multiple image uploads, optimized for mobile with HEIC/HEIF to JPEG conversion, compression, and resizing. Cloudflare R2 serves as the CDN. All uploads require JWT authentication and ownership verification.
 - **SEO**: Implemented with React Helmet for dynamic meta tags, Open Graph, and Twitter card generation. Slugs are generated for listings and seeker profiles. A sitemap.xml and rss.xml are dynamically generated, and `robots.txt` is configured. 301 redirects handle legacy UUID-based URLs.
 - **Mobile Build System**: EAS (Expo Application Services) is configured for Android and iOS.
@@ -25,14 +26,17 @@ The platform prioritizes a mobile-first design with consistent branding. The web
 
 ### Feature Specifications
 - **User Management**: Profile creation, verification, image uploads, and an editable profile dashboard with personal info and listings management.
-- **Listing System**: Detailed room listings with multiple images and filtering. The dashboard shows all user's listings, including drafts.
+- **Profile Completion**: Visual progress bar displaying completion percentage with warning when < 60%. Profile includes personal info (name, phone, bio, city, gender, dateOfBirth, occupation) and lifestyle preferences (smoking, pets, cleanliness, socialLevel). Users must reach 60% completion before creating listings or seeker profiles.
+- **Listing System**: Detailed room listings with multiple images and filtering. Full CRUD operations with ownership verification. Listing status management (active, paused, rented, deleted).
+- **My Listings Dashboard**: Displays all user's listings with thumbnail images, title, rent (₺ format), address, created date, and status badges. Actions include: Edit (→ /ilan-duzenle/:id), Delete (with AlertDialog confirmation), and Status dropdown (active/paused/rented). Shows empty state with call-to-action when no listings exist.
 - **Seeker Profiles**: Comprehensive profiles with dedicated detail pages. The dashboard shows the user's own seeker profile, including inactive states.
 - **Messaging System**: Real-time communication.
 - **Favorites System**: Users can save and manage favorite listings.
 - **Search & Filtering**: Location-based search with various filters for both room and flatmate searches.
 - **Homepage Feed**: A unified chronological feed of listings and seeker profiles.
 - **Seeker Detail Pages**: Display complete profile information, including contact options.
-- **Profile Dashboard**: Four-tab interface (Personal Info, Preferences, My Listings, Favorites) with editable forms, status badges, and quick action buttons.
+- **Listing Detail Pages**: Show complete listing information with owner profile card. Owner card displays profile photo, full name, and "İletişim" (Contact) button linking to /mesajlar/:userId. Contact button hidden when user is the listing owner.
+- **Profile Dashboard**: Four-tab interface (Personal Info, Yaşam Tarzı Tercihleri, İlanlarım, Favorites) with editable forms using react-hook-form + Zod validation, status badges, and quick action buttons. Profile completion progress bar at top. All forms have loading states, toast notifications, and proper cache invalidation.
 
 ### System Design Choices
 The system uses a modular schema with foreign key relationships. Backend fallbacks for slug-based lookups ensure backward compatibility.
