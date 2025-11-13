@@ -1,15 +1,16 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { getToken } from "./auth";
 
-// 🔥 Correct backend URL (Final)
-const BACKEND_API_BASE = "https://flatmateconnect.mesudemirok-4j0.repl.co/api";
+// 🔥 Correct backend API base for Production (Final)
+const BACKEND_API_BASE = "https://www.odanet.com.tr/api";
 
-// Clean join function
+// --- Helper: Build clean URL ---
 function buildUrl(path: string): string {
   const clean = path.startsWith("/") ? path.slice(1) : path;
   return `${BACKEND_API_BASE}/${clean}`;
 }
 
+// --- Helper: Throw if Response is not OK ---
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -17,6 +18,7 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// --- Helper: Auth headers ---
 export function getAuthHeaders(): Record<string, string> {
   const token = getToken();
   if (token) {
@@ -27,6 +29,7 @@ export function getAuthHeaders(): Record<string, string> {
   return {};
 }
 
+// --- API request wrapper ---
 export async function apiRequest(
   method: string,
   url: string,
@@ -53,6 +56,7 @@ export async function apiRequest(
   return res;
 }
 
+// --- Query function used by react-query ---
 type UnauthorizedBehavior = "returnNull" | "throw";
 
 export const getQueryFn: <T>(options: {
@@ -76,6 +80,7 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+// --- Query Client instance ---
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
