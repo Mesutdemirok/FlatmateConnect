@@ -1,0 +1,47 @@
+The backend is still running an old workspace build instead of the fresh deployment build. This causes the production backend to continue using outdated code that expects a missing column, resulting in the error: “column "city" does not exist”, even though the database has the column now.
+
+I need you to fix the deployment fully and permanently. Follow these instructions exactly:
+
+1. Open the .replit file and rewrite it so that:
+   - All references to "npm run dev" are completely removed.
+   - There is no workflow or run command that executes npm run dev.
+   - The ONLY run command at the top level must be:
+       run = "node dist/index.js"
+
+2. Under the [deployment] block, ensure it contains exactly:
+       build = ["npm", "ci", "--omit=dev"]
+       run = ["node", "dist/index.js"]
+       deploymentTarget = "autoscale"
+
+3. In the workflows section:
+   - Either remove the “Start application” workflow
+   - OR change it so the command is:
+         task = "shell.exec"
+         args = "node dist/index.js"
+   - Make sure no workflow runs “npm run dev” at any time.
+
+4. Save the updated .replit file.
+
+5. In the Shell, execute the following commands to generate a fresh production build:
+       npm ci --omit=dev
+       npm run build
+   This must produce a new dist/index.js.
+
+6. Completely delete the existing deployment (destroy the old autoscale container).
+
+7. Create a new deployment from scratch using:
+       Build command: npm ci --omit=dev
+       Run command: node dist/index.js
+
+8. Publish the new deployment and wait until it is fully ready.
+
+9. Verify in the Publishing → Logs that:
+   - The backend starts from the deployment container
+   - The server is running from dist/index.js inside the deployment environment
+   - The old workspace path (/home/runner/workspace/dist/index.js) is not referenced anywhere.
+
+10. After deployment, test login. The “column city does not exist” error should disappear because the new backend matches the database.
+
+11. If necessary, restart the autoscale service so the correct image is used.
+
+Perform all tasks from start to finish automatically, make no partial changes, and ensure the backend is running the correct production build.

@@ -25,7 +25,10 @@ ignore = ["dist/public/assets/*.map"]
 localPort = 5000
 externalPort = 80
 
-# Optional port (not needed but safe to keep)
+[[ports]]
+localPort = 34365
+externalPort = 3001
+
 [[ports]]
 localPort = 42891
 externalPort = 3000
