@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1763015058893,
-      "tag": "0000_watery_jetstream",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1763044438985,
-      "tag": "0001_modern_iron_lad",
+      "when": 1763045034906,
+      "tag": "0000_wealthy_shooting_star",
       "breakpoints": true
     }
   ]

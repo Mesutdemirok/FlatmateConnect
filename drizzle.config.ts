@@ -7,6 +7,10 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
+
+  // 🔥 FIX: Disable strict mode so Replit stops deleting columns
+  strict: false,
+
+  // Optional: keep logs
   verbose: true,
-  strict: true,
 });

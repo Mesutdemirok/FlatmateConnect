@@ -1,5 +1,5 @@
 {
-  "id": "3b5b25b5-9a25-4491-8303-f1aa1453d1ee",
+  "id": "5758d38a-eddd-4fbd-98b0-74eb9ce8da45",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -596,6 +596,42 @@
         "preferred_location": {
           "name": "preferred_location",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city": {
+          "name": "city",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city_slug": {
+          "name": "city_slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district_slug": {
+          "name": "district_slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "neighborhood": {
+          "name": "neighborhood",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "neighborhood_slug": {
+          "name": "neighborhood_slug",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": false
         },
