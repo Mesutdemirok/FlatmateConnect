@@ -30,6 +30,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@replit/vite-plugin-cartographer": "^0.4.0",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
+    "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query": "^5.0.0",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.0",
