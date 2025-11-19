@@ -1,0 +1,93 @@
+{
+  "nav": {
+    "home": "Ana Sayfa",
+    "search": "Ara",
+    "addListing": "İlan Ver",
+    "findRoommate": "Oda Arkadaşı Ara",
+    "profile": "Profil",
+    "login": "Giriş Yap",
+    "logout": "Çıkış Yap"
+  },
+  "hero": {
+    "title": "Güvenilir ve Şeffaf Oda Arama Deneyimi",
+    "subtitle": "Türkiye'nin en güvenilir oda ve - ev arkadaşı bulma platformu",
+    "searchPlaceholder": "Şehir, mahalle veya ilçe ara...",
+    "searchButton": "Ara."
+  },
+  "home": {
+    "title": "En Son İlanlar",
+    "noListings": "Henüz ilan bulunmuyor",
+    "loading": "Yükleniyor..."
+  },
+  "listing": {
+    "rent": "Kira",
+    "month": "/ay",
+    "rooms": "oda",
+    "roommates": "kişi",
+    "contactOwner": "İlan Sahibiyle İletişime Geç",
+    "login": "İletişim kurmak için giriş yapın",
+    "details": "İlan Detayları",
+    "location": "Konum",
+    "price": "Fiyat",
+    "propertyType": "Mülk Tipi",
+    "totalRooms": "Toplam Oda",
+    "bathroomType": "Banyo Tipi",
+    "furnishing": "Eşya Durumu",
+    "availability": "Müsaitlik"
+  },
+  "auth": {
+    "login": "Giriş Yap",
+    "email": "E-posta",
+    "password": "Şifre",
+    "forgotPassword": "Şifremi Unuttum",
+    "noAccount": "Hesabınız yok mu?",
+    "signUp": "Kayıt Ol",
+    "loginError": "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.",
+    "loginSuccess": "Giriş başarılı!"
+  },
+  "profile": {
+    "title": "Profilim",
+    "myListings": "İlanlarım",
+    "favorites": "Favorilerim",
+    "messages": "Mesajlarım",
+    "settings": "Ayarlar"
+  },
+  "addListing": {
+    "title": "İlan Ver",
+    "description": "Oda ilanınızı oluşturun",
+    "submit": "İlanı Yayınla",
+    "success": "İlan başarıyla oluşturuldu!",
+    "error": "İlan oluşturulurken bir hata oluştu"
+  },
+  "findRoommate": {
+    "title": "Oda Arkadaşı Ara",
+    "description": "Size uygun oda arkadaşı bulun",
+    "noResults": "Sonuç bulunamadı"
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "error": "Bir hata oluştu",
+    "tryAgain": "Tekrar Dene",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "back": "Geri",
+    "next": "İleri",
+    "previous": "Önceki",
+    "close": "Kapat",
+    "submit": "Gönder",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "sort": "Sırala",
+    "noData": "Veri bulunamadı",
+    "perMonth": "/ay"
+  },
+  "footer": {
+    "about": "Hakkımızda",
+    "contact": "İletişim",
+    "terms": "Kullanım Koşulları",
+    "privacy": "Gizlilik Politikası",
+    "copyright": "© 2024 Odanet. Tüm hakları saklıdır."
+  }
+}

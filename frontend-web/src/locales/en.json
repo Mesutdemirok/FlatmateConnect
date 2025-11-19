@@ -1,0 +1,93 @@
+{
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "addListing": "Add Listing",
+    "findRoommate": "Find Roommate",
+    "profile": "Profile",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "hero": {
+    "title": "Trusted and Transparent Room Search Experience",
+    "subtitle": "Turkey's most trusted platform for finding rooms and roommates",
+    "searchPlaceholder": "Search city, neighborhood or district...",
+    "searchButton": "Search"
+  },
+  "home": {
+    "title": "Recent Listings",
+    "noListings": "No listings yet",
+    "loading": "Loading..."
+  },
+  "listing": {
+    "rent": "Rent",
+    "month": "/month",
+    "rooms": "rooms",
+    "roommates": "people",
+    "contactOwner": "Contact Owner",
+    "login": "Login to contact",
+    "details": "Listing Details",
+    "location": "Location",
+    "price": "Price",
+    "propertyType": "Property Type",
+    "totalRooms": "Total Rooms",
+    "bathroomType": "Bathroom Type",
+    "furnishing": "Furnishing",
+    "availability": "Availability"
+  },
+  "auth": {
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign Up",
+    "loginError": "Login failed. Please check your credentials.",
+    "loginSuccess": "Login successful!"
+  },
+  "profile": {
+    "title": "My Profile",
+    "myListings": "My Listings",
+    "favorites": "Favorites",
+    "messages": "Messages",
+    "settings": "Settings"
+  },
+  "addListing": {
+    "title": "Add Listing",
+    "description": "Create your room listing",
+    "submit": "Publish Listing",
+    "success": "Listing created successfully!",
+    "error": "An error occurred while creating the listing"
+  },
+  "findRoommate": {
+    "title": "Find Roommate",
+    "description": "Find a roommate that suits you",
+    "noResults": "No results found"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "tryAgain": "Try Again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "noData": "No data found",
+    "perMonth": "/month"
+  },
+  "footer": {
+    "about": "About",
+    "contact": "Contact",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "copyright": "© 2024 Odanet. All rights reserved."
+  }
+}
