@@ -1,8 +1,8 @@
-modules = ["nodejs-20", "postgresql-16", "web"]
+modules = ["nodejs-20", "web"]
 hidden = [".config", ".git"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-25_05"
 packages = ["lsof", "jq", "file"]
 
 [env]
@@ -30,6 +30,10 @@ externalPort = 8081
 [[ports]]
 localPort = 8082
 externalPort = 3000
+
+[[ports]]
+localPort = 34479
+externalPort = 3001
 
 [workflows]
 runButton = "Start application"
